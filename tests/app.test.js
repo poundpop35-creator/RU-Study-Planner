@@ -101,10 +101,10 @@ test('lesson pages open with the one-minute summary, analogy, memory hook and te
 });
 test('home shows a daily plan; ticking a block and choosing hours are saved',()=>{
  navigate('#home');assert.ok(html().includes('แผนวันนี้'));assert.ok(html().includes('data-action="block"'));
- click('hours',{value:'3'});assert.equal(saved().todayHours.hours,3);assert.equal(saved().todayHours.date,today()<STUDY_START?STUDY_START:today());assert.ok(html().includes('คำบรรยายและตำรา'));
+ click('hours',{value:'3'});assert.equal(saved().hourOverrides[today()<STUDY_START?STUDY_START:today()],3);assert.ok(html().includes('คำบรรยายและตำรา'));
  click('block',{id:'main'});assert.deepEqual(saved().planDone[today()<STUDY_START?STUDY_START:today()],['main']);assert.ok(html().includes('aria-pressed="true"'));
  click('block',{id:'main'});assert.deepEqual(saved().planDone[today()<STUDY_START?STUDY_START:today()],[]);
- click('hours',{value:'9'});assert.equal(saved().todayHours.hours,3);
+ click('hours',{value:'9'});assert.equal(saved().hourOverrides[today()<STUDY_START?STUDY_START:today()],3);
 });
 test('search covers the plain-language layer and textbook terms',()=>{
  navigate('#courses');listeners.input({target:{id:'lesson-search',value:'POSDCORB'}});assert.ok(get('#library-results').innerHTML.includes('POL2301-2'));
@@ -143,3 +143,13 @@ test('exam guides render for every course and both practice modes score correctl
  click('prep-mode',{course:'POL2106',mode:'practice'});
 });
 
+
+test('editing two selected dates and defaults preserves each date-specific hour choice',async()=>{
+ navigate('#home');await listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});click('hours',{value:'3'});
+ await listeners.change({target:{id:'study-plan-date',value:'2026-11-06'}});click('hours',{value:'1'});
+ assert.equal(saved().hourOverrides['2026-11-05'],3);assert.equal(saved().hourOverrides['2026-11-06'],1);
+ await listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});assert.ok(html().includes('คำบรรยายและตำรา'));
+ navigate('#settings');await listeners.change({target:{id:'hours-weekday',value:'4',classList:{contains:()=>false}}});
+ assert.equal(saved().hourOverrides['2026-11-05'],3);assert.equal(saved().hourOverrides['2026-11-06'],1);
+ navigate('#home');await listeners.change({target:{id:'study-plan-date',value:'2026-11-06'}});assert.ok(!html().includes('data-id="deep"'));
+});
