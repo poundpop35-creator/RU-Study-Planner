@@ -1,9 +1,9 @@
-import {validatePractice,importLegacyMistakes} from './practice-core.js?v=20261018a';
+import {validatePractice,validateLegacyPracticePending,importLegacyMistakes} from './practice-core.js?v=20261019a';
 import {courses,terms,categoryTargets,readingWeek,studyPhases,studyHours} from './data.js?v=20261018a';
 import {lessons} from './lessons.js?v=20261018a';
 import {prep} from './prep.js?v=20261018a';
 export const STORAGE_KEY='ru-study-planner.v1';
-export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,practiceReview:{},hours:{weekday:2,weekend:2},todayHours:null,planDone:{},prep:{}};}
+export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,practiceMigrationVersion:1,practiceReview:{},legacyPracticePending:[],hours:{weekday:2,weekend:2},hourOverrides:{},planDone:{},prep:{}};}
 const lessonIds=new Set(lessons.map(l=>l.id));
 const courseIds=new Set(courses.map(c=>c.id));
 const cardIds=new Set(lessons.flatMap(l=>l.cards.map((_,i)=>`${l.id}:${i}`)));
@@ -26,11 +26,16 @@ export function validateState(input){
  if([1,2,3].includes(input.dailyGoal))s.dailyGoal=input.dailyGoal;
  if(['normal','large'].includes(input.font))s.font=input.font;
  if(input.planVersion===2&&plain(input.hours))for(const k of ['weekday','weekend']){if(studyHours.includes(input.hours[k]))s.hours[k]=input.hours[k];}
- if(input.planVersion===2&&plain(input.todayHours)&&isDay(input.todayHours.date)&&studyHours.includes(input.todayHours.hours))s.todayHours={date:input.todayHours.date,hours:input.todayHours.hours};
+ // Upgrade the last single-date override without replacing newer date-keyed values.
+ const validHourDay=d=>isDay(d)&&new Date(d+'T12:00:00Z').toISOString().slice(0,10)===d;
+ if(input.planVersion===2&&plain(input.todayHours)&&validHourDay(input.todayHours.date)&&studyHours.includes(input.todayHours.hours))s.hourOverrides[input.todayHours.date]=input.todayHours.hours;
+ if(plain(input.hourOverrides))for(const [d,h]of Object.entries(input.hourOverrides)){if(validHourDay(d)&&studyHours.includes(h))s.hourOverrides[d]=h;}
  if(plain(input.planDone))for(const k of Object.keys(input.planDone).filter(isDay).sort().slice(-400)){const v=input.planDone[k];if(Array.isArray(v))s.planDone[k]=[...new Set(v.filter(x=>BLOCK_IDS.has(x)))];}
  if(plain(input.prep))for(const [k,v]of Object.entries(input.prep)){if(!Object.hasOwn(prep,k)||!plain(v))continue;const n=prep[k].questions.length,score=x=>Number.isInteger(x)&&x>=0&&x<=n?x:null,answers={};if(plain(v.answers))for(const [i,a]of Object.entries(v.answers)){if(/^\d+$/.test(i)&&Number(i)<n&&Number.isInteger(a)&&a>=0&&a<prep[k].questions[Number(i)].options.length)answers[i]=a;}s.prep[k]={answers,submitted:v.submitted===true,best:score(v.best),last:score(v.last)};}
  s.practiceReview=validatePractice(input.practiceReview);
- if(input.planVersion!==2)importLegacyMistakes(s);
+ s.legacyPracticePending=validateLegacyPracticePending(input.legacyPracticePending,s.practiceReview);
+ // Independent of the study-plan version: repair snapshots already saved by the first v2 release.
+ if(input.practiceMigrationVersion!==1)importLegacyMistakes(s);
  return s;
 }
 export function loadState(storage){try{const raw=storage.getItem(STORAGE_KEY);return {state:raw?validateState(JSON.parse(raw)):freshState(),error:null};}catch(error){return {state:freshState(),error:'อ่านข้อมูลที่บันทึกในเครื่องไม่ได้ กรุณานำเข้าไฟล์สำรอง ข้อมูลเดิมจะไม่ถูกเขียนทับจนกว่าจะกู้คืน'};}}
@@ -66,8 +71,8 @@ export function examICS(){const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-
 
 // ---- Daily study planner (1–4 hours a day around work) ----
 export function phaseFor(day){return studyPhases.find(p=>(!p.start||day>=p.start)&&(!p.end||day<=p.end));}
-export function hoursFor(state,day=today()){if(state.todayHours&&state.todayHours.date===day)return state.todayHours.hours;return weekdayIndex(day)>=5?state.hours.weekend:state.hours.weekday;}
-export function hoursUntil(state,from,to){let total=0;for(let d=from<STUDY_START?STUDY_START:from;d<to;d=addDays(d,1))total+=weekdayIndex(d)>=5?state.hours.weekend:state.hours.weekday;return total;}
+export function hoursFor(state,day=today()){return state.hourOverrides?.[day]??(weekdayIndex(day)>=5?state.hours.weekend:state.hours.weekday);}
+export function hoursUntil(state,from,to){let total=0;for(let d=from<STUDY_START?STUDY_START:from;d<to;d=addDays(d,1))total+=hoursFor(state,d);return total;}
 function lowestProgress(state,skip){return exams().map(c=>c.id).filter(id=>!skip.includes(id)).sort((a,b)=>courseProgress(state,a).percent-courseProgress(state,b).percent)[0];}
 function studyTask(state,code,short){
  const l=unreadLesson(state,code);

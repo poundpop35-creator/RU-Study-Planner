@@ -1,18 +1,18 @@
-import {practicePage,practiceAction,resetPracticeSession} from './practice-view.js?v=20261018a';
-import {recordPractice} from './practice-core.js?v=20261018a';
-import {documentsPage} from './documents-view.js?v=20261018a';
-import {examEvidenceTable,examEvidenceCard} from './exam-evidence.js?v=20261018a';
-import {studySections,prepNotice,classroomPage} from './study-sections.js?v=20261018a';
-import {createStudySpace} from './study-space.js?v=20261018a';
-import {notebookPage,notePage,mountEditor,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261018a';
-import {accountPage,accountAction} from './account-view.js?v=20261018a';
-import {courseResources,resourcesPage} from './resources-view.js?v=20261018a';
-import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=20261018a';
+import {practicePage,practiceAction,resetPracticeSession} from './practice-view.js?v=20261019a';
+import {recordPractice} from './practice-core.js?v=20261019a';
+import {documentsPage} from './documents-view.js?v=20261019a';
+import {examEvidenceTable,examEvidenceCard} from './exam-evidence.js?v=20261019a';
+import {studySections,prepNotice,classroomPage} from './study-sections.js?v=20261019a';
+import {createStudySpace} from './study-space.js?v=20261019a';
+import {notebookPage,notePage,mountEditor,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261019a';
+import {accountPage,accountAction} from './account-view.js?v=20261019a';
+import {courseResources,resourcesPage} from './resources-view.js?v=20261019a';
+import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=20261019a';
 import {contentStatus} from './content.js?v=20261018a';
 import {meta,courses,terms,categories,categoryTargets,sources,courseColors,readingWeek,studyPhases,studyHours} from './data.js?v=20261018a';
 import {lessons} from './lessons.js?v=20261018a';
 import {prep} from './prep.js?v=20261018a';
-import {validateState,loadState,escapeHTML as e,thaiDate,today,daysBetween,courseProgress,progress,nextLesson,exams,examClashes,planSummary,cardsForReview,reviewCard,quizItems,examICS,dailyPlan,phaseFor,hoursUntil,streak,prepResult,STUDY_START,weeklyCourses,addDays} from './core.js?v=20261018a';
+import {validateState,loadState,escapeHTML as e,thaiDate,today,daysBetween,courseProgress,progress,nextLesson,exams,examClashes,planSummary,cardsForReview,reviewCard,quizItems,examICS,dailyPlan,phaseFor,hoursUntil,streak,prepResult,STUDY_START,weeklyCourses,addDays} from './core.js?v=20261019a';
 
 const icons={home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',book:'<path d="M12 5v16M3 4h5a4 4 0 0 1 4 3 4 4 0 0 1 4-3h5v15h-5a4 4 0 0 0-4 2 4 4 0 0 0-4-2H3z"/>',cards:'<rect x="7" y="3" width="13" height="16" rx="2"/><path d="M4 7H3v14h13v-1M11 8h5m-5 4h5"/>',plan:'<path d="M8 5h13M8 12h13M8 19h13m-19-15 1 1 2-2m-3 8 1 1 2-2m-3 8 1 1 2-2"/>',calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2m-8 3h2"/>',notes:'<path d="M14 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9M9 15l2-5 8-8 3 3-8 8z"/>',link:'<path d="M10 13a5 5 0 0 0 7 0l4-4a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-4 4a5 5 0 0 0 7 7l2-2"/>',arrow:'<path d="M4 12h16m-6-6 6 6-6 6"/>',check:'<path d="m5 12 4 4L19 6"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',search:'<circle cx="10" cy="10" r="7"/><path d="m15 15 6 6"/>',download:'<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>',flame:'<path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-3 2-4 2-7 2 1 3 3 3 5 1-2 1-5 0-9z"/>',bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',bulb:'<path d="M9 18h6m-5 3h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',star:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',alert:'<path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',spark:'<path d="M12 3v4m0 10v4M3 12h4m10 0h4M6 6l2.5 2.5m7 7L18 18M6 18l2.5-2.5m7-7L18 6"/>',quote:'<path d="M7 7h4v4c0 3-1.5 5-4 6m6-10h4v4c0 3-1.5 5-4 6"/>'};
 const icon=(name,size=20)=>`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.book}</svg>`;
@@ -149,7 +149,7 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
  if(action==='font'){state.font=state.font==='large'?'normal':'large';save();render(true);}
  if(action==='section')document.getElementById(`section-${b.dataset.index}`)?.scrollIntoView({behavior:'smooth',block:'start'});
  if(action==='block')toggleBlock(b.dataset.id);
- if(action==='hours'){const v=Number(b.dataset.value);if(!studyHours.includes(v))return;state.todayHours={date:planDate,hours:v};save();render(true);toast(`ปรับแผนวันนี้เป็น ${v} ชั่วโมงแล้ว`);}
+ if(action==='hours'){const v=Number(b.dataset.value);if(!studyHours.includes(v))return;state.hourOverrides[planDate]=v;save();render(true);toast(`ปรับแผนวันที่เลือกเป็น ${v} ชั่วโมงแล้ว`);}
  if(action==='prep-answer'){const code=b.dataset.course,g=prep[code],i=Number(b.dataset.index),v=Number(b.dataset.value);if(!g||!g.questions[i]||!Number.isInteger(v)||v<0||v>=g.questions[i].options.length)return;const p=state.prep[code]||(state.prep[code]={answers:{},submitted:false,best:null,last:null});if(prepMode==='exam'?p.submitted:Number.isInteger(p.answers[i]))return;p.answers[i]=v;if(prepMode==='practice')recordPractice(state,`prep:${code}:${i}`,v,today());if(prepMode==='practice'&&Object.keys(p.answers).length===g.questions.length){const r=prepResult(state,code);p.last=r.correct;p.best=Math.max(p.best??0,r.correct);toast(`ครบทุกข้อแล้ว ได้ ${r.correct}/${r.total} คะแนน`);}save();render(true);}
  if(action==='prep-submit'){const code=b.dataset.course,p=state.prep[code];if(!prep[code]||!p||p.submitted)return;p.submitted=true;for(const [i,v]of Object.entries(p.answers))recordPractice(state,`prep:${code}:${i}`,v,today());const r=prepResult(state,code);p.last=r.correct;p.best=Math.max(p.best??0,r.correct);save();render(true);toast(`ได้ ${r.correct}/${r.total} คะแนน เลื่อนดูเฉลยแต่ละข้อได้เลย`);}
  if(action==='prep-reset'){const code=b.dataset.course;if(!prep[code])return;const p=state.prep[code];if(p&&Object.keys(p.answers).length&&!confirm('ล้างคำตอบชุดนี้แล้วเริ่มทำใหม่? คะแนนดีสุดยังเก็บไว้'))return;state.prep[code]={answers:{},submitted:false,best:p?.best??null,last:p?.last??null};save();render(true);document.getElementById('mock-title')?.scrollIntoView({block:'start'});}
@@ -181,7 +181,7 @@ document.addEventListener('change',async event=>{const el=event.target;if(!study
  if(el.id==='include-unread'){includeUnread=el.checked;flipped=false;render(true);}
  if(el.classList.contains('grade-select')){if(el.value)state.grades[el.dataset.course]=el.value;else delete state.grades[el.dataset.course];save();render(true);toast('บันทึกผลที่กรอกแล้ว');}
  if(el.classList.contains('move-select')){state.termMoves[el.dataset.course]=Number(el.value);save();render(true);toast('ปรับภาคเรียนแล้ว ตรวจเพดานและวิชาเปิดก่อนลงจริง');}
- if(el.id==='hours-weekday'||el.id==='hours-weekend'){const v=Number(el.value);if(!studyHours.includes(v))return;state.hours[el.id==='hours-weekday'?'weekday':'weekend']=v;if(state.todayHours?.date===today())state.todayHours=null;save();render(true);toast('ปรับเวลาเรียนแล้ว แผนรายวันเปลี่ยนตาม');}
+ if(el.id==='hours-weekday'||el.id==='hours-weekend'){const v=Number(el.value);if(!studyHours.includes(v))return;state.hours[el.id==='hours-weekday'?'weekday':'weekend']=v;save();render(true);toast('ปรับเวลาเรียนแล้ว แผนรายวันเปลี่ยนตาม');}
  if(el.id==='font-choice'){state.font=el.value;save();render(true);}
  if(el.id==='import-backup'){const file=el.files?.[0];if(!file)return;try{if(file.size>2*1024*1024)throw new Error('ไฟล์เกิน 2 MB');const candidate=validateState(JSON.parse(await file.text()));if(!confirm(`นำเข้าบทที่อ่านจบ ${candidate.completed.length} บท และบันทึก ${Object.keys(candidate.notes).length} รายการ เพื่อแทนที่ข้อมูลบัญชีนี้และบันทึกเข้า Supabase?`)){el.value='';return;}state=candidate;locked=false;save();render();toast('นำเข้าข้อมูลสำเร็จ');}catch(err){toast('นำเข้าไม่สำเร็จ: '+(err.message||'รูปแบบไฟล์ไม่ถูกต้อง'));el.value='';}}
 });
