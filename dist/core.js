@@ -1,7 +1,7 @@
-import {validatePractice,importLegacyMistakes} from './practice-core.js?v=20261018a';
-import {courses,terms,categoryTargets,readingWeek,studyPhases,studyHours} from './data.js?v=20261018a';
-import {lessons} from './lessons.js?v=20261018a';
-import {prep} from './prep.js?v=20261018a';
+import {validatePractice,importLegacyMistakes} from './practice-core.js?v=20261019a';
+import {courses,terms,categoryTargets,readingWeek,studyPhases,studyHours} from './data.js?v=20261019a';
+import {lessons} from './lessons.js?v=20261019a';
+import {prep} from './prep.js?v=20261019a';
 export const STORAGE_KEY='ru-study-planner.v1';
 export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,practiceReview:{},hours:{weekday:2,weekend:2},todayHours:null,planDone:{},prep:{}};}
 const lessonIds=new Set(lessons.map(l=>l.id));

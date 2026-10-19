@@ -1,5 +1,5 @@
-import {PALETTE} from './notebook-core.js?v=20261018a';
-import {INK_WIDTH,INK_HEIGHT,inkPoint,acceptsInk,createInkHistory,paintInk,paintInkSegment} from './ink-core.js?v=20261018a';
+import {PALETTE} from './notebook-core.js?v=20261019a';
+import {INK_WIDTH,INK_HEIGHT,inkPoint,acceptsInk,createInkHistory,paintInk,paintInkSegment} from './ink-core.js?v=20261019a';
 
 // A route change retains the unfinished page in memory. Only the explicit
 // Insert action uploads a private PNG using the notebook's existing image path.

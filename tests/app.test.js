@@ -36,7 +36,7 @@ test('home and full lessons open before any private-space connection, without lo
 });
 
 test('every main route and every lesson page renders without runtime errors',()=>{
- for(const route of ['home','practice','documents','courses','classroom','review','plan','calendar','exams','resources','notes','account','about','settings']){navigate('#'+route);assert.ok(html().length>500,route);assert.ok(!html().includes('[object Object]'),route);assert.ok(!html().includes('undefined'),route);}
+ for(const route of ['home','practice','documents','courses','classroom','review','plan','calendar','exams','resources','notes','account','about','settings','awards']){navigate('#'+route);assert.ok(html().length>500,route);assert.ok(!html().includes('[object Object]'),route);assert.ok(!html().includes('undefined'),route);}
  for(const l of lessons){navigate('#lesson/'+l.id);assert.ok(html().includes(l.title),l.id);assert.ok(html().includes(l.example.analysis),l.id);assert.equal((html().match(/class="question-block"/g)||[]).length,l.questions.length,l.id);}
  navigate('#lesson/missing');assert.ok(html().includes('ไม่พบหน้าที่เลือก'));
 });
@@ -142,4 +142,14 @@ test('exam guides render for every course and both practice modes score correctl
  click('prep-reset',{course:'POL2106'});assert.deepEqual(saved().prep.POL2106.answers,{});assert.equal(saved().prep.POL2106.best,1);
  click('prep-mode',{course:'POL2106',mode:'practice'});
 });
-
+test('game layer: level chip, awards page, celebrations and a menu that reaches every page',()=>{
+ navigate('#home');assert.ok(get('#top-stats').innerHTML.includes('Lv.'));assert.ok(html().includes('href="#awards"'));assert.ok(html().includes('ภารกิจวันนี้'));
+ assert.ok(get('#bottom-nav').innerHTML.includes('data-action="more"'));
+ for(const key of ['practice','exams','classroom','plan','calendar','awards','documents','resources','account','settings','about'])assert.ok(get('#more-links').innerHTML.includes(`href="#${key}"`),key);
+ navigate('#awards');assert.ok(html().includes('รางวัลของฉัน'));assert.equal((html().match(/class="badge-card /g)||[]).length,12);
+ navigate('#lesson/POL1101-1');assert.ok(html().includes('อ่านจบรับ +50 XP'));assert.ok(!html().includes('undefined'));
+ click('answer',{lesson:'POL1101-1',index:'1',value:String(lessons[0].questions[1].answer)});assert.ok(html().includes('ถูกต้อง'));assert.ok(!html().includes('undefined'));click('retry',{id:'POL1101-1'});
+ click('complete',{id:'POL1101-1'});assert.ok(html().includes('อ่านจบบทนี้แล้ว'));assert.ok(html().includes('data-fresh'));
+ navigate('#lesson/POL1101-1');assert.ok(!html().includes('data-fresh'),'only the changed element animates, once');
+ click('complete',{id:'POL1101-1'});assert.ok(!saved().completed.includes('POL1101-1'));
+});
