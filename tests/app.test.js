@@ -144,12 +144,12 @@ test('exam guides render for every course and both practice modes score correctl
 });
 
 
-test('editing two selected dates and defaults preserves each date-specific hour choice',()=>{
- navigate('#home');listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});click('hours',{value:'3'});
- listeners.change({target:{id:'study-plan-date',value:'2026-11-06'}});click('hours',{value:'1'});
+test('editing two selected dates and defaults preserves each date-specific hour choice',async()=>{
+ navigate('#home');await listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});click('hours',{value:'3'});
+ await listeners.change({target:{id:'study-plan-date',value:'2026-11-06'}});click('hours',{value:'1'});
  assert.equal(saved().hourOverrides['2026-11-05'],3);assert.equal(saved().hourOverrides['2026-11-06'],1);
- listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});assert.ok(html().includes('คำบรรยายและตำรา'));
- navigate('#settings');listeners.change({target:{id:'hours-weekday',value:'4'}});
+ await listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});assert.ok(html().includes('คำบรรยายและตำรา'));
+ navigate('#settings');await listeners.change({target:{id:'hours-weekday',value:'4',classList:{contains:()=>false}}});
  assert.equal(saved().hourOverrides['2026-11-05'],3);assert.equal(saved().hourOverrides['2026-11-06'],1);
- navigate('#home');listeners.change({target:{id:'study-plan-date',value:'2026-11-06'}});assert.ok(!html().includes('data-id="deep"'));
+ navigate('#home');await listeners.change({target:{id:'study-plan-date',value:'2026-11-06'}});assert.ok(!html().includes('data-id="deep"'));
 });
