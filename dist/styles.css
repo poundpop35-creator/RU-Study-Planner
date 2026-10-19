@@ -456,7 +456,7 @@ html[data-font="large"] .hook p{font-size:20px}
 html[data-font="large"] .sec-list li,html[data-font="large"] .sec-table table{font-size:17.5px}
 
 /* ---------- Review ---------- */
-.review-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.review-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0}
 .segmented{display:inline-flex;padding:4px;border-radius:16px;background:#e3e9f5}
 .segmented button{padding:9px 18px;border-radius:12px;font-weight:600;font-size:15px;color:var(--muted);min-height:42px}
 .segmented button.active{background:#fff;color:var(--blue);box-shadow:0 3px 0 #c9d5ea}
