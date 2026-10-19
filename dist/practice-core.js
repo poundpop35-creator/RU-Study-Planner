@@ -1,5 +1,5 @@
-import {lessons} from './lessons.js?v=20261019a';
-import {prep} from './prep.js?v=20261019a';
+import {lessons} from './lessons.js?v=20261019c';
+import {prep} from './prep.js?v=20261019c';
 
 // Stable source + original index: existing answers keep their original meaning.
 export const questionBank = [
@@ -21,6 +21,11 @@ export function validatePractice(value) {
   }
   return result;
 }
+// Legacy unfinished sessions did not persist their mode. Queue their questions without
+// inventing a completed practice attempt, score, or date.
+export function validateLegacyPracticePending(value, records={}) {
+  return Array.isArray(value) ? [...new Set(value.filter(key=>byKey.get(key)?.source==='prep'&&!records[key]))] : [];
+}
 export function recordPractice(state, key, answer, day) {
   const q=byKey.get(key);
   if (!q || !dateOK(day) || !Number.isInteger(answer) || answer<0 || answer>=q.options.length) return null;
@@ -30,24 +35,36 @@ export function recordPractice(state, key, answer, day) {
   const streak=right ? Math.min(4,(old?.streak||0)+(advance?1:0)) : 0;
   const r={attempts:(old?.attempts||0)+1,correct:(old?.correct||0)+(right?1:0),wrong:(old?.wrong||0)+(right?0:1),streak,lastAnswer:answer,lastDay:day,due:right?plus(day,[0,1,3,7,14][streak]):day};
   state.practiceReview[key]=r;
+  state.legacyPracticePending=(state.legacyPracticePending||[]).filter(k=>k!==key);
   return r;
 }
 export function importLegacyMistakes(state) {
+  state.practiceReview ||= {};
+  const pending=new Set(validateLegacyPracticePending(state.legacyPracticePending,state.practiceReview));
   const seed=(key,answer)=>{if(!state.practiceReview[key])recordPractice(state,key,answer,'2026-10-18');};
   for (const [key,a] of Object.entries(state.answers)) seed('lesson:'+key,a);
-  for (const [code,p] of Object.entries(state.prep)) if(p.submitted || p.last!==null) for(const [i,a] of Object.entries(p.answers))seed(`prep:${code}:${i}`,a);
+  for (const [code,p] of Object.entries(state.prep)) for(const [i,a] of Object.entries(p.answers)){
+    const key=`prep:${code}:${i}`,q=byKey.get(key);
+    if(!q||!Number.isInteger(a)||a<0||a>=q.options.length||state.practiceReview[key])continue;
+    if(p.submitted)seed(key,a);
+    else pending.add(key); // last/best may belong to a previous set, so they cannot prove submission.
+  }
+  state.legacyPracticePending=validateLegacyPracticePending([...pending],state.practiceReview);
 }
 export function practiceQueue(state, {course='', mode='daily', day, limit=15}={}) {
   const pool=questionBank.filter(q=>!course || q.course===course), records=state.practiceReview||{};
   const due=pool.filter(q=>records[q.key]?.due<=day).sort((a,b)=>records[a.key].due.localeCompare(records[b.key].due) || records[b.key].wrong-records[a.key].wrong || a.key.localeCompare(b.key));
-  if(mode==='due') return due.slice(0,limit);
+  const pendingKeys=new Set(validateLegacyPracticePending(state.legacyPracticePending,records));
+  const pending=pool.filter(q=>pendingKeys.has(q.key));
+  if(mode==='due') return [...due,...pending].slice(0,limit);
   if(mode==='mistakes') return due.filter(q=>records[q.key].wrong>0).slice(0,limit);
-  const unseen=pool.filter(q=>!records[q.key]);
+  const unseen=pool.filter(q=>!records[q.key]&&!pendingKeys.has(q.key));
   // Prefer the lesson just opened/read, then unanswered prep items. Never discard overdue items.
   unseen.sort((a,b)=>Number(b.lesson===state.lastLesson)-Number(a.lesson===state.lastLesson) || Number(state.completed.includes(b.lesson))-Number(state.completed.includes(a.lesson)));
-  return [...due,...unseen].slice(0,limit);
+  return [...due,...pending,...unseen].slice(0,limit);
 }
 export function practiceStats(state, day, course='') {
   const pool=questionBank.filter(q=>!course||q.course===course), rows=pool.map(q=>state.practiceReview?.[q.key]).filter(Boolean);
-  return {total:pool.length,seen:rows.length,due:rows.filter(r=>r.due<=day).length,wrong:rows.filter(r=>r.wrong>0&&r.streak<4).length,attempts:rows.reduce((n,r)=>n+r.attempts,0),correct:rows.reduce((n,r)=>n+r.correct,0),today:rows.filter(r=>r.lastDay===day).length};
+  const pendingKeys=new Set(validateLegacyPracticePending(state.legacyPracticePending,state.practiceReview));
+  return {pending:pool.filter(q=>pendingKeys.has(q.key)).length,total:pool.length,seen:rows.length,due:rows.filter(r=>r.due<=day).length,wrong:rows.filter(r=>r.wrong>0&&r.streak<4).length,attempts:rows.reduce((n,r)=>n+r.attempts,0),correct:rows.reduce((n,r)=>n+r.correct,0),today:rows.filter(r=>r.lastDay===day).length};
 }

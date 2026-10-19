@@ -90,10 +90,10 @@ test('flashcards queue only for lessons already read unless every card is reques
 });
 test('daily plan fills exactly the chosen study hours, excluding the actual exam duration',()=>{
  const s=freshState();
- for(let d='2026-11-01';d<='2027-03-22';d=addDays(d,1)){for(const h of [1,2,3,4]){s.todayHours={date:d,hours:h};const p=dailyPlan(s,d);const examDay=exams().some(c=>c.exam===d);
+ for(let d='2026-11-01';d<='2027-03-22';d=addDays(d,1)){for(const h of [1,2,3,4]){s.hourOverrides[d]=h;const p=dailyPlan(s,d);const examDay=exams().some(c=>c.exam===d);
   if(examDay)assert.ok(p.blocks.some(b=>b.id==='examday'),d);assert.equal(p.minutes,h*60,`${d} ${h}h`);
   assert.equal(new Set(p.blocks.map(b=>b.id)).size,p.blocks.length,d);assert.ok(p.blocks.every(b=>b.title&&b.detail&&!/undefined|null/.test(b.title+b.detail)),d);}}
- s.todayHours=null;assert.deepEqual(dailyPlan(s,'2027-03-23').blocks,[]);assert.equal(phaseFor('2027-03-23').id,'done');
+ s.hourOverrides={};assert.deepEqual(dailyPlan(s,'2027-03-23').blocks,[]);assert.equal(phaseFor('2027-03-23').id,'done');
 });
 test('plan follows the weekly rotation, then exam order, then the next exam',()=>{
  const s=freshState();
@@ -108,14 +108,14 @@ test('plan follows the weekly rotation, then exam order, then the next exam',()=
 });
 test('study hours use weekday/weekend defaults with a same-day override',()=>{
  const s=freshState();assert.equal(hoursFor(s,'2026-10-12'),2);assert.equal(hoursFor(s,'2026-10-11'),2);
- s.todayHours={date:'2026-10-12',hours:1};assert.equal(hoursFor(s,'2026-10-12'),1);assert.equal(hoursFor(s,'2026-10-13'),2);
+ s.hourOverrides['2026-10-12']=1;assert.equal(hoursFor(s,'2026-10-12'),1);assert.equal(hoursFor(s,'2026-10-13'),2);
  assert.equal(hoursUntil(s,'2027-03-01','2027-03-08'),7*2);
 });
 test('hours, plan checkmarks and streak survive backup; bad values are dropped',()=>{
- const v=freshState();v.hours={weekday:3,weekend:4};v.todayHours={date:'2026-10-11',hours:1};v.planDone={'2026-10-10':['cards','main'],'2026-10-11':['wrap']};
+ const v=freshState();v.hours={weekday:3,weekend:4};v.hourOverrides['2026-10-11']=1;v.planDone={'2026-10-10':['cards','main'],'2026-10-11':['wrap']};
  const memory=new Map();const storage={getItem:k=>memory.get(k),setItem:(k,x)=>memory.set(k,x)};storeState(storage,v);assert.deepEqual(loadState(storage).state,v);
  const bad=validateState({version:1,hours:{weekday:9,weekend:'4'},todayHours:{date:'x',hours:2},planDone:{'2026-10-11':['main','hack','main'],'__proto__':['main'],'nope':['cards']}});
- assert.deepEqual(bad.hours,{weekday:2,weekend:2});assert.equal(bad.todayHours,null);assert.deepEqual(bad.planDone,{'2026-10-11':['main']});
+ assert.deepEqual(bad.hours,{weekday:2,weekend:2});assert.deepEqual(bad.hourOverrides,{});assert.deepEqual(bad.planDone,{'2026-10-11':['main']});
  assert.equal(streak(v,'2026-10-11'),2);assert.equal(streak(v,'2026-10-12'),2);assert.equal(streak(v,'2026-10-13'),0);
 });
 test('every enrolled course has an exam guide with balanced 5-choice practice questions',()=>{
@@ -137,6 +137,6 @@ test('practice scores survive backup and invalid practice data is dropped',()=>{
  assert.deepEqual(Object.keys(bad.prep),['POL1101']);assert.deepEqual(bad.prep.POL1101,{answers:{'2':3},submitted:false,best:null,last:null});
 });
 test('review and exam phases send four-hour days to the practice exam',()=>{
- const s=freshState();s.todayHours={date:'2027-02-03',hours:4};const extra=dailyPlan(s,'2027-02-03').blocks.find(b=>b.id==='extra');assert.equal(extra.href,`#prep/${extra.course}`);
- s.todayHours={date:'2027-03-14',hours:4};assert.equal(dailyPlan(s,'2027-03-14').blocks.find(b=>b.id==='extra').href,'#prep/POL2303');
+ const s=freshState();s.hourOverrides['2027-02-03']=4;const extra=dailyPlan(s,'2027-02-03').blocks.find(b=>b.id==='extra');assert.equal(extra.href,`#prep/${extra.course}`);
+ s.hourOverrides['2027-03-14']=4;assert.equal(dailyPlan(s,'2027-03-14').blocks.find(b=>b.id==='extra').href,'#prep/POL2303');
 });
