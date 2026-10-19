@@ -3,7 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {lessons} from '../dist/lessons.js';
 import {prep} from '../dist/prep.js';
-import {escapeHTML,today} from '../dist/core.js';
+import {practiceQuestion} from '../dist/practice-core.js';
+import {escapeHTML,today,STUDY_START} from '../dist/core.js';
 import {activityMonth} from '../dist/calendar-core.js';
 
 import {cloudFixture,personalFetcher} from './cloud-fixture.js';
@@ -35,7 +36,7 @@ test('home and full lessons open before any private-space connection, without lo
 });
 
 test('every main route and every lesson page renders without runtime errors',()=>{
- for(const route of ['home','courses','classroom','review','plan','calendar','exams','resources','notes','account','about','settings']){navigate('#'+route);assert.ok(html().length>500,route);assert.ok(!html().includes('[object Object]'),route);assert.ok(!html().includes('undefined'),route);}
+ for(const route of ['home','practice','documents','courses','classroom','review','plan','calendar','exams','resources','notes','account','about','settings']){navigate('#'+route);assert.ok(html().length>500,route);assert.ok(!html().includes('[object Object]'),route);assert.ok(!html().includes('undefined'),route);}
  for(const l of lessons){navigate('#lesson/'+l.id);assert.ok(html().includes(l.title),l.id);assert.ok(html().includes(l.example.analysis),l.id);assert.equal((html().match(/class="question-block"/g)||[]).length,l.questions.length,l.id);}
  navigate('#lesson/missing');assert.ok(html().includes('ไม่พบหน้าที่เลือก'));
 });
@@ -100,14 +101,31 @@ test('lesson pages open with the one-minute summary, analogy, memory hook and te
 });
 test('home shows a daily plan; ticking a block and choosing hours are saved',()=>{
  navigate('#home');assert.ok(html().includes('แผนวันนี้'));assert.ok(html().includes('data-action="block"'));
- click('hours',{value:'3'});assert.equal(saved().todayHours.hours,3);assert.equal(saved().todayHours.date,today());assert.ok(html().includes('ฟังคำบรรยาย'));
- click('block',{id:'main'});assert.deepEqual(saved().planDone[today()],['main']);assert.ok(html().includes('aria-pressed="true"'));
- click('block',{id:'main'});assert.deepEqual(saved().planDone[today()],[]);
+ click('hours',{value:'3'});assert.equal(saved().todayHours.hours,3);assert.equal(saved().todayHours.date,today()<STUDY_START?STUDY_START:today());assert.ok(html().includes('คำบรรยายและตำรา'));
+ click('block',{id:'main'});assert.deepEqual(saved().planDone[today()<STUDY_START?STUDY_START:today()],['main']);assert.ok(html().includes('aria-pressed="true"'));
+ click('block',{id:'main'});assert.deepEqual(saved().planDone[today()<STUDY_START?STUDY_START:today()],[]);
  click('hours',{value:'9'});assert.equal(saved().todayHours.hours,3);
 });
 test('search covers the plain-language layer and textbook terms',()=>{
  navigate('#courses');listeners.input({target:{id:'lesson-search',value:'POSDCORB'}});assert.ok(get('#library-results').innerHTML.includes('POL2301-2'));
  listeners.input({target:{id:'lesson-search',value:''}});
+});
+test('daily practice keeps explanations visible, persists answers and requeues wrong items',()=>{
+ navigate('#practice/POL2200');
+ const prompt=html().match(/<h2>([^<]+)<\/h2>/)?.[1];assert.ok(prompt);
+ const before=Object.keys(saved().practiceReview);
+ click('practice-answer',{value:'0'});
+ const key=Object.keys(saved().practiceReview).find(k=>!before.includes(k));assert.ok(key);
+ const q=practiceQuestion(key);assert.ok(html().includes(escapeHTML(q.explanation)));assert.ok(html().includes('data-action="practice-next"'));
+ click('practice-answer',{value:'1'});assert.equal(saved().practiceReview[key].attempts,1,'lock first answer until next');
+ click('practice-next');assert.ok(!html().includes(escapeHTML(q.explanation)));
+ if(q.answer!==0){navigate('#practice/mistakes-POL2200');assert.ok(html().includes(escapeHTML(q.prompt)));click('practice-answer',{value:String(q.answer)});assert.ok(html().includes(escapeHTML(q.explanation)));assert.equal(saved().practiceReview[key].streak,1);}
+});
+test('plan date controls save completion under the selected date and university PDFs open in the app',()=>{
+ navigate('#home');listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});
+ assert.ok(html().includes('value="2026-11-05"'));click('block',{id:'explain'});assert.ok(saved().planDone['2026-11-05'].includes('explain'));
+ navigate('#documents/curriculum');assert.ok(html().includes('iframe'));assert.ok(html().includes('https://www.ru.ac.th/th/Center_study_plan/21/09_69.pdf'));
+ navigate('#exams');assert.ok(html().includes('ยังไม่ยืนยันประกาศเฉพาะภาค 2/2569'));assert.ok(html().includes('ปรนัย'));
 });
 test('exam guides render for every course and both practice modes score correctly',()=>{
  for(const code of Object.keys(prep)){navigate('#prep/'+code);const h=html();assert.ok(h.includes('ข้อสอบเสมือน'),code);assert.equal((h.match(/class="mock-q/g)||[]).length,prep[code].questions.length,code);assert.ok(!h.includes('undefined'),code);assert.ok(h.includes(escapeHTML(prep[code].textbook)),code);}
