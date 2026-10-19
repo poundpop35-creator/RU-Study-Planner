@@ -1,0 +1,6 @@
+export const universityDocuments=[
+ {id:'curriculum',title:'หลักสูตรคณะรัฐศาสตร์ ปี 2569',file:'./sources/curriculum-2569.pdf',pages:16,original:'https://www.ru.ac.th/th/Center_study_plan/21/09_69.pdf',note:'09_69.pdf ที่เคยส่ง · สำเนาลดขนาดสำหรับเว็บ เนื้อหา 16 หน้าครบ · โครงสร้างหลักสูตร วิชาแกน แผน A/B/C และการเทียบโอน (หน้าเล่ม 456–471)'},
+ {id:'mr30',title:'ม.ร.30 ภาค 2/2569 ฉบับเต็ม',file:'./sources/mr30-2-2569.pdf',pages:170,original:'https://www.regis.ru.ac.th/document/6_regis_examSV/MorLor30/20260904_mr30_269.pdf',note:'ฉบับ 4 ก.ย. 2569 ที่เคยส่ง · รายวิชา เวลาเรียน ห้องเรียน และวันสอบ; วิชาที่ลงอยู่หน้า 142–143'},
+ {id:'mr30-selected',title:'ม.ร.30 เฉพาะหน้า 142–143',file:'./sources/mr30-2-2569-p142-143.pdf',pages:2,original:'https://www.regis.ru.ac.th/document/6_regis_examSV/MorLor30/20260904_mr30_269.pdf#page=142',note:'สำเนาสองหน้าจากงานเดิม สำหรับเปิดเทียบ 7 วิชาอย่างรวดเร็ว'},
+ {id:'admission',title:'ระเบียบการสมัครส่วนกลาง ปี 2569',file:'https://www.ru.ac.th/th/Center_study_plan/21/02_69.pdf',pages:57,original:'https://www.ru.ac.th/th/Center_study_plan/21/02_69.pdf',note:'02_69.pdf ที่เคยส่ง · ไฟล์ประมาณ 45 MB เปิดจากมหาวิทยาลัยโดยตรง · เป็นเอกสารรับสมัครภาค 1/2569 เก็บไว้อ้างอิงข้อกำหนดเดิม ไม่ใช้วันสมัครแทนประกาศภาค 2/2569'}
+];

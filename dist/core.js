@@ -1,13 +1,14 @@
-import {courses,terms,categoryTargets,readingWeek,studyPhases,studyHours} from './data.js?v=20261014h';
-import {lessons} from './lessons.js?v=20261014h';
-import {prep} from './prep.js?v=20261014h';
+import {validatePractice,importLegacyMistakes} from './practice-core.js?v=20261018a';
+import {courses,terms,categoryTargets,readingWeek,studyPhases,studyHours} from './data.js?v=20261018a';
+import {lessons} from './lessons.js?v=20261018a';
+import {prep} from './prep.js?v=20261018a';
 export const STORAGE_KEY='ru-study-planner.v1';
-export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',hours:{weekday:2,weekend:4},todayHours:null,planDone:{},prep:{}};}
+export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,practiceReview:{},hours:{weekday:2,weekend:2},todayHours:null,planDone:{},prep:{}};}
 const lessonIds=new Set(lessons.map(l=>l.id));
 const courseIds=new Set(courses.map(c=>c.id));
 const cardIds=new Set(lessons.flatMap(l=>l.cards.map((_,i)=>`${l.id}:${i}`)));
 const questionIds=new Map(lessons.flatMap(l=>l.questions.map((q,i)=>[`${l.id}:${i}`,q])));
-export const BLOCK_IDS=new Set(['cards','main','second','deep','extra','wrap','examday']);
+export const BLOCK_IDS=new Set(['cards','main','second','deep','extra','wrap','examday','explain']);
 const plain=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const isDay=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v));
 export function validateState(input){
@@ -24,10 +25,12 @@ export function validateState(input){
  if(Array.isArray(input.sessions))s.sessions=input.sessions.filter(v=>plain(v)&&lessonIds.has(v.lesson)&&isDay(v.date)).slice(-1000).map(v=>({lesson:v.lesson,date:v.date}));
  if([1,2,3].includes(input.dailyGoal))s.dailyGoal=input.dailyGoal;
  if(['normal','large'].includes(input.font))s.font=input.font;
- if(plain(input.hours))for(const k of ['weekday','weekend']){if(studyHours.includes(input.hours[k]))s.hours[k]=input.hours[k];}
- if(plain(input.todayHours)&&isDay(input.todayHours.date)&&studyHours.includes(input.todayHours.hours))s.todayHours={date:input.todayHours.date,hours:input.todayHours.hours};
- if(plain(input.planDone))for(const k of Object.keys(input.planDone).filter(isDay).sort().slice(-120)){const v=input.planDone[k];if(Array.isArray(v))s.planDone[k]=[...new Set(v.filter(x=>BLOCK_IDS.has(x)))];}
+ if(input.planVersion===2&&plain(input.hours))for(const k of ['weekday','weekend']){if(studyHours.includes(input.hours[k]))s.hours[k]=input.hours[k];}
+ if(input.planVersion===2&&plain(input.todayHours)&&isDay(input.todayHours.date)&&studyHours.includes(input.todayHours.hours))s.todayHours={date:input.todayHours.date,hours:input.todayHours.hours};
+ if(plain(input.planDone))for(const k of Object.keys(input.planDone).filter(isDay).sort().slice(-400)){const v=input.planDone[k];if(Array.isArray(v))s.planDone[k]=[...new Set(v.filter(x=>BLOCK_IDS.has(x)))];}
  if(plain(input.prep))for(const [k,v]of Object.entries(input.prep)){if(!Object.hasOwn(prep,k)||!plain(v))continue;const n=prep[k].questions.length,score=x=>Number.isInteger(x)&&x>=0&&x<=n?x:null,answers={};if(plain(v.answers))for(const [i,a]of Object.entries(v.answers)){if(/^\d+$/.test(i)&&Number(i)<n&&Number.isInteger(a)&&a>=0&&a<prep[k].questions[Number(i)].options.length)answers[i]=a;}s.prep[k]={answers,submitted:v.submitted===true,best:score(v.best),last:score(v.last)};}
+ s.practiceReview=validatePractice(input.practiceReview);
+ if(input.planVersion!==2)importLegacyMistakes(s);
  return s;
 }
 export function loadState(storage){try{const raw=storage.getItem(STORAGE_KEY);return {state:raw?validateState(JSON.parse(raw)):freshState(),error:null};}catch(error){return {state:freshState(),error:'อ่านข้อมูลที่บันทึกในเครื่องไม่ได้ กรุณานำเข้าไฟล์สำรอง ข้อมูลเดิมจะไม่ถูกเขียนทับจนกว่าจะกู้คืน'};}}
@@ -64,55 +67,36 @@ export function examICS(){const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-
 // ---- Daily study planner (1–4 hours a day around work) ----
 export function phaseFor(day){return studyPhases.find(p=>(!p.start||day>=p.start)&&(!p.end||day<=p.end));}
 export function hoursFor(state,day=today()){if(state.todayHours&&state.todayHours.date===day)return state.todayHours.hours;return weekdayIndex(day)>=5?state.hours.weekend:state.hours.weekday;}
-export function hoursUntil(state,from,to){let total=0;for(let d=from;d<to;d=addDays(d,1))total+=weekdayIndex(d)>=5?state.hours.weekend:state.hours.weekday;return total;}
+export function hoursUntil(state,from,to){let total=0;for(let d=from<STUDY_START?STUDY_START:from;d<to;d=addDays(d,1))total+=weekdayIndex(d)>=5?state.hours.weekend:state.hours.weekday;return total;}
 function lowestProgress(state,skip){return exams().map(c=>c.id).filter(id=>!skip.includes(id)).sort((a,b)=>courseProgress(state,a).percent-courseProgress(state,b).percent)[0];}
 function studyTask(state,code,short){
  const l=unreadLesson(state,code);
  if(l)return {title:`${code} · บทที่ ${l.n} ${l.title}`,detail:short?'อ่าน “เข้าใจใน 1 นาที” และคำสำคัญ ถ้ามีเวลาเหลือค่อยอ่านละเอียด':'เปิดเรื่อง → “เข้าใจใน 1 นาที” → อ่านละเอียด → ตอบคำถามท้ายบท แล้วกดอ่านจบ',href:`#lesson/${l.id}`};
  return {title:`${code} · เรียนลึกกับตำรา`,detail:short?'อ่านบันทึกของตัวเอง แล้วทำคำถามทบทวนของวิชานี้':'อ่านตำราหรือดูคำบรรยาย RU on Demand 1 หัวข้อ แล้วจดสรุปด้วยภาษาตัวเองลงบันทึก',href:`#course/${code}`};
 }
+export const STUDY_START='2026-11-01';
+export const weeklyCourses=['POL2106','POL1101','POL2107','POL2200','POL2301','POL2104','POL2303'];
 export function dailyPlan(state,day=today()){
- const hours=hoursFor(state,day),phase=phaseFor(day),list=exams();
- const nextExam=list.find(c=>c.exam>=day)||null;
- const blocks=[];const add=(id,minutes,title,detail,course,href)=>blocks.push({id,minutes,title,detail,course:course||null,href:href||null});
+ const hours=hoursFor(state,day),phase=phaseFor(day),list=exams(),nextExam=list.find(c=>c.exam>=day)||null,blocks=[];
+ const add=(id,minutes,title,detail,course,href)=>blocks.push({id,minutes,title,detail,course:course||null,href:href||null});
  const result=()=>({day,hours,phase,nextExam,blocks,minutes:blocks.reduce((n,b)=>n+b.minutes,0),done:(state.planDone[day]||[]).filter(id=>blocks.some(b=>b.id===id)).length});
- if(phase.id==='done'||!nextExam)return result();
- const due=cardsForReview(state,'',day).length;
- const cardText=due?`${due} ใบถึงรอบ — นึกคำตอบก่อนเปิดดู`:'ยังไม่มีการ์ดถึงรอบ อ่าน “จำง่าย” ของบทล่าสุดแทน';
- const one=hours===1;
- if(phase.id==='exam'&&nextExam.exam===day){
-  const after=list.find(c=>c.exam>day);
-  add('cards',15,`${nextExam.id} · อุ่นเครื่องเบา ๆ ก่อนสอบ`,'อ่านเฉพาะ “จำง่าย” และคำสำคัญของทุกบท ไม่เริ่มเรื่องใหม่',nextExam.id,`#course/${nextExam.id}`);
-  add('examday',0,`วันนี้สอบ ${nextExam.id} คาบ ${nextExam.slot}`,'ตรวจเวลา ห้องสอบ และสิ่งที่ต้องนำไปจากตารางสอบรายบุคคล ไปถึงก่อนเวลา',nextExam.id,'#exams');
-  const tomorrow=after&&after.exam===addDays(day,1);
-  if(after&&!one)add('second',tomorrow?hours*60-15:60,tomorrow?`หลังสอบ · เตรียม ${after.id} ที่สอบพรุ่งนี้`:`หลังสอบ · เริ่ม ${after.id}`,tomorrow?'พักสั้น ๆ แล้วอ่าน “เข้าใจใน 1 นาที” + “จำง่าย” ทุกบท ทำคำถามของวิชานี้ และนอนให้พอ':`พักให้หายเหนื่อยก่อน แล้วอ่าน “เข้าใจใน 1 นาที” ของ ${after.id} (สอบ ${thaiDate(after.exam,true)})`,after.id,`#course/${after.id}`);
-  return result();
+ if(day<STUDY_START||!nextExam)return result();
+ let code=weeklyCourses[weekdayIndex(day)];
+ if(phase.id==='review')code=list[daysBetween(phase.start,day)%list.length].id;
+ if(phase.id==='exam')code=nextExam.id;
+ const examToday=list.filter(c=>c.exam===day);
+ if(examToday.length){
+  add('examday',0,`วันนี้สอบ ${examToday.map(c=>c.id+' คาบ '+c.slot).join(' / ')}`,'ตรวจเวลาและห้องสอบจากตารางรายบุคคล เวลาสอบไม่นับรวมในแผนอ่าน เลือก 1 ชม. ได้หากต้องการพักเพิ่ม',examToday[0].id,'#exams');
  }
- let main,second;
- if(phase.id==='learn')[,main,second]=readingWeek[weekdayIndex(day)];
- else if(phase.id==='review'){const i=daysBetween(phase.start,day);main=list[i%list.length].id;second=main==='POL2106'?'POL2107':main==='POL2107'?'POL2106':(i%2?'POL2107':'POL2106');}
- else {main=nextExam.id;second=list.find(c=>c.exam>nextExam.exam)?.id||main;}
- add('cards',one?10:15,'อุ่นเครื่องด้วยแฟลชการ์ด',cardText,null,'#review');
- if(phase.id==='learn'){
-  const m=studyTask(state,main,false);add('main',one?40:60,m.title,m.detail,main,m.href);
-  if(!one){const s=studyTask(state,second,true);add('second',30,s.title,s.detail,second,s.href);}
-  if(hours>=3)add('deep',60,`${main} · ฟังคำบรรยาย`,`เปิด RU on Demand ค้นรหัส ${main} ดู 1 ตอน แล้วเติมสิ่งที่อาจารย์เน้นลงบันทึกของบทที่เกี่ยวข้อง`,main,`#course/${main}`);
-  if(hours>=4){const low=lowestProgress(state,[main,second]);const x=studyTask(state,low,false);add('extra',60,x.title,`วิชาที่คืบหน้าน้อยที่สุดตอนนี้ · ${x.detail}`,low,x.href);}
-  add('wrap',one?10:15,'ปิดท้าย: เช็กความเข้าใจ','ตอบคำถามข้อที่เคยผิด แล้วเขียนสรุป 3 บรรทัดว่าวันนี้เข้าใจอะไร',null,'#review');
- }else if(phase.id==='review'){
-  add('main',one?40:60,`${main} · ทบทวนทั้งวิชา`,'อ่าน “เข้าใจใน 1 นาที” ทุกบท + บันทึกของตัวเอง แล้วทำคำถามทบทวนของวิชานี้',main,`#course/${main}`);
-  if(!one)add('second',30,`${second} · วิชาหนัก ทบทวนซ้ำ`,'อ่าน “จุดที่มักสับสน” ทุกบท แล้วลองอธิบายนักคิดหรือแนวคิดหลักโดยไม่เปิดดู',second,`#course/${second}`);
-  if(hours>=3)add('deep',60,`${main} · อ่านตำราส่วนที่ยังไม่มั่นใจ`,'เลือกหัวข้อที่ตอบผิดหรืออธิบายไม่ได้ อ่านตำราหรือฟังคำบรรยายเฉพาะส่วนนั้น',main,`#course/${main}`);
-  if(hours>=4)add('extra',60,`${main} · ทำแนวข้อสอบ`,'ทำข้อสอบเสมือนแบบจำลองสอบ แล้วอ่านเฉลยข้อที่ผิดและเปิดตำราหัวข้อนั้น',main,`#prep/${main}`);
-  add('wrap',one?10:15,'ปิดท้าย: จดสิ่งที่ยังไม่แม่น','เขียน 3 เรื่องที่ยังไม่มั่นใจ ไว้เปิดดูก่อนเริ่มพรุ่งนี้',null,'#notes');
- }else{
-  const left=daysBetween(day,nextExam.exam);
-  add('main',one?40:60,`${main} · สอบ ${thaiDate(nextExam.exam,true)} (อีก ${left} วัน)`,'อ่าน “เข้าใจใน 1 นาที” + “จำง่าย” ทุกบท แล้วทำคำถามทั้งหมดของวิชานี้',main,`#course/${main}`);
-  if(!one)add('second',30,second===main?`${main} · จุดที่มักสับสน`:`${second} · เตรียมวิชาถัดไป`,second===main?'อ่าน “จุดที่มักสับสน” ทุกบท แล้วอธิบายออกเสียงโดยไม่เปิดดู':'อ่านสรุปง่ายเบา ๆ ให้คุ้นก่อนถึงคิวเต็ม',second,`#course/${second}`);
-  if(hours>=3)add('deep',60,`${main} · เก็บจุดที่ยังไม่แม่น`,'ทบทวนข้อที่เคยตอบผิดและบันทึกของตัวเอง ไม่เริ่มอ่านเรื่องใหม่ที่ยาว',main,`#course/${main}`);
-  if(hours>=4)add('extra',60,`${main} · ทำแนวข้อสอบอีกรอบ`,'ทำข้อสอบเสมือนแบบจำลองสอบให้ได้คะแนนดีกว่ารอบก่อน แล้วเก็บข้อที่ยังผิด',main,`#prep/${main}`);
-  add('wrap',one?10:15,left===1?'เตรียมตัวสอบพรุ่งนี้':'ปิดท้าย: ข้อที่เคยผิด',left===1?'เตรียมของตามตารางสอบรายบุคคล ตั้งนาฬิกาปลุก และนอนให้พอ':'ทำคำถามข้อที่เคยผิดของวิชานี้อีกครั้ง',null,left===1?'#exams':'#review');
- }
+ const review=phase.id!=='learn', task=studyTask(state,code,false);
+ const minutes=hours===1?[5,25,15,10,5]:[15,50,30,20,5];
+ add('cards',minutes[0],'ทวนข้อที่ถึงรอบ','ตอบโดยไม่เปิดเฉลยก่อน รวมข้อผิดจากทุกวิชา ถ้าไม่มีคิวให้ทวนแฟลชการ์ด',null,'#practice/due');
+ add('main',minutes[1],review?`${code} · ทบทวนหัวข้อที่ยังไม่แม่น`:task.title,review?'เปิดสรุปและบันทึกหัวข้อที่ตอบผิด แล้วลองอธิบายด้วยภาษาตัวเอง':task.detail,code,review?`#course/${code}`:task.href);
+ add('second',minutes[2],`${code} · ทำข้อสอบควบคู่การอ่าน`,'ฝึกครั้งละไม่เกิน 15 ข้อ เริ่มจากบทที่อ่านและข้อที่ถึงรอบ บันทึกคำตอบทุกข้อ',code,`#practice/${code}`);
+ add('explain',minutes[3],'อ่านเฉลยและแก้ความเข้าใจ','อ่านเหตุผลของคำตอบ เปิดบทที่เกี่ยวข้อง ข้อผิดกลับมาทำใหม่ได้ทันที; ตอบถูกแล้ววน 1, 3, 7, 14 วัน',code,`#practice/mistakes-${code}`);
+ add('wrap',minutes[4],'จดสรุป 3 บรรทัด','จดว่าผิดเพราะอะไรและจำอย่างไร แล้วตรวจสถานะบันทึกใน Supabase',code,'#notes');
+ if(hours>=3)add('deep',60,`${code} · คำบรรยายและตำรา`,'เปิดเนื้อหาจริงจากอาจารย์ แล้วจดแยกจากเนื้อหาติว',code,'#classroom');
+ if(hours>=4)add('extra',60,`${code} · แบบฝึกเพิ่มเติม`,'ทำแบบจำลองสอบและวิเคราะห์ข้อผิด',code,`#prep/${code}`);
  return result();
 }
 export function activeDays(state){const days=new Set(state.sessions.map(s=>s.date));for(const [d,v]of Object.entries(state.planDone))if(v.length)days.add(d);return days;}
