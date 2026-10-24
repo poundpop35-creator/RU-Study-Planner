@@ -153,3 +153,15 @@ test('editing two selected dates and defaults preserves each date-specific hour 
  assert.equal(saved().hourOverrides['2026-11-05'],3);assert.equal(saved().hourOverrides['2026-11-06'],1);
  navigate('#home');await listeners.change({target:{id:'study-plan-date',value:'2026-11-06'}});assert.ok(!html().includes('data-id="deep"'));
 });
+
+test('debt is reachable in the study shell and does not modify study progress',()=>{
+ navigate('#home');assert.ok(html().includes('href="#debt"'));
+ const before=saved();navigate('#debt');
+ assert.ok(html().includes('<h1>แผนจัดการหนี้</h1>'));assert.ok(html().includes('74,850'));
+ assert.ok(get('#navigation').innerHTML.includes('href="#debt" aria-current="page"'));
+ assert.equal(get('#cloud-status-bar').hidden,true);
+ click('debt-toggle',{month:'ส.ค.'});assert.ok(html().includes('64,473'));
+ assert.deepEqual(JSON.parse(memory.get('debtPlanPaid_v1')),{'ส.ค.':true});assert.deepEqual(saved(),before);
+ navigate('#home');assert.equal(get('#cloud-status-bar').hidden,false);navigate('#debt');assert.ok(html().includes('64,473'));
+ click('debt-toggle',{month:'ส.ค.'});assert.ok(html().includes('74,850'));
+});
