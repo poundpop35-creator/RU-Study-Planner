@@ -36,7 +36,7 @@ test('home and full lessons open before any private-space connection, without lo
 });
 
 test('every main route and every lesson page renders without runtime errors',()=>{
- for(const route of ['home','practice','documents','courses','classroom','review','plan','calendar','exams','resources','notes','account','about','settings']){navigate('#'+route);assert.ok(html().length>500,route);assert.ok(!html().includes('[object Object]'),route);assert.ok(!html().includes('undefined'),route);}
+ for(const route of ['home','practice','documents','courses','classroom','review','plan','registration','calendar','exams','resources','notes','account','about','settings']){navigate('#'+route);assert.ok(html().length>500,route);assert.ok(!html().includes('[object Object]'),route);assert.ok(!html().includes('undefined'),route);}
  for(const l of lessons){navigate('#lesson/'+l.id);assert.ok(html().includes(l.title),l.id);assert.ok(html().includes(l.example.analysis),l.id);assert.equal((html().match(/class="question-block"/g)||[]).length,l.questions.length,l.id);}
  navigate('#lesson/missing');assert.ok(html().includes('ไม่พบหน้าที่เลือก'));
 });
@@ -85,7 +85,7 @@ test('rich notebook page supports course-linked writing, formatting controls, im
 });
 test('completion updates progress and remains reversible without changing earned credits',()=>{
  navigate('#lesson/POL1101-1');click('complete',{id:'POL1101-1'});assert.ok(saved().completed.includes('POL1101-1'));navigate('#course/POL1101');assert.ok(html().includes(`ติวแล้ว 1 / ${lessons.filter(l=>l.course==='POL1101').length} บท`));
- navigate('#plan');assert.ok(html().includes('สอบผ่านที่บันทึก 0 นก.'));navigate('#lesson/POL1101-1');click('complete',{id:'POL1101-1'});assert.ok(!saved().completed.includes('POL1101-1'));
+ navigate('#registration');assert.ok(html().includes('สอบผ่านที่บันทึก 0 นก.'));navigate('#lesson/POL1101-1');click('complete',{id:'POL1101-1'});assert.ok(!saved().completed.includes('POL1101-1'));
 });
 test('answers show explanation and mistakes review does not skip it after correction',()=>{
  navigate('#lesson/POL1101-1');click('answer',{lesson:'POL1101-1',index:'0',value:'0'});assert.ok(html().includes('ลองทบทวนแนวคิดอีกนิด'));assert.ok(html().includes(lessons[0].questions[0].explanation));
@@ -180,4 +180,27 @@ test('debt interest payment and editable forecast rates work without touching st
  listeners.submit({target:{id:'debt-rate-form'},preventDefault(){}});
  assert.equal(JSON.parse(memory.get('debtInterestRates_20261025_v1')).line,18);assert.ok(html().includes('value="18"'));assert.deepEqual(saved(),before);
  get('#debt-rate-line').value='-1';listeners.submit({target:{id:'debt-rate-form'},preventDefault(){}});assert.equal(get('#debt-rate-error').hidden,false);assert.equal(JSON.parse(memory.get('debtInterestRates_20261025_v1')).line,18);
+});
+
+
+test('reading and registration are separate routes with independent controls and shared saved progress',()=>{
+ const before=saved();navigate('#plan');
+ assert.ok(html().includes('<h1>แผนอ่าน</h1>'));assert.ok(html().includes('id="study-plan-date"'));
+ assert.ok(!html().includes('class="grade-select"'));assert.ok(!html().includes('id="transfer-general"'));
+ assert.ok(get('#bottom-nav').innerHTML.includes('href="#registration"'));
+ navigate('#registration');assert.ok(html().includes('<h1>แผนลงทะเบียน</h1>'));
+ assert.ok(!html().includes('id="study-plan-date"'));assert.ok(!html().includes('id="hours-weekday"'));
+ assert.equal((html().match(/class="grade-select"/g)||[]).length,7);
+ assert.ok(get('#navigation').innerHTML.includes('href="#registration" aria-current="page"'));
+ click('registration-term',{term:'1'});assert.ok(html().includes('aria-label="ย้าย POL2300"'));
+ listeners.change({target:{classList:{contains:c=>c==='move-select'},dataset:{course:'POL2300'},value:'2'}});
+ assert.equal(saved().termMoves.POL2300,2);assert.ok(!html().includes('aria-label="ย้าย POL2300"'));
+ click('registration-term',{term:'2'});assert.ok(html().includes('aria-label="ย้าย POL2300"'));
+ listeners.change({target:{classList:{contains:c=>c==='move-select'},dataset:{course:'POL2300'},value:'1'}});
+ click('registration-term',{term:'0'});
+ listeners.change({target:{classList:{contains:c=>c==='grade-select'},dataset:{course:'POL1101'},value:'A'}});
+ navigate('#plan');assert.deepEqual(saved().planDone,before.planDone);assert.deepEqual(saved().hourOverrides,before.hourOverrides);
+ navigate('#registration');assert.ok(html().includes('<option selected>A</option>'));
+ listeners.change({target:{classList:{contains:c=>c==='grade-select'},dataset:{course:'POL1101'},value:''}});
+ click('registration-term',{term:'99'});assert.equal((html().match(/class="grade-select"/g)||[]).length,7);
 });
