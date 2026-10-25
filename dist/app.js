@@ -1,5 +1,5 @@
 import {saveRates,rateFields} from './debt-interest.js?v=20261025e';
-import {debtPage,debtAction} from './debt-view.js?v=20261025e';
+import {debtPage,debtAction} from './debt-view.js?v=20261025g';
 import {practicePage,practiceAction,resetPracticeSession} from './practice-view.js?v=20261019a';
 import {recordPractice} from './practice-core.js?v=20261019a';
 import {documentsPage} from './documents-view.js?v=20261019a';
@@ -135,7 +135,7 @@ function prepPage(code){const g=prep[code],c=courseById(code);if(!g||!c)return m
 function missing(){return `<div class="empty panel"><h1>ไม่พบหน้าที่เลือก</h1><p>เลือกบทเรียนจากรายการอีกครั้งได้เลย</p>${link('courses','ไปที่บทเรียน')}</div>`;}
 function updateNav(){const active=(currentView==='lesson'||currentView==='course')?'courses':currentView==='prep'?'exams':currentView==='note'?'notes':currentView;document.querySelector('#navigation').innerHTML=navItems.map(([key,i,label])=>`<a class="nav-link ${active===key?'active':''}" href="#${key}" ${active===key?'aria-current="page"':''}>${icon(i)}<span>${label}</span>${key==='courses'?`<small>${lessons.length}</small>`:''}</a>`).join('');document.querySelector('#bottom-nav').innerHTML=['home','courses','plan','registration','notes','calendar'].map(key=>navItems.find(n=>n[0]===key)).map(([key,i,,short])=>`<a class="${active===key?'active':''}" href="#${key}" ${active===key?'aria-current="page"':''}>${icon(i,22)}<span>${short}</span></a>`).join('');document.querySelector('#breadcrumb').textContent=currentView==='lesson'?`${currentId.split('-')[0]} / ติวก่อนเรียน`:currentView==='prep'?`${currentId} / แนวข้อสอบ`:(navItems.find(n=>n[0]===currentView)?.[2]||{course:'ติวก่อนเรียนรายวิชา',about:'แหล่งเรียนรู้',settings:'ตั้งค่า'}[currentView]||'ห้องเรียน');}
 function render(keepScroll=false){
- destroyEditor();const oldY=window.scrollY;document.documentElement.dataset.font=state.font;updateNav();
+ destroyEditor();const oldY=window.scrollY;document.documentElement.dataset.font=state.font;document.documentElement.dataset.view=currentView;updateNav();
  const info=studySpace.info();
  document.querySelector('#cloud-status-bar').hidden=currentView==='debt';
  main.innerHTML=({home,debt:()=>debtPage(storage),practice:()=>practicePage(state,currentId),documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:classroomPage,course:()=>coursePage(currentId),prep:()=>prepPage(currentId),lesson:()=>lessonPage(currentId),review,plan,registration,calendar:calendarPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings}[currentView]||missing)();
@@ -189,7 +189,7 @@ document.addEventListener('submit',event=>{
  if(event.target.id==='debt-rate-form'){
   event.preventDefault();const values=Object.fromEntries(rateFields.map(f=>[f.key,document.querySelector('#debt-rate-'+f.key).value]));
   const error=saveRates(storage,values);if(error){const warning=document.querySelector('#debt-rate-error');warning.textContent=error;warning.hidden=false;return;}
-  render(true);toast('บันทึกอัตราและคำนวณประมาณการใหม่แล้ว');return;
+  render(true);document.querySelector('#debt-interest-details')?.setAttribute?.('open','');toast('บันทึกอัตราและคำนวณประมาณการใหม่แล้ว');return;
  }
  if(event.target.id!=='debt-payment-form')return;
  event.preventDefault();
