@@ -31,7 +31,7 @@ const click=(action,data={})=>listeners.click({target:{closest:()=>({dataset:{ac
 const saved=()=>JSON.parse(memory.get('ru-study-workspace.v1:user-a')).payload.progress;
 
 test('home and full lessons open before any private-space connection, without login forms',()=>{
- assert.ok(beforeCloudHome.includes('แผนวันนี้'));assert.ok(beforeCloudLesson.includes(lessons[0].title));
+ assert.ok(beforeCloudHome.includes('แผนอ่านส่วนตัว'));assert.ok(beforeCloudLesson.includes(lessons[0].title));
  for(const html of [beforeCloudHome,beforeCloudLesson]){assert.ok(!html.includes('account-signin'));assert.ok(!html.includes('account-google'));}
 });
 
@@ -100,7 +100,7 @@ test('lesson pages open with the one-minute summary, analogy, memory hook and te
  for(const l of lessons){navigate('#lesson/'+l.id);const h=html();assert.ok(h.includes('เข้าใจใน 1 นาที'),l.id);for(const t of [l.easy.one,...l.easy.points,l.easy.analogy,l.easy.remember])assert.ok(h.includes(escapeHTML(t)),l.id);for(const [front] of l.easy.terms)assert.ok(h.includes(escapeHTML(front)),l.id);}
 });
 test('home shows a daily plan; ticking a block and choosing hours are saved',()=>{
- navigate('#home');assert.ok(html().includes('แผนวันนี้'));assert.ok(html().includes('data-action="block"'));
+ navigate('#home');assert.ok(html().includes('แผนอ่านส่วนตัว'));assert.ok(html().includes('data-action="block"'));
  click('hours',{value:'3'});assert.equal(saved().hourOverrides[today()<STUDY_START?STUDY_START:today()],3);assert.ok(html().includes('คำบรรยายและตำรา'));
  click('block',{id:'main'});assert.deepEqual(saved().planDone[today()<STUDY_START?STUDY_START:today()],['main']);assert.ok(html().includes('aria-pressed="true"'));
  click('block',{id:'main'});assert.deepEqual(saved().planDone[today()<STUDY_START?STUDY_START:today()],[]);
