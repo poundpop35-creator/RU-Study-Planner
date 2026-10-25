@@ -1,4 +1,5 @@
-import {debtPage,debtAction} from './debt-view.js?v=20261025c';
+import {saveRates,rateFields} from './debt-interest.js?v=20261025e';
+import {debtPage,debtAction} from './debt-view.js?v=20261025e';
 import {practicePage,practiceAction,resetPracticeSession} from './practice-view.js?v=20261019a';
 import {recordPractice} from './practice-core.js?v=20261019a';
 import {documentsPage} from './documents-view.js?v=20261019a';
@@ -174,10 +175,17 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
  if(action==='recover-session'&&confirm('ใช้ข้อมูลรอบนี้แทนข้อมูลเดิมที่อ่านไม่ได้? ควรส่งออกข้อมูลรอบนี้ก่อน')){locked=false;save();render(true);}
 });
 document.addEventListener('submit',event=>{
- if(event.target.id!=='debt-payment-form'||currentView!=='debt')return;
+ if(currentView!=='debt')return;
+ if(event.target.id==='debt-rate-form'){
+  event.preventDefault();const values=Object.fromEntries(rateFields.map(f=>[f.key,document.querySelector('#debt-rate-'+f.key).value]));
+  const error=saveRates(storage,values);if(error){const warning=document.querySelector('#debt-rate-error');warning.textContent=error;warning.hidden=false;return;}
+  render(true);toast('บันทึกอัตราและคำนวณประมาณการใหม่แล้ว');return;
+ }
+ if(event.target.id!=='debt-payment-form')return;
  event.preventDefault();
  const creditor=document.querySelector('#debt-creditor').value,amount=document.querySelector('#debt-payment-amount').value;
- const error=debtAction('debt-add',{creditor,amount},storage);
+ const interest=document.querySelector('#debt-payment-interest')?.value||'0';
+ const error=debtAction('debt-add',{creditor,amount,interest},storage);
  if(error){const warning=document.querySelector('#debt-payment-error');warning.textContent=error;warning.hidden=false;return;}
  render(true);document.querySelector('#debt-creditor').value=creditor;document.querySelector('#debt-payment-amount').focus({preventScroll:true});toast('บันทึกยอดจ่ายสะสมแล้ว');
 });

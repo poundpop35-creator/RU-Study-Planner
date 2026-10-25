@@ -157,15 +157,27 @@ test('editing two selected dates and defaults preserves each date-specific hour 
 test('debt partial payments persist separately from study progress, and mistakes can be removed',()=>{
  navigate('#home');assert.ok(html().includes('href="#debt"'));
  const before=saved();navigate('#debt');
- assert.ok(html().includes('<h1>แผนจัดการหนี้</h1>'));assert.ok(html().includes('132,983'));
+ assert.ok(html().includes('บัญชีละ 1,000 บาท'));assert.ok(!html().includes('S เริ่มเมื่อรายการอื่นหมด'));assert.ok(html().includes('<h1>แผนจัดการหนี้</h1>'));assert.ok(html().includes('133,423.55'));
  assert.ok(!html().includes('data-action="debt-toggle"'));assert.ok(html().includes('id="debt-payment-form"'));
  assert.ok(get('#navigation').innerHTML.includes('href="#debt" aria-current="page"'));
  assert.equal(get('#cloud-status-bar').hidden,true);
  const submit=amount=>{get('#debt-creditor').value='AEON';get('#debt-payment-amount').value=amount;listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});};
- submit('5');submit('1000');assert.ok(html().includes('131,978'));assert.ok(html().includes('4,995'));
+ submit('5');submit('1000');assert.ok(html().includes('132,418.55'));assert.ok(html().includes('1,995'));
  const entries=JSON.parse(memory.get('debtPayments_20261025_v1'));assert.equal(entries.length,2);assert.deepEqual(saved(),before);
  submit('50000');assert.equal(get('#debt-payment-error').hidden,false);assert.equal(get('#debt-payment-amount').value,'50000');
  assert.equal(JSON.parse(memory.get('debtPayments_20261025_v1')).length,2);
- navigate('#home');assert.equal(get('#cloud-status-bar').hidden,false);navigate('#debt');assert.ok(html().includes('131,978'));
- click('debt-remove',{id:entries[0].id});assert.ok(html().includes('131,983'));assert.deepEqual(saved(),before);
+ navigate('#home');assert.equal(get('#cloud-status-bar').hidden,false);navigate('#debt');assert.ok(html().includes('132,418.55'));
+ click('debt-remove',{id:entries[0].id});assert.ok(html().includes('132,423.55'));assert.deepEqual(saved(),before);
+});
+
+test('debt interest payment and editable forecast rates work without touching study data',()=>{
+ navigate('#debt');const before=saved();
+ assert.ok(html().includes('ดอกเบี้ยและเงินที่ต้องเตรียมเพิ่ม'));assert.ok(html().includes('S รวม 7,900 บาท ไม่มีดอกเพิ่ม'));
+ get('#debt-creditor').value='LINE';get('#debt-payment-amount').value='100';get('#debt-payment-interest').value='20';
+ listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});
+ const entries=JSON.parse(memory.get('debtPayments_20261025_v1'));assert.equal(entries.at(-1).amountCents,8000);assert.equal(entries.at(-1).interestCents,2000);
+ for(const [key,value] of Object.entries({aeonUpper:'22',aeonCard:'16',line:'18',gold:'0.99'}))get('#debt-rate-'+key).value=value;
+ listeners.submit({target:{id:'debt-rate-form'},preventDefault(){}});
+ assert.equal(JSON.parse(memory.get('debtInterestRates_20261025_v1')).line,18);assert.ok(html().includes('value="18"'));assert.deepEqual(saved(),before);
+ get('#debt-rate-line').value='-1';listeners.submit({target:{id:'debt-rate-form'},preventDefault(){}});assert.equal(get('#debt-rate-error').hidden,false);assert.equal(JSON.parse(memory.get('debtInterestRates_20261025_v1')).line,18);
 });
