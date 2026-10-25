@@ -71,3 +71,7 @@ export function setMonth(storage,month){
  const paid={...result.paid};if(paid[month])delete paid[month];else paid[month]=true;
  try{storage.setItem(STORE,JSON.stringify(paid));return '';}catch{return 'ยังบันทึกไม่ได้ กรุณาตรวจสิทธิ์หรือพื้นที่จัดเก็บในเบราว์เซอร์ แล้วลองอีกครั้ง';}
 }
+// One-off costs that are neither principal nor interest (user, 25 ต.ค. 2569: AEON insurance once more, about 600 baht).
+// Funded outside the monthly budget like interest; shown until a payment records this fee for the creditor.
+export const extraCharges=[{creditor:'AEON',name:'ค่าประกัน AEON',amount:600,note:'อีก 1 รอบ ประมาณ 600 บาท · ไม่ใช่ดอกเบี้ย ยอดจริงดูใบแจ้งหนี้'}];
+

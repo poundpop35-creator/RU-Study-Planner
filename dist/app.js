@@ -1,5 +1,5 @@
-import {saveRates,rateFields} from './debt-interest.js?v=20261025e';
-import {debtPage,debtAction} from './debt-view.js?v=20261025g';
+import {saveRates,rateFields} from './debt-interest.js?v=20261025i';
+import {debtPage,debtAction} from './debt-view.js?v=20261025i';
 import {practicePage,practiceAction,resetPracticeSession} from './practice-view.js?v=20261019a';
 import {recordPractice} from './practice-core.js?v=20261019a';
 import {documentsPage} from './documents-view.js?v=20261019a';
@@ -205,8 +205,8 @@ document.addEventListener('submit',event=>{
  if(event.target.id!=='debt-payment-form')return;
  event.preventDefault();
  const creditor=document.querySelector('#debt-creditor').value,amount=document.querySelector('#debt-payment-amount').value;
- const interest=document.querySelector('#debt-payment-interest')?.value||'0';
- const error=debtAction('debt-add',{creditor,amount,interest},storage);
+ const interest=document.querySelector('#debt-payment-interest')?.value||'0',fee=document.querySelector('#debt-payment-fee')?.value||'0';
+ const error=debtAction('debt-add',{creditor,amount,interest,fee},storage);
  if(error){const warning=document.querySelector('#debt-payment-error');warning.textContent=error;warning.hidden=false;return;}
  render(true);document.querySelector('#debt-creditor').value=creditor;document.querySelector('#debt-payment-amount').focus({preventScroll:true});toast('บันทึกยอดจ่ายสะสมแล้ว');
 });

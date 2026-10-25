@@ -179,6 +179,11 @@ test('debt interest payment and editable forecast rates work without touching st
  for(const [key,value] of Object.entries({aeonUpper:'22',aeonCard:'16',line:'18',gold:'0.99'}))get('#debt-rate-'+key).value=value;
  listeners.submit({target:{id:'debt-rate-form'},preventDefault(){}});
  assert.equal(JSON.parse(memory.get('debtInterestRates_20261025_v1')).line,18);assert.ok(html().includes('value="18"'));assert.deepEqual(saved(),before);
+ navigate('#debt');assert.ok(html().includes('ค่าประกัน AEON อีก 1 รอบ'));assert.ok(html().includes('id="debt-payment-fee"'));
+ get('#debt-creditor').value='AEON';get('#debt-payment-amount').value='600';get('#debt-payment-interest').value='0';get('#debt-payment-fee').value='600';
+ listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});
+ assert.equal(JSON.parse(memory.get('debtPayments_20261025_v1')).at(-1).feeCents,60000);assert.ok(!html().includes('ค่าประกัน AEON อีก 1 รอบ'));assert.ok(html().includes('จ่ายค่าประกัน/ค่าธรรมเนียมแล้ว 600 บาท'));assert.deepEqual(saved(),before);
+ get('#debt-payment-fee').value='0';
  get('#debt-rate-line').value='-1';listeners.submit({target:{id:'debt-rate-form'},preventDefault(){}});assert.equal(get('#debt-rate-error').hidden,false);assert.equal(JSON.parse(memory.get('debtInterestRates_20261025_v1')).line,18);
 });
 

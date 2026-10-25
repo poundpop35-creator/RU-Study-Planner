@@ -131,3 +131,6 @@ html[data-view=debt] main{max-width:940px}
 .debt-month tbody th{width:auto}
 @media(max-width:700px){.debt-table td small{white-space:normal}.debt-month tbody th small{white-space:normal}}
 @media(max-width:700px){.debt-interest .debt-table th:nth-child(3),.debt-interest .debt-table td:nth-child(3){display:none}}
+.debt-fee{color:#92400e!important;font-weight:600}.debt-fee.done{color:var(--green)!important}
+.debt-fee-line{margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--amber-soft);border:1px solid #f6d39d}
+@media(min-width:701px){.debt-entry-form{grid-template-columns:repeat(2,minmax(0,1fr))}}

@@ -66,3 +66,16 @@ test('all previous month flags do not create payments for the newly supplied AEO
  const s=memory();s.setItem(LEGACY,JSON.stringify(Object.fromEntries(['ต.ค. 2569','พ.ย. 2569','ธ.ค. 2569','ม.ค. 2570','ก.พ. 2570','มี.ค. 2570','เม.ย. 2570','พ.ค. 2570','มิ.ย. 2570'].map(m=>[m,true]))));
  assert.equal(summary(s).paid,132983);assert.equal(summary(s).left,440.55);assert.equal(summary(s).interestPaid,0);
 });
+
+test('insurance and fees are recorded apart from interest and never reduce the balance',()=>{
+ const s=memory(),start=paymentSummary(readPayments(s).entries);
+ assert.equal(addPayment(s,'AEON','2100','100','600'),'');
+ const after=paymentSummary(readPayments(s).entries),entry=readPayments(s).entries.at(-1);
+ assert.equal(entry.amountCents,140000);assert.equal(entry.interestCents,10000);assert.equal(entry.feeCents,60000);
+ assert.equal(after.paid,1400);assert.equal(after.left,start.left-1400);assert.equal(after.interestPaid,100);assert.equal(after.feePaid,600);assert.equal(after.cashPaid,2100);
+ assert.equal(after.feeByCreditor.AEON,600);
+ assert.equal(addPayment(s,'AEON','600','0','600'),'');assert.equal(paymentSummary(readPayments(s).entries).paid,1400);
+ const before=s.getItem(PAYMENT_STORE);
+ for(const fee of ['-1','0.001','abc'])assert.ok(addPayment(s,'AEON','100','0',fee));
+ assert.ok(addPayment(s,'AEON','100','60','50'));assert.equal(s.getItem(PAYMENT_STORE),before);
+});

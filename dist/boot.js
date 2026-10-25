@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261025h'); }
+try { await import('./app.js?v=20261025i'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

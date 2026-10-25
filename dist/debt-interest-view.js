@@ -1,12 +1,14 @@
-import {readRates,rateFields,interestPlan} from './debt-interest.js?v=20261025e';
+import {readRates,rateFields,interestPlan} from './debt-interest.js?v=20261025i';
+import {extraCharges} from './debt-core.js?v=20261025i';
 const fmt=n=>n.toLocaleString('en-US',{maximumFractionDigits:2});
 // Interest is funded outside the monthly budget, so it lives in its own folded section.
-export function interestPanel(storage){
+// charges: one-off costs still to pay (the page drops a charge once its fee is recorded).
+export function interestPanel(storage,charges=extraCharges){
  const {rates,error}=readRates(storage),rows=interestPlan(rates);
  const interestTotal=rows.reduce((n,r)=>n+Math.round(r.interestTotal*100),0)/100;
  const cashTotal=rows.reduce((n,r)=>n+Math.round(r.cashTotal*100),0)/100;
- return `<details class="debt-more debt-interest" id="debt-interest-details"${error?' open':''}><summary>ดอกเบี้ยและเงินที่ต้องเตรียมเพิ่ม <span>${error?'ต้องบันทึกอัตราใหม่':`ทั้งแผนประมาณ ${fmt(interestTotal)} บาท`}</span></summary>
- <p>ดอกเบี้ยของ <b>AEON, LINE และทอง</b> จ่ายแยกจากงบ 15,000 บาท · <b>G</b> รวมดอกในงวดแล้ว · S รวม 7,900 บาท ไม่มีดอกเพิ่ม</p>
+ return `<details class="debt-more debt-interest" id="debt-interest-details"${error?' open':''}><summary>ดอกเบี้ยและเงินที่ต้องเตรียมเพิ่ม <span>${error?'ต้องบันทึกอัตราใหม่':`ดอกทั้งแผนประมาณ ${fmt(interestTotal)} บาท${charges.map(x=>` + ${x.name} ${fmt(x.amount)}`).join('')} บาท`}</span></summary>
+ <p>ดอกเบี้ยของ <b>AEON, LINE และทอง</b> จ่ายแยกจากงบ 15,000 บาท · <b>G</b> รวมดอกในงวดแล้ว · S รวม 7,900 บาท ไม่มีดอกเพิ่ม</p>${charges.map(x=>`<p class="debt-fee-line"><b>${x.name}:</b> ${x.note} (ไม่รวมในตารางดอกเบี้ยด้านล่าง)</p>`).join('')}
  ${error?'':`<div class="debt-table" tabindex="0" role="region" aria-label="ตารางดอกเบี้ยประมาณการรายเดือน"><table><thead><tr><th scope="col">เดือน</th><th scope="col">ดอกเบี้ย (ประมาณ)</th><th scope="col">งบลดหนี้</th><th scope="col">รวมต้องจ่าย</th></tr></thead><tbody>${rows.map(r=>`<tr><th scope="row">${r.month}</th><td>${fmt(r.interestTotal)}<small>AEON ${fmt(Math.round((r.interest.aeonUpper+r.interest.aeonCard)*100)/100)} · LINE ${fmt(r.interest.line)} · ทอง ${fmt(r.interest.gold)}</small></td><td>${fmt(r.baseTotal)}</td><td><strong>${fmt(r.cashTotal)}</strong></td></tr>`).join('')}</tbody><tfoot><tr><th scope="row">รวม</th><td>${fmt(interestTotal)}</td><td></td><td><strong>${fmt(cashTotal)}</strong></td></tr></tfoot></table></div>`}
  <div class="debt-caution"><strong>เป็นตัวเลขประมาณ ไม่ใช่ยอดที่เจ้าหนี้เรียกเก็บ</strong> ยอดจริงดูจากใบแจ้งหนี้แต่ละเดือน · จำลองรอบละ 30 วัน และสมมติว่าจ่ายตามแผนทุกงวด</div>
  <h3>อัตราดอกเบี้ยที่ใช้คำนวณ</h3><p class="debt-hint">ค่าตั้งต้น: AEON รายการบน 25% ต่อปี (ยังไม่รู้ประเภท สมมติเป็นยัวร์แคช) · AEON เครดิต 16% · LINE BK 25% · ทอง 1.25% ต่อเดือน — แก้ให้ตรงสัญญาของคุณได้</p>
