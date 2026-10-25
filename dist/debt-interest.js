@@ -1,4 +1,4 @@
-import {plan} from './debt-core.js?v=20261025i';
+import {plan} from './debt-core.js?v=20261025j';
 export const RATE_STORE='debtInterestRates_20261025_v1';
 export const rateFields=[
  {key:'aeonUpper',name:'AEON รายการบน (ยังไม่ทราบประเภท)',value:25,unit:'% ต่อปี',max:100},
@@ -16,7 +16,7 @@ export function saveRates(storage,values){
  if(rateFields.some(f=>String(values[f.key]??'').trim()===''))return 'กรอกอัตราให้ครบทุกช่อง';
  const rates=Object.fromEntries(rateFields.map(f=>[f.key,Number(values[f.key])]));
  if(!valid(rates))return 'กรอกอัตรารายปี 0–100% และรายเดือน 0–10%';
- try{storage.setItem(RATE_STORE,JSON.stringify(rates));return '';}catch{return 'บันทึกอัตราไม่ได้ กรุณาตรวจพื้นที่จัดเก็บของเบราว์เซอร์';}
+ try{storage.setItem(RATE_STORE,JSON.stringify(rates));return '';}catch(err){return err?.userMessage||'บันทึกอัตราไม่ได้ กรุณาตรวจพื้นที่จัดเก็บของเบราว์เซอร์';}
 }
 // This is a forecast, never a lender statement or a source of actual payment entries.
 // AEON statement totals proxy opening balances; they may include prior accrued charges.

@@ -1,9 +1,9 @@
-import {validatePractice,validateLegacyPracticePending,importLegacyMistakes} from './practice-core.js?v=20261019a';
-import {courses,terms,categoryTargets,readingWeek,studyPhases,studyHours} from './data.js?v=20261018a';
-import {lessons} from './lessons.js?v=20261018a';
-import {prep} from './prep.js?v=20261018a';
+import {validatePractice,validateLegacyPracticePending,importLegacyMistakes} from './practice-core.js?v=20261025j';
+import {courses,terms,categoryTargets,readingWeek,studyPhases,studyHours} from './data.js?v=20261025j';
+import {lessons} from './lessons.js?v=20261025j';
+import {prep} from './prep.js?v=20261025j';
 export const STORAGE_KEY='ru-study-planner.v1';
-export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,practiceMigrationVersion:1,practiceReview:{},legacyPracticePending:[],hours:{weekday:2,weekend:2},hourOverrides:{},planDone:{},prep:{}};}
+export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,practiceMigrationVersion:1,practiceReview:{},legacyPracticePending:[],hours:{weekday:2,weekend:2},hourOverrides:{},planDone:{},prep:{},debt:{}};}
 const lessonIds=new Set(lessons.map(l=>l.id));
 const courseIds=new Set(courses.map(c=>c.id));
 const cardIds=new Set(lessons.flatMap(l=>l.cards.map((_,i)=>`${l.id}:${i}`)));
@@ -11,6 +11,8 @@ const questionIds=new Map(lessons.flatMap(l=>l.questions.map((q,i)=>[`${l.id}:${
 export const BLOCK_IDS=new Set(['cards','main','second','deep','extra','wrap','examday','explain']);
 const plain=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const isDay=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v));
+// Storage keys of the debt modules (debt-payments.js, debt-interest.js, debt-core.js).
+export const DEBT_KEYS=['debtPayments_20261025_v1','debtInterestRates_20261025_v1','debtPlanPaid_20261025_budget15000_v2'];
 export function validateState(input){
  if(!plain(input)||input.version!==1)throw new Error('ไฟล์สำรองไม่ใช่รูปแบบ RU Study Planner รุ่น 1');
  const s=freshState();
@@ -32,6 +34,8 @@ export function validateState(input){
  if(plain(input.hourOverrides))for(const [d,h]of Object.entries(input.hourOverrides)){if(validHourDay(d)&&studyHours.includes(h))s.hourOverrides[d]=h;}
  if(plain(input.planDone))for(const k of Object.keys(input.planDone).filter(isDay).sort().slice(-400)){const v=input.planDone[k];if(Array.isArray(v))s.planDone[k]=[...new Set(v.filter(x=>BLOCK_IDS.has(x)))];}
  if(plain(input.prep))for(const [k,v]of Object.entries(input.prep)){if(!Object.hasOwn(prep,k)||!plain(v))continue;const n=prep[k].questions.length,score=x=>Number.isInteger(x)&&x>=0&&x<=n?x:null,answers={};if(plain(v.answers))for(const [i,a]of Object.entries(v.answers)){if(/^\d+$/.test(i)&&Number(i)<n&&Number.isInteger(a)&&a>=0&&a<prep[k].questions[Number(i)].options.length)answers[i]=a;}s.prep[k]={answers,submitted:v.submitted===true,best:score(v.best),last:score(v.last)};}
+ // Personal debt plan (numbers only), kept here so it syncs with the study space; the debt modules validate the contents on read.
+ if(plain(input.debt))for(const k of DEBT_KEYS){if(typeof input.debt[k]==='string'&&input.debt[k].length<=500000)s.debt[k]=input.debt[k];}
  s.practiceReview=validatePractice(input.practiceReview);
  s.legacyPracticePending=validateLegacyPracticePending(input.legacyPracticePending,s.practiceReview);
  // Independent of the study-plan version: repair snapshots already saved by the first v2 release.

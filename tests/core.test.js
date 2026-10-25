@@ -140,3 +140,11 @@ test('review and exam phases send four-hour days to the practice exam',()=>{
  const s=freshState();s.hourOverrides['2027-02-03']=4;const extra=dailyPlan(s,'2027-02-03').blocks.find(b=>b.id==='extra');assert.equal(extra.href,`#prep/${extra.course}`);
  s.hourOverrides['2027-03-14']=4;assert.equal(dailyPlan(s,'2027-03-14').blocks.find(b=>b.id==='extra').href,'#prep/POL2303');
 });
+
+test('debt numbers survive the synced progress record, and only known debt keys are kept',()=>{
+ const s=freshState();assert.deepEqual(s.debt,{});
+ const payments=JSON.stringify([{id:'a1',creditor:'AEON',amountCents:100000,interestCents:0,feeCents:60000,at:'2026-10-25T10:00:00.000Z'}]);
+ const back=validateState(JSON.parse(JSON.stringify({...s,debt:{debtPayments_20261025_v1:payments,debtInterestRates_20261025_v1:'{"line":18}',other:'x',debtPlanPaid_20261025_budget15000_v2:5}})));
+ assert.deepEqual(back.debt,{debtPayments_20261025_v1:payments,debtInterestRates_20261025_v1:'{"line":18}'});
+ assert.deepEqual(validateState({...s,debt:'not an object'}).debt,{});
+});

@@ -1,5 +1,5 @@
-import {readRates,rateFields,interestPlan} from './debt-interest.js?v=20261025i';
-import {extraCharges} from './debt-core.js?v=20261025i';
+import {readRates,rateFields,interestPlan} from './debt-interest.js?v=20261025j';
+import {extraCharges} from './debt-core.js?v=20261025j';
 const fmt=n=>n.toLocaleString('en-US',{maximumFractionDigits:2});
 // Interest is funded outside the monthly budget, so it lives in its own folded section.
 // charges: one-off costs still to pay (the page drops a charge once its fee is recorded).

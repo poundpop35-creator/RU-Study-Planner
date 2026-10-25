@@ -1,6 +1,6 @@
-import {courses} from './data.js?v=20261018a';
-import {escapeHTML as e,today,thaiDate} from './core.js?v=20261019a';
-import {practiceQueue,practiceStats,recordPractice} from './practice-core.js?v=20261019a';
+import {courses} from './data.js?v=20261025j';
+import {escapeHTML as e,today,thaiDate} from './core.js?v=20261025j';
+import {practiceQueue,practiceStats,recordPractice} from './practice-core.js?v=20261025j';
 let session=null;
 export function resetPracticeSession(){session=null;}
 function selection(route){

@@ -1,7 +1,7 @@
-import {interestPanel} from './debt-interest-view.js?v=20261025i';
-import {readRates,interestPlan} from './debt-interest.js?v=20261025i';
-import {readPayments,paymentSummary,addPayment,removePayment} from './debt-payments.js?v=20261025i';
-import {months,creditors,data,budget,plan,monthTotal,extraCharges} from './debt-core.js?v=20261025i';
+import {interestPanel} from './debt-interest-view.js?v=20261025j';
+import {readRates,interestPlan} from './debt-interest.js?v=20261025j';
+import {readPayments,paymentSummary,addPayment,removePayment} from './debt-payments.js?v=20261025j';
+import {months,creditors,data,budget,plan,monthTotal,extraCharges} from './debt-core.js?v=20261025j';
 const fmt=n=>n.toLocaleString('en-US',{maximumFractionDigits:2});
 const round=n=>Math.round(n*100)/100;
 const colors={G:'#be185d',AEON:'#6d28d9',LINE:'#0369a1','ทอง':'#b45309',S:'#047857'};
@@ -17,7 +17,7 @@ export function debtPage(storage){
  const interestRow=m=>rateError?null:interestPlan(rates).find(r=>r.month===m);
  return `<div class="debt-page">
  <header class="debt-bar"><div><span class="debt-bar-tag">เครื่องมือส่วนตัว · ไม่เกี่ยวกับการเรียน</span><h1>แผนจัดการหนี้</h1><p>งบเดือนละ ${fmt(budget)} บาท · ${months[0]} ถึง ${months.at(-1)} (${months.length} เดือน)</p></div><a class="button secondary" href="#home">← กลับห้องเรียน</a></header>
- <p class="debt-local">🔒 บันทึกไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ซิงก์ และไม่อยู่ในไฟล์สำรองการเรียน</p>
+ <p class="debt-local">☁️ บันทึกในพื้นที่ออนไลน์เดียวกับข้อมูลการเรียน เปิดจากเครื่องอื่นด้วยพื้นที่เรียนเดียวกันก็เห็นยอดเดียวกัน · <a href="#account">เปิดบนอีกเครื่อง →</a></p>
  ${error?`<div class="notice" role="alert">${error}</div>`:''}
  ${overview(s,error,amount)}
  ${thisMonth(s,error,amount,interestRow)}

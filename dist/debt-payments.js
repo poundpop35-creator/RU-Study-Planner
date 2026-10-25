@@ -1,4 +1,4 @@
-import {creditors,months,data,legacyData,readPaid} from './debt-core.js?v=20261025i';
+import {creditors,months,data,legacyData,readPaid} from './debt-core.js?v=20261025j';
 export const PAYMENT_STORE='debtPayments_20261025_v1';
 const errorText='อ่านประวัติการจ่ายไม่ได้ จึงยังไม่แสดงยอดสะสมและไม่เขียนทับข้อมูลเดิม';
 const cents=n=>Math.round(n*100);
@@ -32,7 +32,7 @@ export function readPayments(storage){
   return {entries,error:''};
  }catch{return {entries:[],error:errorText};}
 }
-function write(storage,entries){try{storage.setItem(PAYMENT_STORE,JSON.stringify(entries));return '';}catch{return 'บันทึกไม่ได้ กรุณาตรวจพื้นที่จัดเก็บของเบราว์เซอร์แล้วลองอีกครั้ง';}}
+function write(storage,entries){try{storage.setItem(PAYMENT_STORE,JSON.stringify(entries));return '';}catch(err){return err?.userMessage||'บันทึกไม่ได้ กรุณาตรวจพื้นที่จัดเก็บของเบราว์เซอร์แล้วลองอีกครั้ง';}}
 export function addPayment(storage,creditor,amount,interestAmount=0,feeAmount=0){
  const result=readPayments(storage);if(result.error)return result.error;
  const c=creditors.find(c=>c.key===creditor);if(!c)return 'เลือกเจ้าหนี้ก่อนบันทึก';
