@@ -1,4 +1,4 @@
-import {creditors,months,data,legacyData,readPaid} from './debt-core.js?v=20261025j';
+import {creditors,months,data,legacyData,readPaid} from './debt-core.js?v=20261026b';
 export const PAYMENT_STORE='debtPayments_20261025_v1';
 const errorText='อ่านประวัติการจ่ายไม่ได้ จึงยังไม่แสดงยอดสะสมและไม่เขียนทับข้อมูลเดิม';
 const cents=n=>Math.round(n*100);

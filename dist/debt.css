@@ -134,3 +134,44 @@ html[data-view=debt] main{max-width:940px}
 .debt-fee{color:#92400e!important;font-weight:600}.debt-fee.done{color:var(--green)!important}
 .debt-fee-line{margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--amber-soft);border:1px solid #f6d39d}
 @media(min-width:701px){.debt-entry-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Creditors: one compact list. */
+ul.debt-creditors{list-style:none;padding:0;margin:12px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+ul.debt-creditors li{padding:12px 14px;border:1px solid var(--line);border-left:5px solid var(--debt-color);border-radius:12px;background:#fff}
+.debt-creditor-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.debt-creditor-row b{font-size:16px}.debt-creditor-row small{color:var(--muted);font-size:13px}
+ul.debt-creditors .debt-creditor-left{margin:0!important}ul.debt-creditors .debt-creditor-left strong{font-size:19px}
+ul.debt-creditors progress{height:8px;margin:8px 0 6px}
+
+/* History: folds away; grouped by month; one line per payment with a small delete button. */
+details.debt-history{padding:0}
+details.debt-history>summary{list-style:none;cursor:pointer;padding:18px 22px;display:grid;gap:4px}
+details.debt-history>summary::-webkit-details-marker{display:none}
+details.debt-history>summary h2{margin:0}
+details.debt-history>summary h2::after{content:'▾';margin-left:auto;color:var(--muted);font-size:16px}
+details.debt-history[open]>summary h2::after{content:'▴'}
+.debt-history-peek{color:var(--muted);font-size:14px;padding-left:40px}
+details.debt-history[open]>summary{border-bottom:1px solid var(--line)}
+.debt-history-sum{margin:12px 22px!important;font-size:14px;color:var(--muted)}
+.debt-history-month{margin:0 22px 12px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.debt-history-month>summary{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;background:#f1f5fc;cursor:pointer;font-weight:600;font-size:14px}
+.debt-history-month>summary span:last-child{color:var(--muted);font-weight:500}
+.debt-history .debt-history-month ul{list-style:none;margin:0;padding:0}
+.debt-history .debt-history-month li{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:10px 10px 10px 12px;border:0;border-top:1px solid var(--line);border-left:4px solid var(--debt-color)}
+.debt-history .debt-history-month li:first-child{border-top:0}
+.debt-history-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0}
+.debt-history-main span{font-size:13px;color:var(--muted)}
+.debt-history-main small{flex-basis:100%;font-size:13px;color:var(--muted)}
+.debt-history-amt{font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.debt-remove{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:14px;cursor:pointer}
+.debt-remove:hover,.debt-remove:focus-visible{border-color:var(--red);color:var(--red);background:var(--red-soft)}
+
+/* Phone form: who and how much on full rows; interest and insurance side by side. */
+@media(max-width:700px){
+ .debt-entry-form{grid-template-columns:1fr 1fr;gap:12px}
+ .debt-entry-form>label:nth-child(1),.debt-entry-form>label:nth-child(2){grid-column:1/-1}
+ .debt-entry-form .debt-field-hint{font-size:12px}
+ details.debt-history>summary{padding:16px}.debt-history-peek{padding-left:0}
+ .debt-history-sum{margin:12px 16px!important}.debt-history-month{margin:0 12px 12px}
+}
+.debt-close-plan{white-space:nowrap}
