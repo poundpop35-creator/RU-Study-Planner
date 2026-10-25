@@ -1,25 +1,41 @@
-export const months = ['ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.','มี.ค.'];
-export const creditors = [
-  {key:'S',        name:'S',        cvar:'--c-S'},
-  {key:'G',        name:'G',        cvar:'--c-G'},
-  {key:'YourCash', name:'YourCash', cvar:'--c-Y'},
-  {key:'LINE BK',  name:'LINE BK',  cvar:'--c-L'},
-  {key:'AEON',     name:'AEON',     cvar:'--c-A'},
+// Updated from the user's 25 Oct 2569 note and monthly budget of 15,000 baht.
+export const budget=15000;
+export const creditors=[
+ {key:'G',name:'G',balance:28083},
+ {key:'AEON',name:'AEON',balance:25000},
+ {key:'LINE',name:'LINE',balance:26000},
+ {key:'ทอง',name:'ทอง',balance:46000},
+ {key:'S',name:'S',balance:7900},
 ];
-// จำนวนเงินที่ต้องจ่ายต่อเดือน (0 = ไม่ต้องจ่าย)
-export const data = {
-  'ส.ค.':{S:4231,G:4046,YourCash:400, 'LINE BK':1000,AEON:700},
-  'ก.ย.':{S:4084,G:4046,YourCash:400, 'LINE BK':1000,AEON:700},
-  'ต.ค.':{S:0,   G:4046,YourCash:4254,'LINE BK':1000,AEON:700},
-  'พ.ย.':{S:0,   G:1483,YourCash:6817,'LINE BK':1000,AEON:700},
-  'ธ.ค.':{S:0,   G:0,   YourCash:3776,'LINE BK':5524,AEON:700},
-  'ม.ค.':{S:0,   G:0,   YourCash:0,   'LINE BK':9300,AEON:700},
-  'ก.พ.':{S:0,   G:0,   YourCash:0,   'LINE BK':9300,AEON:700},
-  'มี.ค.':{S:0,  G:0,   YourCash:0,   'LINE BK':1368,AEON:2875},
-};
-
-
-export const STORE='debtPlanPaid_v1';
+export const gInstallments=[8560,5993,4510,4510,4510];
+const monthNames=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+// G keeps its fixed installments; remaining budget clears AEON, LINE, gold, then S as agreed.
+// Principal only: the user funds interest separately from this monthly budget.
+export function buildPlan(monthlyBudget=budget){
+ if(!Number.isSafeInteger(monthlyBudget)||monthlyBudget<Math.max(...gInstallments))throw new Error('งบต้องไม่น้อยกว่างวด G สูงสุด');
+ const remaining=Object.fromEntries(creditors.map(c=>[c.key,c.balance])),rows=[];
+ for(let i=0;Object.values(remaining).some(v=>v>0);i++){
+  if(i>=120)throw new Error('แผนยาวเกินช่วงที่รองรับ');
+  const date=new Date(Date.UTC(2026,9+i,1));
+  const month=monthNames[date.getUTCMonth()]+' '+(date.getUTCFullYear()+543);
+  const payments=Object.fromEntries(creditors.map(c=>[c.key,0]));
+  let available=monthlyBudget;
+  payments.G=gInstallments[i]||0;remaining.G-=payments.G;available-=payments.G;
+  for(const key of ['AEON','LINE','ทอง','S']){
+   if(key==='S'&&['G','ทอง','LINE','AEON'].some(k=>remaining[k]>0))continue;
+   // Non-final payments are whole thousands; only the closing payment has a remainder.
+   payments[key]=remaining[key]<=available?remaining[key]:Math.floor(available/1000)*1000;
+   remaining[key]-=payments[key];available-=payments[key];
+  }
+  rows.push({month,payments,total:monthlyBudget-available,unused:available,remaining:{...remaining}});
+ }
+ return rows;
+}
+export const plan=buildPlan();
+export const months=plan.map(row=>row.month);
+export const data=Object.fromEntries(plan.map(row=>[row.month,row.payments]));
+// Keep incorrect legacy flags intact, but never apply them to revised installments.
+export const STORE='debtPlanPaid_20261025_budget15000_v2';
 export function readPaid(storage){
  try{
   const raw=storage.getItem(STORE),value=raw?JSON.parse(raw):{};

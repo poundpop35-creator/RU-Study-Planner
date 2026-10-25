@@ -154,14 +154,18 @@ test('editing two selected dates and defaults preserves each date-specific hour 
  navigate('#home');await listeners.change({target:{id:'study-plan-date',value:'2026-11-06'}});assert.ok(!html().includes('data-id="deep"'));
 });
 
-test('debt is reachable in the study shell and does not modify study progress',()=>{
+test('debt partial payments persist separately from study progress, and mistakes can be removed',()=>{
  navigate('#home');assert.ok(html().includes('href="#debt"'));
  const before=saved();navigate('#debt');
- assert.ok(html().includes('<h1>แผนจัดการหนี้</h1>'));assert.ok(html().includes('74,850'));
+ assert.ok(html().includes('<h1>แผนจัดการหนี้</h1>'));assert.ok(html().includes('132,983'));
+ assert.ok(!html().includes('data-action="debt-toggle"'));assert.ok(html().includes('id="debt-payment-form"'));
  assert.ok(get('#navigation').innerHTML.includes('href="#debt" aria-current="page"'));
  assert.equal(get('#cloud-status-bar').hidden,true);
- click('debt-toggle',{month:'ส.ค.'});assert.ok(html().includes('64,473'));
- assert.deepEqual(JSON.parse(memory.get('debtPlanPaid_v1')),{'ส.ค.':true});assert.deepEqual(saved(),before);
- navigate('#home');assert.equal(get('#cloud-status-bar').hidden,false);navigate('#debt');assert.ok(html().includes('64,473'));
- click('debt-toggle',{month:'ส.ค.'});assert.ok(html().includes('74,850'));
+ const submit=amount=>{get('#debt-creditor').value='AEON';get('#debt-payment-amount').value=amount;listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});};
+ submit('5');submit('1000');assert.ok(html().includes('131,978'));assert.ok(html().includes('4,995'));
+ const entries=JSON.parse(memory.get('debtPayments_20261025_v1'));assert.equal(entries.length,2);assert.deepEqual(saved(),before);
+ submit('50000');assert.equal(get('#debt-payment-error').hidden,false);assert.equal(get('#debt-payment-amount').value,'50000');
+ assert.equal(JSON.parse(memory.get('debtPayments_20261025_v1')).length,2);
+ navigate('#home');assert.equal(get('#cloud-status-bar').hidden,false);navigate('#debt');assert.ok(html().includes('131,978'));
+ click('debt-remove',{id:entries[0].id});assert.ok(html().includes('131,983'));assert.deepEqual(saved(),before);
 });
