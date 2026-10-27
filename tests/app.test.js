@@ -31,12 +31,12 @@ const click=(action,data={})=>listeners.click({target:{closest:()=>({dataset:{ac
 const saved=()=>JSON.parse(memory.get('ru-study-workspace.v1:user-a')).payload.progress;
 
 test('home and full lessons open before any private-space connection, without login forms',()=>{
- assert.ok(beforeCloudHome.includes('แผนวันนี้'));assert.ok(beforeCloudLesson.includes(lessons[0].title));
+ assert.ok(beforeCloudHome.includes('แผนอ่านส่วนตัว'));assert.ok(beforeCloudLesson.includes(lessons[0].title));
  for(const html of [beforeCloudHome,beforeCloudLesson]){assert.ok(!html.includes('account-signin'));assert.ok(!html.includes('account-google'));}
 });
 
 test('every main route and every lesson page renders without runtime errors',()=>{
- for(const route of ['home','practice','documents','courses','classroom','review','plan','calendar','exams','resources','notes','account','about','settings','awards']){navigate('#'+route);assert.ok(html().length>500,route);assert.ok(!html().includes('[object Object]'),route);assert.ok(!html().includes('undefined'),route);}
+ for(const route of ['home','practice','documents','courses','classroom','review','plan','registration','calendar','exams','resources','notes','account','about','settings','awards','menu']){navigate('#'+route);assert.ok(html().length>500,route);assert.ok(!html().includes('[object Object]'),route);assert.ok(!html().includes('undefined'),route);}
  for(const l of lessons){navigate('#lesson/'+l.id);assert.ok(html().includes(l.title),l.id);assert.ok(html().includes(l.example.analysis),l.id);assert.equal((html().match(/class="question-block"/g)||[]).length,l.questions.length,l.id);}
  navigate('#lesson/missing');assert.ok(html().includes('ไม่พบหน้าที่เลือก'));
 });
@@ -85,7 +85,7 @@ test('rich notebook page supports course-linked writing, formatting controls, im
 });
 test('completion updates progress and remains reversible without changing earned credits',()=>{
  navigate('#lesson/POL1101-1');click('complete',{id:'POL1101-1'});assert.ok(saved().completed.includes('POL1101-1'));navigate('#course/POL1101');assert.ok(html().includes(`ติวแล้ว 1 / ${lessons.filter(l=>l.course==='POL1101').length} บท`));
- navigate('#plan');assert.ok(html().includes('สอบผ่านที่บันทึก 0 นก.'));navigate('#lesson/POL1101-1');click('complete',{id:'POL1101-1'});assert.ok(!saved().completed.includes('POL1101-1'));
+ navigate('#registration');assert.ok(html().includes('สอบผ่านที่บันทึก 0 นก.'));navigate('#lesson/POL1101-1');click('complete',{id:'POL1101-1'});assert.ok(!saved().completed.includes('POL1101-1'));
 });
 test('answers show explanation and mistakes review does not skip it after correction',()=>{
  navigate('#lesson/POL1101-1');click('answer',{lesson:'POL1101-1',index:'0',value:'0'});assert.ok(html().includes('ลองทบทวนแนวคิดอีกนิด'));assert.ok(html().includes(lessons[0].questions[0].explanation));
@@ -100,7 +100,7 @@ test('lesson pages open with the one-minute summary, analogy, memory hook and te
  for(const l of lessons){navigate('#lesson/'+l.id);const h=html();assert.ok(h.includes('เข้าใจใน 1 นาที'),l.id);for(const t of [l.easy.one,...l.easy.points,l.easy.analogy,l.easy.remember])assert.ok(h.includes(escapeHTML(t)),l.id);for(const [front] of l.easy.terms)assert.ok(h.includes(escapeHTML(front)),l.id);}
 });
 test('home shows a daily plan; ticking a block and choosing hours are saved',()=>{
- navigate('#home');assert.ok(html().includes('แผนวันนี้'));assert.ok(html().includes('data-action="block"'));
+ navigate('#home');assert.ok(html().includes('แผนอ่านส่วนตัว'));assert.ok(html().includes('data-action="block"'));
  click('hours',{value:'3'});assert.equal(saved().hourOverrides[today()<STUDY_START?STUDY_START:today()],3);assert.ok(html().includes('คำบรรยายและตำรา'));
  click('block',{id:'main'});assert.deepEqual(saved().planDone[today()<STUDY_START?STUDY_START:today()],['main']);assert.ok(html().includes('aria-pressed="true"'));
  click('block',{id:'main'});assert.deepEqual(saved().planDone[today()<STUDY_START?STUDY_START:today()],[]);
@@ -142,16 +142,29 @@ test('exam guides render for every course and both practice modes score correctl
  click('prep-reset',{course:'POL2106'});assert.deepEqual(saved().prep.POL2106.answers,{});assert.equal(saved().prep.POL2106.best,1);
  click('prep-mode',{course:'POL2106',mode:'practice'});
 });
-test('game layer: level chip, awards page, celebrations and a menu that reaches every page',()=>{
- navigate('#home');assert.ok(get('#top-stats').innerHTML.includes('Lv.'));assert.ok(html().includes('href="#awards"'));assert.ok(html().includes('ภารกิจวันนี้'));
- assert.ok(get('#bottom-nav').innerHTML.includes('data-action="more"'));
- for(const key of ['practice','exams','classroom','plan','calendar','awards','documents','resources','account','settings','about'])assert.ok(get('#more-links').innerHTML.includes(`href="#${key}"`),key);
+
+test('game layer: level chip, awards page and celebrations',()=>{
+ navigate('#home');assert.ok(get('#top-stats').innerHTML.includes('Lv.'));assert.ok(html().includes('href="#awards"'));assert.ok(html().includes('class="button gold hero-cta"'));
  navigate('#awards');assert.ok(html().includes('รางวัลของฉัน'));assert.equal((html().match(/class="badge-card /g)||[]).length,12);
  navigate('#lesson/POL1101-1');assert.ok(html().includes('อ่านจบรับ +50 XP'));assert.ok(!html().includes('undefined'));
  click('answer',{lesson:'POL1101-1',index:'1',value:String(lessons[0].questions[1].answer)});assert.ok(html().includes('ถูกต้อง'));assert.ok(!html().includes('undefined'));click('retry',{id:'POL1101-1'});
  click('complete',{id:'POL1101-1'});assert.ok(html().includes('อ่านจบบทนี้แล้ว'));assert.ok(html().includes('data-fresh'));
  navigate('#lesson/POL1101-1');assert.ok(!html().includes('data-fresh'),'only the changed element animates, once');
  click('complete',{id:'POL1101-1'});assert.ok(!saved().completed.includes('POL1101-1'));
+});
+test('five places on the phone bar, each page lights its place, and the menu reaches every page',()=>{
+ const bar=()=>get('#bottom-nav').innerHTML,current=key=>bar().includes(`href="#${key}" aria-current="page"`);
+ navigate('#home');assert.equal((bar().match(/<a /g)||[]).length,5);for(const key of ['home','courses','plan','notes','menu'])assert.ok(bar().includes(`href="#${key}"`),key);
+ for(const [route,place] of [['home','home'],['lesson/POL1101-1','courses'],['classroom','courses'],['practice','courses'],['review','courses'],['prep/POL2106','courses'],['calendar','plan'],['registration','plan'],['notes','notes'],['settings','menu'],['debt','menu']]){navigate('#'+route);assert.ok(current(place),route);assert.equal((bar().match(/aria-current/g)||[]).length,1,route);}
+ navigate('#menu');for(const key of ['courses','classroom','practice','review','exams','notes','plan','calendar','registration','documents','resources','awards','account','debt','settings','about'])assert.ok(html().includes(`href="#${key}"`),key);
+ for(const route of ['courses','classroom','practice','review']){navigate('#'+route);assert.ok(html().includes('class="hub-tabs"'),route);assert.ok(html().includes(`href="#${route}" aria-current="page"`),route);}
+ for(const route of ['plan','calendar','registration']){navigate('#'+route);assert.equal((html().match(/class="hub-tabs"/g)||[]).length,1,route);assert.ok(html().includes(`href="#${route}" aria-current="page"`),route);}
+});
+test('the date and hour tools fold under the day plan and stay open while in use',async()=>{
+ navigate('#home');listeners.toggle({target:{classList:{contains:c=>c==='plan-tools'},open:false}});navigate('#home');assert.ok(html().includes('<details class="plan-tools">'));
+ await listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});assert.ok(html().includes('<details class="plan-tools" open>'));
+ click('block',{id:'cards'});assert.ok(html().includes('<details class="plan-tools" open>'));click('block',{id:'cards'});
+ click('plan-today');
 });
 test('editing two selected dates and defaults preserves each date-specific hour choice',async()=>{
  navigate('#home');await listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});click('hours',{value:'3'});
@@ -161,4 +174,62 @@ test('editing two selected dates and defaults preserves each date-specific hour 
  navigate('#settings');await listeners.change({target:{id:'hours-weekday',value:'4',classList:{contains:()=>false}}});
  assert.equal(saved().hourOverrides['2026-11-05'],3);assert.equal(saved().hourOverrides['2026-11-06'],1);
  navigate('#home');await listeners.change({target:{id:'study-plan-date',value:'2026-11-06'}});assert.ok(!html().includes('data-id="deep"'));
+});
+
+// Debt numbers live in progress.debt so they sync; every study field must stay as it was.
+const sameStudy=(a,b)=>{const {debt:_a,...x}=a,{debt:_b,...y}=b;assert.deepEqual(x,y);};
+test('debt partial payments sync with the study space without changing study data, and mistakes can be removed',()=>{
+ navigate('#home');assert.ok(html().includes('href="#debt"'));
+ const before=saved();navigate('#debt');
+ assert.ok(html().includes('บัญชีละ 1,000 บาท'));assert.ok(!html().includes('S เริ่มเมื่อรายการอื่นหมด'));assert.ok(html().includes('<h1>แผนจัดการหนี้</h1>'));assert.ok(html().includes('140,723.55'));
+ assert.ok(!html().includes('data-action="debt-toggle"'));assert.ok(html().includes('id="debt-payment-form"'));
+ assert.ok(get('#navigation').innerHTML.includes('href="#debt" aria-current="page"'));
+ assert.equal(get('#cloud-status-bar').hidden,false);
+ const submit=amount=>{get('#debt-creditor').value='AEON';get('#debt-payment-amount').value=amount;listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});};
+ submit('5');submit('1000');assert.ok(html().includes('139,718.55'));assert.ok(html().includes('2,995'));
+ const entries=JSON.parse(memory.get('debtPayments_20261025_v1'));assert.equal(entries.length,2);assert.equal(saved().debt.debtPayments_20261025_v1,memory.get('debtPayments_20261025_v1'));sameStudy(saved(),before);
+ submit('50000');assert.equal(get('#debt-payment-error').hidden,false);assert.equal(get('#debt-payment-amount').value,'50000');
+ assert.equal(JSON.parse(memory.get('debtPayments_20261025_v1')).length,2);
+ navigate('#home');assert.equal(get('#cloud-status-bar').hidden,false);navigate('#debt');assert.ok(html().includes('139,718.55'));
+ click('debt-remove',{id:entries[0].id});assert.ok(html().includes('139,723.55'));sameStudy(saved(),before);
+});
+
+test('debt interest payment and editable forecast rates sync without touching study data',()=>{
+ navigate('#debt');const before=saved();
+ assert.ok(html().includes('ดอกเบี้ยและเงินที่ต้องเตรียมเพิ่ม'));assert.ok(html().includes('S รวม 7,900 บาท ไม่มีดอกเพิ่ม'));
+ get('#debt-creditor').value='LINE';get('#debt-payment-amount').value='100';get('#debt-payment-interest').value='20';
+ listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});
+ const entries=JSON.parse(memory.get('debtPayments_20261025_v1'));assert.equal(entries.at(-1).amountCents,8000);assert.equal(entries.at(-1).interestCents,2000);
+ for(const [key,value] of Object.entries({aeonUpper:'22',aeonCard:'16',line:'18',gold:'0.99'}))get('#debt-rate-'+key).value=value;
+ listeners.submit({target:{id:'debt-rate-form'},preventDefault(){}});
+ assert.equal(JSON.parse(memory.get('debtInterestRates_20261025_v1')).line,18);assert.equal(JSON.parse(saved().debt.debtInterestRates_20261025_v1).line,18);assert.ok(html().includes('value="18"'));sameStudy(saved(),before);
+ navigate('#debt');assert.ok(html().includes('ค่าประกัน AEON อีก 1 รอบ'));assert.ok(html().includes('id="debt-payment-fee"'));
+ get('#debt-creditor').value='AEON';get('#debt-payment-amount').value='600';get('#debt-payment-interest').value='0';get('#debt-payment-fee').value='600';
+ listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});
+ assert.equal(JSON.parse(memory.get('debtPayments_20261025_v1')).at(-1).feeCents,60000);assert.ok(!html().includes('ค่าประกัน AEON อีก 1 รอบ'));assert.ok(html().includes('จ่ายค่าประกัน/ค่าธรรมเนียมแล้ว 600 บาท'));sameStudy(saved(),before);
+ get('#debt-payment-fee').value='0';
+ get('#debt-rate-line').value='-1';listeners.submit({target:{id:'debt-rate-form'},preventDefault(){}});assert.equal(get('#debt-rate-error').hidden,false);assert.equal(JSON.parse(memory.get('debtInterestRates_20261025_v1')).line,18);
+});
+
+
+test('reading and registration are separate routes with independent controls and shared saved progress',()=>{
+ const before=saved();navigate('#plan');
+ assert.ok(html().includes('<h1>แผนอ่าน</h1>'));assert.ok(html().includes('id="study-plan-date"'));
+ assert.ok(!html().includes('class="grade-select"'));assert.ok(!html().includes('id="transfer-general"'));
+ assert.ok(html().includes('href="#registration"'));assert.ok(get('#bottom-nav').innerHTML.includes('href="#plan" aria-current="page"'));
+ navigate('#registration');assert.ok(html().includes('<h1>แผนลงทะเบียน</h1>'));
+ assert.ok(!html().includes('id="study-plan-date"'));assert.ok(!html().includes('id="hours-weekday"'));
+ assert.equal((html().match(/class="grade-select"/g)||[]).length,7);
+ assert.ok(get('#navigation').innerHTML.includes('href="#registration" aria-current="page"'));
+ click('registration-term',{term:'1'});assert.ok(html().includes('aria-label="ย้าย POL2300"'));
+ listeners.change({target:{classList:{contains:c=>c==='move-select'},dataset:{course:'POL2300'},value:'2'}});
+ assert.equal(saved().termMoves.POL2300,2);assert.ok(!html().includes('aria-label="ย้าย POL2300"'));
+ click('registration-term',{term:'2'});assert.ok(html().includes('aria-label="ย้าย POL2300"'));
+ listeners.change({target:{classList:{contains:c=>c==='move-select'},dataset:{course:'POL2300'},value:'1'}});
+ click('registration-term',{term:'0'});
+ listeners.change({target:{classList:{contains:c=>c==='grade-select'},dataset:{course:'POL1101'},value:'A'}});
+ navigate('#plan');assert.deepEqual(saved().planDone,before.planDone);assert.deepEqual(saved().hourOverrides,before.hourOverrides);
+ navigate('#registration');assert.ok(html().includes('<option selected>A</option>'));
+ listeners.change({target:{classList:{contains:c=>c==='grade-select'},dataset:{course:'POL1101'},value:''}});
+ click('registration-term',{term:'99'});assert.equal((html().match(/class="grade-select"/g)||[]).length,7);
 });
