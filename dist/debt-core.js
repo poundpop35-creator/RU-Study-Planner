@@ -6,20 +6,21 @@ export const creditors=[
  {key:'LINE',name:'LINE',balance:26000},
  {key:'ทอง',name:'ทอง',balance:46000},
  {key:'S',name:'S',balance:7900},
+ {key:'TT',name:'TT',balance:7300},
 ];
 export const gInstallments=[8560,5993,4510,4510,4510];
 const monthNames=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 export const monthlyMinimum=1000;
-const priority=['AEON','LINE','ทอง','S'];
 const round=n=>Math.round(n*100)/100;
 // AEON's photographed bill: 378 + 827 = 1,205; reserve 2,000 to keep non-final targets in thousands.
-export const minimumTargets={AEON:2000,LINE:1000,'ทอง':1000,S:1000};
+// S and TT get no monthly minimum: the user pays them last, after every other debt is cleared (27 ต.ค. 2569).
+export const minimumTargets={AEON:2000,LINE:1000,'ทอง':1000};
 // Reserve every active creditor's minimum before accelerating debts in priority order.
 // Principal only: the user funds interest separately from this monthly budget.
 export function buildPlan(monthlyBudget=budget){
- if(!Number.isSafeInteger(monthlyBudget)||monthlyBudget<Math.max(...gInstallments)+Object.values(minimumTargets).reduce((a,b)=>a+b,0))throw new Error('งบต้องพอจ่ายงวด G และขั้นต่ำทุกบัญชี รวมอย่างน้อย 13,560 บาท');
- const remaining={G:28083,aeonUpper:15115.44,aeonCard:10325.11,LINE:26000,'ทอง':46000,S:7900},rows=[];
- const accountPriority=['aeonUpper','aeonCard','LINE','ทอง','S'];
+ if(!Number.isSafeInteger(monthlyBudget)||monthlyBudget<Math.max(...gInstallments)+Object.values(minimumTargets).reduce((a,b)=>a+b,0))throw new Error('งบต้องพอจ่ายงวด G และขั้นต่ำของ AEON, LINE และทอง รวมอย่างน้อย 12,560 บาท');
+ const remaining={G:28083,aeonUpper:15115.44,aeonCard:10325.11,LINE:26000,'ทอง':46000,S:7900,TT:7300},rows=[];
+ const minimumAccounts=['aeonUpper','aeonCard','LINE','ทอง'],accountPriority=[...minimumAccounts,'S','TT'];
  for(let i=0;Object.values(remaining).some(v=>v>0);i++){
   if(i>=120)throw new Error('แผนยาวเกินช่วงที่รองรับ');
   const date=new Date(Date.UTC(2026,9+i,1));
@@ -27,7 +28,7 @@ export function buildPlan(monthlyBudget=budget){
   const amounts=Object.fromEntries(Object.keys(remaining).map(k=>[k,0]));
   let available=monthlyBudget;
   amounts.G=gInstallments[i]||0;remaining.G-=amounts.G;available-=amounts.G;
-  for(const key of accountPriority){
+  for(const key of minimumAccounts){
    amounts[key]=Math.min(monthlyMinimum,remaining[key]);
    remaining[key]=round(remaining[key]-amounts[key]);available=round(available-amounts[key]);
   }
@@ -35,8 +36,8 @@ export function buildPlan(monthlyBudget=budget){
    const extra=remaining[key]<=available?remaining[key]:Math.floor(available/1000)*1000;
    amounts[key]=round(amounts[key]+extra);remaining[key]=round(remaining[key]-extra);available=round(available-extra);
   }
-  const payments={G:amounts.G,AEON:round(amounts.aeonUpper+amounts.aeonCard),LINE:amounts.LINE,'ทอง':amounts['ทอง'],S:amounts.S};
-  rows.push({month,payments,aeonAllocation:{aeonUpper:amounts.aeonUpper,aeonCard:amounts.aeonCard},total:round(monthlyBudget-available),unused:available,remaining:{G:remaining.G,AEON:round(remaining.aeonUpper+remaining.aeonCard),LINE:remaining.LINE,'ทอง':remaining['ทอง'],S:remaining.S}});
+  const payments={G:amounts.G,AEON:round(amounts.aeonUpper+amounts.aeonCard),LINE:amounts.LINE,'ทอง':amounts['ทอง'],S:amounts.S,TT:amounts.TT};
+  rows.push({month,payments,aeonAllocation:{aeonUpper:amounts.aeonUpper,aeonCard:amounts.aeonCard},total:round(monthlyBudget-available),unused:available,remaining:{G:remaining.G,AEON:round(remaining.aeonUpper+remaining.aeonCard),LINE:remaining.LINE,'ทอง':remaining['ทอง'],S:remaining.S,TT:remaining.TT}});
  }
  return rows;
 }
@@ -49,7 +50,7 @@ export const legacyData=Object.fromEntries([
  [8560,6000,0,0,0],[5993,9000,0,0,0],[4510,10000,0,0,0],
  [4510,0,10000,0,0],[4510,0,10000,0,0],[0,0,6000,9000,0],
  [0,0,0,15000,0],[0,0,0,15000,0],[0,0,0,7000,7900]
-].map((amounts,i)=>[months[i],Object.fromEntries(creditors.map((c,j)=>[c.key,amounts[j]]))]));
+].map((amounts,i)=>[months[i],Object.fromEntries(creditors.map((c,j)=>[c.key,amounts[j]??0]))]));
 // Keep incorrect original flags intact; this key belongs only to the previous corrected plan.
 export const STORE='debtPlanPaid_20261025_budget15000_v2';
 export function readPaid(storage){
@@ -62,7 +63,7 @@ export function readPaid(storage){
 export const monthTotal=m=>creditors.reduce((sum,c)=>sum+data[m][c.key],0);
 export function summary(paid){
  const total=round(Object.values(legacyData).reduce((sum,row)=>sum+Object.values(row).reduce((a,b)=>a+b,0),0));
- const paidTotal=months.reduce((sum,m)=>sum+(paid[m]?Object.values(legacyData[m]).reduce((a,b)=>a+b,0):0),0);
+ const paidTotal=months.reduce((sum,m)=>sum+(paid[m]&&legacyData[m]?Object.values(legacyData[m]).reduce((a,b)=>a+b,0):0),0);
  return {total,paid:paidTotal,left:round(total-paidTotal),count:months.filter(m=>paid[m]).length,percent:Math.round(paidTotal/total*100),next:months.find(m=>!paid[m])};
 }
 export function setMonth(storage,month){

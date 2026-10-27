@@ -1,10 +1,10 @@
-import {interestPanel} from './debt-interest-view.js?v=20261026b';
-import {readRates,interestPlan} from './debt-interest.js?v=20261026b';
-import {readPayments,paymentSummary,addPayment,removePayment} from './debt-payments.js?v=20261026b';
-import {months,creditors,data,budget,plan,monthTotal,extraCharges} from './debt-core.js?v=20261026b';
+import {interestPanel} from './debt-interest-view.js?v=20261027a';
+import {readRates,interestPlan} from './debt-interest.js?v=20261027a';
+import {readPayments,paymentSummary,addPayment,removePayment} from './debt-payments.js?v=20261027a';
+import {months,creditors,data,budget,plan,monthTotal,extraCharges} from './debt-core.js?v=20261027a';
 const fmt=n=>n.toLocaleString('en-US',{maximumFractionDigits:2});
 const round=n=>Math.round(n*100)/100;
-const colors={G:'#be185d',AEON:'#6d28d9',LINE:'#0369a1','ทอง':'#b45309',S:'#047857'};
+const colors={G:'#be185d',AEON:'#6d28d9',LINE:'#0369a1','ทอง':'#b45309',S:'#047857',TT:'#4d7c0f'};
 const when=at=>at?new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(at)):'จากสถานะจ่ายครบที่เคยบันทึก';
 const lastMonth=key=>months.filter(m=>data[m][key]>0).at(-1);
 const openCharges=s=>extraCharges.filter(x=>!(s.feeByCreditor[x.creditor]>0));
@@ -28,11 +28,12 @@ export function debtPage(storage){
  ${interestPanel(storage,error?extraCharges:openCharges(s))}
  <details class="debt-more"><summary>วิธีคิดของแผนนี้</summary><ul>
   <li>งบ ${fmt(budget)} บาท/เดือน ใช้<b>ลดเงินต้น</b>ทุกเจ้า และจ่าย<b>งวด G</b> (งวด G รวมดอกแล้ว)</li>
-  <li>ทุกเดือนกันขั้นต่ำให้ทุกเจ้าที่ยังมีหนี้: AEON 2 บัญชี บัญชีละ 1,000 บาท · LINE, ทอง, S เจ้าละ 1,000 บาท (ถ้าเหลือน้อยกว่านั้นก็จ่ายปิดตามยอดจริง)</li>
-  <li>เงินที่เหลือเอาไปเร่งปิดตามลำดับ: AEON รายการบน → AEON เครดิต → LINE → ทอง → S</li>
+  <li>ทุกเดือนกันขั้นต่ำให้เจ้าที่มีดอกเบี้ย: AEON 2 บัญชี บัญชีละ 1,000 บาท · LINE และทอง เจ้าละ 1,000 บาท (ถ้าเหลือน้อยกว่านั้นก็จ่ายปิดตามยอดจริง)</li>
+  <li>เงินที่เหลือเอาไปเร่งปิดตามลำดับ: AEON รายการบน → AEON เครดิต → LINE → ทอง</li>
+  <li><b>S (7,900) และ TT (7,300) ไม่ต้องจ่ายทุกเดือน</b> จ่ายหลังเจ้าอื่นหมดแล้ว: S ${months.find(m=>data[m].S>0)} · TT ${months.find(m=>data[m].TT>0)} (สองเจ้ารวม 15,200 บาท เกินงบเดือนเดียว จึงแบ่งเป็น 2 เดือน)</li>
   ${extraCharges.map(x=>`<li><b>${x.name}</b>: ${s.feeByCreditor[x.creditor]>0?`จ่ายแล้ว ${fmt(s.feeByCreditor[x.creditor])} บาท ✓`:`${x.note}`} — ไม่ลดยอดหนี้ เตรียมเงินแยกเหมือนดอกเบี้ย และบันทึกในช่องค่าประกันเมื่อจ่าย</li>`).join('')}
   <li><b>ดอกเบี้ยของ AEON, LINE และทอง ต้องเตรียมเงินแยกต่างหาก</b> นอกงบ ${fmt(budget)} บาท (ดูหัวข้อดอกเบี้ย)</li>
-  <li>8 เดือนจ่ายได้ 120,000 บาท ยังไม่พอ จึงใช้ ${months.length} เดือน งวดสุดท้าย ${months.at(-1)} ใช้ ${fmt(plan.at(-1).total)} บาท เหลืองบ ${fmt(plan.at(-1).unused)} บาท</li>
+  <li>หนี้รวม ${fmt(creditors.reduce((n,c)=>n+c.balance,0))} บาท เกิน 9 เดือน × 15,000 จึงใช้ ${months.length} เดือน งวดสุดท้าย ${months.at(-1)} ใช้ ${fmt(plan.at(-1).total)} บาท เหลืองบ ${fmt(plan.at(-1).unused)} บาท</li>
   <li>แผนจบตามนี้ถ้าจ่ายดอกครบทุกงวดและไม่ก่อหนี้ใหม่ · จ่ายทีละน้อยได้ ระบบรวมยอดให้เอง</li>
  </ul></details>
  </div>`;

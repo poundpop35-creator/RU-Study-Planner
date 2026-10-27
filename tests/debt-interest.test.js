@@ -8,7 +8,7 @@ test('30-day interest is calculated separately for both AEON accounts, LINE and 
  assert.equal(rows[0].interestTotal,1555.62);assert.equal(rows[0].cashTotal,16115.62);
  for(const r of rows){assert.equal(Math.round(r.cashTotal*100),Math.round(r.baseTotal*100)+Math.round(r.interestTotal*100));assert.ok(!('G' in r.interest));assert.ok(!('S' in r.interest));}
  assert.equal(rows[4].interest.aeonUpper,0);assert.equal(rows[5].interest.aeonCard,0);assert.equal(rows[7].interest.line,0);
- assert.equal(rows.at(-1).interest.gold,187.5);
+ assert.equal(rows.at(-2).interest.gold,87.5);assert.equal(rows.at(-1).interestTotal,0,'the last month pays only TT, which has no interest');
 });
 test('AEON subaccounts receive minimums every active month with remainders only at closure',()=>{
  const left={aeonUpper:1511544,aeonCard:1032511};

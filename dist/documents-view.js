@@ -1,5 +1,5 @@
-import {universityDocuments} from './documents.js?v=20261026b';
-import {escapeHTML as e} from './core.js?v=20261026b';
+import {universityDocuments} from './documents.js?v=20261027a';
+import {escapeHTML as e} from './core.js?v=20261027a';
 export function documentsPage(id=''){
  const doc=universityDocuments.find(d=>d.id===id);
  return `<div class="page-heading"><div><div class="eyebrow">UNIVERSITY DOCUMENTS</div><h1>เอกสารมหาวิทยาลัย</h1><p>ไฟล์ที่เคยส่งและลิงก์ต้นฉบับ · ตรวจประกาศแก้ไขเพิ่มเติมก่อนลงทะเบียนและสอบ</p></div><a class="button secondary" href="#exams">รายวิชาและวันสอบ</a></div>

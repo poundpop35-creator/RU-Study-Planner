@@ -159,17 +159,17 @@ const sameStudy=(a,b)=>{const {debt:_a,...x}=a,{debt:_b,...y}=b;assert.deepEqual
 test('debt partial payments sync with the study space without changing study data, and mistakes can be removed',()=>{
  navigate('#home');assert.ok(html().includes('href="#debt"'));
  const before=saved();navigate('#debt');
- assert.ok(html().includes('บัญชีละ 1,000 บาท'));assert.ok(!html().includes('S เริ่มเมื่อรายการอื่นหมด'));assert.ok(html().includes('<h1>แผนจัดการหนี้</h1>'));assert.ok(html().includes('133,423.55'));
+ assert.ok(html().includes('บัญชีละ 1,000 บาท'));assert.ok(!html().includes('S เริ่มเมื่อรายการอื่นหมด'));assert.ok(html().includes('<h1>แผนจัดการหนี้</h1>'));assert.ok(html().includes('140,723.55'));
  assert.ok(!html().includes('data-action="debt-toggle"'));assert.ok(html().includes('id="debt-payment-form"'));
  assert.ok(get('#navigation').innerHTML.includes('href="#debt" aria-current="page"'));
  assert.equal(get('#cloud-status-bar').hidden,false);
  const submit=amount=>{get('#debt-creditor').value='AEON';get('#debt-payment-amount').value=amount;listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});};
- submit('5');submit('1000');assert.ok(html().includes('132,418.55'));assert.ok(html().includes('1,995'));
+ submit('5');submit('1000');assert.ok(html().includes('139,718.55'));assert.ok(html().includes('2,995'));
  const entries=JSON.parse(memory.get('debtPayments_20261025_v1'));assert.equal(entries.length,2);assert.equal(saved().debt.debtPayments_20261025_v1,memory.get('debtPayments_20261025_v1'));sameStudy(saved(),before);
  submit('50000');assert.equal(get('#debt-payment-error').hidden,false);assert.equal(get('#debt-payment-amount').value,'50000');
  assert.equal(JSON.parse(memory.get('debtPayments_20261025_v1')).length,2);
- navigate('#home');assert.equal(get('#cloud-status-bar').hidden,false);navigate('#debt');assert.ok(html().includes('132,418.55'));
- click('debt-remove',{id:entries[0].id});assert.ok(html().includes('132,423.55'));sameStudy(saved(),before);
+ navigate('#home');assert.equal(get('#cloud-status-bar').hidden,false);navigate('#debt');assert.ok(html().includes('139,718.55'));
+ click('debt-remove',{id:entries[0].id});assert.ok(html().includes('139,723.55'));sameStudy(saved(),before);
 });
 
 test('debt interest payment and editable forecast rates sync without touching study data',()=>{
