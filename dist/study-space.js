@@ -1,8 +1,8 @@
-import {createPersonalClient} from './personal-client.js?v=20261027b';
-import {supabaseConfig as config} from './supabase-config.js?v=20261027b';
-import {freshState,validateState} from './core.js?v=20261027b';
-import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261027b';
-import {getImage,putImage,newImageId} from './image-store.js?v=20261027b';
+import {createPersonalClient} from './personal-client.js?v=20261027c';
+import {supabaseConfig as config} from './supabase-config.js?v=20261027c';
+import {freshState,validateState} from './core.js?v=20261027c';
+import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261027c';
+import {getImage,putImage,newImageId} from './image-store.js?v=20261027c';
 export const workspaceKey=id=>'ru-study-workspace.v1:'+id;
 const scriptLoads=new Map();
 export function loadScript(src){if(!scriptLoads.has(src))scriptLoads.set(src,new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>{scriptLoads.delete(src);reject(Error('โหลดเครื่องมือไม่สำเร็จ กรุณาลองอีกครั้ง'));};document.head.append(s);}));return scriptLoads.get(src);}

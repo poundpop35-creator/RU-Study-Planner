@@ -1,5 +1,5 @@
-import {courses} from './data.js?v=20261027b';
-import {escapeHTML as e} from './core.js?v=20261027b';
+import {courses} from './data.js?v=20261027c';
+import {escapeHTML as e} from './core.js?v=20261027c';
 
 // One row of tabs links pages that belong together; the open page's tab is marked.
 export function hubTabs(tabs,active,label){

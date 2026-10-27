@@ -1,7 +1,7 @@
-import {interestPanel} from './debt-interest-view.js?v=20261027b';
-import {readRates,interestPlan} from './debt-interest.js?v=20261027b';
-import {readPayments,paymentSummary,addPayment,removePayment} from './debt-payments.js?v=20261027b';
-import {months,creditors,data,budget,plan,monthTotal,extraCharges} from './debt-core.js?v=20261027b';
+import {interestPanel} from './debt-interest-view.js?v=20261027c';
+import {readRates,interestPlan} from './debt-interest.js?v=20261027c';
+import {readPayments,paymentSummary,addPayment,removePayment} from './debt-payments.js?v=20261027c';
+import {months,creditors,data,budget,plan,monthTotal,extraCharges} from './debt-core.js?v=20261027c';
 const fmt=n=>n.toLocaleString('en-US',{maximumFractionDigits:2});
 const round=n=>Math.round(n*100)/100;
 const colors={G:'#be185d',AEON:'#6d28d9',LINE:'#0369a1','ทอง':'#b45309',S:'#047857',TT:'#4d7c0f'};

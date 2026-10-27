@@ -232,4 +232,10 @@ test('reading and registration are separate routes with independent controls and
  navigate('#registration');assert.ok(html().includes('<option selected>A</option>'));
  listeners.change({target:{classList:{contains:c=>c==='grade-select'},dataset:{course:'POL1101'},value:''}});
  click('registration-term',{term:'99'});assert.equal((html().match(/class="grade-select"/g)||[]).length,7);
+ listeners.input({target:{id:'registration-search',value:'pol 3382'}});
+ const found=get('#registration-search-results').innerHTML;assert.ok(found.includes('data-action="registration-find" data-term="4" data-course="POL3382"'));assert.ok(found.includes('ฤดูร้อน/2570'));
+ listeners.input({target:{id:'registration-search',value:'zzz'}});assert.ok(get('#registration-search-results').innerHTML.includes('ไม่พบ'));
+ listeners.input({target:{id:'registration-search',value:'3382'}});click('registration-find',{term:'4',course:'POL3382'});
+ assert.ok(html().includes('<tr id="reg-row-POL3382" class="reg-hit">'));assert.ok(html().includes('value="3382"'));
+ listeners.input({target:{id:'registration-search',value:''}});click('registration-term',{term:'0'});
 });

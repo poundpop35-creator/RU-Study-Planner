@@ -1,9 +1,9 @@
 // Game layer: XP, levels and badges are derived from saved progress only, so every device shows the same numbers
 // and no new fields enter the Supabase workspace.
-import {courses} from './data.js?v=20261027b';
-import {lessons} from './lessons.js?v=20261027b';
-import {prep} from './prep.js?v=20261027b';
-import {activeDays,addDays,today,weekdayIndex,courseProgress} from './core.js?v=20261027b';
+import {courses} from './data.js?v=20261027c';
+import {lessons} from './lessons.js?v=20261027c';
+import {prep} from './prep.js?v=20261027c';
+import {activeDays,addDays,today,weekdayIndex,courseProgress} from './core.js?v=20261027c';
 
 export const XP=Object.freeze({lesson:50,question:10,repeat:2,card:5,block:10});
 export const XP_SOURCES=[['lessons','📖','อ่านจบบทเรียน',`บทละ ${XP.lesson} XP`],['questions','🎯','ตอบโจทย์ถูกครั้งแรก',`ข้อละ ${XP.question} XP · คำถามท้ายบท แนวข้อสอบ และฝึกสอบ`],['repeats','🔁','ตอบถูกซ้ำตอนวนทบทวน',`ครั้งละ ${XP.repeat} XP`],['cards','🃏','ทบทวนแฟลชการ์ดใบใหม่',`ใบละ ${XP.card} XP`],['blocks','✅','ทำภารกิจในแผนรายวัน',`ช่วงละ ${XP.block} XP`]];
