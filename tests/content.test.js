@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {catalog} from '../dist/content.js';
+import {catalog,BUNDLED_UPDATED} from '../dist/content.js';
 import {validateCatalog,loadContent,contentCacheKey} from '../dist/content-client.js';
 const config={url:'https://test-project.supabase.co',publishableKey:'sb_publishable_TEST_PUBLIC_KEY'};
 const clone=()=>structuredClone(catalog), memory=()=>{const m=new Map();return {getItem:k=>m.get(k),setItem:(k,v)=>m.set(k,v),m};};
@@ -23,4 +23,14 @@ test('unsafe links, class times, keys and payloads fail closed to validated cont
  const unsafe=clone();unsafe.prep.POL1101.links[0][1]='javascript:alert(1)';assert.throws(()=>validateCatalog(unsafe));
  const wrong=clone();wrong.schedules[0].startTime='99:00';assert.throws(()=>validateCatalog(wrong));
  let calls=0;const result=await loadContent({config:{...config,publishableKey:'sb_secret_NEVER_PUBLISH'},fallback:async()=>clone(),fetcher:async()=>{calls++;}});assert.equal(calls,0);assert.equal(result.source,'snapshot');assert.ok(result.warning);
+});
+test('a newer snapshot shipped with the app wins over an older database copy, never the other way',async()=>{
+ assert.equal(BUNDLED_UPDATED,catalog.updated,'BUNDLED_UPDATED must match content.snapshot.json');
+ const old=clone();old.updated='2026-10-01';old.lessons[0].title='ฉบับเก่าในฐานข้อมูล';const fresh=clone();fresh.updated='2026-10-19';
+ const newer=await loadContent({config,storage:memory(),bundledUpdated:'2026-10-19',fallback:async()=>fresh,fetcher:async()=>({ok:true,json:async()=>old})});
+ assert.equal(newer.source,'bundled');assert.equal(newer.catalog.updated,'2026-10-19');assert.equal(newer.warning,null);
+ const same=await loadContent({config,storage:memory(),bundledUpdated:'2026-10-01',fallback:async()=>{throw Error('unused');},fetcher:async()=>({ok:true,json:async()=>old})});
+ assert.equal(same.source,'supabase');assert.equal(same.catalog.lessons[0].title,'ฉบับเก่าในฐานข้อมูล');
+ const unreadable=await loadContent({config,storage:memory(),bundledUpdated:'2026-10-19',fallback:async()=>{throw Error('offline');},fetcher:async()=>({ok:true,json:async()=>old})});
+ assert.equal(unreadable.source,'supabase');
 });

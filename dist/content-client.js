@@ -29,7 +29,9 @@ export function validateCatalog(c) {
  return c;
 }
 export function contentCacheKey(config) { return 'ru-study-catalog.v1:'+(config.url||'snapshot'); }
-export async function loadContent({config,fetcher=fetch,storage,fallback,timeout=8000}) {
+// bundledUpdated is the `updated` date of the snapshot shipped with this app release. A release can carry
+// corrected content before anyone re-seeds the database, so a strictly newer bundled copy wins over Supabase.
+export async function loadContent({config,fetcher=fetch,storage,fallback,timeout=8000,bundledUpdated=''}) {
  let failure=null;
  if (config.url && config.publishableKey) {
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
@@ -41,6 +43,9 @@ export async function loadContent({config,fetcher=fetch,storage,fallback,timeout
    if(!response.ok)throw new Error('อ่านฐานข้อมูลไม่สำเร็จ');
    const catalog=validateCatalog(await response.json());
    try { storage?.setItem(contentCacheKey(config),JSON.stringify(catalog)); } catch { /* Reading still works when cache is full. */ }
+   if (bundledUpdated && catalog.updated < bundledUpdated) {
+    try { const local=validateCatalog(await fallback()); if (local.updated > catalog.updated) return {catalog:local,source:'bundled',warning:null}; } catch { /* Keep the database copy if the bundled one cannot be read. */ }
+   }
    return {catalog,source:'supabase',warning:null};
   } catch { failure='เชื่อมต่อข้อมูลล่าสุดไม่ได้ กำลังใช้สำเนาเดิม ตรวจประกาศมหาวิทยาลัยก่อนเดินทางหรือสอบ'; }
   finally { clearTimeout(timer); }

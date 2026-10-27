@@ -7,8 +7,10 @@ async function localSnapshot(){
  }
  const response=await fetch(snapshotURL);if(!response.ok)throw new Error('โหลดเนื้อหาไม่สำเร็จ');return response.json();
 }
+// Must equal `updated` in content.snapshot.json (a test checks this).
+export const BUNDLED_UPDATED='2026-10-18';
 let storage;try{storage=globalThis.localStorage;}catch{/* Private browsing can deny storage. */}
 export const contentStatus=typeof process!=='undefined'&&process.versions?.node
  ? {catalog:validateCatalog(await localSnapshot()),source:'snapshot',warning:null}
- : await loadContent({config:supabaseConfig,storage,fallback:localSnapshot});
+ : await loadContent({config:supabaseConfig,storage,fallback:localSnapshot,bundledUpdated:BUNDLED_UPDATED});
 export const catalog=contentStatus.catalog;
