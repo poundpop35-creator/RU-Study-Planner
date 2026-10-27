@@ -1,5 +1,5 @@
-import {courses} from './data.js?v=20261027a';
-import {escapeHTML as e,thaiDate} from './core.js?v=20261027a';
+import {courses} from './data.js?v=20261027b';
+import {escapeHTML as e,thaiDate} from './core.js?v=20261027b';
 export const examEvidence={
  POL1101:{format:'ปรนัย',period:'S/2565, 1/2565 และภาคก่อนหน้า',detail:'หน้าแนะนำชุดเฉลยระบุปรนัย 100 ข้อ; เป็นข้อมูลย้อนหลังของร้านชีท',url:'https://sheetram.com/product.jsp/view/205/pol1101-ps110-เฉลยการเมืองและการปกครองของไทย/',publisher:'Sheetram · ชุดเฉลยย้อนหลัง'},
  POL2104:{format:'ปรนัย',period:'S/2566',detail:'หน้าเผยแพร่ข้อสอบย้อนหลังแสดงคำสั่งเลือกคำตอบเดียวและตัวเลือก 1–5; ไม่ใช่ประกาศมหาวิทยาลัย',url:'https://mjsheetramfree.com/pol2104-s-2566/',publisher:'เอ็มเจชีทรามฟรี · ข้อสอบย้อนหลัง'},

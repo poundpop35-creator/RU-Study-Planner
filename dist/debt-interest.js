@@ -1,4 +1,4 @@
-import {plan} from './debt-core.js?v=20261027a';
+import {plan} from './debt-core.js?v=20261027b';
 export const RATE_STORE='debtInterestRates_20261025_v1';
 export const rateFields=[
  {key:'aeonUpper',name:'AEON รายการบน (ยังไม่ทราบประเภท)',value:25,unit:'% ต่อปี',max:100},

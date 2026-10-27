@@ -1,5 +1,5 @@
-import {lessons} from './lessons.js?v=20261027a';
-import {prep} from './prep.js?v=20261027a';
+import {lessons} from './lessons.js?v=20261027b';
+import {prep} from './prep.js?v=20261027b';
 
 // Stable source + original index: existing answers keep their original meaning.
 export const questionBank = [

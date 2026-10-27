@@ -1,7 +1,7 @@
-import {courses,sources} from './data.js?v=20261027a';
-import {lessons} from './lessons.js?v=20261027a';
-import {prep} from './prep.js?v=20261027a';
-import {escapeHTML as e,courseProgress} from './core.js?v=20261027a';
+import {courses,sources} from './data.js?v=20261027b';
+import {lessons} from './lessons.js?v=20261027b';
+import {prep} from './prep.js?v=20261027b';
+import {escapeHTML as e,courseProgress} from './core.js?v=20261027b';
 const counts={lessons:lessons.length,part2:lessons.filter(l=>l.part===2).length,questions:lessons.reduce((n,l)=>n+l.questions.length,0),prep:Object.values(prep).reduce((n,g)=>n+g.questions.length,0)};
 const source=id=>sources.find(s=>s.id===id)?.url;
 export function courseResources(code){
