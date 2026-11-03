@@ -1,0 +1,275 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//RU Study Planner//Class and Exam Calendar//TH
+CALSCALE:GREGORIAN
+X-WR-CALNAME:RU Study Planner · 2/2569
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-11-19@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261119T103000Z
+DTEND:20261119T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-11-26@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261126T103000Z
+DTEND:20261126T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-12-03@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261203T103000Z
+DTEND:20261203T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-12-10@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261210T103000Z
+DTEND:20261210T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-12-17@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261217T103000Z
+DTEND:20261217T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-12-24@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261224T103000Z
+DTEND:20261224T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-12-31@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261231T103000Z
+DTEND:20261231T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-01-07@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270107T103000Z
+DTEND:20270107T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-01-14@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270114T103000Z
+DTEND:20270114T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-01-21@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270121T103000Z
+DTEND:20270121T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม\nช่วงส
+ อบซ่อม 1/2569 — ตรวจประกาศการบ
+ รรยาย
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-01-28@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270128T103000Z
+DTEND:20270128T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-02-04@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270204T103000Z
+DTEND:20270204T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-02-11@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270211T103000Z
+DTEND:20270211T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-02-18@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270218T103000Z
+DTEND:20270218T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-02-25@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270225T103000Z
+DTEND:20270225T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-03-04@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270304T103000Z
+DTEND:20270304T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20270322
+DTEND;VALUE=DATE:20270323
+SUMMARY:สอบ POL2107 · คาบ B
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nคาบ B ยังไม่ระบุชั่
+ วโมงและห้องสอบ ตรวจตารางส
+ อบรายบุคคล
+END:VEVENT
+END:VCALENDAR

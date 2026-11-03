@@ -1,0 +1,83 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//RU Study Planner//Class and Exam Calendar//TH
+CALSCALE:GREGORIAN
+X-WR-CALNAME:RU Study Planner · 2/2569
+BEGIN:VEVENT
+UID:POL2104-269@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20270310
+DTEND;VALUE=DATE:20270311
+SUMMARY:สอบ POL2104 · คาบ A
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nคาบ A ยังไม่ระบุช
+ ั่วโมงและห้องสอบ ตรวจตารา
+ งสอบรายบุคคล
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20270312
+DTEND;VALUE=DATE:20270313
+SUMMARY:สอบ POL1101 · คาบ B
+DESCRIPTION:การเมืองการปกครองไทย\n
+ คาบ B ยังไม่ระบุชั่วโมงและ
+ ห้องสอบ ตรวจตารางสอบรายบุ
+ คคล
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20270313
+DTEND;VALUE=DATE:20270314
+SUMMARY:สอบ POL2200 · คาบ B
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nคาบ B ยังไม่ร
+ ะบุชั่วโมงและห้องสอบ ตรวจ
+ ตารางสอบรายบุคคล
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20270315
+DTEND;VALUE=DATE:20270316
+SUMMARY:สอบ POL2303 · คาบ B
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nคาบ B ยังไม่ระบุ
+ ชั่วโมงและห้องสอบ ตรวจตาร
+ างสอบรายบุคคล
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20270319
+DTEND;VALUE=DATE:20270320
+SUMMARY:สอบ POL2106 · คาบ A
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nคาบ A ยังไม่ระบุชั่วโมงแ
+ ละห้องสอบ ตรวจตารางสอบราย
+ บุคคล
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20270321
+DTEND;VALUE=DATE:20270322
+SUMMARY:สอบ POL2301 · คาบ B
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nคาบ B ยังไม่ระบุชั่ว
+ โมงและห้องสอบ ตรวจตารางสอ
+ บรายบุคคล
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20270322
+DTEND;VALUE=DATE:20270323
+SUMMARY:สอบ POL2107 · คาบ B
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nคาบ B ยังไม่ระบุชั่
+ วโมงและห้องสอบ ตรวจตารางส
+ อบรายบุคคล
+END:VEVENT
+END:VCALENDAR
