@@ -1,0 +1,279 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//RU Study Planner//Class and Exam Calendar//TH
+CALSCALE:GREGORIAN
+X-WR-CALNAME:RU Study Planner · 2/2569
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-11-20@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261120T063000Z
+DTEND:20261120T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-11-27@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261127T063000Z
+DTEND:20261127T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-12-04@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261204T063000Z
+DTEND:20261204T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-12-11@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261211T063000Z
+DTEND:20261211T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-12-18@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261218T063000Z
+DTEND:20261218T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-12-25@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261225T063000Z
+DTEND:20261225T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-01-01@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270101T063000Z
+DTEND:20270101T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-01-08@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270108T063000Z
+DTEND:20270108T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-01-15@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270115T063000Z
+DTEND:20270115T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-01-22@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270122T063000Z
+DTEND:20270122T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม\nช่วงสอบซ่อม 1/2569 — ตรวจประก
+ าศการบรรยาย
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-01-29@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270129T063000Z
+DTEND:20270129T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-02-05@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270205T063000Z
+DTEND:20270205T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-02-12@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270212T063000Z
+DTEND:20270212T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-02-19@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270219T063000Z
+DTEND:20270219T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-02-26@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270226T063000Z
+DTEND:20270226T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-03-05@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270305T063000Z
+DTEND:20270305T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+END:VCALENDAR

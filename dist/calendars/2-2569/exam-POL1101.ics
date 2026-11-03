@@ -1,0 +1,17 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//RU Study Planner//Class and Exam Calendar//TH
+CALSCALE:GREGORIAN
+X-WR-CALNAME:RU Study Planner · 2/2569
+BEGIN:VEVENT
+UID:POL1101-269@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20270312
+DTEND;VALUE=DATE:20270313
+SUMMARY:สอบ POL1101 · คาบ B
+DESCRIPTION:การเมืองการปกครองไทย\n
+ คาบ B ยังไม่ระบุชั่วโมงและ
+ ห้องสอบ ตรวจตารางสอบรายบุ
+ คคล
+END:VEVENT
+END:VCALENDAR

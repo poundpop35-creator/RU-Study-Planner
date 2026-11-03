@@ -3,5 +3,20 @@
   "framework": null,
   "buildCommand": "npm run check && npm test",
   "installCommand": "echo 'Using committed and version-pinned browser assets'",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/calendars/:path*",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/calendar; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
+      ]
+    }
+  ]
 }

@@ -1,0 +1,1817 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//RU Study Planner//Class and Exam Calendar//TH
+CALSCALE:GREGORIAN
+X-WR-CALNAME:RU Study Planner · 2/2569
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2026-11-16@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261116T041000Z
+DTEND:20261116T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2026-11-17@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261117T043000Z
+DTEND:20261117T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2026-11-18@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261118T043000Z
+DTEND:20261118T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2026-11-18@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261118T063000Z
+DTEND:20261118T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2026-11-18@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261118T063000Z
+DTEND:20261118T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-11-19@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261119T103000Z
+DTEND:20261119T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-11-20@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261120T063000Z
+DTEND:20261120T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2026-11-23@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261123T041000Z
+DTEND:20261123T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2026-11-24@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261124T043000Z
+DTEND:20261124T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2026-11-25@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261125T043000Z
+DTEND:20261125T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2026-11-25@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261125T063000Z
+DTEND:20261125T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2026-11-25@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261125T063000Z
+DTEND:20261125T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-11-26@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261126T103000Z
+DTEND:20261126T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-11-27@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261127T063000Z
+DTEND:20261127T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2026-11-30@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261130T041000Z
+DTEND:20261130T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2026-12-01@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261201T043000Z
+DTEND:20261201T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2026-12-02@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261202T043000Z
+DTEND:20261202T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2026-12-02@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261202T063000Z
+DTEND:20261202T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2026-12-02@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261202T063000Z
+DTEND:20261202T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-12-03@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261203T103000Z
+DTEND:20261203T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-12-04@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261204T063000Z
+DTEND:20261204T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2026-12-07@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261207T041000Z
+DTEND:20261207T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2026-12-08@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261208T043000Z
+DTEND:20261208T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2026-12-09@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261209T043000Z
+DTEND:20261209T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2026-12-09@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261209T063000Z
+DTEND:20261209T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2026-12-09@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261209T063000Z
+DTEND:20261209T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-12-10@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261210T103000Z
+DTEND:20261210T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-12-11@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261211T063000Z
+DTEND:20261211T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2026-12-14@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261214T041000Z
+DTEND:20261214T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2026-12-15@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261215T043000Z
+DTEND:20261215T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2026-12-16@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261216T043000Z
+DTEND:20261216T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2026-12-16@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261216T063000Z
+DTEND:20261216T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2026-12-16@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261216T063000Z
+DTEND:20261216T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-12-17@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261217T103000Z
+DTEND:20261217T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-12-18@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261218T063000Z
+DTEND:20261218T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2026-12-21@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261221T041000Z
+DTEND:20261221T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2026-12-22@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261222T043000Z
+DTEND:20261222T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2026-12-23@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261223T043000Z
+DTEND:20261223T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2026-12-23@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261223T063000Z
+DTEND:20261223T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2026-12-23@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261223T063000Z
+DTEND:20261223T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-12-24@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261224T103000Z
+DTEND:20261224T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2026-12-25@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261225T063000Z
+DTEND:20261225T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2026-12-28@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261228T041000Z
+DTEND:20261228T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2026-12-29@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261229T043000Z
+DTEND:20261229T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2026-12-30@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261230T043000Z
+DTEND:20261230T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2026-12-30@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261230T063000Z
+DTEND:20261230T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2026-12-30@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261230T063000Z
+DTEND:20261230T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2026-12-31@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20261231T103000Z
+DTEND:20261231T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-01-01@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270101T063000Z
+DTEND:20270101T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2027-01-04@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270104T041000Z
+DTEND:20270104T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2027-01-05@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270105T043000Z
+DTEND:20270105T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2027-01-06@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270106T043000Z
+DTEND:20270106T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2027-01-06@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270106T063000Z
+DTEND:20270106T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2027-01-06@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270106T063000Z
+DTEND:20270106T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-01-07@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270107T103000Z
+DTEND:20270107T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-01-08@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270108T063000Z
+DTEND:20270108T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2027-01-11@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270111T041000Z
+DTEND:20270111T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2027-01-12@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270112T043000Z
+DTEND:20270112T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2027-01-13@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270113T043000Z
+DTEND:20270113T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2027-01-13@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270113T063000Z
+DTEND:20270113T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2027-01-13@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270113T063000Z
+DTEND:20270113T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-01-14@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270114T103000Z
+DTEND:20270114T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-01-15@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270115T063000Z
+DTEND:20270115T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2027-01-18@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270118T041000Z
+DTEND:20270118T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2027-01-19@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270119T043000Z
+DTEND:20270119T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-01-21@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270121T103000Z
+DTEND:20270121T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม\nช่วงส
+ อบซ่อม 1/2569 — ตรวจประกาศการบ
+ รรยาย
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-01-22@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270122T063000Z
+DTEND:20270122T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม\nช่วงสอบซ่อม 1/2569 — ตรวจประก
+ าศการบรรยาย
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2027-01-25@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270125T041000Z
+DTEND:20270125T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม\nช่วงสอบซ่อม 1/256
+ 9 — ตรวจประกาศการบรรยาย
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2027-01-26@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270126T043000Z
+DTEND:20270126T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม\nช่
+ วงสอบซ่อม 1/2569 — ตรวจประกาศก
+ ารบรรยาย
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2027-01-27@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270127T043000Z
+DTEND:20270127T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2027-01-27@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270127T063000Z
+DTEND:20270127T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2027-01-27@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270127T063000Z
+DTEND:20270127T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-01-28@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270128T103000Z
+DTEND:20270128T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-01-29@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270129T063000Z
+DTEND:20270129T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2027-02-01@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270201T041000Z
+DTEND:20270201T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2027-02-02@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270202T043000Z
+DTEND:20270202T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2027-02-03@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270203T043000Z
+DTEND:20270203T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2027-02-03@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270203T063000Z
+DTEND:20270203T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2027-02-03@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270203T063000Z
+DTEND:20270203T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-02-04@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270204T103000Z
+DTEND:20270204T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-02-05@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270205T063000Z
+DTEND:20270205T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2027-02-08@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270208T041000Z
+DTEND:20270208T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2027-02-09@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270209T043000Z
+DTEND:20270209T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2027-02-10@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270210T043000Z
+DTEND:20270210T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2027-02-10@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270210T063000Z
+DTEND:20270210T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2027-02-10@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270210T063000Z
+DTEND:20270210T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-02-11@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270211T103000Z
+DTEND:20270211T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-02-12@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270212T063000Z
+DTEND:20270212T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2027-02-15@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270215T041000Z
+DTEND:20270215T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2027-02-16@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270216T043000Z
+DTEND:20270216T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2027-02-17@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270217T043000Z
+DTEND:20270217T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2027-02-17@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270217T063000Z
+DTEND:20270217T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2027-02-17@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270217T063000Z
+DTEND:20270217T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-02-18@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270218T103000Z
+DTEND:20270218T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-02-19@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270219T063000Z
+DTEND:20270219T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2027-02-22@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270222T041000Z
+DTEND:20270222T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2027-02-23@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270223T043000Z
+DTEND:20270223T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2027-02-24@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270224T043000Z
+DTEND:20270224T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2027-02-24@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270224T063000Z
+DTEND:20270224T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2027-02-24@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270224T063000Z
+DTEND:20270224T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-02-25@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270225T103000Z
+DTEND:20270225T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-02-26@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270226T063000Z
+DTEND:20270226T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL1101-269-lecture-2027-03-01@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270301T041000Z
+DTEND:20270301T064000Z
+STATUS:TENTATIVE
+LOCATION:KTB 401
+SUMMARY:เรียนตาม ม.ร.30 POL1101
+DESCRIPTION:การเมืองการปกครองไทย\n
+ เวลาไทย 11:10–13:40 ห้องเรียน KTB 401\n
+ รายการเรียนเป็นรอบตาม ม.ร.30
+  ไม่ใช่การยืนยันว่าอาจารย
+ ์บรรยายทุกครั้ง วันหยุดแล
+ ะประกาศงดหรือชดเชยต้องตร
+ วจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2303-269-lecture-2027-03-02@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270302T043000Z
+DTEND:20270302T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 201
+SUMMARY:เรียนตาม ม.ร.30 POL2303
+DESCRIPTION:การบริหารทรัพยากรมนุษ
+ ย์ในภาครัฐ\nเวลาไทย 11:30–13:20 ห้
+ องเรียน KLB 201\nรายการเรียนเป็
+ นรอบตาม ม.ร.30 ไม่ใช่การยืนย
+ ันว่าอาจารย์บรรยายทุกครั
+ ้ง วันหยุดและประกาศงดหรือ
+ ชดเชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2301-269-lecture-2027-03-03@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270303T043000Z
+DTEND:20270303T062000Z
+STATUS:TENTATIVE
+LOCATION:KLB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2301
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nเวลาไทย 11:30–13:20 ห้องเร
+ ียน KLB 301\nรายการเรียนเป็นรอบ
+ ตาม ม.ร.30 ไม่ใช่การยืนยันว่
+ าอาจารย์บรรยายทุกครั้ง วั
+ นหยุดและประกาศงดหรือชดเช
+ ยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2104-269-lecture-2027-03-03@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270303T063000Z
+DTEND:20270303T082000Z
+STATUS:TENTATIVE
+LOCATION:KLB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2104
+DESCRIPTION:พรรคการเมืองและกลุ่มผ
+ ลประโยชน์\nเวลาไทย 13:30–15:20 ห้อ
+ งเรียน KLB 501\nรายการเรียนเป็น
+ รอบตาม ม.ร.30 ไม่ใช่การยืนยั
+ นว่าอาจารย์บรรยายทุกครั้
+ ง วันหยุดและประกาศงดหรือช
+ ดเชยต้องตรวจเพิ่มเติม\nเวล
+ าเรียนตรงกับวิชาอื่นที่ล
+ งไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2106-269-lecture-2027-03-03@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270303T063000Z
+DTEND:20270303T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 501
+SUMMARY:เรียนตาม ม.ร.30 POL2106
+DESCRIPTION:ปรัชญาการเมืองเบื้องต
+ ้น\nเวลาไทย 13:30–15:20 ห้องเรียน VP
+ B 501\nรายการเรียนเป็นรอบตาม ม
+ .ร.30 ไม่ใช่การยืนยันว่าอาจา
+ รย์บรรยายทุกครั้ง วันหยุด
+ และประกาศงดหรือชดเชยต้อง
+ ตรวจเพิ่มเติม\nเวลาเรียนตร
+ งกับวิชาอื่นที่ลงไว้
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2107-269-lecture-2027-03-04@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270304T103000Z
+DTEND:20270304T122000Z
+STATUS:TENTATIVE
+LOCATION:VKB 301
+SUMMARY:เรียนตาม ม.ร.30 POL2107
+DESCRIPTION:การเมืองเปรียบเทียบเบ
+ ื้องต้น\nเวลาไทย 17:30–19:20 ห้องเ
+ รียน VKB 301\nรายการเรียนเป็นรอ
+ บตาม ม.ร.30 ไม่ใช่การยืนยันว
+ ่าอาจารย์บรรยายทุกครั้ง ว
+ ันหยุดและประกาศงดหรือชดเ
+ ชยต้องตรวจเพิ่มเติม
+END:VEVENT
+BEGIN:VEVENT
+UID:POL2200-269-lecture-2027-03-05@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART:20270305T063000Z
+DTEND:20270305T082000Z
+STATUS:TENTATIVE
+LOCATION:VPB 401
+SUMMARY:เรียนตาม ม.ร.30 POL2200
+DESCRIPTION:ความสัมพันธ์ระหว่างปร
+ ะเทศเบื้องต้น\nเวลาไทย 13:30–15:
+ 20 ห้องเรียน VPB 401\nรายการเรียน
+ เป็นรอบตาม ม.ร.30 ไม่ใช่การย
+ ืนยันว่าอาจารย์บรรยายทุก
+ ครั้ง วันหยุดและประกาศงดห
+ รือชดเชยต้องตรวจเพิ่มเติ
+ ม
+END:VEVENT
+END:VCALENDAR

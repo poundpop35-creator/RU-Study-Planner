@@ -1,0 +1,17 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//RU Study Planner//Class and Exam Calendar//TH
+CALSCALE:GREGORIAN
+X-WR-CALNAME:RU Study Planner · 2/2569
+BEGIN:VEVENT
+UID:POL2301-269@ru-study-planner
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20270321
+DTEND;VALUE=DATE:20270322
+SUMMARY:สอบ POL2301 · คาบ B
+DESCRIPTION:องค์การและการบริหารใน
+ ภาครัฐ\nคาบ B ยังไม่ระบุชั่ว
+ โมงและห้องสอบ ตรวจตารางสอ
+ บรายบุคคล
+END:VEVENT
+END:VCALENDAR
