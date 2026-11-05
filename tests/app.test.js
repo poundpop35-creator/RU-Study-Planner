@@ -43,7 +43,10 @@ test('every main route and every lesson page renders without runtime errors',()=
 
 test('calendar filters, selected-day details, references and resource links work together',()=>{
  navigate('#calendar');assert.ok(html().includes('มีเวลาเรียนชนกัน 1 คู่'));assert.ok(html().includes('mr30-2-2569-p142-143.pdf'));
- click('cal-jump',{month:'2026-11'});click('cal-day',{date:'2026-11-18'});assert.ok(html().includes('KLB 501'));assert.ok(html().includes('VPB 501'));
+ click('cal-jump',{month:'2026-11'});click('cal-day',{date:'2026-11-18'});const details=html().match(/<article class="calendar-event lecture-event">.*?<\/article>/gs)||[];
+ for(const [code,room,names] of [['POL2104','KLB 501',['NIPON','KRIANGCHAI']],['POL2106','VPB 501',['CHATCHAPHANU']]]){
+  const row=details.find(x=>x.includes(code));assert.ok(row?.includes(room)&&names.every(name=>row.includes(name)),code);
+ }
  click('cal-filter',{type:'exam'});click('cal-view',{view:'list'});assert.equal((html().match(/calendar-event exam-event/g)||[]).length,7);
  listeners.change({target:{id:'calendar-course',value:'POL2104'}});assert.equal((html().match(/calendar-event exam-event/g)||[]).length,1);assert.ok(html().includes('คาบ A'));assert.ok(html().includes('10 มี.ค. 2570'));
  navigate('#resources');assert.ok(html().includes('https://ondemand.ru.ac.th/'));assert.ok(html().includes('https://bookstore.ru.ac.th/'));assert.equal((html().match(/class="panel desk-course"/g)||[]).length,7);
@@ -54,7 +57,7 @@ test('switching exams back to classes leaves March and returns to the relevant l
  click('cal-filter',{type:'exam'});click('cal-view',{view:'month'});click('cal-day',{date:'2027-03-10'});
  click('cal-filter',{type:'lecture'});
  const label=new Intl.DateTimeFormat('th-TH',{month:'long',year:'numeric',timeZone:'Asia/Bangkok'}).format(new Date(activityMonth('lecture')+'-01T12:00:00+07:00'));
- assert.ok(html().includes(label));assert.ok(html().includes('แตะวันที่เพื่อดูเวลาและห้องเรียน'));
+ assert.ok(html().includes(label));assert.ok(html().includes('แตะวันที่เพื่อดูห้องเรียน เวลา และผู้สอน'));
  assert.ok(html().includes('calendar-chip lecture'));assert.ok(!html().includes('calendar-chip exam'));
  click('cal-jump',{month:'2027-03',type:'exam'});assert.ok(html().includes('calendar-chip exam'));
  click('cal-jump',{month:'2026-11',type:'lecture'});assert.ok(html().includes('calendar-chip lecture'));

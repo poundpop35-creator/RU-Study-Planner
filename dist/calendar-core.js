@@ -1,5 +1,6 @@
 import {calendar,courses,schedules} from './data.js?v=20261027c';
 import {addDays,today} from './core.js?v=20261027c';
+import {lectureInstructors} from './lecture-instructors.js?v=20261106a';
 export const weekdays=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
 export function monthBounds(month){
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw new Error('Invalid month');
@@ -37,7 +38,7 @@ export function calendarEvents({start=calendar.lectureStart,end=calendar.examEnd
    rows.push({id:'notice-'+d,type:'notice',date:d,title:exception.title,source:exception.source,course:'',time:'งดบรรยาย'});continue;
   }
   for(const s of schedules.filter(s=>s.weekday===weekday&&selected.some(c=>c.id===s.course))){
-   rows.push({...s,id:s.id+'-'+d,type:'lecture',date:d,title:selected.find(c=>c.id===s.course).title,time:s.startTime+'–'+s.endTime,check:exception?.kind==='check'?exception.title:null,clash:clashes.some(pair=>pair.some(x=>x.id===s.id))});
+   rows.push({...s,instructors:lectureInstructors(s),id:s.id+'-'+d,type:'lecture',date:d,title:selected.find(c=>c.id===s.course).title,time:s.startTime+'–'+s.endTime,check:exception?.kind==='check'?exception.title:null,clash:clashes.some(pair=>pair.some(x=>x.id===s.id))});
   }
  }
  if(type!=='lecture')for(const c of selected.filter(c=>c.exam&&c.exam>=start&&c.exam<=end))rows.push({id:'exam-'+c.id,type:'exam',date:c.exam,course:c.id,title:c.title,slot:c.slot,time:'คาบ '+c.slot,source:'mr30'});
@@ -50,10 +51,10 @@ export function scheduleICS({type='all',course=''}={}){
  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RU Study Planner//Class and Exam Calendar//TH','CALSCALE:GREGORIAN','X-WR-CALNAME:'+icsEscape('RU Study Planner · 2/2569')];
  for(const event of calendarEvents({type,course}).filter(x=>x.type!=='notice')){
   const exam=event.type==='exam';
-  lines.push('BEGIN:VEVENT',`UID:${exam?event.course+'-269':event.id}@ru-study-planner`,'DTSTAMP:20261014T000000Z');
+  lines.push('BEGIN:VEVENT',`UID:${exam?event.course+'-269':event.id}@ru-study-planner`,exam?'DTSTAMP:20261014T000000Z':'DTSTAMP:20261106T000000Z');
   if(exam)lines.push('DTSTART;VALUE=DATE:'+event.date.replaceAll('-',''),'DTEND;VALUE=DATE:'+addDays(event.date,1).replaceAll('-',''));
-  else lines.push('DTSTART:'+utc(event.date,event.startTime),'DTEND:'+utc(event.date,event.endTime),'STATUS:TENTATIVE','LOCATION:'+icsEscape(event.room));
-  lines.push('SUMMARY:'+icsEscape(`${exam?'สอบ':'เรียนตาม ม.ร.30'} ${event.course}${exam?' · คาบ '+event.slot:''}`),'DESCRIPTION:'+icsEscape(event.title+'\n'+(exam?'คาบ '+event.slot+' ยังไม่ระบุชั่วโมงและห้องสอบ ตรวจตารางสอบรายบุคคล':'เวลาไทย '+event.time+' ห้องเรียน '+event.room+'\n'+calendar.note+(event.check?'\n'+event.check:'')+(event.clash?'\nเวลาเรียนตรงกับวิชาอื่นที่ลงไว้':''))),'END:VEVENT');
+  else lines.push('SEQUENCE:1','DTSTART:'+utc(event.date,event.startTime),'DTEND:'+utc(event.date,event.endTime),'STATUS:TENTATIVE','LOCATION:'+icsEscape(event.room));
+  lines.push('SUMMARY:'+icsEscape(`${exam?'สอบ':'เรียนตาม ม.ร.30'} ${event.course}${exam?' · คาบ '+event.slot:''}`),'DESCRIPTION:'+icsEscape(event.title+'\n'+(exam?'คาบ '+event.slot+' ยังไม่ระบุชั่วโมงและห้องสอบ ตรวจตารางสอบรายบุคคล':'เวลาไทย '+event.time+' ห้องเรียน '+event.room+'\nผู้สอนประจำวิชา: '+event.instructors+'\n'+calendar.note+(event.check?'\n'+event.check:'')+(event.clash?'\nเวลาเรียนตรงกับวิชาอื่นที่ลงไว้':''))),'END:VEVENT');
  }
  return lines.concat('END:VCALENDAR').map(foldICS).join('\r\n')+'\r\n';
 }
