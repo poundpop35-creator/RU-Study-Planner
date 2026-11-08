@@ -1,4 +1,5 @@
-import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261108a';
+import {importPanel,resolvePlan} from './debt-import.js?v=20261108b';
+import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261108b';
 import {saveRates,rateFields} from './debt-interest.js?v=20261027c';
 import {debtPage,debtAction} from './debt-view.js?v=20261027c';
 import {practicePage,practiceAction,resetPracticeSession} from './practice-view.js?v=20261027c';
@@ -214,7 +215,7 @@ function readProgress(){const root=document.documentElement,bar=document.getElem
 function render(keepScroll=false){
  destroyEditor();const oldY=window.scrollY;document.documentElement.dataset.font=state.font;document.documentElement.dataset.view=currentView;updateNav();
  const info=studySpace.info();
- main.innerHTML=({home,debt:()=>{adoptLocalDebt();return updatedPage(debtStore,currentId,info.canEdit)??debtPage(debtStore);},practice:()=>studySections('practice')+practicePage(state,currentId),documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:classroomPage,course:()=>coursePage(currentId),prep:()=>prepPage(currentId),lesson:()=>lessonPage(currentId),review,plan,registration,calendar:()=>planningNav('calendar')+calendarPage(),menu:menuPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings,awards}[currentView]||missing)();
+ main.innerHTML=({home,debt:()=>{adoptLocalDebt();if(!info.hydrated&&info.phase==='loading')return '<section class="panel" role="status">กำลังโหลดแผนหนี้และประวัติการจ่ายของพื้นที่นี้…</section>';return updatedPage(debtStore,currentId,info.canEdit)??(importPanel()+debtPage(debtStore));},practice:()=>studySections('practice')+practicePage(state,currentId),documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:classroomPage,course:()=>coursePage(currentId),prep:()=>prepPage(currentId),lesson:()=>lessonPage(currentId),review,plan,registration,calendar:()=>planningNav('calendar')+calendarPage(),menu:menuPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings,awards}[currentView]||missing)();
  fresh=null;
  if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sync-status]').forEach(el=>el.textContent=info.status);
  document.title=`${currentView==='lesson'?(lessonById(currentId)?.title||'บทเรียน'):document.querySelector('#breadcrumb').textContent} · RU Study Planner`;
@@ -270,8 +271,20 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
  if(action==='recover-session'&&confirm('ใช้ข้อมูลรอบนี้แทนข้อมูลเดิมที่อ่านไม่ได้? ควรส่งออกข้อมูลรอบนี้ก่อน')){locked=false;save();render(true);}
  reward(before,rect);
 });
-document.addEventListener('submit',event=>{
+document.addEventListener('submit',async event=>{
  if(currentView!=='debt')return;
+ if(event.target.id==='debt-import-form'){
+  event.preventDefault();const info=studySpace.info(),msg=document.querySelector('#debt-import-message');
+  if(!info.canEdit){msg.textContent='รอให้พื้นที่เรียนเดิมเชื่อมต่อแล้วกดอีกครั้ง';return;}
+  const field=document.querySelector('#debt-import-value'),button=event.submitter;if(button?.disabled)return;if(button)button.disabled=true;
+  msg.textContent='กำลังเปิดแผน…';
+  try{const token=await resolvePlan(field.value);
+   if(currentView!=='debt'||studySpace.info().scope!==info.scope||!studySpace.info().canEdit)throw Error('พื้นที่เรียนเปลี่ยน กรุณาเปิดหน้าแผนหนี้อีกครั้ง');
+   const error=updateAction('activate',debtStore,{token});if(error)throw Error(error);
+   currentId='';render();toast('อัปเดตแผนหนี้ในพื้นที่เดิมแล้ว');
+  }catch(err){msg.textContent=err.message||'รับแผนไม่สำเร็จ';}finally{if(button)button.disabled=false;}
+  return;
+ }
  if(event.target.id==='debt-rate-form'){
   event.preventDefault();const values=Object.fromEntries(rateFields.map(f=>[f.key,document.querySelector('#debt-rate-'+f.key).value]));
   const error=saveRates(debtStore,values);if(error){const warning=document.querySelector('#debt-rate-error');warning.textContent=error;warning.hidden=false;return;}
