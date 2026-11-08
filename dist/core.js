@@ -12,7 +12,7 @@ export const BLOCK_IDS=new Set(['cards','main','second','deep','extra','wrap','e
 const plain=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const isDay=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v));
 // Storage keys of the debt modules (debt-payments.js, debt-interest.js, debt-core.js).
-export const DEBT_KEYS=['debtPayments_20261025_v1','debtInterestRates_20261025_v1','debtPlanPaid_20261025_budget15000_v2'];
+export const DEBT_KEYS=['debtPrivateSchedule_v1','debtPayments_20261025_v1','debtInterestRates_20261025_v1','debtPlanPaid_20261025_budget15000_v2'];
 export function validateState(input){
  if(!plain(input)||input.version!==1)throw new Error('ไฟล์สำรองไม่ใช่รูปแบบ RU Study Planner รุ่น 1');
  const s=freshState();

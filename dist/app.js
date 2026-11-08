@@ -1,3 +1,4 @@
+import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261108a';
 import {saveRates,rateFields} from './debt-interest.js?v=20261027c';
 import {debtPage,debtAction} from './debt-view.js?v=20261027c';
 import {practicePage,practiceAction,resetPracticeSession} from './practice-view.js?v=20261027c';
@@ -52,11 +53,11 @@ if(contentStatus.warning){const el=document.querySelector('#content-warning');el
 // Debt numbers ride in the synced progress record so they open on every device.
 // The browser copy is kept too; it seeds the account once, and is never preferred over synced data.
 const debtStore={
- getItem(k){return Object.hasOwn(state.debt||{},k)?state.debt[k]:storage.getItem(k);},
- setItem(k,v){const before=state.debt;state.debt={...state.debt,[k]:v};if(!save()){state.debt=before;const err=Error('not saved');err.userMessage='ยังบันทึกเข้าพื้นที่ออนไลน์ไม่ได้ (กำลังเชื่อมต่อ) กรุณาลองอีกครั้งในอีกสักครู่';throw err;}try{storage.setItem(k,v);}catch{/* the synced copy is the record */}}
+ getItem(k){return Object.hasOwn(state.debt||{},k)?state.debt[k]:k===snapshotKey?null:storage.getItem(k);},
+ setItem(k,v){const before=state.debt;state.debt={...state.debt,[k]:v};if(!save()){state.debt=before;const err=Error('not saved');err.userMessage='ยังบันทึกเข้าพื้นที่ออนไลน์ไม่ได้ (กำลังเชื่อมต่อ) กรุณาลองอีกครั้งในอีกสักครู่';throw err;}try{if(k!==snapshotKey)storage.setItem(k,v);}catch{/* the synced copy is the record */}}
 };
 function adoptLocalDebt(){
- const missing=DEBT_KEYS.filter(k=>!Object.hasOwn(state.debt||{},k)).map(k=>{try{return [k,storage.getItem(k)];}catch{return [k,null];}}).filter(([,v])=>typeof v==='string');
+ const missing=DEBT_KEYS.filter(k=>k!==snapshotKey&&!Object.hasOwn(state.debt||{},k)).map(k=>{try{return [k,storage.getItem(k)];}catch{return [k,null];}}).filter(([,v])=>typeof v==='string');
  if(!missing.length||!studySpace.info().canEdit)return;
  const before=state.debt;state.debt={...state.debt,...Object.fromEntries(missing)};if(!save())state.debt=before;
 }
@@ -213,7 +214,7 @@ function readProgress(){const root=document.documentElement,bar=document.getElem
 function render(keepScroll=false){
  destroyEditor();const oldY=window.scrollY;document.documentElement.dataset.font=state.font;document.documentElement.dataset.view=currentView;updateNav();
  const info=studySpace.info();
- main.innerHTML=({home,debt:()=>{adoptLocalDebt();return debtPage(debtStore);},practice:()=>studySections('practice')+practicePage(state,currentId),documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:classroomPage,course:()=>coursePage(currentId),prep:()=>prepPage(currentId),lesson:()=>lessonPage(currentId),review,plan,registration,calendar:()=>planningNav('calendar')+calendarPage(),menu:menuPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings,awards}[currentView]||missing)();
+ main.innerHTML=({home,debt:()=>{adoptLocalDebt();return updatedPage(debtStore,currentId,info.canEdit)??debtPage(debtStore);},practice:()=>studySections('practice')+practicePage(state,currentId),documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:classroomPage,course:()=>coursePage(currentId),prep:()=>prepPage(currentId),lesson:()=>lessonPage(currentId),review,plan,registration,calendar:()=>planningNav('calendar')+calendarPage(),menu:menuPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings,awards}[currentView]||missing)();
  fresh=null;
  if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sync-status]').forEach(el=>el.textContent=info.status);
  document.title=`${currentView==='lesson'?(lessonById(currentId)?.title||'บทเรียน'):document.querySelector('#breadcrumb').textContent} · RU Study Planner`;
@@ -232,7 +233,8 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
  if(action==='fx-close'){closeLevelUp();return;}
  if(action==='term'){b.setAttribute?.('aria-pressed',String(b.getAttribute?.('aria-pressed')!=='true'));return;}
  if(action==='terms-all'){const list=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('#section-terms .term')]:[],open=list.some(t=>t.getAttribute('aria-pressed')!=='true');list.forEach(t=>t.setAttribute('aria-pressed',String(open)));b.textContent=open?'ปิดคำอธิบายทั้งหมด':'เปิดดูทั้งหมด';return;}
- if(action==='debt-remove'){if(currentView!=='debt'||!confirm('ลบรายการจ่ายนี้? ยอดสะสมและเงินต้นคงเหลือจะคำนวณใหม่'))return;const error=debtAction(action,b.dataset,debtStore);const keepOpen=document.querySelector('#debt-history')?.open;render(true);if(keepOpen)document.querySelector('#debt-history')?.setAttribute?.('open','');toast(error||'ลบรายการจ่ายแล้ว');return;}
+ if(action==='debt-activate'&&currentView==='debt'){const error=updateAction('activate',debtStore,{token:currentId});if(!error)location.hash='debt';toast(error||'บันทึกแผนหนี้แล้ว');render(true);return;}
+ if(action==='debt-remove'){if(currentView!=='debt'||!confirm('ลบรายการจ่ายนี้? ยอดสะสมและเงินต้นคงเหลือจะคำนวณใหม่'))return;const error=debtStore.getItem(snapshotKey)?updateAction('remove',debtStore,b.dataset):debtAction(action,b.dataset,debtStore);const keepOpen=document.querySelector('#debt-history')?.open;render(true);if(keepOpen)document.querySelector('#debt-history')?.setAttribute?.('open','');toast(error||'ลบรายการจ่ายแล้ว');return;}
  if(action.startsWith('account-')){accountAction(action,studySpace,render,toast);return;}
  if(action.startsWith('nb-')&&!studySpace.info().canEdit){toast(studySpace.info().status);return;}
  if(action.startsWith('nb-')){notebookAction(action,b.dataset,studySpace,state,render,toast);return;}
@@ -279,7 +281,7 @@ document.addEventListener('submit',event=>{
  event.preventDefault();
  const creditor=document.querySelector('#debt-creditor').value,amount=document.querySelector('#debt-payment-amount').value;
  const interest=document.querySelector('#debt-payment-interest')?.value||'0',fee=document.querySelector('#debt-payment-fee')?.value||'0';
- const error=debtAction('debt-add',{creditor,amount,interest,fee},debtStore);
+ const error=debtStore.getItem(snapshotKey)?updateAction('add',debtStore,{creditor,amount,interest,fee}):debtAction('debt-add',{creditor,amount,interest,fee},debtStore);
  if(error){const warning=document.querySelector('#debt-payment-error');warning.textContent=error;warning.hidden=false;return;}
  render(true);document.querySelector('#debt-creditor').value=creditor;document.querySelector('#debt-payment-amount').focus({preventScroll:true});toast('บันทึกยอดจ่ายสะสมแล้ว');
 });
