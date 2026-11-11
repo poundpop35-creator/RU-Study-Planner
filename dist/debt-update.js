@@ -1,4 +1,4 @@
-import {renderDebtCards} from './debt-cards.js?v=20261111a';
+import {renderDebtCards} from './debt-cards.js?v=20261111b';
 // Portfolio details arrive from the private workspace or an import link's fragment.
 // No personal plans, balances, lender names, or installment amounts belong in this module.
 import {readPayments} from './debt-payments.js?v=20261027c';
@@ -24,9 +24,19 @@ export function decode(token){
   if(meta&&(!Array.isArray(parts)||parts.length>10||!parts.every(t=>Array.isArray(t)&&str(t[0],80)&&int(t[1],31)&&Array.isArray(t[2])&&t[2].length<=bills.length&&t[2].every(n=>int(n)))||parts.length&&bills.some((n,i)=>n!==sum(parts.map(t=>t[2][i]||0)))||after&&!Number.isFinite(Date.parse(after))))fail();
   return {label,group,bal,min,bills,carry,old,rate:rate/100,period,storedRate,day,parts,after};
  });
- return {date,budget,unit,accounts,note};
+ const payWindow=items[0][11]?.payWindow;
+ if(payWindow&&(!Array.isArray(payWindow)||payWindow.length!==2||!payWindow.every(n=>int(n,31)&&n>0)||payWindow[0]>payWindow[1]))fail();
+ return {date,budget,unit,accounts,note,payWindow};
 }
 const month=(d,i)=>new Intl.DateTimeFormat('th-TH',{month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(+d.slice(0,4),+d.slice(5,7)-1+i,1)));
+function earlyInstallments(ac,m,start,left){
+ return ac.flatMap((v,i)=>{
+  let bill=Math.min(left[i],v.bills[m]||0);if(!bill)return [];
+  const pieces=v.parts.length?v.parts.map(([label,day,ns])=>({label:v.label+' · '+label,day,n:ns[m]||0})):
+   [{label:v.label,day:v.day,n:bill}];
+  return pieces.filter(x=>x.day>0&&x.day<start&&x.n>0).sort((a,b)=>a.day-b.day).map(x=>{const n=Math.min(bill,x.n);bill-=n;return {...x,n};}).filter(x=>x.n);
+ }).sort((a,b)=>a.day-b.day);
+}
 export function forecast(p,old,rates){
  const ac=p.accounts.map(a=>{let credit=sum(old.filter(e=>a.old&&e.creditor===a.old&&(!a.after||Date.parse(e.at)>Date.parse(a.after))).map(e=>e.amountCents));const paid=Math.min(a.bal,credit);
   const use=v=>{const used=Math.min(v,credit);credit-=used;return v-used;};
@@ -38,15 +48,17 @@ export function forecast(p,old,rates){
   const put=(i,n)=>{const pay=Math.max(0,Math.min(left[i],n));left[i]-=pay;a[i]+=pay;free-=pay;return pay;};
   const interest=sum(ac.map((v,i)=>Math.round(left[i]*v.rate/100*(v.period==='y'?30/365:v.period==='m'?1:0))));
   ac.forEach((v,i)=>put(i,(v.bills[m]||0)+v.min));
-  const carryIn=Math.min(reserve,Math.max(0,-free));reserve-=carryIn;free+=carryIn;
+  const carryIn=p.payWindow?Math.min(reserve,sum(a)):Math.min(reserve,Math.max(0,-free));reserve-=carryIn;free+=carryIn;
   const needed=sum(ac.map((v,i)=>Math.min(left[i],(v.bills[m+1]||0)+v.min)));
-  const setAside=Math.min(Math.max(0,free),Math.max(0,needed-p.budget-reserve));reserve+=setAside;free-=setAside;
+  const early=p.payWindow?earlyInstallments(ac,m+1,p.payWindow[0],left):[];
+  const reserveGoal=Math.max(sum(early.map(x=>x.n)),needed-p.budget,0);
+  const setAside=Math.min(Math.max(0,free),Math.max(0,reserveGoal-reserve));reserve+=setAside;free-=setAside;
   ac.forEach((v,i)=>{v.carry-=put(i,Math.min(Math.max(0,free),v.carry));});
   ac.forEach((v,i)=>{if(v.min)put(i,left[i]<=free?left[i]:Math.floor(free/p.unit)*p.unit);});
   // Return unused reserve if a discretionary early payoff made it unnecessary.
-  const release=Math.min(reserve,Math.max(0,reserve-Math.max(0,sum(ac.map((v,i)=>Math.min(left[i],(v.bills[m+1]||0)+v.min)))-p.budget)));
+  const release=p.payWindow?0:Math.min(reserve,Math.max(0,reserve-Math.max(0,sum(ac.map((v,i)=>Math.min(left[i],(v.bills[m+1]||0)+v.min)))-p.budget)));
   reserve-=release;
-  rows.push({month:month(p.date,m),a,opening,interest,setAside,carryIn:carryIn+release,total:sum(a),fromBudget:sum(a)+setAside-carryIn-release});
+  rows.push({month:month(p.date,m),a,opening,interest,early,shortfall:Math.max(0,reserveGoal-reserve),setAside,carryIn:carryIn+release,total:sum(a),fromBudget:sum(a)+setAside-carryIn-release});
  }
  return {ac,rows};
 }

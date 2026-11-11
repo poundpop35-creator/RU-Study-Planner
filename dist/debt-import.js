@@ -1,6 +1,6 @@
 // Restore a schedule into the currently open workspace. Never switch the user's space.
 import {supabaseConfig} from './supabase-config.js';
-import {decode} from './debt-update.js?v=20261111a';
+import {decode} from './debt-update.js?v=20261111b';
 const enc=new TextEncoder(), bytes=text=>Uint8Array.from(atob(text.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
 const digest=t=>crypto.subtle.digest('SHA-256',enc.encode(t));
 const hex=b=>Array.from(new Uint8Array(b),n=>n.toString(16).padStart(2,'0')).join('');

@@ -17,3 +17,10 @@ test('preview, activation, partial payment, reload, and repeated activation are 
  assert.equal(updateAction('activate',store,{token}),'');assert.equal(JSON.parse(map.get(snapshotKey)).entries.length,1);assert.ok(updateAction('add',store,{creditor:'1',amount:'999999'}));
  const recovered=validateState({version:1,debt:Object.fromEntries(map)}).debt;assert.match(updatedPage({getItem:k=>recovered[k]},'',true),/One-off · เหลือ 300 บาท/);
 });
+test('a late-month pay window holds early bills first, flags any gap, and uses the reserve only once',()=>{
+ const cfg=['2030-01-02',20000,1000,[['A','',37000,0,[17000,20000],0,'',0,'','',8,{payWindow:[25,30]}],['B','',12000,0,[2000,2000,8000],0,'',0,'','',26]],''];
+ const k='p2.'+Buffer.from(JSON.stringify(cfg)).toString('base64url'),p=decode(k),{rows}=forecast(p,[],{});
+ assert.equal(rows[0].setAside,1000);assert.equal(rows[0].shortfall,19000);assert.equal(rows[0].early[0].day,8);
+ assert.equal(rows[1].carryIn,1000);assert.equal(rows.reduce((v,r)=>v+r.fromBudget,0),49000);
+ const view=updatedPage({getItem:()=>null},k,true);assert.match(view,/25–28 ก.พ./);assert.match(view,/ยังขาด 190 บาท/);
+});
