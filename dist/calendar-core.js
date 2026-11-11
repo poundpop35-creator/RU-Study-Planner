@@ -29,6 +29,8 @@ export function firstLecture(schedule){
  for(let d=calendar.lectureStart;d<=calendar.lectureEnd;d=addDays(d,1))if(new Date(d+'T12:00:00Z').getUTCDay()===schedule.weekday&&!calendar.exceptions.some(x=>x.kind==='cancelled'&&d>=x.start&&d<=x.end))return d;
  return null;
 }
+// Faculty notice dated 3 Nov 2569: keep the first meeting in MR30.
+export function regularLecture(s){return s.id==='POL2200-269-lecture'?{...s,weekday:4,room:'VPB 501'}:s;}
 export function calendarEvents({start=calendar.lectureStart,end=calendar.examEnd,type='all',course=''}={}){
  const rows=[],clashes=lectureClashes();
  const selected=courses.filter(c=>c.enrolled&&(!course||c.id===course));
@@ -37,8 +39,12 @@ export function calendarEvents({start=calendar.lectureStart,end=calendar.examEnd
   if(exception?.kind==='cancelled'){
    rows.push({id:'notice-'+d,type:'notice',date:d,title:exception.title,source:exception.source,course:'',time:'งดบรรยาย'});continue;
   }
-  for(const s of schedules.filter(s=>s.weekday===weekday&&selected.some(c=>c.id===s.course))){
-   rows.push({...s,instructors:lectureInstructors(s),id:s.id+'-'+d,type:'lecture',date:d,title:selected.find(c=>c.id===s.course).title,time:s.startTime+'–'+s.endTime,check:exception?.kind==='check'?exception.title:null,clash:clashes.some(pair=>pair.some(x=>x.id===s.id))});
+  for(const base of schedules.filter(s=>selected.some(c=>c.id===s.course))){
+   const amended=regularLecture(base),changed=amended!==base,first=changed?firstLecture(base):null;
+   const s=changed&&d>first?amended:base;
+   if(s.weekday!==weekday)continue;
+   const moved=changed&&d>first;
+   rows.push({...s,instructors:lectureInstructors(s),id:s.id+'-'+(moved?addDays(d,1):d),moved,facultyNote:changed?(moved?'ตามประกาศคณะรัฐศาสตร์ 3 พ.ย. 2569':'บรรยายครั้งแรกตาม ม.ร.30 ก่อนเปลี่ยนเป็นวันพฤหัสบดี ห้อง VPB 501'):'',type:'lecture',date:d,title:selected.find(c=>c.id===s.course).title,time:s.startTime+'–'+s.endTime,check:exception?.kind==='check'?exception.title:null,clash:clashes.some(pair=>pair.some(x=>x.id===s.id))});
   }
  }
  if(type!=='lecture')for(const c of selected.filter(c=>c.exam&&c.exam>=start&&c.exam<=end))rows.push({id:'exam-'+c.id,type:'exam',date:c.exam,course:c.id,title:c.title,slot:c.slot,time:'คาบ '+c.slot,source:'mr30'});
@@ -51,10 +57,10 @@ export function scheduleICS({type='all',course=''}={}){
  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RU Study Planner//Class and Exam Calendar//TH','CALSCALE:GREGORIAN','X-WR-CALNAME:'+icsEscape('RU Study Planner · 2/2569')];
  for(const event of calendarEvents({type,course}).filter(x=>x.type!=='notice')){
   const exam=event.type==='exam';
-  lines.push('BEGIN:VEVENT',`UID:${exam?event.course+'-269':event.id}@ru-study-planner`,exam?'DTSTAMP:20261014T000000Z':'DTSTAMP:20261106T000000Z');
+  lines.push('BEGIN:VEVENT',`UID:${exam?event.course+'-269':event.id}@ru-study-planner`,exam?'DTSTAMP:20261014T000000Z':event.facultyNote?'DTSTAMP:20261111T000000Z':'DTSTAMP:20261106T000000Z');
   if(exam)lines.push('DTSTART;VALUE=DATE:'+event.date.replaceAll('-',''),'DTEND;VALUE=DATE:'+addDays(event.date,1).replaceAll('-',''));
-  else lines.push('SEQUENCE:1','DTSTART:'+utc(event.date,event.startTime),'DTEND:'+utc(event.date,event.endTime),'STATUS:TENTATIVE','LOCATION:'+icsEscape(event.room));
-  lines.push('SUMMARY:'+icsEscape(`${exam?'สอบ':'เรียนตาม ม.ร.30'} ${event.course}${exam?' · คาบ '+event.slot:''}`),'DESCRIPTION:'+icsEscape(event.title+'\n'+(exam?'คาบ '+event.slot+' ยังไม่ระบุชั่วโมงและห้องสอบ ตรวจตารางสอบรายบุคคล':'เวลาไทย '+event.time+' ห้องเรียน '+event.room+'\nผู้สอนประจำวิชา: '+event.instructors+'\n'+calendar.note+(event.check?'\n'+event.check:'')+(event.clash?'\nเวลาเรียนตรงกับวิชาอื่นที่ลงไว้':''))),'END:VEVENT');
+  else lines.push(event.facultyNote?'SEQUENCE:2':'SEQUENCE:1','DTSTART:'+utc(event.date,event.startTime),'DTEND:'+utc(event.date,event.endTime),'STATUS:TENTATIVE','LOCATION:'+icsEscape(event.room));
+  lines.push('SUMMARY:'+icsEscape(`${exam?'สอบ':event.moved?'บรรยายตามประกาศคณะ':'เรียนตาม ม.ร.30'} ${event.course}${exam?' · คาบ '+event.slot:''}`),'DESCRIPTION:'+icsEscape(event.title+'\n'+(exam?'คาบ '+event.slot+' ยังไม่ระบุชั่วโมงและห้องสอบ ตรวจตารางสอบรายบุคคล':'เวลาไทย '+event.time+' ห้องเรียน '+event.room+'\nผู้สอนประจำวิชา: '+event.instructors+(event.facultyNote?'\n'+event.facultyNote:'')+'\n'+calendar.note+(event.check?'\n'+event.check:'')+(event.clash?'\nเวลาเรียนตรงกับวิชาอื่นที่ลงไว้':''))),'END:VEVENT');
  }
  return lines.concat('END:VCALENDAR').map(foldICS).join('\r\n')+'\r\n';
 }

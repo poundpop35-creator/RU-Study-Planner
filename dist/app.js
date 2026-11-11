@@ -1,5 +1,5 @@
-import {importPanel,resolvePlan} from './debt-import.js?v=20261108b';
-import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261108b';
+import {importPanel,resolvePlan} from './debt-import.js?v=20261111a';
+import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261111a';
 import {saveRates,rateFields} from './debt-interest.js?v=20261027c';
 import {debtPage,debtAction} from './debt-view.js?v=20261027c';
 import {practicePage,practiceAction,resetPracticeSession} from './practice-view.js?v=20261027c';
@@ -11,7 +11,7 @@ import {createStudySpace} from './study-space.js?v=20261027c';
 import {notebookPage,notePage,mountEditor,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261027c';
 import {accountPage,accountAction} from './account-view.js?v=20261027c';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
-import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=20261106a';
+import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=20261111a';
 import {contentStatus} from './content.js?v=20261027c';
 import {meta,courses,terms,categories,categoryTargets,sources,courseColors,readingWeek,studyPhases,studyHours} from './data.js?v=20261027c';
 import {lessons} from './lessons.js?v=20261027c';

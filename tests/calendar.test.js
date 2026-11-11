@@ -36,3 +36,11 @@ test('ICS uses accurate UTC for Bangkok lectures, all-day exams, stable IDs and 
  assert.ok(lecture.includes('DTSTART:20261116T041000Z'));assert.ok(lecture.includes('DTEND:20261116T064000Z'));assert.ok(lecture.includes('LOCATION:KTB 401'));assert.ok(lecture.includes('STATUS:TENTATIVE'));
  const all=scheduleICS();assert.ok(!all.includes('20270120T'));for(const line of all.split('\r\n'))assert.ok(Buffer.byteLength(line,'utf8')<=75);assert.ok(all.replace(/\r\n /g,'').includes('ปรัชญาการเมืองเบื้องต้น'));
 });
+test('faculty amendment moves only subsequent meetings and preserves feed IDs across the week boundary',()=>{
+ const lectures=calendarEvents({type:'lecture',course:'POL2200'}).filter(x=>x.type==='lecture');
+ assert.deepEqual(lectures.slice(0,2).map(x=>[x.date,x.room,x.time]),[['2026-11-20','VPB 401','13:30–15:20'],['2026-11-26','VPB 501','13:30–15:20']]);
+ assert.ok(lectures.slice(1).every(x=>new Date(x.date).getUTCDay()===4&&x.moved));assert.equal(new Set(lectures.map(x=>x.id)).size,lectures.length);
+ const ics=scheduleICS({type:'lecture',course:'POL2200'}).replace(/\r\n /g,'');const moved=ics.split('BEGIN:VEVENT').find(x=>x.includes('UID:POL2200-269-lecture-2026-11-27@'));
+ assert.match(moved,/DTSTART:20261126T063000Z/);assert.match(moved,/LOCATION:VPB 501/);assert.match(moved,/SEQUENCE:2/);
+ assert.equal(calendarEvents({type:'exam',course:'POL2200'})[0].date,'2027-03-13');
+});

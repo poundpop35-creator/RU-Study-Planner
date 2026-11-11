@@ -15,5 +15,5 @@ test('preview, activation, partial payment, reload, and repeated activation are 
  assert.equal(updatedPage(store,'',true),null);assert.match(updatedPage(store,token,true),/ใช้แผนนี้/);
  assert.equal(map.size,0);assert.equal(updateAction('activate',store,{token}),'');assert.equal(updateAction('add',store,{creditor:'1',amount:'20'}),'');
  assert.equal(updateAction('activate',store,{token}),'');assert.equal(JSON.parse(map.get(snapshotKey)).entries.length,1);assert.ok(updateAction('add',store,{creditor:'1',amount:'999999'}));
- const recovered=validateState({version:1,debt:Object.fromEntries(map)}).debt;assert.match(updatedPage({getItem:k=>recovered[k]},'',true),/300.00/);
+ const recovered=validateState({version:1,debt:Object.fromEntries(map)}).debt;assert.match(updatedPage({getItem:k=>recovered[k]},'',true),/One-off · เหลือ 300 บาท/);
 });
