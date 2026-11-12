@@ -1,6 +1,6 @@
 import {createPersonalClient} from './personal-client.js?v=20261027c';
 import {supabaseConfig as config} from './supabase-config.js?v=20261027c';
-import {freshState,validateState} from './core.js?v=20261027c';
+import {freshState,validateState} from './core.js?v=20261112a';
 import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261027c';
 import {getImage,putImage,newImageId} from './image-store.js?v=20261027c';
 export const workspaceKey=id=>'ru-study-workspace.v1:'+id;

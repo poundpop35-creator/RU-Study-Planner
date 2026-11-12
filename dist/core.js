@@ -3,7 +3,7 @@ import {courses,terms,categoryTargets,readingWeek,studyPhases,studyHours} from '
 import {lessons} from './lessons.js?v=20261027c';
 import {prep} from './prep.js?v=20261027c';
 export const STORAGE_KEY='ru-study-planner.v1';
-export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,practiceMigrationVersion:1,practiceReview:{},legacyPracticePending:[],hours:{weekday:2,weekend:2},hourOverrides:{},planDone:{},prep:{},debt:{}};}
+export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,firstHeard:{},readExtra:{},readCourse:{},practiceMigrationVersion:1,practiceReview:{},legacyPracticePending:[],hours:{weekday:2,weekend:2},hourOverrides:{},planDone:{},prep:{},debt:{}};}
 const lessonIds=new Set(lessons.map(l=>l.id));
 const courseIds=new Set(courses.map(c=>c.id));
 const cardIds=new Set(lessons.flatMap(l=>l.cards.map((_,i)=>`${l.id}:${i}`)));
@@ -32,7 +32,11 @@ export function validateState(input){
  const validHourDay=d=>isDay(d)&&new Date(d+'T12:00:00Z').toISOString().slice(0,10)===d;
  if(input.planVersion===2&&plain(input.todayHours)&&validHourDay(input.todayHours.date)&&studyHours.includes(input.todayHours.hours))s.hourOverrides[input.todayHours.date]=input.todayHours.hours;
  if(plain(input.hourOverrides))for(const [d,h]of Object.entries(input.hourOverrides)){if(validHourDay(d)&&studyHours.includes(h))s.hourOverrides[d]=h;}
- if(plain(input.planDone))for(const k of Object.keys(input.planDone).filter(isDay).sort().slice(-400)){const v=input.planDone[k];if(Array.isArray(v))s.planDone[k]=[...new Set(v.filter(x=>BLOCK_IDS.has(x)))];}
+ const enrolled=new Set(courses.filter(c=>c.enrolled).map(c=>c.id));
+ if(plain(input.firstHeard))for(const [k,v] of Object.entries(input.firstHeard))if(enrolled.has(k)&&validHourDay(v))s.firstHeard[k]=v;
+ if(plain(input.readExtra))for(const [k,v] of Object.entries(input.readExtra))if(validHourDay(k)&&v===true)s.readExtra[k]=true;
+ if(plain(input.readCourse))for(const [k,v] of Object.entries(input.readCourse))if(validHourDay(k)&&enrolled.has(v))s.readCourse[k]=v;
+ if(plain(input.planDone))for(const k of Object.keys(input.planDone).filter(isDay).sort().slice(-400)){const v=input.planDone[k];if(Array.isArray(v))s.planDone[k]=[...new Set(v.filter(x=>BLOCK_IDS.has(x)||typeof x==='string'&&/^after-POL[0-9]{4}-(notes|read|recall|extend|practice)$/.test(x)))];}
  if(plain(input.prep))for(const [k,v]of Object.entries(input.prep)){if(!Object.hasOwn(prep,k)||!plain(v))continue;const n=prep[k].questions.length,score=x=>Number.isInteger(x)&&x>=0&&x<=n?x:null,answers={};if(plain(v.answers))for(const [i,a]of Object.entries(v.answers)){if(/^\d+$/.test(i)&&Number(i)<n&&Number.isInteger(a)&&a>=0&&a<prep[k].questions[Number(i)].options.length)answers[i]=a;}s.prep[k]={answers,submitted:v.submitted===true,best:score(v.best),last:score(v.last)};}
  // Personal debt plan (numbers only), kept here so it syncs with the study space; the debt modules validate the contents on read.
  if(plain(input.debt))for(const k of DEBT_KEYS){if(typeof input.debt[k]==='string'&&input.debt[k].length<=500000)s.debt[k]=input.debt[k];}

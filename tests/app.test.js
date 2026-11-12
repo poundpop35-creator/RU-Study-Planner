@@ -102,12 +102,9 @@ test('search finds actual lesson content and displays a useful empty state',()=>
 test('lesson pages open with the one-minute summary, analogy, memory hook and terms',()=>{
  for(const l of lessons){navigate('#lesson/'+l.id);const h=html();assert.ok(h.includes('เข้าใจใน 1 นาที'),l.id);for(const t of [l.easy.one,...l.easy.points,l.easy.analogy,l.easy.remember])assert.ok(h.includes(escapeHTML(t)),l.id);for(const [front] of l.easy.terms)assert.ok(h.includes(escapeHTML(front)),l.id);}
 });
-test('home shows a daily plan; ticking a block and choosing hours are saved',()=>{
- navigate('#home');assert.ok(html().includes('แผนอ่านส่วนตัว'));assert.ok(html().includes('data-action="block"'));
- click('hours',{value:'3'});assert.equal(saved().hourOverrides[today()<STUDY_START?STUDY_START:today()],3);assert.ok(html().includes('คำบรรยายและตำรา'));
- click('block',{id:'main'});assert.deepEqual(saved().planDone[today()<STUDY_START?STUDY_START:today()],['main']);assert.ok(html().includes('aria-pressed="true"'));
- click('block',{id:'main'});assert.deepEqual(saved().planDone[today()<STUDY_START?STUDY_START:today()],[]);
- click('hours',{value:'9'});assert.equal(saved().hourOverrides[today()<STUDY_START?STUDY_START:today()],3);
+test('home with no first lectures confirmed points to the plan without assigning reading',()=>{
+ navigate('#home');assert.match(html(),/แผนอ่านส่วนตัว/);assert.match(html(),/รอเรียนคาบแรกก่อนอ่าน/);
+ assert.ok(!html().includes('data-action="block"'));assert.ok(html().includes('data-action="heard-first"'));
 });
 test('search covers the plain-language layer and textbook terms',()=>{
  navigate('#courses');listeners.input({target:{id:'lesson-search',value:'POSDCORB'}});assert.ok(get('#library-results').innerHTML.includes('POL2301-2'));
