@@ -6,7 +6,7 @@ import {debtPage,debtAction} from './debt-view.js?v=20261027c';
 import {practicePage,practiceAction,resetPracticeSession} from './practice-view.js?v=20261027c';
 import {recordPractice,practiceStats} from './practice-core.js?v=20261027c';
 import {documentsPage} from './documents-view.js?v=20261027c';
-import {examEvidenceTable,examEvidenceCard} from './exam-evidence.js?v=20261027c';
+import {examEvidenceTable,examEvidenceCard,readingExamFormats} from './exam-evidence.js?v=20261113a';
 import {hubTabs,studySections,prepNotice,classroomPage} from './study-sections.js?v=20261027c';
 import {createStudySpace} from './study-space.js?v=20261112a';
 import {notebookPage,notePage,mountEditor,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261027c';
@@ -167,11 +167,12 @@ function hourTemplate(){return [['1 ชม.','วันยุ่ง','ทวน 
 function menuPage(){const tile=([key,i,label,help])=>`<a href="#${key}">${icon(i,22)}<span><b>${label}</b><small>${help}</small></span></a>`;return `${heading('เมนูทั้งหมด','ทุกหน้าในแอป จัดตามสิ่งที่อยากทำ')}<div class="menu-groups">${navGroups.filter(([title])=>title).map(([title,items])=>`<section class="menu-group${title.startsWith('อื่น')?' nav-other':''}"><h2>${title}</h2><div class="menu-tiles">${items.map(([key,i,label])=>tile([key,i,label,navHelp[key]])).join('')}</div></section>`).join('')}<section class="menu-group"><h2>ตั้งค่าและที่มาของแอป</h2><div class="menu-tiles">${tile(['settings','gear','ตั้งค่าและสำรองข้อมูล','เวลาอ่าน ขนาดตัวอักษร ไฟล์สำรอง'])}${tile(['about','quote','แหล่งเรียนรู้และข้อตกลง','ที่มาของเนื้อหาและเงื่อนไขของแผน'])}</div></section></div>`;}
 // The three plans answer different questions; one row of tabs links them and each page says what it is for.
 function planningNav(active=''){return hubTabs([['plan','แผนอ่าน'],['calendar','ตารางเรียน–สอบ'],['registration','ลงทะเบียน']],active,'แผนของฉัน 3 แบบ');}
-function plan(){const day=today();if(useAfter(planDate))return planningNav('plan')+heading('แผนอ่าน','เริ่ม 16 พ.ย. 2569 · เรียนก่อน อ่านตามคาบ วันละ 1–2 ชั่วโมง')+todayPlanHTML()+weekView(planDate);return `${planningNav('plan')}${heading('แผนอ่าน','งานอ่านแต่ละวัน แบ่งเป็นช่วงสั้น ๆ · เลือกวันและปรับจำนวนชั่วโมงได้')}
+function plan(){const day=today();if(useAfter(planDate))return planningNav('plan')+heading('แผนอ่าน','เริ่ม 16 พ.ย. 2569 · เรียนก่อน อ่านตามคาบ วันละ 1–2 ชั่วโมง')+todayPlanHTML()+readingExamFormats()+weekView(planDate);return `${planningNav('plan')}${heading('แผนอ่าน','งานอ่านแต่ละวัน แบ่งเป็นช่วงสั้น ๆ · เลือกวันและปรับจำนวนชั่วโมงได้')}
  ${todayPlanHTML()}
  <details class="reading-settings"><summary>ตั้งเวลาอ่านประจำวัน</summary> <section class="panel hours-panel"><div><h2>เวลาอ่านส่วนตัวของฉัน</h2><p>กำหนดเวลาเริ่มต้นของแต่ละวัน หรือเลือกวันที่แล้วปรับเฉพาะวันได้ในแผนด้านบน</p></div><div class="hours-fields"><label class="field">วันทำงาน (จ.–ศ.)<select id="hours-weekday">${studyHours.map(h=>`<option value="${h}" ${state.hours.weekday===h?'selected':''}>${h} ชั่วโมง</option>`).join('')}</select></label><label class="field">วันหยุด (ส.–อา.)<select id="hours-weekend">${studyHours.map(h=>`<option value="${h}" ${state.hours.weekend===h?'selected':''}>${h} ชั่วโมง</option>`).join('')}</select></label></div><ul class="hour-templates">${hourTemplate().map(([h,label,text])=>`<li><b>${h}</b><span>${label}</span><p>${text}</p></li>`).join('')}</ul></section>
 </details>
  <div class="section-heading"><div><h2>ตารางอ่านส่วนตัวประจำสัปดาห์</h2><p>ครบทั้ง 7 วิชาทุกสัปดาห์ สลับอ่านและทำโจทย์ทุกวัน · หลัง 1 ก.พ. วนทวนตามลำดับวันสอบ</p></div></div><div class="week-grid">${readingWeek.map(([dayName],i)=>{const primary=weeklyCourses[i];return `<div class="day-card ${((new Date(`${day}T12:00:00Z`).getUTCDay()+6)%7)===i?'today':''}" style="--course:${colorOf(primary)}"><span class="eyebrow">อ่านวัน${dayName}</span><b>${primary}</b><small>${e(courseById(primary).title)}</small><span class="day-second">อ่าน + ทำข้อสอบ + ทวนข้อผิด</span><span class="day-hours">${i>=5?state.hours.weekend:state.hours.weekday} ชม.</span></div>`;}).join('')}</div>
+ ${readingExamFormats()}
  ${journeyHTML(day)}
 `;}
 // Where each planned course sits now (a moved course follows state.termMoves), so the student can look a code up.
