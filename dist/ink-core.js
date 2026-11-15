@@ -11,13 +11,13 @@ export function createInkHistory(){
  const append=operation=>{operations=operations.slice(0,cursor);operations.push(operation);cursor=operations.length;};
  return {
   begin(point,style){stroke={...style,points:[point]};},
-  move(point){if(!stroke)return null;const previous=stroke.points.at(-1);stroke.points.push(point);return {previous,point,stroke};},
+  move(point){if(!stroke)return null;const previous=stroke.points.at(-1);if(stroke.tool==='line')stroke.points[1]=point;else stroke.points.push(point);return {previous,point,stroke};},
   finish(){if(stroke){append(stroke);stroke=null;}},
   clear(){append({clear:true});},
   undo(){if(cursor)cursor--;},redo(){if(cursor<operations.length)cursor++;},
   get canUndo(){return cursor>0;},get canRedo(){return cursor<operations.length;},
   get operations(){return operations.slice(0,cursor);},get stroke(){return stroke;},
-  get hasInk(){const visible=operations.slice(0,cursor);const lastClear=visible.findLastIndex(x=>x.clear);return visible.slice(lastClear+1).some(x=>x.tool==='pen');}
+  get hasInk(){const visible=operations.slice(0,cursor);const lastClear=visible.findLastIndex(x=>x.clear);return visible.slice(lastClear+1).some(x=>['pen','text','line'].includes(x.tool));}
  };
 }
 export function paintInkSegment(ctx,a,b,stroke){
@@ -32,6 +32,10 @@ export function paintInk(ctx,history){
  ctx.clearRect(0,0,INK_WIDTH,INK_HEIGHT);
  for(const stroke of [...history.operations,...(history.stroke?[history.stroke]:[])]){
   if(stroke.clear){ctx.clearRect(0,0,INK_WIDTH,INK_HEIGHT);continue;}
+  if(stroke.tool==='text'){
+   const {x,y}=stroke.points[0];ctx.save();ctx.fillStyle=stroke.color;ctx.font='32px sans-serif';ctx.textBaseline='top';
+   const w=ctx.measureText(stroke.text).width;ctx.fillText(stroke.text,Math.max(0,Math.min(x,INK_WIDTH-w)),Math.min(y,INK_HEIGHT-40),INK_WIDTH);ctx.restore();continue;
+  }
   paintInkSegment(ctx,stroke.points[0],stroke.points[0],stroke);
   for(let i=1;i<stroke.points.length;i++)paintInkSegment(ctx,stroke.points[i-1],stroke.points[i],stroke);
  }
