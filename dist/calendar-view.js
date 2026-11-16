@@ -1,4 +1,4 @@
-import {weeklyPlanner} from './weekly-planner.js?v=20261115';
+import {weeklyPlanner} from './weekly-planner.js?v=20261116-advice';
 import {calendarSubscriptionURL} from './calendar-feed.js?v=20261103a';
 import {calendar,courses,schedules,sources} from './data.js?v=20261027c';
 import {escapeHTML as e,thaiDate,today,addDays} from './core.js?v=20261027c';

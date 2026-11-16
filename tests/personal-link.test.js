@@ -37,3 +37,14 @@ test('edge handler rejects absent or invalid capabilities before touching the da
  }
  const response=await handler(new Request('https://test.invalid/personal-study/workspace',{method:'OPTIONS'}));assert.equal(response.status,204);
 });
+test('account lookup opens the bound workspace on an independent device without replacing its guest key or URL',async()=>{
+ const {lookupAccount}=await import('../dist/notebook-account.js');
+ const a=memoryStorage(),b=memoryStorage(),cloud=cloudFixture(),fetcher=personalFetcher(cloud);
+ const create=(storage,accountKey)=>createPersonalClient({storage,accountKey,location:location(),fetcher});
+ const original=create(a);create(b);const before=b.getItem(personalKey);
+ const db={auth:{getSession:async()=>({data:{session:{user:{id:'student',email:'student@example.test'}}}})},from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{space_key:a.getItem(personalKey)}})})})})};
+ const source=createStudySpace({storage:a,progress:freshState(),clientFactory:()=>original,imageStore:imageCache()});await source.init();
+ source.saveNotebook({version:1,notes:[newNote({id:'same-note',text:'one notebook'})]});await source.sync();
+ const remote=create(b,(await lookupAccount(db)).key);assert.equal(remote.access().url,original.access().url);assert.equal(b.getItem(personalKey),before);
+ const target=createStudySpace({storage:b,progress:freshState(),clientFactory:()=>remote,imageStore:imageCache()});await target.init();assert.deepEqual(target.notebook(),source.notebook());source.dispose();target.dispose();
+});

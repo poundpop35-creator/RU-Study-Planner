@@ -1,12 +1,14 @@
 import {supabaseConfig as config} from './supabase-config.js';
 export const personalKey='ru-study-personal-link.v1';
 const valid=key=>/^[0-9a-f]{64}$/.test(key||'');
-export function createPersonalClient({storage,location=globalThis.location,history=globalThis.history,fetcher=fetch}={}){
+export function createPersonalClient({storage,accountKey,location=globalThis.location,history=globalThis.history,fetcher=fetch}={}){
  let key='',user=null,remembered=false;
  const incoming=/^#space=([0-9a-f]{64})$/.exec(location?.hash||'')?.[1];
  try{key=incoming||storage.getItem(personalKey)||'';}catch{key=incoming||'';}
+ if(accountKey&&!valid(accountKey))throw Error('ข้อมูลบัญชีไม่ถูกต้อง');
+ if(accountKey){key=accountKey;remembered=true;}
  if(!valid(key))key=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
- try{storage.setItem(personalKey,key);remembered=true;}catch{}
+ if(!accountKey)try{storage.setItem(personalKey,key);remembered=true;}catch{}
  if(incoming&&remembered)history?.replaceState?.(null,'',location.pathname+location.search+'#home');
  if(!remembered)history?.replaceState?.(null,'',(location?.pathname||'/')+(location?.search||'')+'#space='+key);
  const base=(location?.origin||'')+(location?.pathname||'/');
