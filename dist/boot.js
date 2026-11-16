@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261116-account'); }
+try { await import('./app.js?v=20261116-shared'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

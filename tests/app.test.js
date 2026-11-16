@@ -84,7 +84,7 @@ test('rich notebook page supports course-linked writing, formatting controls, im
  click('nb-from-lesson',{lesson:'POL1101-1'});assert.match(location.hash,/^#note\//);navigate(location.hash);
  for(const text of ['ไฮไลต์','สีตัวอักษร','แทรกรูป','คำถามทวนความจำ','note-image-file','note-question','POL1101'])assert.ok(html().includes(text),text);
  navigate('#notes');assert.ok(html().includes('ส่งออกโน้ตพร้อมรูป'));assert.ok(html().includes('POL1101'));click('nb-review');assert.ok(html().includes('ยังไม่มีคำถามจากโน้ต'));click('nb-review-close');
- navigate('#account');assert.ok(html().includes('คัดลอกลิงก์เปิดบนอีกเครื่อง'));assert.ok(!html().includes('account-google'));assert.ok(!html().includes('account-signin'));assert.ok(!html().includes('URL Configuration'));
+ navigate('#account');assert.ok(html().includes('พื้นที่กลางเดียวกันทุกเบราว์เซอร์'));assert.ok(!html().includes('member-email'));assert.ok(!html().includes('account-google'));assert.ok(!html().includes('account-signin'));assert.ok(!html().includes('URL Configuration'));
 });
 test('completion updates progress and remains reversible without changing earned credits',()=>{
  navigate('#lesson/POL1101-1');click('complete',{id:'POL1101-1'});assert.ok(saved().completed.includes('POL1101-1'));navigate('#course/POL1101');assert.ok(html().includes(`ติวแล้ว 1 / ${lessons.filter(l=>l.course==='POL1101').length} บท`));
