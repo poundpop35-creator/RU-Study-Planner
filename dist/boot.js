@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261116-shared'); }
+try { await import('./app.js?v=20261116-mobile-delete'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
