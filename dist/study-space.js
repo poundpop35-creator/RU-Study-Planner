@@ -1,18 +1,19 @@
+import {createSharedClient,legacyKeys,migrateLegacy} from './shared-space.js?v=20261116-shared';
 import {accountClient,lookupAccount,sessionKey} from './notebook-account.js';
 import {createPersonalClient,personalKey} from './personal-client.js?v=20261116-account';
 import {supabaseConfig as config} from './supabase-config.js?v=20261027c';
 import {freshState,validateState} from './core.js?v=20261112a';
-import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261027c';
+import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261116-shared';
 import {getImage,putImage,newImageId} from './image-store.js?v=20261027c';
 export const workspaceKey=id=>'ru-study-workspace.v1:'+id;
 const scriptLoads=new Map();
 export function loadScript(src){if(!scriptLoads.has(src))scriptLoads.set(src,new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>{scriptLoads.delete(src);reject(Error('โหลดเครื่องมือไม่สำเร็จ กรุณาลองอีกครั้ง'));};document.head.append(s);}));return scriptLoads.get(src);}
 const empty=()=>({version:1,progress:freshState(),notebook:freshNotebook()});
 const clone=value=>JSON.parse(JSON.stringify(value));
-const message=err=>err?.code==='40001'?'มีข้อมูลใหม่จากอีกเครื่อง กรุณาเลือกฉบับในหน้าบัญชี':err?.message||'เชื่อมต่อ Supabase ไม่ได้ กรุณาลองอีกครั้ง';
+const message=err=>err?.code==='40001'?'มีข้อมูลใหม่จากอีกเครื่อง กรุณาเลือกฉบับในหน้าข้อมูลและการซิงก์':err?.message||'เชื่อมต่อ Supabase ไม่ได้ กรุณาลองอีกครั้ง';
 // Supabase is authoritative. Device storage is only a recovery queue/cache.
 export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()=>{},onStatus=()=>{},clientFactory,settingsFetcher=fetch,imageStore={get:getImage,put:putImage}}){
- let membership={};
+ let membership={},migrationWarning='';
  let scope='guest',user=null,client=null,revision=0,dirty=false,conflict=false,timer,poll,busy=false,epoch=0,edit=0,locked=false,initialized=false,hydrated=false,disposed=false;
  let status='กำลังเชื่อมต่อพื้นที่เรียน…',phase='loading',lastSync='',providers={},cacheWarning='',payload=empty(),subscription;
  const uploaded=new Set(),removeListeners=[];
@@ -83,7 +84,7 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
  function listen(target,event,fn){target?.addEventListener?.(event,fn);removeListeners.push(()=>target?.removeEventListener?.(event,fn));}
  const api={
   dispose(){disposed=true;clearTimeout(timer);clearInterval(poll);epoch++;subscription?.unsubscribe();removeListeners.forEach(fn=>fn());},
-  info:()=>({scope,user,accountEmail:membership.email,linked:!!membership.key,status,phase,lastSync,dirty,busy,conflict,locked,personal:!!client?.personal,providers,ready:!!client,initialized,hydrated,canEdit:!!user&&hydrated&&!locked,cacheWarning:client?.access?.().remembered===false?'เครื่องนี้จำลิงก์ส่วนตัวไม่ได้ กรุณาคัดลอกลิงก์ในเมนูข้อมูลไว้ก่อนปิดแอป':cacheWarning}),
+  info:()=>({scope,user,shared:!!client?.shared,accountEmail:membership.email,linked:!!membership.key,status,phase,lastSync,dirty,busy,conflict,locked,personal:!!client?.personal,providers,ready:!!client,initialized,hydrated,canEdit:!!user&&hydrated&&!locked,cacheWarning:migrationWarning||(client?.access?.().remembered===false?'เครื่องนี้จำลิงก์ส่วนตัวไม่ได้ กรุณาคัดลอกลิงก์ในเมนูข้อมูลไว้ก่อนปิดแอป':cacheWarning)}),
   access:()=>client?.access?.()||null,
   notebook:()=>payload.notebook,
   snapshot:()=>clone(payload),
@@ -94,36 +95,22 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
   async init(){
    try{
     if(clientFactory)client=await clientFactory();else {
+     const keys=legacyKeys(storage);
      let hasSession=false;try{hasSession=!!storage.getItem(sessionKey);}catch{}
-     if(hasSession)membership=await lookupAccount(await accountClient(loadScript));
-     client=createPersonalClient({storage,accountKey:membership.key});
+     if(hasSession)try{membership=await lookupAccount(await accountClient(loadScript));if(membership.key)keys.push(membership.key);}catch{migrationWarning='ยังอ่านพื้นที่บัญชีเดิมไม่ได้ ต้นฉบับยังอยู่ กรุณาลองเชื่อมต่ออีกครั้ง';}
+     client=createSharedClient({storage});
+     try{await migrateLegacy({client,keys,storage,imageStore,progress});}catch(err){migrationWarning='นำข้อมูลเดิมเข้าพื้นที่กลางยังไม่สำเร็จ: '+message(err);}
     }
     const listener=client.auth.onAuthStateChange((_event,session)=>{setTimeout(()=>switchUser(session?.user||null),0);});subscription=listener?.data?.subscription;
     const {data,error}=await client.auth.getSession();if(error)throw error;await switchUser(data.session?.user||null);
     if(!client.personal)try{const r=await settingsFetcher(config.url+'/auth/v1/settings',{headers:{apikey:config.publishableKey}});if(r.ok)providers=(await r.json()).external||{};}catch{}
-    listen(globalThis.window,'storage',ev=>{if(ev.key===sessionKey){const uid=v=>{try{return JSON.parse(v)?.user?.id||null;}catch{return null;}};if(uid(ev.oldValue)!==uid(ev.newValue))location.reload();}});
+
     listen(globalThis.window,'online',()=>sync());listen(globalThis.window,'focus',()=>sync());
     listen(globalThis.document,'visibilitychange',()=>{if(document.visibilityState==='visible'||dirty)sync();});
     listen(globalThis.window,'beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
-    poll=setInterval(()=>{if(!globalThis.document||document.visibilityState!=='hidden')sync();},15000);poll?.unref?.();
+    poll=setInterval(()=>{if(!globalThis.document||document.visibilityState!=='hidden')sync();},5000);poll?.unref?.();
    }catch(err){setStatus(message(err),'error');}
    finally{initialized=true;notify();onChange();}
-  },
-  async memberAction(action,email,password){
-   if(dirty||busy)await sync();if(dirty||busy||conflict)throw Error('รอให้บันทึกเสร็จหรือแก้ข้อมูลที่ชนกันก่อน');
-   const db=await accountClient(loadScript);
-   if(action==='bind'){
-    requireAccount();const m=await lookupAccount(db);
-    if(!m.email||m.email!==membership.email||m.key)throw Error('สถานะบัญชีเปลี่ยน กรุณาโหลดหน้าใหม่');
-    const key=new URL(api.access().url).hash.slice(7);
-    const {error}=await db.from('ru_study_account_links').insert({space_key:key});if(error)throw error;
-    if(storage.getItem(personalKey)===key)storage.removeItem(personalKey);
-   }else if(action==='logout'){const {error}=await db.auth.signOut({scope:'local'});if(error)throw error;}
-   else {
-    const result=action==='register'?await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}}):await db.auth.signInWithPassword({email,password});
-    if(result.error)throw result.error;if(!result.data.session)return false;
-   }
-   location.hash='account';location.reload();return true;
   },
   async signIn(email,password){if(!client)throw Error('ระบบบัญชียังไม่พร้อม กรุณาโหลดหน้าใหม่');const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;if(data?.user)await switchUser(data.user);},
   async signUp(email,password){if(!client)throw Error('ระบบบัญชียังไม่พร้อม');const {data,error}=await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});if(error)throw error;if(data.session?.user)await switchUser(data.session.user);return !!data.session;},
@@ -131,7 +118,7 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
   async signOut(){if(dirty||busy)await sync();if(dirty||busy||conflict)throw Error('ยังมีข้อมูลไม่บันทึกใน Supabase กรุณารอให้สำเร็จก่อนออกจากระบบ');const {error}=await client.auth.signOut({scope:'local'});if(error)throw error;await switchUser(null);},
   async resolve(useLocal){
    if(!user||!conflict)return;const ticket=epoch,remote=await fetchRemote(user.id);if(ticket!==epoch)return;
-   if(remote){if(!cacheBackup('recovery',{local:payload,remote:remote.payload}))throw Error('เก็บฉบับกู้คืนไม่สำเร็จ กรุณาส่งออกสำรองก่อนแก้ข้อมูลชนกัน');if(!useLocal){payload=validateEnvelope(remote.payload,validateState);dirty=false;onProgress(payload.progress);onChange();}revision=remote.revision;lastSync=remote.updated_at;}
+   if(remote){if(!cacheBackup('recovery',{local:payload,remote:remote.payload}))throw Error('เก็บฉบับกู้คืนไม่สำเร็จ กรุณาส่งออกสำรองก่อนแก้ข้อมูลชนกัน');if(!useLocal){payload=validateEnvelope(remote.payload,validateState);dirty=false;onProgress(payload.progress);onChange();}if(useLocal&&remote.payload.migrations)payload.migrations=[...new Set([...(payload.migrations||[]),...remote.payload.migrations])];revision=remote.revision;lastSync=remote.updated_at;}
    conflict=false;persist();await sync();
   },
   async importGuest(){
@@ -146,7 +133,7 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
   },
   async image(id){requireAccount();const ticket=epoch,uid=user.id;let blob;try{blob=await imageStore.get(scope,id);}catch{}if(!blob){const {data,error}=await client.storage.from('ru-study-notes').download(uid+'/'+id);if(error)throw error;if(ticket!==epoch)throw Error('บัญชีเปลี่ยน');blob=data;try{await imageStore.put(scope,id,blob);}catch{}}return blob;},
   async importSnapshot(value,images={}){
-   requireAccount();const next=validateEnvelope(value,validateState);for(const id of referencedImages(next.notebook)){if(images[id]){const blob=await (await fetch(images[id])).blob();newImageId(blob);await upload(id,blob,user.id);uploaded.add(id);try{await imageStore.put(scope,id,blob);}catch{}}else await api.image(id);}
+   requireAccount();const next=validateEnvelope(value,validateState);if(payload.migrations)next.migrations=[...new Set([...(next.migrations||[]),...payload.migrations])];for(const id of referencedImages(next.notebook)){if(images[id]){const blob=await (await fetch(images[id])).blob();newImageId(blob);await upload(id,blob,user.id);uploaded.add(id);try{await imageStore.put(scope,id,blob);}catch{}}else await api.image(id);}
    cacheBackup('before-import',payload);payload=next;changed();onProgress(payload.progress);onChange();await sync();
   }
  };
