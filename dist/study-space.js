@@ -121,6 +121,23 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
    if(remote){if(!cacheBackup('recovery',{local:payload,remote:remote.payload}))throw Error('เก็บฉบับกู้คืนไม่สำเร็จ กรุณาส่งออกสำรองก่อนแก้ข้อมูลชนกัน');if(!useLocal){payload=validateEnvelope(remote.payload,validateState);dirty=false;onProgress(payload.progress);onChange();}if(useLocal&&remote.payload.migrations)payload.migrations=[...new Set([...(payload.migrations||[]),...remote.payload.migrations])];revision=remote.revision;lastSync=remote.updated_at;}
    conflict=false;persist();await sync();
   },
+  async deleteNote(id){
+   requireAccount();const ticket=epoch,deadline=Date.now()+30000;
+   const flush=async()=>{
+    do{
+     while(busy){if(Date.now()>deadline)throw Error('ยังซิงก์ไม่เสร็จ กรุณาลองลบอีกครั้ง');await new Promise(resolve=>setTimeout(resolve,50));}
+     if(ticket!==epoch||disposed)throw Error('พื้นที่เปลี่ยน กรุณาเปิดโน้ตใหม่');
+     if(conflict||locked)throw Error(status);
+     await sync();
+     if(conflict||locked||phase==='error')throw Error(status);
+     if(Date.now()>deadline)throw Error('ยังบันทึกไม่เสร็จ กรุณาตรวจสถานะการซิงก์');
+    }while(dirty||busy);
+   };
+   // Finish any in-flight autosave and load current data before removing one note.
+   await flush();requireAccount();
+   const next=clone(payload.notebook);next.notes=next.notes.filter(note=>note.id!==id);
+   api.saveNotebook(next);await flush();
+  },
   async importGuest(){
    requireAccount();const raw=storage.getItem(workspaceKey('guest'));const guest=raw?validateEnvelope(JSON.parse(raw).payload,validateState):{...empty(),progress};
    for(const id of referencedImages(guest.notebook)){const b=await imageStore.get('guest',id);if(!b)throw Error('ไม่พบรูปเดิม กรุณานำเข้าจากเครื่องที่เคยจด');await upload(id,b,user.id);uploaded.add(id);try{await imageStore.put(scope,id,b);}catch{}}

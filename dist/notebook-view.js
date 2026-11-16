@@ -1,3 +1,4 @@
+import {confirmNoteDelete} from './note-delete-dialog.js?v=20261116-mobile-delete';
 import {openInkPad} from './ink-pad.js?v=20261115';
 import {courses} from './data.js?v=20261027c';
 import {lessons} from './lessons.js?v=20261027c';
@@ -88,7 +89,13 @@ export async function notebookAction(action,data,space,progress,render,toast){
    return;
   }
   if(action==='nb-new'||action==='nb-from-lesson'){const l=lessons.find(x=>x.id===data.lesson);const chosenCourse=courses.some(c=>c.id===data.course)?data.course:course;const note=newNote({course:l?.course||chosenCourse,lesson:l?.id||'',source:l?'prep':data.source||source||'general',title:l?.title||'โน้ตใหม่'});book.notes.push(note);space.saveNotebook(book);location.hash='#note/'+note.id;}
-  if(action==='nb-delete'&&n&&confirm('ลบโน้ตนี้จากพื้นที่กลางทุกเครื่อง?')){book.notes=book.notes.filter(x=>x.id!==n.id);space.saveNotebook(book);await space.sync();location.hash='#notes';toast(space.info().status);return;}
+  if(action==='nb-delete'&&n){
+   if(!await confirmNoteDelete(n.title))return;
+   toast('กำลังลบโน้ต…');
+   await space.deleteNote(n.id);
+   if(location.hash==='#notes')render(true);else location.hash='#notes';
+   toast('ลบโน้ตจากพื้นที่กลางแล้ว');return;
+  }
   if(action==='nb-pin'&&n){n.pinned=!n.pinned;space.saveNotebook(book);render(true);}
   if(action==='nb-archive'&&n){n.archived=!n.archived;space.saveNotebook(book);location.hash='#notes';}
   if(action==='nb-archive-filter'){archived=!archived;render(true);}
