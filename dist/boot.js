@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261116-mobile-delete'); }
+try { await import('./app.js?v=20261117-paper'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

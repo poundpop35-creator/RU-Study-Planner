@@ -8,8 +8,8 @@ import {recordPractice,practiceStats} from './practice-core.js?v=20261027c';
 import {documentsPage} from './documents-view.js?v=20261027c';
 import {examEvidenceTable,examEvidenceCard,readingExamFormats,registrationExam} from './exam-evidence.js?v=20261113b';
 import {hubTabs,studySections,prepNotice,classroomPage} from './study-sections.js?v=20261027c';
-import {createStudySpace} from './study-space.js?v=20261116-mobile-delete';
-import {notebookPage,notePage,mountEditor,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261116-mobile-delete';
+import {createStudySpace} from './study-space.js?v=20261117-paper';
+import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261117-paper';
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
 import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=20261111a';
@@ -332,7 +332,7 @@ document.addEventListener('change',async event=>{const el=event.target;if(!study
 });
 // Remember whether the plan tools are open, so ticking a block or changing the date does not fold them away.
 document.addEventListener('toggle',event=>{if(event.target?.classList?.contains('plan-tools'))planToolsOpen=event.target.open;},true);
-studySpace=createStudySpace({storage,progress:state,onProgress:value=>{state=validateState(value);locked=false;},onChange:()=>render(true),onStatus:info=>{
+studySpace=createStudySpace({storage,progress:state,onProgress:value=>{state=validateState(value);locked=false;},onChange:()=>{if(currentView==='note'&&refreshPaper(studySpace,currentId))return;render(true);},onStatus:info=>{
  if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sync-status]').forEach(el=>el.textContent=info.status);
  const bar=document.getElementById('cloud-status-bar');if(bar){bar.dataset.phase=info.phase;bar.hidden=false;}
  for(const id of ['note-status','rich-note-status']){const el=document.getElementById(id);if(el)el.textContent=info.status;}

@@ -69,7 +69,7 @@ test('pre-class material and actual classroom content are separate, and notes ha
  assert.equal((html().match(/data-source="classroom"/g)||[]).length,7);
  click('nb-new',{course:'POL2301',source:'classroom'});navigate(location.hash);
  assert.ok(get('#bottom-nav').innerHTML.includes('href="#notes" aria-current="page"'));
- assert.ok(html().includes('value="classroom" selected'));assert.ok(html().includes('id="open-ink-pad"'));
+ assert.ok(html().includes('paper-app'));assert.ok(html().includes('data-paper="pen"'));
  navigate('#notes');listeners.change({target:{id:'notebook-source',value:'classroom'}});assert.ok(html().includes('note-origin classroom'));
  listeners.change({target:{id:'notebook-source',value:''}});
 });
@@ -82,7 +82,7 @@ test('notes save immediately and render as text, never executable user HTML',()=
 test('rich notebook page supports course-linked writing, formatting controls, images and recall',()=>{
  navigate('#lesson/POL1101-1');assert.ok(html().includes('data-action="nb-from-lesson"'));
  click('nb-from-lesson',{lesson:'POL1101-1'});assert.match(location.hash,/^#note\//);navigate(location.hash);
- for(const text of ['ไฮไลต์','สีตัวอักษร','แทรกรูป','คำถามทวนความจำ','note-image-file','note-question','POL1101'])assert.ok(html().includes(text),text);
+ for(const text of ['ไฮไลต์','เลือกและย้าย','แทรกรูป','คำถามทบทวน','paper-image-file','paper-question','POL1101'])assert.ok(html().includes(text),text);
  navigate('#notes');assert.ok(html().includes('ส่งออกโน้ตพร้อมรูป'));assert.ok(html().includes('POL1101'));click('nb-review');assert.ok(html().includes('ยังไม่มีคำถามจากโน้ต'));click('nb-review-close');
  navigate('#account');assert.ok(html().includes('พื้นที่กลางเดียวกันทุกเบราว์เซอร์'));assert.ok(!html().includes('member-email'));assert.ok(!html().includes('account-google'));assert.ok(!html().includes('account-signin'));assert.ok(!html().includes('URL Configuration'));
 });
