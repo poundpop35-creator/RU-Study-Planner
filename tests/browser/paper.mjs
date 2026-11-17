@@ -30,7 +30,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['mobile-webkit',web
   const page=await context.newPage();page.on('pageerror',err=>errors.push(err.message));await page.goto('http://127.0.0.1:3000/#note/browser-note');await page.locator('#paper-svg').waitFor();await page.waitForFunction(()=>document.body.classList.contains('paper-mode'));return {context,page};};
  try{
   const a=await setup(),b=await setup(),page=a.page;
-  const click=key=>page.locator('[data-paper="'+key+'"]').first().click();
+  const click=async key=>{const button=page.locator('[data-paper="'+key+'"]').first();await button.click();if(key==='save')await wait(()=>button.isEnabled());};
   const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();return {x:r.x+x*r.width/900,y:r.y+y*r.height/1273};};
   const tap=async(x,y)=>{const p=await point(x,y);if(mobile)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y);};
   // Text can be entered on touch without enabling finger drawing.
@@ -57,13 +57,13 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['mobile-webkit',web
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));await wait(()=>b.page.locator('#paper-title').inputValue().then(s=>s==='งานรอออนไลน์'));assert.equal(await b.page.locator('#paper-svg image').count(),1);
   // Remote updates during text entry preserve the editor node and pending text.
   await click('text');await tap(100,600);await page.locator('#paper-text-input').fill('กำลังเขียนขณะซิงก์');
-  await b.page.locator('#paper-title').fill('อีกเครื่องอัปเดตชื่อ');await b.page.locator('#paper-title').blur();await b.page.locator('[data-paper="save"]').click();
+  await b.page.locator('#paper-title').fill('อีกเครื่องอัปเดตชื่อ');await b.page.locator('#paper-title').blur();await b.page.locator('[data-paper="save"]').click();await wait(()=>b.page.locator('[data-paper="save"]').isEnabled());
   await page.evaluate(()=>{window.__paperNode=document.querySelector('#paper-svg');window.dispatchEvent(new Event('focus'));});await page.waitForTimeout(300);
   assert.equal(await page.locator('#paper-text-input').inputValue(),'กำลังเขียนขณะซิงก์');assert.equal(await page.evaluate(()=>window.__paperNode===document.querySelector('#paper-svg')),true);await click('save');assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.text==='กำลังเขียนขณะซิงก์'));assert.equal(row.payload.notebook.notes[0].title,'อีกเครื่องอัปเดตชื่อ');
   await page.reload();await page.waitForFunction(()=>document.body.classList.contains('paper-mode'));assert.equal(await page.locator('#paper-svg image').count(),1);
   await page.locator('.paper-menu summary').click();await click('legacy');await page.getByRole('dialog').waitFor();await page.locator('.paper-legacy .ql-editor').waitFor();assert.match(await page.locator('.paper-legacy-content').innerText(),/ต้นฉบับบทเรียน/);await page.getByRole('button',{name:'กลับหน้ากระดาษ',exact:true}).click();
   assert.deepEqual(errors,[]);console.log(name+': editor, text, vector ink, undo/redo, selection, images, pages, confirmation, offline save, cross-device sync, no remount, legacy original PASS');
- }catch(err){console.error(name,err);for(const c of browser.contexts())for(const p of c.pages())await p.screenshot({path:'test-results/failure-'+name+'.png'}).catch(()=>{});process.exitCode=1;}
+ }catch(err){console.error(name,err);let shot=0;for(const c of browser.contexts())for(const p of c.pages())await p.screenshot({path:'test-results/failure-'+name+'-'+shot+++'.png'}).catch(()=>{});process.exitCode=1;}
  finally{await browser.close();}
 }
 await new Promise(r=>server.close(r));

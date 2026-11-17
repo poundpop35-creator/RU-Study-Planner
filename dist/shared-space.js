@@ -62,6 +62,7 @@ export async function migrateLegacy({client,keys,storage,imageStore,fetcher=fetc
    for(const original of source.payload.notebook.notes){
     const n=copy(original);n.id='import-'+(await hash(source.id+':'+JSON.stringify(n))).slice(0,48);
     for(const op of n.delta.ops)if(op.insert?.studyImage)op.insert.studyImage=mapping.get(op.insert.studyImage);
+    for(const page of n.paper?.pages||[])for(const object of page.objects)if(object.type==='image')object.imageId=mapping.get(object.imageId);
     if(!ids.has(n.id)){next.notebook.notes.push(n);ids.add(n.id);}
    }
    next.progress=mergeProgress(next.progress,source.payload.progress);receipts.add(source.receipt);changed=true;
