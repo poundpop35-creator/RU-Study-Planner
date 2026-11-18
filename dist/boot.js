@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261118-wordlinks'); }
+try { await import('./app.js?v=degree-check'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
