@@ -34,9 +34,31 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();return {x:r.x+x*r.width/900,y:r.y+y*r.height/1273};};
   const tap=async(x,y)=>{const p=await point(x,y);if(mobile)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y);};
   // Text can be entered on touch without enabling finger drawing.
-  assert.equal(await page.locator('[data-paper="text"]').getAttribute('aria-pressed'),'true');await tap(100,230);await page.locator('#paper-text-input').fill('ความเข้าใจของฉัน');await click('save');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
-  const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');assert.ok(text.h>=60);
+  assert.equal(await page.locator('[data-paper="text"]').getAttribute('aria-pressed'),'true');await tap(100,230);
+  const typingBox=page.locator('#paper-text-input'),size=()=>typingBox.evaluate(el=>({w:el.offsetWidth,h:el.offsetHeight}));
+  await typingBox.fill('จด');const small=await size();assert.ok(small.w<90&&small.h<60);
+  await typingBox.fill('ข้อความสำหรับทดสอบการตัดบรรทัด '.repeat(18));const long=await size();assert.ok(long.w>small.w&&long.w<=801&&long.h>small.h);
+  await typingBox.fill('จด');assert.deepEqual(await size(),small);
+  await page.locator('#paper-text-input').fill('ความเข้าใจของฉัน');await click('save');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
+  const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
   // Real mouse/pen-style pointer flow; touch mode additionally checks pan-vs-ink behavior.
+  await click('shape');await page.locator('#paper-shape').selectOption('arrow');
+  const startShape=await point(160,360),endShape=await point(70,300);
+  if(mobile){
+   await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
+    svg.setPointerCapture=()=>{};
+    for(const [type,p] of [['pointerdown',a],['pointermove',b],['pointerup',b]])svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'touch',pointerId:12,clientX:p.x,clientY:p.y}));
+    delete svg.setPointerCapture;
+   },[startShape,endShape]);
+  }else {await page.mouse.move(startShape.x,startShape.y);await page.mouse.down();await page.mouse.move(endShape.x,endShape.y);await page.mouse.up();}
+  await click('save');assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.kind==='arrow'&&o.reverseX&&o.reverseY),JSON.stringify(row.payload.notebook.notes[0].paper.pages[0].objects));
+  await click('undo');await click('save');assert.equal(await page.locator('#paper-svg [data-shape]').count(),0);
+  await click('redo');await click('save');assert.equal(await page.locator('#paper-svg [data-shape="arrow"]').count(),1);
+  await click('select');await tap(105,240);
+  if(mobile)await click('multi');else await page.keyboard.down('Shift');
+  await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'2');
+  await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'1');
+  if(mobile)await click('multi');else await page.keyboard.up('Shift');
   await click('pen');const from=await point(100,400),to=await point(350,450);
   if(mobile){await page.locator('#paper-finger').check();await tap(220,420);}
   else{await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(to.x,to.y,{steps:15});await page.mouse.up();}
@@ -46,6 +68,18 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await click('select');await tap(220,420);await page.locator('[data-paper="delete-object"]').click();await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,0);
   await click('undo');await click('save');
   await page.locator('#paper-image-file').setInputFiles({name:'test.png',mimeType:'image/png',buffer:png});await wait(()=>images.size===1);await wait(()=>page.locator('#paper-svg image').count().then(n=>n===1));await click('save');
+  await click('image-link');const linkDialog=page.locator('#paper-link-dialog');
+  await linkDialog.locator('input').fill('https://example.org/lesson');await linkDialog.getByText('บันทึกลิงก์').click();
+  await click('save');assert.equal(await page.locator('#paper-open-link').getAttribute('href'),'https://example.org/lesson');
+  assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='image').link,'https://example.org/lesson');
+  await click('image-link');await linkDialog.locator('input').fill('javascript:alert(1)');
+  await linkDialog.getByText('บันทึกลิงก์').click();assert.ok(await linkDialog.isVisible());
+  await linkDialog.getByText('ลบลิงก์').click();assert.ok(await page.locator('#paper-open-link').isHidden());
+  await click('undo');await click('save');
+  assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='image').link,'https://example.org/lesson');
+  // Undo clears selection. Select the restored picture again before using its handles.
+  const restored=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='image');
+  await tap(restored.x+restored.w/2,restored.y+restored.h/2);
   const picture=()=>row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='image');
   const original={...picture()};
   const edge=page.locator('#paper-svg [data-edge="e"] circle').last(),handle=await edge.boundingBox();
@@ -85,12 +119,18 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await page.reload();await page.waitForFunction(()=>document.body.classList.contains('paper-mode'));assert.equal(await page.locator('#paper-svg image').count(),1);
   await page.locator('.paper-menu summary').click();await click('legacy');await page.getByRole('dialog').waitFor();await page.locator('.paper-legacy .ql-editor').waitFor();assert.match(await page.locator('.paper-legacy-content').innerText(),/ต้นฉบับบทเรียน/);await page.getByRole('button',{name:'กลับหน้ากระดาษ',exact:true}).click();
   await page.locator('.paper-back').click();await page.locator('.note-card').waitFor();assert.equal(await page.locator('.note-card p').count(),0);await page.screenshot({path:'test-results/library-'+name+'.png'});
+  await page.locator('[data-action="nb-classify"]').first().click();
+  const category=page.getByRole('dialog');await category.locator('[name="source"]').selectOption('prep');
+  await category.locator('[name="course"]').fill('POL2106');await category.getByText('บันทึก',{exact:true}).click();
+  await wait(()=>row.payload.notebook.notes[0].source==='prep');assert.equal(row.payload.notebook.notes[0].course,'POL2106');
   await page.locator('[data-action="nb-new"]').first().click();
   const create=page.getByRole('dialog');await create.locator('[name="title"]').fill('Pol2104 ครั้งที่ 1');
   await create.locator('[name="course"]').fill('pol2104');await create.getByText('สร้างโน้ต',{exact:true}).click();
   await page.locator('#paper-svg').waitFor();await click('save');assert.ok(row.payload.notebook.notes.some(n=>n.course==='POL2104'&&n.source==='classroom'));
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
-  await b.page.locator('[data-paper="files"]').click();await b.page.locator('#paper-file-list').getByText('lesson.pdf').waitFor();
+  await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
+  const [download]=await Promise.all([b.page.waitForEvent('download'),fileButton.click()]);
+  assert.equal(download.suggestedFilename(),'lesson.pdf');assert.equal((await readFile(await download.path())).toString(),'%PDF-1.4 sample');
   assert.deepEqual(errors,[]);console.log(name+': editor, text, vector ink, undo/redo, selection, images, pages, confirmation, offline save, cross-device sync, no remount, legacy original PASS');
  }catch(err){console.error(name,err);let shot=0;for(const c of browser.contexts())for(const p of c.pages())await p.screenshot({path:'test-results/failure-'+name+'-'+shot+++'.png'}).catch(()=>{});process.exitCode=1;}
  finally{await browser.close();}
