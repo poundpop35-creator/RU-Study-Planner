@@ -34,8 +34,13 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();return {x:r.x+x*r.width/900,y:r.y+y*r.height/1273};};
   const tap=async(x,y)=>{const p=await point(x,y);if(mobile)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y);};
   // Text can be entered on touch without enabling finger drawing.
-  assert.equal(await page.locator('[data-paper="text"]').getAttribute('aria-pressed'),'true');await tap(100,230);await page.locator('#paper-text-input').fill('ความเข้าใจของฉัน');await click('save');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
-  const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');assert.ok(text.h>=60);
+  assert.equal(await page.locator('[data-paper="text"]').getAttribute('aria-pressed'),'true');await tap(100,230);
+  const typingBox=page.locator('#paper-text-input'),size=()=>typingBox.evaluate(el=>({w:el.offsetWidth,h:el.offsetHeight}));
+  await typingBox.fill('จด');const small=await size();assert.ok(small.w<90&&small.h<60);
+  await typingBox.fill('ข้อความสำหรับทดสอบการตัดบรรทัด '.repeat(18));const long=await size();assert.ok(long.w>small.w&&long.w<=801&&long.h>small.h);
+  await typingBox.fill('จด');assert.deepEqual(await size(),small);
+  await page.locator('#paper-text-input').fill('ความเข้าใจของฉัน');await click('save');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
+  const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
   // Real mouse/pen-style pointer flow; touch mode additionally checks pan-vs-ink behavior.
   await click('pen');const from=await point(100,400),to=await point(350,450);
   if(mobile){await page.locator('#paper-finger').check();await tap(220,420);}

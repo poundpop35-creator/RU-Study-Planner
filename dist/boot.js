@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261118-edit2'); }
+try { await import('./app.js?v=20261118-textfit'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

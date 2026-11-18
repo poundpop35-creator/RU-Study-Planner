@@ -43,7 +43,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(gesture?.preview)content=pageSVG({...p,objects:visible},images);
   const box=bounds(visible.filter(o=>selected.has(o.id)));
   const singleImage=selected.size===1&&visible.find(o=>selected.has(o.id)&&o.type==="image");
-  if(box)content+=`<rect x="${box.x-6}" y="${box.y-6}" width="${box.w+12}" height="${box.h+12}" fill="none" stroke="#3155d9" stroke-width="2" stroke-dasharray="7 5"/>${singleImage?imageHandles(box,scale):`<rect data-resize="true" x="${box.x+box.w-9}" y="${box.y+box.h-9}" width="18" height="18" rx="4" fill="#3155d9"/>`}`;
+  if(box&&!editing)content+=`<rect x="${box.x-6}" y="${box.y-6}" width="${box.w+12}" height="${box.h+12}" fill="none" stroke="#3155d9" stroke-width="2" stroke-dasharray="7 5"/>${singleImage?imageHandles(box,scale):`<rect data-resize="true" x="${box.x+box.w-9}" y="${box.y+box.h-9}" width="18" height="18" rx="4" fill="#3155d9"/>`}`;
   if(gesture?.kind==='lasso')content+=`<path d="${gesture.points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ')}" fill="#3155d910" stroke="#3155d9" stroke-width="2" stroke-dasharray="6 4"/>`;
   svg.innerHTML=content;svg.dataset.tool=tool;
   $('#paper-page-label').textContent=`หน้า ${model.pages.findIndex(p=>p.id===pageId)+1} / ${model.pages.length}`;
@@ -67,21 +67,42 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  function zoomAt(next,cx=viewport.clientWidth/2,cy=viewport.clientHeight/2){const old=scale,x=(viewport.scrollLeft+cx)/old,y=(viewport.scrollTop+cy)/old;zoom=Math.min(4,Math.max(.5,next));sizing();viewport.scrollLeft=x*scale-cx;viewport.scrollTop=y*scale-cy;}
  function point(e){const r=svg.getBoundingClientRect();return {x:Math.max(0,Math.min(PAGE_W,(e.clientX-r.left)/r.width*PAGE_W)),y:Math.max(0,Math.min(PAGE_H,(e.clientY-r.top)/r.height*PAGE_H))};}
  function setTool(next){finishText();gesture=null;tool=next;if(!['select','text'].includes(tool))selected.clear();say(({pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะตำแหน่งบนกระดาษเพื่อพิมพ์',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูม'})[tool]);draw();}
+ const textMeasure=document.createElement('span');
+ Object.assign(textMeasure.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',whiteSpace:'pre',width:'max-content',maxWidth:'none',left:'0',top:'0'});
+ const measureClip=document.createElement('div');
+ Object.assign(measureClip.style,{position:'absolute',width:'0',height:'0',overflow:'hidden'});
+ measureClip.append(textMeasure);sheet.append(measureClip);
+ function fitTextBox(){
+  if(!editing)return;
+  const o=editing.object;
+  textMeasure.textContent=textarea.value;
+  const availableWidth=Math.max(1,PAGE_W-o.x);
+  const width=Math.min(availableWidth,Math.max(32,textMeasure.offsetWidth+5));
+  textarea.style.width=width+'px';
+  textarea.style.overflowY='hidden';
+  textarea.style.height='1px';
+  const height=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textarea.scrollHeight));
+  textarea.style.height=height+'px';
+  if(textarea.scrollHeight>height)textarea.style.overflowY='auto';
+ }
  function startText(o){
   finishText();editing={id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};selected=new Set([o.id]);textarea.value=o.text;
-  Object.assign(textarea.style,{left:o.x+'px',top:o.y+'px',width:o.w+'px',height:Math.max(o.h,60)+'px',fontSize:o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;textarea.focus();textarea.setSelectionRange(textarea.value.length,textarea.value.length);textarea.scrollIntoView({block:'nearest',inline:'nearest'});
+  Object.assign(textarea.style,{left:o.x+'px',top:o.y+'px',fontSize:o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;
+  const style=getComputedStyle(textarea);
+  Object.assign(textMeasure.style,{fontFamily:style.fontFamily,fontSize:style.fontSize,fontWeight:style.fontWeight,letterSpacing:style.letterSpacing});
+  fitTextBox();draw();textarea.focus();textarea.setSelectionRange(textarea.value.length,textarea.value.length);textarea.scrollIntoView({block:'nearest',inline:'nearest'});
  }
  let textTimer;
  function finishText(keepOpen=false){
   clearTimeout(textTimer);
-  if(!editing)return;const edit=editing,textHeight=textarea.scrollHeight;
+  if(!editing)return;const edit=editing,w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
   if(!keepOpen){editing=null;textarea.hidden=true;}
-  const o={...edit.object,text:textarea.value,h:Math.min(PAGE_H-edit.object.y,Math.max(edit.object.h,textHeight))};
-  if(edit.fresh&&!o.text.trim())return;
-  if(!edit.fresh&&o.text===edit.object.text)return;
+  const o={...edit.object,text:textarea.value,w,h};
+  if(edit.fresh&&!o.text.trim()){selected.clear();draw();return;}
+  if(!edit.fresh&&o.text===edit.object.text&&o.w===edit.object.w&&o.h===edit.object.h){if(!keepOpen)draw();return;}
   if(change(p=>{const i=p.objects.findIndex(v=>v.id===o.id);if(i>=0)p.objects[i]=o;else p.objects.push(o);})&&keepOpen){edit.object=o;edit.fresh=false;}
  }
- bind(textarea,'input',()=>{clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);textarea.style.height='auto';textarea.style.height=Math.max(60,Math.min(PAGE_H-(editing?.object.y||0),textarea.scrollHeight+4))+'px';});
+ bind(textarea,'input',()=>{clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);fitTextBox();});
  bind(textarea,'blur',()=>{if(!closed)finishText();});
  bind(textarea,'keydown',e=>{if(e.key==='Escape'){e.preventDefault();finishText();}});
  function pointerDown(e){
@@ -106,7 +127,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
    }
   }
   if(tool==='text'){
-   const target=[...page().objects].reverse().find(o=>o.type==='text'&&contains(p,o));startText(target||{id:uid(),type:'text',x:Math.min(p.x,PAGE_W-160),y:Math.min(p.y,PAGE_H-80),w:Math.max(160,Math.min(480,PAGE_W-p.x-24)),h:80,text:'',size:fontSize,color,bold});return;
+   const target=[...page().objects].reverse().find(o=>o.type==='text'&&contains(p,o));startText(target||{id:uid(),type:'text',x:Math.min(p.x,PAGE_W-32),y:Math.min(p.y,PAGE_H-Math.ceil(fontSize*1.5)),w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color,bold});return;
   }
   if(tool==='select'){
    const box=bounds(page().objects.filter(o=>selected.has(o.id)));
