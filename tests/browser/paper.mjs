@@ -51,7 +51,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     delete svg.setPointerCapture;
    },[startShape,endShape]);
   }else {await page.mouse.move(startShape.x,startShape.y);await page.mouse.down();await page.mouse.move(endShape.x,endShape.y);await page.mouse.up();}
-  await click('save');assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.kind==='arrow'&&o.reverseX&&o.reverseY));
+  await click('save');assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.kind==='arrow'&&o.reverseX&&o.reverseY),JSON.stringify(row.payload.notebook.notes[0].paper.pages[0].objects));
   await click('undo');await click('save');assert.equal(await page.locator('#paper-svg [data-shape]').count(),0);
   await click('redo');await click('save');assert.equal(await page.locator('#paper-svg [data-shape="arrow"]').count(),1);
   await click('select');await tap(105,240);
@@ -107,6 +107,10 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await page.reload();await page.waitForFunction(()=>document.body.classList.contains('paper-mode'));assert.equal(await page.locator('#paper-svg image').count(),1);
   await page.locator('.paper-menu summary').click();await click('legacy');await page.getByRole('dialog').waitFor();await page.locator('.paper-legacy .ql-editor').waitFor();assert.match(await page.locator('.paper-legacy-content').innerText(),/ต้นฉบับบทเรียน/);await page.getByRole('button',{name:'กลับหน้ากระดาษ',exact:true}).click();
   await page.locator('.paper-back').click();await page.locator('.note-card').waitFor();assert.equal(await page.locator('.note-card p').count(),0);await page.screenshot({path:'test-results/library-'+name+'.png'});
+  await page.locator('[data-action="nb-classify"]').first().click();
+  const category=page.getByRole('dialog');await category.locator('[name="source"]').selectOption('prep');
+  await category.locator('[name="course"]').fill('POL2106');await category.getByText('บันทึก',{exact:true}).click();
+  await wait(()=>row.payload.notebook.notes[0].source==='prep');assert.equal(row.payload.notebook.notes[0].course,'POL2106');
   await page.locator('[data-action="nb-new"]').first().click();
   const create=page.getByRole('dialog');await create.locator('[name="title"]').fill('Pol2104 ครั้งที่ 1');
   await create.locator('[name="course"]').fill('pol2104');await create.getByText('สร้างโน้ต',{exact:true}).click();

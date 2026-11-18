@@ -72,7 +72,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  function sizing(){fit=Math.min(1,Math.max(.2,(viewport.clientWidth-48)/PAGE_W));scale=fit*zoom;wrap.style.width=PAGE_W*scale+'px';wrap.style.height=PAGE_H*scale+'px';sheet.style.transform=`scale(${scale})`;$('#paper-zoom').textContent=Math.round(zoom*100)+'%';}
  function zoomAt(next,cx=viewport.clientWidth/2,cy=viewport.clientHeight/2){const old=scale,x=(viewport.scrollLeft+cx)/old,y=(viewport.scrollTop+cy)/old;zoom=Math.min(4,Math.max(.5,next));sizing();viewport.scrollLeft=x*scale-cx;viewport.scrollTop=y*scale-cy;}
  function point(e){const r=svg.getBoundingClientRect();return {x:Math.max(0,Math.min(PAGE_W,(e.clientX-r.left)/r.width*PAGE_W)),y:Math.max(0,Math.min(PAGE_H,(e.clientY-r.top)/r.height*PAGE_H))};}
- function setTool(next){finishText();gesture=null;tool=next;if(next!=='select')multiSelect=false;if(!['select','text'].includes(tool))selected.clear();say(({shape:'เลือกรูปทรง แล้วลากบนหน้ากระดาษ',pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะตำแหน่งบนกระดาษเพื่อพิมพ์',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูม'})[tool]);draw();}
+ function setTool(next){finishText();pointers.clear();gesture=null;tool=next;if(next!=='select')multiSelect=false;if(!['select','text'].includes(tool))selected.clear();say(({shape:'เลือกรูปทรง แล้วลากบนหน้ากระดาษ',pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะตำแหน่งบนกระดาษเพื่อพิมพ์',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูม'})[tool]);draw();}
  const textMeasure=document.createElement('span');
  Object.assign(textMeasure.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',whiteSpace:'pre',width:'max-content',maxWidth:'none',left:'0',top:'0'});
  const measureClip=document.createElement('div');
@@ -208,6 +208,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   draw();if(pendingRemote)refresh(space);
  }
  bind(svg,'pointerdown',pointerDown);bind(svg,'pointermove',pointerMove);bind(svg,'pointerup',pointerUp);bind(svg,'pointercancel',pointerUp);
+ bind(svg,'lostpointercapture',e=>{if(pointers.delete(e.pointerId)){gesture=null;scheduleDraw();}});
  bind(svg,'dblclick',e=>{if(tool!=='select')return;const o=[...page().objects].reverse().find(o=>o.type==='text'&&contains(point(e),o));if(o)startText(o);});
  bind(viewport,'wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();const r=viewport.getBoundingClientRect();zoomAt(zoom*Math.exp(-e.deltaY*.005),e.clientX-r.left,e.clientY-r.top);}},{passive:false});
  async function insertImages(files){
