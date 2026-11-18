@@ -19,7 +19,7 @@ export function validatePaper(value){
     out.tool=o.tool;out.color=o.color;out.width=o.width;out.points=o.points.map(p=>{if(!Array.isArray(p)||p.length!==3||!num(p[0],0,1)||!num(p[1],0,1)||!num(p[2],0,1))throw Error('จุดปากกาไม่ถูกต้อง');return [...p];});
    }else if(o.type==='text'){
     if(typeof o.text!=='string'||o.text.length>20000||!color(o.color)||!num(o.size,10,96))throw Error('ข้อความบนกระดาษไม่ถูกต้อง');Object.assign(out,{text:o.text,color:o.color,size:o.size,bold:o.bold===true});
-   }else {if(typeof o.imageId!=='string'||!/^[a-f0-9-]{36}\.(png|jpg|webp|gif)$/.test(o.imageId))throw Error('รูปภาพไม่ถูกต้อง');out.imageId=o.imageId;}
+   }else {if(typeof o.imageId!=='string'||!/^[a-f0-9-]{36}\.(png|jpg|webp|gif)$/.test(o.imageId))throw Error('รูปภาพไม่ถูกต้อง');out.imageId=o.imageId;if(o.stretch===true)out.stretch=true;}
    return out;
   })};
  })};

@@ -1,4 +1,5 @@
-import {validatePaper} from './paper-core.js?v=20261117-paper';
+import {validatePaper} from './paper-core.js?v=20261118-edit2';
+import {validateFiles} from './note-files.js';
 // Store a small, validated Delta rather than trusting saved HTML.
 export const PALETTE=['#172033','#1d4ed8','#047857','#b91c1c','#7e22ce','#c2410c'];
 export const HIGHLIGHTS=['#fef08a','#bbf7d0','#bfdbfe','#fbcfe8','#fed7aa'];
@@ -35,11 +36,11 @@ export const noteText=n=>n.paper?n.paper.pages.flatMap(p=>p.objects.filter(o=>o.
 export function referencedImages(notebook){return [...new Set(notebook.notes.flatMap(n=>[...n.delta.ops.map(o=>o.insert?.studyImage),...(n.paper?.pages||[]).flatMap(p=>p.objects.map(o=>o.imageId))]).filter(imageId))];}
 export function freshNotebook(){return {version:1,notes:[]};}
 export function validateNotebook(v){
- if(!plain(v)||![1,2].includes(v.version)||!Array.isArray(v.notes)||v.notes.length>500)throw Error('สมุดจดต้องเป็นรุ่น 1 หรือ 2 และมีไม่เกิน 500 โน้ต');
+ if(!plain(v)||![1,2,3].includes(v.version)||!Array.isArray(v.notes)||v.notes.length>500)throw Error('สมุดจดต้องเป็นรุ่น 1–3 และมีไม่เกิน 500 โน้ต');
  // Version 2 makes old clients reject paper data before they can silently drop it on save.
- const ids=new Set();return {version:v.version===2||v.notes.some(n=>n?.paper)?2:1,notes:v.notes.map(n=>{
+ const ids=new Set();return {version:v.version===3||v.notes.some(n=>n?.files?.length)?3:v.version===2||v.notes.some(n=>n?.paper)?2:1,notes:v.notes.map(n=>{
   if(!plain(n)||!idOK(n.id)||ids.has(n.id))throw Error('รหัสหน้าโน้ตไม่ถูกต้อง');ids.add(n.id);
-  return {...(n.paper?{paper:validatePaper(n.paper)}:{}),id:n.id,title:String(n.title||'โน้ตใหม่').slice(0,160),course:/^POL\d{4}$/.test(n.course)?n.course:'',lesson:/^POL\d{4}-\d+$/.test(n.lesson)?n.lesson:'',source:noteSource(n),tags:String(n.tags||'').slice(0,250),delta:cleanDelta(n.delta),pinned:n.pinned===true,archived:n.archived===true,updatedAt:typeof n.updatedAt==='string'&&Number.isFinite(Date.parse(n.updatedAt))?n.updatedAt:new Date(0).toISOString(),question:String(n.question||'').slice(0,4000),answer:String(n.answer||'').slice(0,10000)};
+  return {...(n.files?{files:validateFiles(n.files)}:{}),...(n.paper?{paper:validatePaper(n.paper)}:{}),id:n.id,title:String(n.title||'โน้ตใหม่').slice(0,160),course:/^POL\d{4}$/.test(n.course)?n.course:'',lesson:/^POL\d{4}-\d+$/.test(n.lesson)?n.lesson:'',source:noteSource(n),tags:String(n.tags||'').slice(0,250),delta:cleanDelta(n.delta),pinned:n.pinned===true,archived:n.archived===true,updatedAt:typeof n.updatedAt==='string'&&Number.isFinite(Date.parse(n.updatedAt))?n.updatedAt:new Date(0).toISOString(),question:String(n.question||'').slice(0,4000),answer:String(n.answer||'').slice(0,10000)};
  })};
 }
 export function newNote({id=crypto.randomUUID(),course='',lesson='',source=lesson?'prep':'general',title='โน้ตใหม่',text=''}={}){return {id,title,course,lesson,source:noteSource({source,lesson}),tags:'',delta:cleanDelta({ops:[{insert:text+'\n'}]}),pinned:false,archived:false,updatedAt:new Date().toISOString(),question:'',answer:''};}
