@@ -14,6 +14,8 @@ The notebook opens in a full-screen paper workspace. Text boxes, pressure-aware 
 
 ## Data contract and limits
 
+The notebook envelope upgrades to version 2 when a paper note is first saved. Legacy clients accept only version 1, so they fail validation and must reload instead of stripping unknown paper fields on their next save. The outer workspace remains version 1, accepted by the existing Edge API.
+
 A note retains its original `delta` unchanged and optionally has `paper: {version:1,pages:[{id,template,objects}]}`. Objects have stable IDs, type, x/y/w/h. Strokes retain tool, color, width, normalized points and pressure. Text retains text, size, bold, color. Images reference Storage IDs, not base64 payloads. Template changes do not transform content. Eraser removes entire strokes; selected objects may be moved/resized/duplicated/deleted.
 
 Legacy conversion creates deterministic IDs across devices. Converted text is plain text; the original styles and complete original Delta remain available from “ดูต้นฉบับเดิม”. If the original is too large to convert, it remains intact in the original viewer and a new blank paper workspace is offered with an explicit notice.

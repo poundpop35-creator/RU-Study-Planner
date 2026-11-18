@@ -14,7 +14,7 @@ test('legacy conversion is deterministic across devices and preserves original D
 });
 test('paper schema roundtrips strokes text and image references; rejects bad coordinates and IDs',()=>{
  const b=book(),p=b.notes[0].paper.pages[0];p.objects.push(stroke(),{id:'img',type:'image',x:0,y:0,w:100,h:100,imageId:'12345678-1234-1234-1234-123456789012.jpg'});
- assert.deepEqual(validateNotebook(b),b);assert.equal(referencedImages(b).length,1);assert.equal(findNotes(b,{query:'ข้อความเดิม'}).length,1);
+ assert.deepEqual(validateNotebook(b),{...b,version:2});assert.equal(referencedImages(b).length,1);assert.equal(findNotes(b,{query:'ข้อความเดิม'}).length,1);
  const invalid=copy(b);invalid.notes[0].paper.pages[0].objects[0].x=Infinity;assert.throws(()=>validateNotebook(invalid));
  const dup=copy(b);dup.notes[0].paper.pages.push(copy(p));assert.throws(()=>validateNotebook(dup));
 });
@@ -43,3 +43,5 @@ test('offline flush never claims success and queued vector data survives reconne
  try{await space.init();space.saveNotebook(book());cloud.fail(Error('offline'));await assert.rejects(()=>space.flush(),/offline/);assert.equal(space.info().dirty,true);cloud.fail(null);await space.flush();assert.equal(space.info().dirty,false);assert.ok(cloud.rows.get(cloud.owner.id).payload.notebook.notes[0].paper);}finally{space.dispose();}
 });
 test('capacity guard leaves headroom below 4 MB API request limit',()=>{assert.doesNotThrow(()=>assertCapacity({text:'x'.repeat(3700000)}));assert.throws(()=>assertCapacity({text:'ก'.repeat(1300000)}),/เต็ม/);});
+
+test('paper upgrades notebook to version 2 so legacy clients cannot strip vector data',()=>{const v=validateNotebook(book());assert.equal(v.version,2);assert.equal(validateNotebook({...v,notes:[]}).version,2);assert.equal(validateNotebook({version:1,notes:[newNote()]}).version,1);});

@@ -35,8 +35,9 @@ export const noteText=n=>n.paper?n.paper.pages.flatMap(p=>p.objects.filter(o=>o.
 export function referencedImages(notebook){return [...new Set(notebook.notes.flatMap(n=>[...n.delta.ops.map(o=>o.insert?.studyImage),...(n.paper?.pages||[]).flatMap(p=>p.objects.map(o=>o.imageId))]).filter(imageId))];}
 export function freshNotebook(){return {version:1,notes:[]};}
 export function validateNotebook(v){
- if(!plain(v)||v.version!==1||!Array.isArray(v.notes)||v.notes.length>500)throw Error('สมุดจดต้องเป็นรุ่น 1 และมีไม่เกิน 500 หน้า');
- const ids=new Set();return {version:1,notes:v.notes.map(n=>{
+ if(!plain(v)||![1,2].includes(v.version)||!Array.isArray(v.notes)||v.notes.length>500)throw Error('สมุดจดต้องเป็นรุ่น 1 หรือ 2 และมีไม่เกิน 500 โน้ต');
+ // Version 2 makes old clients reject paper data before they can silently drop it on save.
+ const ids=new Set();return {version:v.version===2||v.notes.some(n=>n?.paper)?2:1,notes:v.notes.map(n=>{
   if(!plain(n)||!idOK(n.id)||ids.has(n.id))throw Error('รหัสหน้าโน้ตไม่ถูกต้อง');ids.add(n.id);
   return {...(n.paper?{paper:validatePaper(n.paper)}:{}),id:n.id,title:String(n.title||'โน้ตใหม่').slice(0,160),course:/^POL\d{4}$/.test(n.course)?n.course:'',lesson:/^POL\d{4}-\d+$/.test(n.lesson)?n.lesson:'',source:noteSource(n),tags:String(n.tags||'').slice(0,250),delta:cleanDelta(n.delta),pinned:n.pinned===true,archived:n.archived===true,updatedAt:typeof n.updatedAt==='string'&&Number.isFinite(Date.parse(n.updatedAt))?n.updatedAt:new Date(0).toISOString(),question:String(n.question||'').slice(0,4000),answer:String(n.answer||'').slice(0,10000)};
  })};

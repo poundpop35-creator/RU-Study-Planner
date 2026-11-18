@@ -48,7 +48,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await page.locator('#paper-image-file').setInputFiles({name:'test.png',mimeType:'image/png',buffer:png});await wait(()=>images.size===1);await wait(()=>page.locator('#paper-svg image').count().then(n=>n===1));await click('save');
   await page.locator('#paper-template').selectOption('dots');await click('save');
   await page.screenshot({path:'test-results/paper-'+name+'.png'});
-  if(!await page.locator('[data-paper="add-page"]').isVisible())await click('pages');await click('add-page');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
+  if(!await page.locator('[data-paper="add-page"]').first().isVisible())await click('pages');await click('add-page');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
   await click('delete-page');await page.getByRole('alertdialog').waitFor();await page.locator('[data-delete-choice="cancel"]').click();assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
   await click('delete-page');await page.locator('[data-delete-choice="confirm"]').click();await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,1);
   // Save waits for acknowledgement instead of reporting success on click.
