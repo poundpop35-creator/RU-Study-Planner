@@ -1,4 +1,4 @@
-try { await import('./app.js?v=degree-check'); }
+try { await import('./app.js?v=credit-colors'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

@@ -40,7 +40,9 @@ tr.reg-hit>td{background:#fef9c3!important}tr.reg-hit>td:first-child{box-shadow:
 .degree-audit{margin:22px 0}
 .audit-columns,.audit-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .audit-columns>div{min-width:0}
-.audit-totals{padding:16px;margin-bottom:14px;border-radius:14px;background:#eaf1ff;color:#203c76}
+.audit-totals{margin-bottom:14px}
+.audit-totals>div{padding:14px 16px;color:#1d3c67;background:#edf5fd;border-inline-start:5px solid #80b8de;border-radius:10px}
+.audit-totals>div+div{background:#e8f7f2;border-color:#69bdac}
 .audit-totals span,.audit-group th small,.audit-group td small{display:block;font-weight:400;font-size:.84em}
 .audit-group{background:var(--card,#fff);border:1px solid var(--line,#cbd5e1);border-radius:14px;margin-bottom:14px;padding:14px}
 .audit-group h3{margin:0;font-size:1.05rem}
@@ -52,5 +54,19 @@ tr.reg-hit>td{background:#fef9c3!important}tr.reg-hit>td:first-child{box-shadow:
 .audit-group button,.audit-group a{color:var(--accent,#3155d9);font:inherit;font-weight:600}
 .audit-group button{background:transparent;padding:0;border:0;text-decoration:underline;cursor:pointer}
 .audit-group a{display:inline-block;margin-top:10px}
+/* Give row headers the same background as their row; only the column headings use mint. */
+.audit-group thead th{background:#cbefea;color:#173e4c;white-space:normal}
+.audit-group tbody th,.audit-group tbody td{background:transparent;color:#1d3c67;white-space:normal;border-color:#d5dfe4}
+.audit-group tbody th small{font-size:.93em;line-height:1.45;margin-top:2px}
+.audit-group tbody tr{background:#fff}
+.audit-group tbody tr:nth-child(even){background:#f5f8fb}
+.audit-group .audit-course.enrolled{--row:#e9f7ed;--pill:#c8ecd2;--ink:#145834}
+.audit-group .audit-course.planned{--row:#fff9e3;--pill:#faecb2;--ink:#654c0c}
+.audit-group .audit-course.passed{--row:#ecf4ff;--pill:#d2e5ff;--ink:#214e80}
+.audit-group .audit-course.retry{--row:#fff0ed;--pill:#ffdbd4;--ink:#862b23}
+.audit-group tbody tr.audit-course{background:var(--row)}
+.audit-status{display:inline-block;border-radius:6px;padding:2px 6px;background:var(--pill);color:var(--ink);font-size:.85em;font-weight:650;white-space:nowrap}
+.audit-group tbody button{color:#1d466b;text-underline-offset:2px}
+.audit-group [data-action="audit-transfer"]{margin-top:10px}
 @media(max-width:820px){.audit-columns{grid-template-columns:1fr;gap:0}}
 @media(max-width:480px){.audit-totals{grid-template-columns:1fr;gap:8px}.audit-group{padding:10px}.audit-group th,.audit-group td{padding:6px 2px}}

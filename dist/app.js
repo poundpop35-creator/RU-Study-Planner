@@ -1,4 +1,4 @@
-import {registrationChecklist} from './registration-checklist.js';
+import {registrationChecklist} from './registration-checklist.js?v=credit-colors';
 import {readingStart,afterPlan,firstChecklist,weekView,mayConfirm} from './after-class.js?v=20261112a';
 import {importPanel,resolvePlan} from './debt-import.js?v=20261111b';
 import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261111b';
