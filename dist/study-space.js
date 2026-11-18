@@ -1,8 +1,8 @@
-import {createSharedClient,legacyKeys,migrateLegacy} from './shared-space.js?v=20261118-wordlinks';
+import {createSharedClient,legacyKeys,migrateLegacy} from './shared-space.js?v=registration-status';
 import {accountClient,lookupAccount,sessionKey} from './notebook-account.js';
 import {createPersonalClient,personalKey} from './personal-client.js?v=20261116-account';
 import {supabaseConfig as config} from './supabase-config.js?v=20261027c';
-import {freshState,validateState} from './core.js?v=20261112a';
+import {freshState,validateState} from './core.js?v=registration-status';
 import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261118-wordlinks';
 import {getImage,putImage,newImageId} from './image-store.js?v=20261027c';
 export const workspaceKey=id=>'ru-study-workspace.v1:'+id;

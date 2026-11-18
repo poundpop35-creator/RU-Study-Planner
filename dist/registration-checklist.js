@@ -1,10 +1,15 @@
 import {meta,categories,categoryTargets} from './data.js?v=20261027c';
-import {escapeHTML as e} from './core.js?v=20261112a';
+import {escapeHTML as e,isEnrolled} from './core.js?v=registration-status';
 
 const transferGroups=[
  ['general','ศึกษาทั่วไป',30,'ทักษะการเรียนรู้ตลอดชีวิต 15 · ผู้สร้างสรรค์นวัตกรรม 6 · พลเมืองที่เข้มแข็ง 9'],
  ['free','เลือกเสรี',12,'ตามแผนบริหารรัฐกิจ']
 ];
+
+export function enrollmentControl(state,course){
+ const checked=isEnrolled(state,course),graded=Boolean(state.grades[course.id]);
+ return `<label class="reg-enrollment ${checked?'enrolled':'planned'}"${graded?' title="มีผลสอบแล้ว หากต้องการเปลี่ยนสถานะ ให้ล้างผลสอบก่อน"':''}><input type="checkbox" class="enrollment-check" data-course="${e(course.id)}" aria-label="ลงทะเบียนแล้ว ${e(course.id)}"${checked?' checked':''}${graded?' disabled':''}><span>${checked?'ลงแล้ว':'รอตามแผน'}</span></label>`;
+}
 
 export function registrationChecklist(state,summary){
  const total=meta.totalCredits;
@@ -19,9 +24,9 @@ export function registrationChecklist(state,summary){
   const target=categoryTargets[key],planned=summary.planned[key],passed=summary.passed[key];
   const rows=summary.termRows.flatMap(term=>term.courses.filter(c=>c.category===key).map(c=>{
    const grade=state.grades[c.id];
-   const status=grade?(grade==='F'?'retry':'passed'):(c.enrolled?'enrolled':'planned');
+   const status=grade?(grade==='F'?'retry':'passed'):(isEnrolled(state,c)?'enrolled':'planned');
    const label={enrolled:'ลงแล้ว',planned:'รอตามแผน',passed:'สอบผ่าน',retry:'ต้องสอบใหม่'}[status];
-   return `<tr class="audit-course ${status}"><td>${e(term.name)}</td><th scope="row"><button type="button" data-action="registration-find" data-course="${e(c.id)}" data-term="${term.id}" title="ดูวิชานี้ในแผนรายภาค">${e(c.id)}</button><small>${e(c.title)}</small></th><td>${c.credits}</td><td>${grade?`<b>${e(grade)}</b> `:''}<span class="audit-status">${label}</span></td></tr>`;
+   return `<tr class="audit-course ${status}"><td>${e(term.name)}</td><th scope="row"><button type="button" data-action="registration-find" data-course="${e(c.id)}" data-term="${term.id}" title="ดูวิชานี้ในแผนรายภาค">${e(c.id)}</button><small>${e(c.title)}</small></th><td>${c.credits}</td><td>${grade?`<b>${e(grade)}</b> `:''}${grade?`<span class="audit-status">${label}</span>`:enrollmentControl(state,c)}</td></tr>`;
   })).join('');
   return `<section class="audit-group"><h3>${e(categories[key])} <small>${target} หน่วยกิต</small></h3><p>${planned>=target?'วางแผนครบ':'ขาดในแผน '+(target-planned)+' นก.'} · สอบผ่านที่บันทึก ${passed} นก.</p><table><thead><tr><th>ภาค</th><th>รายวิชา</th><th>นก.</th><th>ผล / สถานะ</th></tr></thead><tbody>${rows}</tbody></table></section>`;
  };

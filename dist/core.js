@@ -3,7 +3,7 @@ import {courses,terms,categoryTargets,readingWeek,studyPhases,studyHours} from '
 import {lessons} from './lessons.js?v=20261027c';
 import {prep} from './prep.js?v=20261027c';
 export const STORAGE_KEY='ru-study-planner.v1';
-export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,firstHeard:{},readExtra:{},readCourse:{},practiceMigrationVersion:1,practiceReview:{},legacyPracticePending:[],hours:{weekday:2,weekend:2},hourOverrides:{},planDone:{},prep:{},debt:{}};}
+export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},enrollment:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,firstHeard:{},readExtra:{},readCourse:{},practiceMigrationVersion:1,practiceReview:{},legacyPracticePending:[],hours:{weekday:2,weekend:2},hourOverrides:{},planDone:{},prep:{},debt:{}};}
 const lessonIds=new Set(lessons.map(l=>l.id));
 const courseIds=new Set(courses.map(c=>c.id));
 const cardIds=new Set(lessons.flatMap(l=>l.cards.map((_,i)=>`${l.id}:${i}`)));
@@ -21,6 +21,7 @@ export function validateState(input){
  if(plain(input.answers))for(const [k,v]of Object.entries(input.answers)){if(questionIds.has(k)&&Number.isInteger(v)&&v>=0&&v<questionIds.get(k).options.length)s.answers[k]=v;}
  if(plain(input.reviews))for(const [k,v]of Object.entries(input.reviews)){if(cardIds.has(k)&&plain(v)&&isDay(v.due)&&Number.isInteger(v.level)&&v.level>=0&&v.level<=3)s.reviews[k]={due:v.due,level:v.level};}
  if(plain(input.grades))for(const [k,v]of Object.entries(input.grades)){if(courseIds.has(k)&&['A','B+','B','C+','C','D+','D','F'].includes(v))s.grades[k]=v;}
+ if(plain(input.enrollment))for(const [id,value] of Object.entries(input.enrollment)){if(courseIds.has(id)&&typeof value==='boolean')s.enrollment[id]=value;}
  if(plain(input.termMoves))for(const [k,v]of Object.entries(input.termMoves)){if(courseIds.has(k)&&!courses.find(c=>c.id===k).enrolled&&Number.isInteger(v)&&v>=1&&v<terms.length)s.termMoves[k]=v;}
  if(lessonIds.has(input.lastLesson))s.lastLesson=input.lastLesson;
  if(plain(input.transfer))for(const [k,max]of [['general',30],['free',12]]){if(Number.isInteger(input.transfer[k])&&input.transfer[k]>=0&&input.transfer[k]<=max)s.transfer[k]=input.transfer[k];}
@@ -62,6 +63,7 @@ export function unreadLesson(state,code){return lessons.find(l=>l.course===code&
 export function exams(){return courses.filter(c=>c.enrolled&&c.exam).sort((a,b)=>a.exam.localeCompare(b.exam)||a.slot.localeCompare(b.slot));}
 export function examClashes(items){const seen=new Map();const clashes=[];for(const c of items){if(!c.exam||!c.slot)continue;const key=`${c.exam}:${c.slot}`;if(seen.has(key))clashes.push([seen.get(key),c.id]);else seen.set(key,c.id);}return clashes;}
 const values={'A':4,'B+':3.5,'B':3,'C+':2.5,'C':2,'D+':1.5,'D':1,'F':0};
+export function isEnrolled(state,course){return Boolean(state.grades[course.id]||(state.enrollment?.[course.id]??course.enrolled));}
 export function planSummary(state){
  const planned=Object.fromEntries(Object.keys(categoryTargets).map(k=>[k,0]));const passed={...planned};
  let gradePoints=0,graded=0;

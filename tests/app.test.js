@@ -222,6 +222,9 @@ test('reading and registration are separate routes with independent controls and
  assert.equal((html().match(/class="grade-select"/g)||[]).length,7);
  assert.ok(get('#navigation').innerHTML.includes('href="#registration" aria-current="page"'));
  click('registration-term',{term:'1'});assert.ok(html().includes('aria-label="ย้าย POL2300"'));
+ const mark=checked=>listeners.change({target:{classList:{contains:c=>c==='enrollment-check'},dataset:{course:'POL2300'},checked}});
+ mark(true);assert.equal(saved().enrollment.POL2300,true);assert.ok(html().includes('aria-label="ลงทะเบียนแล้ว POL2300" checked'));
+ mark(false);assert.equal(saved().enrollment.POL2300,false);assert.ok(!html().includes('aria-label="ลงทะเบียนแล้ว POL2300" checked'));
  listeners.change({target:{classList:{contains:c=>c==='move-select'},dataset:{course:'POL2300'},value:'2'}});
  assert.equal(saved().termMoves.POL2300,2);assert.ok(!html().includes('aria-label="ย้าย POL2300"'));
  click('registration-term',{term:'2'});assert.ok(html().includes('aria-label="ย้าย POL2300"'));

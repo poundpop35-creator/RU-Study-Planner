@@ -91,3 +91,16 @@ test('hours and repaired legacy candidates survive synthetic cloud save and sepa
   assert.deepEqual(validateState(back),back);
  }finally{a.dispose();b.dispose();}
 });
+
+test('enrollment changes in both directions persist in the shared workspace',async()=>{
+ const cloud=cloudFixture();
+ const make=()=>createStudySpace({storage:memoryStorage(),progress:freshState(),clientFactory:()=>cloud.client,imageStore:imageCache()});
+ const a=make(),b=make();
+ try{
+  await a.init();const state=a.snapshot().progress;
+  state.enrollment={POL2300:true,POL1101:false};a.saveProgress(state);await a.flush();
+  await b.init();assert.deepEqual(b.snapshot().progress.enrollment,state.enrollment);
+  const updated=b.snapshot().progress;updated.enrollment.POL2300=false;b.saveProgress(updated);await b.flush();await a.sync();
+  assert.deepEqual(a.snapshot().progress.enrollment,{POL2300:false,POL1101:false});
+ }finally{a.dispose();b.dispose();}
+});
