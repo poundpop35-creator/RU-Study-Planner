@@ -68,6 +68,18 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await click('select');await tap(220,420);await page.locator('[data-paper="delete-object"]').click();await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,0);
   await click('undo');await click('save');
   await page.locator('#paper-image-file').setInputFiles({name:'test.png',mimeType:'image/png',buffer:png});await wait(()=>images.size===1);await wait(()=>page.locator('#paper-svg image').count().then(n=>n===1));await click('save');
+  await click('image-link');const linkDialog=page.locator('#paper-link-dialog');
+  await linkDialog.locator('input').fill('https://example.org/lesson');await linkDialog.getByText('บันทึกลิงก์').click();
+  await click('save');assert.equal(await page.locator('#paper-open-link').getAttribute('href'),'https://example.org/lesson');
+  assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='image').link,'https://example.org/lesson');
+  await click('image-link');await linkDialog.locator('input').fill('javascript:alert(1)');
+  await linkDialog.getByText('บันทึกลิงก์').click();assert.ok(await linkDialog.isVisible());
+  await linkDialog.getByText('ลบลิงก์').click();assert.ok(await page.locator('#paper-open-link').isHidden());
+  await click('undo');await click('save');
+  assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='image').link,'https://example.org/lesson');
+  // Undo clears selection. Select the restored picture again before using its handles.
+  const restored=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='image');
+  await tap(restored.x+restored.w/2,restored.y+restored.h/2);
   const picture=()=>row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='image');
   const original={...picture()};
   const edge=page.locator('#paper-svg [data-edge="e"] circle').last(),handle=await edge.boundingBox();
@@ -116,7 +128,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await create.locator('[name="course"]').fill('pol2104');await create.getByText('สร้างโน้ต',{exact:true}).click();
   await page.locator('#paper-svg').waitFor();await click('save');assert.ok(row.payload.notebook.notes.some(n=>n.course==='POL2104'&&n.source==='classroom'));
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
-  await b.page.locator('[data-paper="files"]').click();await b.page.locator('#paper-file-list').getByText('lesson.pdf').waitFor();
+  await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
+  const [download]=await Promise.all([b.page.waitForEvent('download'),fileButton.click()]);
+  assert.equal(download.suggestedFilename(),'lesson.pdf');assert.equal((await readFile(await download.path())).toString(),'%PDF-1.4 sample');
   assert.deepEqual(errors,[]);console.log(name+': editor, text, vector ink, undo/redo, selection, images, pages, confirmation, offline save, cross-device sync, no remount, legacy original PASS');
  }catch(err){console.error(name,err);let shot=0;for(const c of browser.contexts())for(const p of c.pages())await p.screenshot({path:'test-results/failure-'+name+'-'+shot+++'.png'}).catch(()=>{});process.exitCode=1;}
  finally{await browser.close();}

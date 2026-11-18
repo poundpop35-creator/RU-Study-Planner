@@ -1,5 +1,5 @@
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
-import {PAGE_W,PAGE_H,emptyPage,uid,paperFor,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper} from './paper-core.js?v=20261118-shapes';
+import {PAGE_W,PAGE_H,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper} from './paper-core.js?v=20261118-shapes';
 import {pageSVG,objectSVG,esc} from './paper-render.js?v=20261118-shapes';
 import {imageHandles,resizeImage,cropImage} from './paper-images.js';
 import {readAttachment,downloadAttachment} from './note-files.js';
@@ -58,6 +58,10 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   root.querySelectorAll('[data-paper-color]').forEach(b=>b.setAttribute('aria-pressed',String(color===b.dataset.paperColor)));
   $('[data-paper="undo"]').disabled=!h().canUndo; $('[data-paper="redo"]').disabled=!h().canRedo;
   const tools=$('#paper-selection-tools');tools.hidden=!selected.size;$('#paper-selected-count').textContent=selected.size;
+  const linkButton=$('[data-paper="image-link"]'),openLink=$('#paper-open-link');
+  linkButton.hidden=!singleImage;linkButton.textContent=singleImage?.link?'แก้ลิงก์':'ใส่ลิงก์';
+  openLink.hidden=!singleImage?.link;
+  if(singleImage?.link)openLink.href=singleImage.link;else openLink.removeAttribute('href');
   $('[data-paper="crop"]').hidden=!singleImage;
   const texts=p.objects.filter(o=>selected.has(o.id)&&o.type==='text');$('[data-paper="edit-text"]').hidden=texts.length!==1;$('#paper-font-size').parentElement.hidden=!texts.length;$('[data-paper="bold"]').hidden=!texts.length;
   $('#paper-font-size').value=texts[0]?.size||fontSize;
@@ -256,6 +260,22 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
    }
    if(['select','pen','highlight','eraser','text','shape','hand'].includes(action)){setTool(action);return;}
    if(action==='files'){fileList();$('#paper-files').showModal();return;}
+   if(action==='image-link'){
+    const target=page().objects.find(o=>selected.has(o.id)&&o.type==='image');
+    if(!target)return;
+    const dialog=$('#paper-link-dialog'),form=dialog.querySelector('form'),input=form.elements.url;
+    input.value=target.link||'';dialog.querySelector('p').textContent='';
+    dialog.querySelector('[value="remove"]').hidden=!target.link;
+    form.onsubmit=event=>{
+     const choice=event.submitter?.value;
+     if(choice==='cancel')return;
+     try{
+      const link=choice==='remove'?'':imageLink(input.value);
+      if(!change(p=>{const image=p.objects.find(o=>o.id===target.id);if(!image)throw Error('ไม่พบรูปนี้บนหน้าแล้ว');if(link)image.link=link;else delete image.link;}))throw Error('บันทึกลิงก์ไม่สำเร็จ');
+     }catch(err){event.preventDefault();dialog.querySelector('p').textContent=err.message;}
+    };
+    dialog.showModal();return;
+   }
    if(action==='crop'){
     const o=page().objects.find(o=>selected.has(o.id)&&o.type==='image');
     if(!o||!images.has(o.imageId))throw Error('กรุณารอให้โหลดรูปก่อน');

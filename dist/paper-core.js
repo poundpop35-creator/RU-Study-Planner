@@ -7,6 +7,14 @@ const color=x=>typeof x==='string'&&/^#[a-fA-F0-9]{6}$/.test(x);
 export const copy=x=>JSON.parse(JSON.stringify(x));
 export const uid=()=>crypto.randomUUID();
 export const emptyPage=()=>({id:uid(),template:'ruled',objects:[]});
+export function imageLink(value){
+ const text=String(value??'').trim();
+ if(!text)return '';
+ let url;
+ try{url=new URL(text);}catch{}
+ if(!url||!['https:','http:'].includes(url.protocol)||!url.hostname||url.username||url.password||url.href.length>2048)throw Error('กรอกลิงก์เว็บไซต์ที่ขึ้นต้นด้วย https:// หรือ http://');
+ return url.href;
+}
 export function validatePaper(value){
  if(!value||value.version!==1||!Array.isArray(value.pages)||!value.pages.length||value.pages.length>100)throw Error('สมุดรองรับ 1–100 หน้า');
  const ids=new Set();let points=0;
@@ -23,7 +31,7 @@ export function validatePaper(value){
     Object.assign(out,{kind:o.kind,color:o.color,width:o.width,reverseX:o.reverseX===true,reverseY:o.reverseY===true});
    }else if(o.type==='text'){
     if(typeof o.text!=='string'||o.text.length>20000||!color(o.color)||!num(o.size,10,96))throw Error('ข้อความบนกระดาษไม่ถูกต้อง');Object.assign(out,{text:o.text,color:o.color,size:o.size,bold:o.bold===true});
-   }else {if(typeof o.imageId!=='string'||!/^[a-f0-9-]{36}\.(png|jpg|webp|gif)$/.test(o.imageId))throw Error('รูปภาพไม่ถูกต้อง');out.imageId=o.imageId;if(o.stretch===true)out.stretch=true;}
+   }else {if(typeof o.imageId!=='string'||!/^[a-f0-9-]{36}\.(png|jpg|webp|gif)$/.test(o.imageId))throw Error('รูปภาพไม่ถูกต้อง');out.imageId=o.imageId;if(o.stretch===true)out.stretch=true;if(o.link)out.link=imageLink(o.link);}
    return out;
   })};
  })};
