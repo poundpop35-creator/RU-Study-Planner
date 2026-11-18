@@ -42,6 +42,23 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await page.locator('#paper-text-input').fill('ความเข้าใจของฉัน');await click('save');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
   const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
   // Real mouse/pen-style pointer flow; touch mode additionally checks pan-vs-ink behavior.
+  await click('shape');await page.locator('#paper-shape').selectOption('arrow');
+  const startShape=await point(160,360),endShape=await point(70,300);
+  if(mobile){
+   await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
+    svg.setPointerCapture=()=>{};
+    for(const [type,p] of [['pointerdown',a],['pointermove',b],['pointerup',b]])svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'touch',pointerId:12,clientX:p.x,clientY:p.y}));
+    delete svg.setPointerCapture;
+   },[startShape,endShape]);
+  }else {await page.mouse.move(startShape.x,startShape.y);await page.mouse.down();await page.mouse.move(endShape.x,endShape.y);await page.mouse.up();}
+  await click('save');assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.kind==='arrow'&&o.reverseX&&o.reverseY));
+  await click('undo');await click('save');assert.equal(await page.locator('#paper-svg [data-shape]').count(),0);
+  await click('redo');await click('save');assert.equal(await page.locator('#paper-svg [data-shape="arrow"]').count(),1);
+  await click('select');await tap(105,240);
+  if(mobile)await click('multi');else await page.keyboard.down('Shift');
+  await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'2');
+  await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'1');
+  if(mobile)await click('multi');else await page.keyboard.up('Shift');
   await click('pen');const from=await point(100,400),to=await point(350,450);
   if(mobile){await page.locator('#paper-finger').check();await tap(220,420);}
   else{await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(to.x,to.y,{steps:15});await page.mouse.up();}

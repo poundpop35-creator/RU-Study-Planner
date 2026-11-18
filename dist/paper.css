@@ -49,3 +49,5 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 #paper-file-list {padding:0;list-style:none}
 #paper-file-list li {display:flex;justify-content:space-between;gap:8px;margin:6px 0}
 #paper-file-list button {overflow-wrap:anywhere}
+.paper-tool-options [data-paper="multi"][aria-pressed="true"] {background:#e6edff;color:#2848af;box-shadow:inset 0 0 0 1px #718be3}
+@media(max-width:1000px){.paper-toolbar{flex-wrap:wrap}.paper-tool-options{flex-wrap:wrap;justify-content:center}}

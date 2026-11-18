@@ -1,4 +1,4 @@
-import {validatePaper} from './paper-core.js?v=20261118-edit2';
+import {validatePaper} from './paper-core.js?v=20261118-shapes';
 import {validateFiles} from './note-files.js';
 // Store a small, validated Delta rather than trusting saved HTML.
 export const PALETTE=['#172033','#1d4ed8','#047857','#b91c1c','#7e22ce','#c2410c'];

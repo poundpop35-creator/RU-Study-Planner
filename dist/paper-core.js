@@ -1,3 +1,4 @@
+import {shapes} from './paper-shapes.js';
 export const PAGE_W=900,PAGE_H=1273;
 export const PAPERS=['plain','ruled','grid','dots'];
 const idOK=x=>typeof x==='string'&&/^[a-zA-Z0-9_-]{1,90}$/.test(x);
@@ -12,11 +13,14 @@ export function validatePaper(value){
  return {version:1,pages:value.pages.map(page=>{
   if(!idOK(page.id)||ids.has(page.id)||!PAPERS.includes(page.template)||!Array.isArray(page.objects)||page.objects.length>5000)throw Error('ข้อมูลหน้ากระดาษไม่ถูกต้อง');ids.add(page.id);
   return {id:page.id,template:page.template,objects:page.objects.map(o=>{
-   if(!idOK(o.id)||ids.has(o.id)||!['stroke','text','image'].includes(o.type)||!num(o.x,-PAGE_W,PAGE_W*2)||!num(o.y,-PAGE_H,PAGE_H*2)||!num(o.w,1,PAGE_W*3)||!num(o.h,1,PAGE_H*3))throw Error('วัตถุบนกระดาษไม่ถูกต้อง');ids.add(o.id);
+   if(!idOK(o.id)||ids.has(o.id)||!['stroke','text','image','shape'].includes(o.type)||!num(o.x,-PAGE_W,PAGE_W*2)||!num(o.y,-PAGE_H,PAGE_H*2)||!num(o.w,1,PAGE_W*3)||!num(o.h,1,PAGE_H*3))throw Error('วัตถุบนกระดาษไม่ถูกต้อง');ids.add(o.id);
    const out={id:o.id,type:o.type,x:o.x,y:o.y,w:o.w,h:o.h};
    if(o.type==='stroke'){
     if(!['pen','highlight'].includes(o.tool)||!color(o.color)||!num(o.width,1,40)||!Array.isArray(o.points)||!o.points.length)throw Error('เส้นปากกาไม่ถูกต้อง');points+=o.points.length;if(points>120000)throw Error('ลายมือในโน้ตนี้เต็มแล้ว กรุณาสร้างโน้ตใหม่');
     out.tool=o.tool;out.color=o.color;out.width=o.width;out.points=o.points.map(p=>{if(!Array.isArray(p)||p.length!==3||!num(p[0],0,1)||!num(p[1],0,1)||!num(p[2],0,1))throw Error('จุดปากกาไม่ถูกต้อง');return [...p];});
+   }else if(o.type==='shape'){
+    if(!Object.hasOwn(shapes,o.kind)||!color(o.color)||!num(o.width,1,40))throw Error('รูปทรงไม่ถูกต้อง');
+    Object.assign(out,{kind:o.kind,color:o.color,width:o.width,reverseX:o.reverseX===true,reverseY:o.reverseY===true});
    }else if(o.type==='text'){
     if(typeof o.text!=='string'||o.text.length>20000||!color(o.color)||!num(o.size,10,96))throw Error('ข้อความบนกระดาษไม่ถูกต้อง');Object.assign(out,{text:o.text,color:o.color,size:o.size,bold:o.bold===true});
    }else {if(typeof o.imageId!=='string'||!/^[a-f0-9-]{36}\.(png|jpg|webp|gif)$/.test(o.imageId))throw Error('รูปภาพไม่ถูกต้อง');out.imageId=o.imageId;if(o.stretch===true)out.stretch=true;}

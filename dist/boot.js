@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261118-textfit'); }
+try { await import('./app.js?v=20261118-shapes'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
