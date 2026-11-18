@@ -1,8 +1,11 @@
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
-import {PAGE_W,PAGE_H,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper} from './paper-core.js?v=20261118-shapes';
-import {pageSVG,objectSVG,esc} from './paper-render.js?v=20261118-shapes';
+import {PAGE_W,PAGE_H,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper} from './paper-core.js?v=20261118-wordlinks';
+import {pageSVG,objectSVG,esc} from './paper-render.js?v=20261118-wordlinks';
 import {imageHandles,resizeImage,cropImage} from './paper-images.js';
 import {readAttachment,downloadAttachment} from './note-files.js';
+import {replaceLink,moveLinks} from './word-links.js';
+import {chooseWordTarget} from './word-link-dialog.js';
+import {openNoteFile} from './file-viewer.js';
 import {makeShape} from './paper-shapes.js';
 let active=null;
 export function refreshPaper(space,id){return active?.id===id?active.refresh(space):false;}
@@ -11,7 +14,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  let note=space.notebook().notes.find(n=>n.id===id);if(!note)return ()=>{};
  let conversionWarning='';let initial;try{initial=paperFor(note);}catch{initial={version:1,pages:[emptyPage()]};conversionWarning='ต้นฉบับยาวเกินหน้ากระดาษที่รองรับ ดูฉบับเต็มได้ในเมนู ดูต้นฉบับเดิม';}
  let model=initial,pageId=model.pages[0].id,tool='text',color='#172033',width=5,fontSize=24,bold=false,finger=false,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
- let multiSelect=false;
+ let multiSelect=false,wordSelection=null;
  let lastStored=JSON.stringify(note.paper||null),pendingRemote=false,draftBase=null;
  let cachedPage=null,cachedContent='',imageVersion=0,cachedImageVersion=-1;
  const scope=space.info().scope,images=new Map(),loading=new Set(),history=new Map(),events=[],pointers=new Map();
@@ -95,8 +98,29 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   textarea.style.height=height+'px';
   if(textarea.scrollHeight>height)textarea.style.overflowY='auto';
  }
+ function rememberWord(){
+  if(!editing)return;
+  const start=textarea.selectionStart,end=textarea.selectionEnd;
+  wordSelection=end>start?{pageId,id:editing.id,start,end,text:textarea.value}:null;
+ }
+ async function linkWord(){
+  if(editing)rememberWord();
+  const range=wordSelection;
+  if(!range||range.pageId!==pageId){say('เลือกคำในกล่องข้อความก่อน แล้วกดเชื่อมคำกับเว็บ/ไฟล์',true);return;}
+  finishText();
+  const findTarget=()=>page().objects.find(o=>o.id===range.id&&o.text===range.text);
+  const object=findTarget();if(!object)return;
+  const old=object.links?.find(link=>link.start<range.end&&link.end>range.start);
+  const result=await chooseWordTarget(range.text.slice(range.start,range.end),old,currentNote().files||[]);
+  if(!result||closed)return;
+  if(!findTarget()||pageId!==range.pageId)throw Error('ข้อความเปลี่ยนแล้ว กรุณาเลือกคำอีกครั้ง');
+  if(result.attachment)updateFiles(files=>[...files,result.attachment]);
+  if(result.target?.fileId&&!currentNote().files?.some(f=>f.id===result.target.fileId))throw Error('ไม่พบไฟล์ที่เลือกแล้ว');
+  if(change(p=>{const o=p.objects.find(o=>o.id===range.id);o.links=replaceLink(o.links||[],range.start,range.end,result.target);}))say(result.target?'แตะคำที่ขีดเส้นใต้เพื่อเปิด':'ลบลิงก์จากคำแล้ว');
+  wordSelection=null;
+ }
  function startText(o){
-  finishText();editing={id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};selected=new Set([o.id]);textarea.value=o.text;
+  finishText();wordSelection=null;editing={lastText:o.text,links:o.links||[],id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};selected=new Set([o.id]);textarea.value=o.text;
   Object.assign(textarea.style,{left:o.x+'px',top:o.y+'px',fontSize:o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;
   const style=getComputedStyle(textarea);
   Object.assign(textMeasure.style,{fontFamily:style.fontFamily,fontSize:style.fontSize,fontWeight:style.fontWeight,letterSpacing:style.letterSpacing});
@@ -107,15 +131,19 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   clearTimeout(textTimer);
   if(!editing)return;const edit=editing,w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
   if(!keepOpen){editing=null;textarea.hidden=true;}
-  const o={...edit.object,text:textarea.value,w,h};
+  const o={...edit.object,text:textarea.value,w,h};if(edit.links.length)o.links=edit.links;else delete o.links;
   if(edit.fresh&&!o.text.trim()){selected.clear();draw();return;}
   if(!edit.fresh&&o.text===edit.object.text&&o.w===edit.object.w&&o.h===edit.object.h){if(!keepOpen)draw();return;}
   if(change(p=>{const i=p.objects.findIndex(v=>v.id===o.id);if(i>=0)p.objects[i]=o;else p.objects.push(o);})&&keepOpen){edit.object=o;edit.fresh=false;}
  }
- bind(textarea,'input',()=>{clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);fitTextBox();});
- bind(textarea,'blur',()=>{if(!closed)finishText();});
- bind(textarea,'keydown',e=>{if(e.key==='Escape'){e.preventDefault();finishText();}});
+ bind(textarea,'select',rememberWord);
+ bind($('[data-paper="word-link"]'),'pointerdown',e=>{if(editing){rememberWord();e.preventDefault();}});
+ bind(textarea,'input',()=>{if(editing){editing.links=moveLinks(editing.links,editing.lastText,textarea.value);editing.lastText=textarea.value;}clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);fitTextBox();});
+ bind(textarea,'blur',()=>{if(!closed){rememberWord();finishText();}});
+ bind(textarea,'keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();linkWord().catch(err=>say(err.message,true));return;}if(e.key==='Escape'){e.preventDefault();finishText();}});
  function pointerDown(e){
+  if(e.target.closest('[data-word-link],[data-word-file]')&&['text','select'].includes(tool)&&!multiSelect&&!e.shiftKey)return;
+  wordSelection=null;
   if(e.pointerType==='mouse'&&e.button!==0)return;
   if(e.pointerType==='touch'&&[...pointers.values()].some(p=>p.pointerType==='pen'))return;
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,pointerType:e.pointerType});
@@ -211,6 +239,14 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   else if(g?.kind==='lasso'){selected=new Set(page().objects.filter(o=>o.type==='stroke'?o.points.some(pt=>inPolygon({x:o.x+pt[0]*o.w,y:o.y+pt[1]*o.h},g.points)):inPolygon({x:o.x+o.w/2,y:o.y+o.h/2},g.points)).map(o=>o.id));}
   draw();if(pendingRemote)refresh(space);
  }
+ bind(svg,'click',e=>{
+  const link=e.target.closest('[data-word-link],[data-word-file]');if(!link)return;
+  if(!['text','select'].includes(tool)||multiSelect||e.shiftKey){e.preventDefault();return;}
+  if(link.dataset.wordFile){
+   const file=currentNote()?.files?.find(f=>f.id===link.dataset.wordFile);
+   if(file)openNoteFile(file).catch(err=>say(err.message,true));else say('ไฟล์แนบนี้ถูกลบแล้ว',true);
+  }
+ });
  bind(svg,'pointerdown',pointerDown);bind(svg,'pointermove',pointerMove);bind(svg,'pointerup',pointerUp);bind(svg,'pointercancel',pointerUp);
  bind(svg,'lostpointercapture',e=>{if(pointers.delete(e.pointerId)){gesture=null;scheduleDraw();}});
  bind(svg,'dblclick',e=>{if(tool!=='select')return;const o=[...page().objects].reverse().find(o=>o.type==='text'&&contains(point(e),o));if(o)startText(o);});
@@ -229,7 +265,10 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  }
  function updateFiles(fn){
   writable();const book=copy(space.notebook()),target=book.notes.find(n=>n.id===id);
-  target.files=fn(target.files||[]);target.updatedAt=new Date().toISOString();space.saveNotebook(book);fileList();
+  const before=target.files||[];target.files=fn(before);
+  const removed=new Set(before.filter(f=>!target.files.some(next=>next.id===f.id)).map(f=>f.id));
+  if(removed.size)for(const p of target.paper?.pages||[])for(const o of p.objects)if(o.links)o.links=o.links.filter(link=>!removed.has(link.fileId));
+  target.updatedAt=new Date().toISOString();space.saveNotebook(book);fileList();
  }
  bind($('#paper-doc-file'),'change',async e=>{
   const input=e.target,file=input.files[0];if(!file)return;
@@ -254,6 +293,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
    if(b.dataset.paperPage){finishText();pageId=b.dataset.paperPage;selected.clear();viewport.scrollTop=0;root.classList.remove('pages-open');draw();thumbs();return;}
    if(b.dataset.paperColor){color=b.dataset.paperColor;if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type!=='image'?{...o,color}:o);});draw();return;}
    const action=b.dataset.paper;if(!action)return;
+   if(action==='word-link'){await linkWord();return;}
    if(action==='multi'){
     multiSelect=!multiSelect;setTool('select');
     say(multiSelect?'แตะเพื่อเพิ่มหรือนำออกจากกลุ่ม · ลากชิ้นที่เลือกเพื่อย้ายพร้อมกัน':'แตะเพื่อเลือก · Shift + คลิกเพื่อเลือกเพิ่ม');return;
