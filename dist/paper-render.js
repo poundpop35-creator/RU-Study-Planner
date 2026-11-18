@@ -1,8 +1,8 @@
-import {PAGE_W,PAGE_H} from './paper-core.js?v=20261117-paper';
+import {PAGE_W,PAGE_H} from './paper-core.js?v=20261118-edit2';
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const round=n=>Math.round(n*100)/100;
 export function objectSVG(o,images=new Map()){
- if(o.type==='image')return `<image data-object="${o.id}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}" href="${esc(images.get(o.imageId)||'')}" preserveAspectRatio="xMidYMid meet"/>`;
+ if(o.type==='image')return `<image data-object="${o.id}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}" href="${esc(images.get(o.imageId)||'')}" preserveAspectRatio="${o.stretch?'none':'xMidYMid meet'}"/>`;
  if(o.type==='text')return `<foreignObject data-object="${o.id}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:'Noto Sans Thai',sans-serif;font-size:${o.size}px;line-height:1.5;font-weight:${o.bold?700:400};color:${o.color};white-space:pre-wrap;overflow-wrap:anywhere;height:100%;overflow:hidden">${esc(o.text)}</div></foreignObject>`;
  const points=o.points.map(p=>[o.x+p[0]*o.w,o.y+p[1]*o.h,p[2]]);
  if(points.length===1)return `<circle data-object="${o.id}" cx="${points[0][0]}" cy="${points[0][1]}" r="${o.width/2}" fill="${o.color}" opacity="${o.tool==='highlight'?'.3':'1'}"/>`;

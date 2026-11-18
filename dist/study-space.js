@@ -1,9 +1,9 @@
-import {createSharedClient,legacyKeys,migrateLegacy} from './shared-space.js?v=20261116-shared';
+import {createSharedClient,legacyKeys,migrateLegacy} from './shared-space.js?v=20261118-edit2';
 import {accountClient,lookupAccount,sessionKey} from './notebook-account.js';
 import {createPersonalClient,personalKey} from './personal-client.js?v=20261116-account';
 import {supabaseConfig as config} from './supabase-config.js?v=20261027c';
 import {freshState,validateState} from './core.js?v=20261112a';
-import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261117-paper';
+import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261118-edit2';
 import {getImage,putImage,newImageId} from './image-store.js?v=20261027c';
 export const workspaceKey=id=>'ru-study-workspace.v1:'+id;
 const scriptLoads=new Map();
@@ -31,14 +31,14 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
   catch{cacheWarning='เก็บสำเนาชั่วคราวในเครื่องไม่ได้ อย่าปิดหน้านี้จนกว่าจะบันทึกใน Supabase สำเร็จ';return false;}
  }
  function requireAccount(){if(!user)throw Error('กำลังเชื่อมต่อพื้นที่บันทึกใน Supabase กรุณาลองอีกครั้ง');if(!hydrated||locked)throw Error('ยังโหลดข้อมูลบัญชีจาก Supabase ไม่สำเร็จ กรุณาลองเชื่อมต่ออีกครั้ง');}
- function schedule(delay=700){clearTimeout(timer);timer=setTimeout(()=>sync(),delay);timer?.unref?.();}
+ function schedule(delay=3000){clearTimeout(timer);timer=setTimeout(()=>sync(),delay);timer?.unref?.();}
  function changed(){requireAccount();edit++;dirty=true;persist();setStatus('กำลังรอบันทึกใน Supabase…','pending');schedule();return true;}
  async function fetchRemote(uid){const {data,error}=await client.from('ru_study_workspaces').select('payload,revision,updated_at').eq('user_id',uid).maybeSingle();if(error)throw error;return data;}
  async function upload(id,blob,uid){const {error}=await client.storage.from('ru-study-notes').upload(uid+'/'+id,blob,{contentType:blob.type,upsert:false});if(error&&!['409','Duplicate'].includes(String(error.statusCode||error.error))&&!/already exists|duplicate/i.test(error.message||''))throw error;}
  async function sync(){
   if(!user||!client||busy||conflict||disposed)return;
   const ticket=epoch,uid=user.id,wasHydrated=hydrated;busy=true;clearTimeout(timer);
-  setStatus(dirty?'กำลังบันทึกใน Supabase…':'กำลังตรวจข้อมูลจาก Supabase…',dirty?'saving':'loading');
+  if(dirty||!wasHydrated)setStatus(dirty?'กำลังบันทึกใน Supabase…':'กำลังตรวจข้อมูลจาก Supabase…',dirty?'saving':'loading');
   try{
    const remote=await fetchRemote(uid);if(ticket!==epoch)return;
    if(remote){
@@ -71,7 +71,7 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
    busy=false;
    if(ticket===epoch&&!wasHydrated&&hydrated){onProgress(payload.progress);onChange();}
    if(ticket!==epoch&&user&&!disposed)schedule(0);
-   else if(dirty&&!conflict&&!locked&&!disposed)schedule(phase==='pending'?700:10000);
+   else if(dirty&&!conflict&&!locked&&!disposed)schedule(phase==='pending'?3000:10000);
   }
  }
  async function switchUser(next){
@@ -119,7 +119,7 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
     listen(globalThis.window,'online',()=>sync());listen(globalThis.window,'focus',()=>sync());
     listen(globalThis.document,'visibilitychange',()=>{if(document.visibilityState==='visible'||dirty)sync();});
     listen(globalThis.window,'beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
-    poll=setInterval(()=>{if(!globalThis.document||document.visibilityState!=='hidden')sync();},5000);poll?.unref?.();
+    poll=setInterval(()=>{if(!dirty&&(!globalThis.document||document.visibilityState!=='hidden'))sync();},15000);poll?.unref?.();
    }catch(err){setStatus(message(err),'error');}
    finally{initialized=true;notify();onChange();}
   },
