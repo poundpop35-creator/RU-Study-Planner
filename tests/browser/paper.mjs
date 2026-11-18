@@ -64,8 +64,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     delete svg.setPointerCapture;
    },mid);await click('save');assert.ok(picture().w>beforePinch.w);assert.equal(await page.locator('#paper-zoom').innerText(),zoom);
   }
-  await click('crop');const crop=page.getByRole('dialog');await crop.locator('input').first().press('ArrowRight');await crop.getByText('ใช้ส่วนที่เลือก').click();
-  await wait(()=>images.size===2);await click('save');assert.notEqual(picture().imageId,original.imageId);
+  const beforeCropWidth=picture().w;await click('crop');const crop=page.getByRole('dialog');await crop.locator('input').first().press('ArrowRight');await crop.getByText('ใช้ส่วนที่เลือก').click();
+  await wait(()=>images.size===2);await wait(()=>page.locator('#paper-svg image').getAttribute('width').then(w=>Number(w)<beforeCropWidth));await click('save');assert.notEqual(picture().imageId,original.imageId);
   await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 sample')});
   await wait(()=>row.payload.notebook.notes[0].files?.[0]?.name==='lesson.pdf');await page.locator('#paper-files form button').click();
   await page.locator('#paper-template').selectOption('dots');await click('save');
@@ -85,6 +85,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await page.reload();await page.waitForFunction(()=>document.body.classList.contains('paper-mode'));assert.equal(await page.locator('#paper-svg image').count(),1);
   await page.locator('.paper-menu summary').click();await click('legacy');await page.getByRole('dialog').waitFor();await page.locator('.paper-legacy .ql-editor').waitFor();assert.match(await page.locator('.paper-legacy-content').innerText(),/ต้นฉบับบทเรียน/);await page.getByRole('button',{name:'กลับหน้ากระดาษ',exact:true}).click();
   await page.locator('.paper-back').click();await page.locator('.note-card').waitFor();assert.equal(await page.locator('.note-card p').count(),0);await page.screenshot({path:'test-results/library-'+name+'.png'});
+  await page.locator('[data-action="nb-new"]').first().click();
+  const create=page.getByRole('dialog');await create.locator('[name="title"]').fill('Pol2104 ครั้งที่ 1');
+  await create.locator('[name="course"]').fill('pol2104');await create.getByText('สร้างโน้ต',{exact:true}).click();
+  await page.locator('#paper-svg').waitFor();await click('save');assert.ok(row.payload.notebook.notes.some(n=>n.course==='POL2104'&&n.source==='classroom'));
+  await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await b.page.locator('[data-paper="files"]').click();await b.page.locator('#paper-file-list').getByText('lesson.pdf').waitFor();
   assert.deepEqual(errors,[]);console.log(name+': editor, text, vector ink, undo/redo, selection, images, pages, confirmation, offline save, cross-device sync, no remount, legacy original PASS');
  }catch(err){console.error(name,err);let shot=0;for(const c of browser.contexts())for(const p of c.pages())await p.screenshot({path:'test-results/failure-'+name+'-'+shot+++'.png'}).catch(()=>{});process.exitCode=1;}
  finally{await browser.close();}

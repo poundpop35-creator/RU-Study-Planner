@@ -17,7 +17,7 @@ export async function cropImage(url) {
  const img=new Image();img.src=url;await img.decode();
  const dialog=document.createElement('dialog');
  dialog.className='paper-sheet-dialog';
- dialog.innerHTML='<form method="dialog"><h2>ครอปรูป</h2><canvas width="260" height="160"></canvas>'+['ซ้าย','ขวา','บน','ล่าง'].map(label=>'<label>'+label+' <input type="range" min="0" max="95" value="0"></label>').join('')+'<footer><button value="cancel">ยกเลิก</button><button value="crop">ใช้ส่วนที่เลือก</button></footer></form>';
+ dialog.innerHTML='<form method="dialog"><h2>ครอปรูป</h2><canvas width="260" height="160"></canvas>'+['ซ้าย','ขวา','บน','ล่าง'].map(label=>'<label>'+label+' <input type="range" min="0" max="95" value="0"></label>').join('')+'<div class="paper-dialog-actions"><button value="cancel">ยกเลิก</button><button value="crop">ใช้ส่วนที่เลือก</button></div></form>';
  document.body.append(dialog);
  const sliders=[...dialog.querySelectorAll('input')],preview=dialog.querySelector('canvas');
  function region(){const [l,r,t,b]=sliders.map(s=>Number(s.value)/100);return [l*img.width,t*img.height,Math.max(1,(1-l-r)*img.width),Math.max(1,(1-t-b)*img.height)];}

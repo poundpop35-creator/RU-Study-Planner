@@ -44,7 +44,7 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 .paper-sheet-dialog label {display:grid;gap:4px;margin:10px 0}
 .paper-sheet-dialog button,.paper-sheet-dialog select,.paper-sheet-dialog input {font:inherit;max-width:100%;min-height:40px}
 .paper-sheet-dialog button {background:#edf1fa;color:#243d87;border:0;border-radius:8px;padding:6px 12px}
-.paper-sheet-dialog footer,.paper-sheet-dialog header {display:flex;gap:12px;align-items:center;justify-content:space-between}
+.paper-sheet-dialog .paper-dialog-actions,.paper-sheet-dialog header {display:flex;gap:12px;align-items:center;justify-content:space-between}
 .paper-sheet-dialog canvas {display:block;max-width:100%;margin:auto;background:#eee}
 #paper-file-list {padding:0;list-style:none}
 #paper-file-list li {display:flex;justify-content:space-between;gap:8px;margin:6px 0}
