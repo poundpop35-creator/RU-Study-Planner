@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261118-shapes'); }
+try { await import('./app.js?v=20261118-wordlinks'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

@@ -1,12 +1,12 @@
-import {paperPage} from './paper-view.js?v=20261118-shapes';
-import {mountPaper,refreshPaper} from './paper-editor.js?v=20261118-shapes';
+import {paperPage} from './paper-view.js?v=20261118-wordlinks';
+import {mountPaper,refreshPaper} from './paper-editor.js?v=20261118-wordlinks';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
 import {courses} from './data.js?v=20261027c';
 import {lessons} from './lessons.js?v=20261027c';
 import {escapeHTML as e} from './core.js?v=20261027c';
-import {newNote,findNotes,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261118-shapes';
+import {newNote,findNotes,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261118-wordlinks';
 let query='',course='',source='',archived=false,reviewing=false,reviewIndex=0,revealed=false,unmount=()=>{};
 const stamps=x=>new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short'}).format(new Date(x));
 const sourceChoices=value=>Object.entries(NOTE_SOURCES).map(([key,label])=>`<option value="${key}" ${value===key?'selected':''}>${label}</option>`).join('');

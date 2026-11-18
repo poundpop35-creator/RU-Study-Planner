@@ -131,6 +131,25 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
   const [download]=await Promise.all([b.page.waitForEvent('download'),fileButton.click()]);
   assert.equal(download.suggestedFilename(),'lesson.pdf');assert.equal((await readFile(await download.path())).toString(),'%PDF-1.4 sample');
+  await click('text');await tap(120,240);
+  const box=page.locator('#paper-text-input');await box.fill('politics / politics');
+  await box.evaluate(el=>el.setSelectionRange(11,19));await click('word-link');
+  let linkForm=page.getByRole('dialog').filter({hasText:'เชื่อมคำกับเว็บหรือไฟล์'});
+  assert.equal(await linkForm.locator('blockquote').innerText(),'politics');
+  await linkForm.locator('[name="address"]').fill('https://example.org/politics');await linkForm.getByText('บันทึกลิงก์').click();
+  const webWord=page.locator('#paper-svg [data-word-link]');await webWord.waitFor();assert.equal(await webWord.innerText(),'politics');
+  await tap(122,246);await box.evaluate(el=>el.setSelectionRange(0,8));await click('word-link');
+  await linkForm.locator('[name="kind"]').selectOption('upload');
+  await linkForm.locator('[name="upload"]').setInputFiles({name:'reading.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 preview test')});
+  await linkForm.getByText('บันทึกลิงก์').click();await click('save');
+  await page.reload();await page.locator('#paper-svg [data-word-file]').click();
+  const reader=page.locator('.paper-file-view');assert.equal(await reader.locator('h2').innerText(),'reading.pdf');
+  assert.equal(await reader.locator('iframe').getAttribute('title'),'reading.pdf');await reader.locator('[data-close]').click();
+  assert.equal(await webWord.getAttribute('href'),'https://example.org/politics');
+  await page.evaluate(async data=>{const {openNoteFile}=await import('/file-viewer.js');await openNoteFile({name:'lesson.docx',data});},'UEsDBBQAAAAIAIV4cl1iiZmmSgAAAFAAAAARAAAAd29yZC9kb2N1bWVudC54bWyzKcrPL1GoyM3JK7Yqt1UqLcqzKkktLlGysym3KgARJXYPdsx6sGP6g50ND3YsfrBj64Mdix7smKmQkp9cYaMPkgeRQKX6IJPsAFBLAQIUAxQAAAAIAIV4cl1iiZmmSgAAAFAAAAARAAAAAAAAAAAAAACAAQAAAAB3b3JkL2RvY3VtZW50LnhtbFBLBQYAAAAAAQABAD8AAAB5AAAAAAA=');
+  assert.match(await reader.locator('.file-content').innerText(),/บทเรียน docx/);await reader.locator('[data-close]').click();
+  await page.evaluate(async data=>{const {openNoteFile}=await import('/file-viewer.js');await openNoteFile({name:'lesson.pptx',data});},'UEsDBBQAAAAIAIV4cl1c32V0SgAAAFAAAAAVAAAAcHB0L3NsaWRlcy9zbGlkZTEueG1ssynKzy9RqMjNySu2SrRVKi3KsypJLS5RsrNJtCoAESV2D3bMerBj+oOdDQ92LH6wY+uDHYse7JipUFBQUmGjD5IHkUCl+iCT7ABQSwECFAMUAAAACACFeHJdXN9ldEoAAABQAAAAFQAAAAAAAAAAAAAAgAEAAAAAcHB0L3NsaWRlcy9zbGlkZTEueG1sUEsFBgAAAAABAAEAQwAAAH0AAAAAAA==');
+  assert.match(await reader.locator('.file-content').innerText(),/บทเรียน pptx/);await reader.locator('[data-close]').click();
   assert.deepEqual(errors,[]);console.log(name+': editor, text, vector ink, undo/redo, selection, images, pages, confirmation, offline save, cross-device sync, no remount, legacy original PASS');
  }catch(err){console.error(name,err);let shot=0;for(const c of browser.contexts())for(const p of c.pages())await p.screenshot({path:'test-results/failure-'+name+'-'+shot+++'.png'}).catch(()=>{});process.exitCode=1;}
  finally{await browser.close();}
