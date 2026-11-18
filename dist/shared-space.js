@@ -1,5 +1,5 @@
 import {createPersonalClient,personalKey} from './personal-client.js?v=20261116-account';
-import {freshState,validateState} from './core.js?v=20261112a';
+import {freshState,validateState} from './core.js?v=registration-status';
 import {validateEnvelope,referencedImages} from './notebook-core.js?v=20261118-wordlinks';
 
 // Intentionally PUBLIC: the owner requested one editable workspace for all visitors.
