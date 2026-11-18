@@ -8,8 +8,8 @@ import {recordPractice,practiceStats} from './practice-core.js?v=20261027c';
 import {documentsPage} from './documents-view.js?v=20261027c';
 import {examEvidenceTable,examEvidenceCard,readingExamFormats,registrationExam} from './exam-evidence.js?v=20261113b';
 import {hubTabs,studySections,prepNotice,classroomPage} from './study-sections.js?v=20261027c';
-import {createStudySpace} from './study-space.js?v=20261116-mobile-delete';
-import {notebookPage,notePage,mountEditor,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261116-mobile-delete';
+import {createStudySpace} from './study-space.js?v=20261117-paper';
+import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261117-paper';
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
 import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=20261111a';
@@ -231,7 +231,7 @@ function render(keepScroll=false){
  const info=studySpace.info();
  main.innerHTML=({home,debt:()=>{adoptLocalDebt();if(!info.hydrated&&info.phase==='loading')return '<section class="panel" role="status">กำลังโหลดแผนหนี้และประวัติการจ่ายของพื้นที่นี้…</section>';return updatedPage(debtStore,currentId,info.canEdit)??(importPanel()+debtPage(debtStore));},practice:()=>studySections('practice')+practicePage(state,currentId),documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:classroomPage,course:()=>coursePage(currentId),prep:()=>prepPage(currentId),lesson:()=>lessonPage(currentId),review,plan,registration,calendar:()=>planningNav('calendar')+calendarPage(),menu:menuPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings,awards}[currentView]||missing)();
  fresh=null;
- if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sync-status]').forEach(el=>el.textContent=info.status);
+ if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=info.status;if(el.classList?.contains('paper-cloud'))el.dataset.phase=info.phase;});
  document.title=`${currentView==='lesson'?(lessonById(currentId)?.title||'บทเรียน'):document.querySelector('#breadcrumb').textContent} · RU Study Planner`;
  if(info.canEdit&&currentView==='note'&&typeof window.location!=='undefined')mountEditor(studySpace,currentId);
  if(keepScroll)window.scrollTo(0,oldY);else window.scrollTo(0,0);
@@ -332,8 +332,8 @@ document.addEventListener('change',async event=>{const el=event.target;if(!study
 });
 // Remember whether the plan tools are open, so ticking a block or changing the date does not fold them away.
 document.addEventListener('toggle',event=>{if(event.target?.classList?.contains('plan-tools'))planToolsOpen=event.target.open;},true);
-studySpace=createStudySpace({storage,progress:state,onProgress:value=>{state=validateState(value);locked=false;},onChange:()=>render(true),onStatus:info=>{
- if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sync-status]').forEach(el=>el.textContent=info.status);
+studySpace=createStudySpace({storage,progress:state,onProgress:value=>{state=validateState(value);locked=false;},onChange:()=>{if(currentView==='note'&&refreshPaper(studySpace,currentId))return;render(true);},onStatus:info=>{
+ if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=info.status;if(el.classList?.contains('paper-cloud'))el.dataset.phase=info.phase;});
  const bar=document.getElementById('cloud-status-bar');if(bar){bar.dataset.phase=info.phase;bar.hidden=false;}
  for(const id of ['note-status','rich-note-status']){const el=document.getElementById(id);if(el)el.textContent=info.status;}
  storageWarning(info.cacheWarning);

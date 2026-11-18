@@ -1,4 +1,4 @@
-import {PALETTE} from './notebook-core.js?v=20261027c';
+import {PALETTE} from './notebook-core.js?v=20261117-paper';
 import {INK_WIDTH,INK_HEIGHT,inkPoint,acceptsInk,createInkHistory,paintInk,paintInkSegment} from './ink-core.js?v=20261115';
 
 // A route change retains the unfinished page in memory. Only the explicit

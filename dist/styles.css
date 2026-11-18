@@ -964,3 +964,6 @@ html[data-view=debt] .top-stats{display:none}
 .note-delete-overlay{position:fixed;inset:0;z-index:10000;background:#0f172a99;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;overscroll-behavior:contain}
 .note-delete-dialog{width:min(100%,440px);max-height:calc(100dvh - 40px);overflow:auto;background:#fff;color:#172033;border-radius:20px;padding:24px;box-shadow:0 18px 70px #0004}
 .note-delete-dialog h2{margin:0 0 16px;font-size:24px}.note-delete-name{font-weight:700;overflow-wrap:anywhere}.note-delete-dialog .button-row{display:grid;grid-template-columns:1fr 1fr}.note-delete-dialog .button{min-height:48px;touch-action:manipulation}.note-delete-dialog .note-delete-danger{background:#b91c1c;color:#fff;border-color:#991b1b}
+
+/* Keep the notebook library compact regardless of note length. */
+.note-card{min-height:180px;padding:20px}.note-card h2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.45;margin:14px 0 8px}.note-card small{padding-top:14px}

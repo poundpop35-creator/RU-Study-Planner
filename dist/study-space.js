@@ -3,12 +3,13 @@ import {accountClient,lookupAccount,sessionKey} from './notebook-account.js';
 import {createPersonalClient,personalKey} from './personal-client.js?v=20261116-account';
 import {supabaseConfig as config} from './supabase-config.js?v=20261027c';
 import {freshState,validateState} from './core.js?v=20261112a';
-import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261116-shared';
+import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261117-paper';
 import {getImage,putImage,newImageId} from './image-store.js?v=20261027c';
 export const workspaceKey=id=>'ru-study-workspace.v1:'+id;
 const scriptLoads=new Map();
 export function loadScript(src){if(!scriptLoads.has(src))scriptLoads.set(src,new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>{scriptLoads.delete(src);reject(Error('โหลดเครื่องมือไม่สำเร็จ กรุณาลองอีกครั้ง'));};document.head.append(s);}));return scriptLoads.get(src);}
 const empty=()=>({version:1,progress:freshState(),notebook:freshNotebook()});
+export function assertCapacity(payload){if(new TextEncoder().encode(JSON.stringify(payload)).byteLength>3800000)throw Error('พื้นที่ข้อมูลใกล้เต็มแล้ว กรุณาส่งออกสำรองและลบโน้ตที่ไม่ใช้ก่อนเพิ่มงาน');}
 const clone=value=>JSON.parse(JSON.stringify(value));
 const message=err=>err?.code==='40001'?'มีข้อมูลใหม่จากอีกเครื่อง กรุณาเลือกฉบับในหน้าข้อมูลและการซิงก์':err?.message||'เชื่อมต่อ Supabase ไม่ได้ กรุณาลองอีกครั้ง';
 // Supabase is authoritative. Device storage is only a recovery queue/cache.
@@ -50,7 +51,7 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
    }else if(revision>0){locked=true;throw Error('ไม่พบข้อมูลบัญชีที่เคยบันทึกใน Supabase หยุดการเขียนทับเพื่อรักษาข้อมูลเดิม');}
    hydrated=true;
    if(dirty){
-    const snapshot=clone(payload),savedEdit=edit;
+    const snapshot=clone(payload),savedEdit=edit;assertCapacity(snapshot);
     for(const id of referencedImages(snapshot.notebook)){
      if(uploaded.has(id))continue;
      let blob;try{blob=await imageStore.get(scope,id);}catch{}
@@ -90,8 +91,18 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
   snapshot:()=>clone(payload),
   requireAccount,
   saveProgress(value){requireAccount();const next=validateState(value);if(JSON.stringify(next)===JSON.stringify(payload.progress))return true;payload.progress=next;return changed();},
-  saveNotebook(value){requireAccount();payload.notebook=validateNotebook(value);return changed();},
+  saveNotebook(value){requireAccount();const next=validateNotebook(value);assertCapacity({...payload,notebook:next});payload.notebook=next;return changed();},
   sync,
+  async flush(){
+   requireAccount();const ticket=epoch,deadline=Date.now()+30000;
+   do{
+    while(busy){if(Date.now()>deadline)throw Error('การบันทึกใช้เวลานาน กรุณาตรวจการเชื่อมต่อ');await new Promise(resolve=>setTimeout(resolve,50));}
+    if(ticket!==epoch||disposed)throw Error('พื้นที่เปลี่ยน กรุณาเปิดโน้ตใหม่');
+    if(conflict||locked)throw Error(status);
+    await sync();if(conflict||locked||phase==='error')throw Error(status);
+    if(Date.now()>deadline)throw Error('ยังบันทึกไม่เสร็จ กรุณาลองอีกครั้ง');
+   }while(dirty||busy);
+  },
   async init(){
    try{
     if(clientFactory)client=await clientFactory();else {
