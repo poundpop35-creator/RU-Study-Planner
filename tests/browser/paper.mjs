@@ -30,7 +30,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const page=await context.newPage();page.on('pageerror',err=>errors.push(err.message));await page.goto('http://127.0.0.1:3000/#note/browser-note');await page.locator('#paper-svg').waitFor();await page.waitForFunction(()=>document.body.classList.contains('paper-mode'));return {context,page};};
  try{
   const a=await setup(),b=await setup(),page=a.page;
-  const click=async key=>{const button=page.locator('[data-paper="'+key+'"]').first();await button.click();if(key==='save')await wait(()=>button.isEnabled());};
+  const click=async key=>{const button=key==='word-link'&&mobile&&await page.locator('#paper-mobile-editor').isVisible()?page.locator('#paper-mobile-editor [data-paper="word-link"]'):page.locator('[data-paper="'+key+'"]').first();await button.click();if(key==='save')await wait(()=>button.isEnabled());};
   const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();return {x:r.x+x*r.width/900,y:r.y+y*r.height/1273};};
   const tap=async(x,y)=>{const p=await point(x,y);if(mobile)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y);};
   // Text can be entered on touch without enabling finger drawing.
