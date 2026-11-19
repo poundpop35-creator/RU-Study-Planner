@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validatePaper,paperFor,emptyPage,strokeObject,pageHistory,mergePaper,copy,strokeHit} from '../dist/paper-core.js';
+import {validatePaper,paperFor,emptyPage,strokeObject,pageHistory,mergePaper,copy,strokeHit,penWidth,PEN_WIDTH_PRESETS} from '../dist/paper-core.js';
 import {newNote,validateNotebook,referencedImages,findNotes} from '../dist/notebook-core.js';
 import {createStudySpace,assertCapacity} from '../dist/study-space.js';
 import {freshState} from '../dist/core.js';
@@ -45,3 +45,17 @@ test('offline flush never claims success and queued vector data survives reconne
 test('capacity guard leaves headroom below 4 MB API request limit',()=>{assert.doesNotThrow(()=>assertCapacity({text:'x'.repeat(3700000)}));assert.throws(()=>assertCapacity({text:'ก'.repeat(1300000)}),/เต็ม/);});
 
 test('paper upgrades notebook to version 2 so legacy clients cannot strip vector data',()=>{const v=validateNotebook(book());assert.equal(v.version,2);assert.equal(validateNotebook({...v,notes:[]}).version,2);assert.equal(validateNotebook({version:1,notes:[newNote()]}).version,1);});
+
+test('pen width presets and custom slider bounds match the existing stroke schema',()=>{
+ assert.deepEqual(PEN_WIDTH_PRESETS,[1,2,3,5,8,12]);
+ for(const size of [1,2,3,5,8,12]){
+  assert.equal(penWidth(String(size)),size);
+  const value=book();
+  value.notes[0].paper.pages[0].objects.push(strokeObject([[20,30,.5],[50,80,.5]],{tool:'pen',color:'#172033',width:size}));
+  assert.equal(validatePaper(value.notes[0].paper).pages[0].objects[0].width,size);
+ }
+ for(const bad of [0,-1,13,40,NaN,Infinity,'bad','5.5']){
+  assert.equal(penWidth(bad),5);
+ }
+ assert.equal(penWidth('bad',8),8);
+});
