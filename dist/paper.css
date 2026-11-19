@@ -112,3 +112,12 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-size-controls output{order:4;font-size:16px;min-width:24px}
  .paper-size-controls .paper-pen-preview{order:5}
 }
+
+/* Preserve usable canvas and touch selection on small screens:
+   show thickness controls only while a drawing tool can use them. */
+@media(max-width:720px){
+ .paper-app .paper-pen-sizes{display:none}
+ .paper-app[data-paper-tool="pen"] .paper-pen-sizes,
+ .paper-app[data-paper-tool="highlight"] .paper-pen-sizes,
+ .paper-app[data-paper-tool="shape"] .paper-pen-sizes{display:flex}
+}
