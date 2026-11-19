@@ -80,7 +80,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   root.querySelectorAll('[data-paper]').forEach(b=>{if(['pen','highlight','eraser','text','shape','select','hand'].includes(b.dataset.paper))b.setAttribute('aria-pressed',String(tool===b.dataset.paper));});
   root.querySelectorAll('[data-paper-color]').forEach(b=>b.setAttribute('aria-pressed',String(color===b.dataset.paperColor)));
   $('[data-paper="undo"]').disabled=!h().canUndo; $('[data-paper="redo"]').disabled=!h().canRedo;
-  const tools=$('#paper-selection-tools');tools.hidden=!selected.size;$('#paper-selected-count').textContent=selected.size;
+  const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('#paper-selected-count').textContent=selected.size;
   const linkButton=$('[data-paper="image-link"]'),openLink=$('#paper-open-link');
   linkButton.hidden=!singleImage;linkButton.textContent=singleImage?.link?'แก้ลิงก์':'ใส่ลิงก์';
   openLink.hidden=!singleImage?.link;
@@ -125,7 +125,12 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   const availableWidth=Math.max(1,PAGE_W-o.x);
   const width=Math.min(availableWidth,Math.max(32,textMeasure.offsetWidth+5));
   editing.paperWidth=width;
-  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
+  // The on-screen iPhone textarea is deliberately larger than the SVG object.
+   // Measure the text at the original paper font size so multiline notes are never clipped on save.
+   textMeasure.style.display='inline-block';textMeasure.style.width=width+'px';
+   textMeasure.style.maxWidth=width+'px';textMeasure.style.whiteSpace='pre-wrap';
+   textMeasure.style.overflowWrap='anywhere';textMeasure.style.lineHeight='1.5';
+   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
   if(editing.mobile){textarea.style.width='100%';textarea.style.height='clamp(130px,25dvh,300px)';textarea.style.overflowY='auto';return;}
   textarea.style.width=width+'px';
   textarea.style.overflowY='hidden';
@@ -158,7 +163,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  function startText(o){
   finishText();wordSelection=null;editing={lastText:o.text,links:o.links||[],id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};selected=new Set([o.id]);textarea.value=o.text;
   editing.mobile=window.matchMedia('(max-width:720px)').matches;
-  if(editing.mobile){$('#paper-mobile-editor').hidden=false;$('#paper-mobile-editor').append(textarea);}
+  if(editing.mobile){root.classList.add('paper-is-editing');$('#paper-mobile-editor').hidden=false;$('#paper-mobile-editor').append(textarea);}
   Object.assign(textarea.style,{left:editing.mobile?'0':o.x+'px',top:editing.mobile?'0':o.y+'px',fontSize:editing.mobile?'17px':o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;
   const style=getComputedStyle(textarea);
   Object.assign(textMeasure.style,{fontFamily:style.fontFamily,fontSize:editing.mobile?o.size+'px':style.fontSize,fontWeight:style.fontWeight,letterSpacing:style.letterSpacing});
@@ -168,7 +173,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  function finishText(keepOpen=false){
   clearTimeout(textTimer);
   if(!editing)return;const edit=editing,w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
-  if(!keepOpen){editing=null;textarea.hidden=true;if(edit.mobile){$('#paper-mobile-editor').hidden=true;sheet.append(textarea);}}
+  if(!keepOpen){editing=null;textarea.hidden=true;if(edit.mobile){root.classList.remove('paper-is-editing');$('#paper-mobile-editor').hidden=true;sheet.append(textarea);}}
   const o={...edit.object,text:textarea.value,w:edit.mobile?edit.paperWidth:w,h:edit.mobile?edit.paperHeight:h};if(edit.links.length)o.links=edit.links;else delete o.links;
   if(edit.fresh&&!o.text.trim()){selected.clear();draw();return;}
   if(!edit.fresh&&o.text===edit.object.text&&o.w===edit.object.w&&o.h===edit.object.h){if(!keepOpen)draw();return;}
