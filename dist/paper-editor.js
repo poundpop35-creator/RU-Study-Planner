@@ -433,7 +433,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  bind($('#paper-smart-shape'),'change',e=>{smartEnabled=e.target.checked;if(!smartEnabled)cancelSmartTimer();});
  bind($('#paper-line-style'),'change',e=>{
   lineStyle=e.target.value;
-  if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type==='shape'?{...o,lineStyle}:o);});
+  if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type==='shape'?{...o,dash:lineStyle}:o);});
  });
  bind($('#paper-font-size'),'change',e=>{fontSize=Number(e.target.value);change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text')o.size=fontSize;}));});
  for(const [selector,key] of [['#paper-title','title'],['#paper-course','course'],['#paper-source','source'],['#paper-tags','tags'],['#paper-question','question'],['#paper-answer','answer']])bind($(selector),'change',e=>{try{writable();const book=copy(space.notebook()),n=book.notes.find(n=>n.id===id);n[key]=key==='course'?e.target.value.trim().toUpperCase():e.target.value;if(key==='course'&&n[key]&&!/^POL\d{4}$/.test(n[key]))throw Error('กรอกรหัสวิชา เช่น POL1101');n.updatedAt=new Date().toISOString();space.saveNotebook(book);}catch(err){say(err.message,true);}});
