@@ -1,4 +1,4 @@
-import {PAGE_W,PAGE_H} from './paper-core.js?v=20261118-wordlinks';
+import {PAGE_W,PAGE_H} from './paper-core.js?v=geometry-20261119';
 import {linkedTextHTML} from './word-links.js';
 import {shapeSVG} from './paper-shapes.js?v=geometry-20261119';
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
