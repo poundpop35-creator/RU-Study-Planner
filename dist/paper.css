@@ -97,3 +97,18 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-size-controls .paper-size-presets{justify-content:space-between;flex:1 1 100%}
  .paper-app .paper-size-controls .paper-size-preset{flex:1 1 0;min-width:34px}
 }
+
+/* Keep the pen thickness controls visible on phones instead of hiding them behind a popover.
+   On-device writing uses the same 1–12 paper-coordinate width as desktop. */
+@media(max-width:720px){
+ .paper-tool-options{align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:8px}
+ .paper-pen-sizes{order:15;flex:1 1 100%;width:100%;padding:8px 10px;min-height:52px;border:1px solid #b3c8ec;background:#f3f7ff;border-radius:12px}
+ .paper-app .paper-size-toggle{display:none!important}
+ .paper-pen-sizes .paper-size-controls{display:flex!important;position:static;top:auto;right:auto;z-index:auto;width:100%;padding:0;margin:0;border:0;box-shadow:none;border-radius:0;background:transparent;align-items:center;justify-content:flex-start;gap:8px}
+ .paper-size-controls .paper-size-label{width:100%;text-align:left;font-size:12px;font-weight:750;color:#1e40af}
+ .paper-size-controls .paper-size-presets{flex:1 1 100%;display:flex;justify-content:space-between}
+ .paper-app .paper-size-controls .paper-size-preset{flex:1 1 0;min-width:34px;min-height:40px;height:40px}
+ .paper-size-controls .paper-size-slider{order:3;flex:1 1 auto;min-width:100px}
+ .paper-size-controls output{order:4;font-size:16px;min-width:24px}
+ .paper-size-controls .paper-pen-preview{order:5}
+}
