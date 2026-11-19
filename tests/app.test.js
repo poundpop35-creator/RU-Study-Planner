@@ -274,3 +274,20 @@ test('default monthly calendar shows lectures and replay together; checking a re
  assert.ok(html().includes('replay-check-symbol'));
  click('cal-replay-done',{key});assert.equal(saved().replay[key],undefined);
 });
+
+test('one schedule at a time: week, month and list switch without duplicate visible calendars',()=>{
+ navigate('#calendar');click('cal-view',{view:'week'});
+ assert.equal((html().match(/class="unified-grid"/g)||[]).length,1,'exactly one weekly grid');
+ assert.equal((html().match(/class="calendar-grid"/g)||[]).length,0,'month hidden in week view');
+ assert.ok(html().includes('ความหนา')===false || html().includes('รายสัปดาห์'));
+ click('cal-view',{view:'month'});
+ assert.equal((html().match(/class="unified-grid"/g)||[]).length,0,'weekly grid hidden in month view');
+ assert.equal((html().match(/class="calendar-grid"/g)||[]).length,1,'exactly one month grid');
+ click('cal-view',{view:'list'});
+ assert.equal((html().match(/class="unified-grid"/g)||[]).length,0);
+ assert.equal((html().match(/class="calendar-grid"/g)||[]).length,0);
+ assert.ok(html().includes('calendar-agenda'));
+ click('cal-view',{view:'week'});
+ assert.ok(html().includes('unified-done'));
+ assert.ok(html().includes('unified-lecture'));
+});
