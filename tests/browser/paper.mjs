@@ -59,8 +59,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'2');
   await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'1');
   if(mobile)await click('multi');else await page.keyboard.up('Shift');
+  if(mobile)assert.ok(await page.locator('#paper-width').isHidden(),'pen controls should not occupy canvas when selecting text or objects');
   await click('pen');
-   if(mobile){assert.ok(await page.locator('#paper-width').isVisible(),'mobile thickness slider must be directly visible');}
+   if(mobile){assert.ok(await page.locator('#paper-width').isVisible(),'mobile thickness slider must be visible when choosing pen');}
    const dots=page.locator('[data-paper-width]');
    assert.equal(await dots.count(),6);
    await page.locator('[data-paper-width="2"]').click();
