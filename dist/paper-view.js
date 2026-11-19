@@ -1,5 +1,5 @@
 import {esc} from './paper-render.js?v=geometry-20261119';
-import {NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261118-wordlinks';
+import {NOTE_SOURCES,noteSource} from './notebook-core.js?v=geometry-20261119';
 import {shapes,lineStyles} from './paper-shapes.js?v=geometry-20261119';
 import {PEN_WIDTH_PRESETS} from './paper-core.js?v=geometry-20261119';
 export const colors=['#172033','#3155d9','#15966d','#dc4343','#8756c6','#ef9e39'];
