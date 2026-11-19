@@ -12,7 +12,7 @@ test('extra shapes render editable SVG and retain the selected line style after 
   const svg=shapeSVG(s);
   assert.match(svg,/data-shape="/);assert.match(svg,/stroke-dasharray="/);
   const validated=validatePaper({version:1,pages:[{...emptyPage(),objects:[s]}]});
-  assert.equal(validated.pages[0].objects[0].lineStyle,'dashed');
+  assert.equal(validated.pages[0].objects[0].dash,'dashed');
  }
  assert.throws(()=>validatePaper({version:1,pages:[{...emptyPage(),objects:[makeShape('a','rect',{x:0,y:0},{x:50,y:50},'#172033',2,'invalid')]}]}),/รูปแบบเส้น/);
  const square=makeShape('square','square',{x:100,y:150},{x:180,y:220},'#172033',3);
