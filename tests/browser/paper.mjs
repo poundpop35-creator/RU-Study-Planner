@@ -151,7 +151,18 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   // Second independent browser context receives the exact same objects without reloading editor.
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));await wait(()=>b.page.locator('#paper-title').inputValue().then(s=>s==='งานรอออนไลน์'));assert.equal(await b.page.locator('#paper-svg image').count(),1);
   // Remote updates during text entry preserve the editor node and pending text.
-  await click('text');await tap(650,600);await page.locator('#paper-text-input').fill('กำลังเขียนขณะซิงก์');
+  await click('text');await tap(650,600);
+   if(!await page.locator('#paper-text-input').isVisible()){
+    // If an image covers this position, write in the unused bottom-right page area.
+    const fallback=await point(850,1010);
+    await page.locator('#paper-svg').evaluate((svg,p)=>{
+     svg.setPointerCapture=()=>{};
+     for(const type of ['pointerdown','pointerup'])svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'pen',pointerId:115,clientX:p.x,clientY:p.y}));
+     delete svg.setPointerCapture;
+    },fallback);
+   }
+   assert.ok(await page.locator('#paper-text-input').isVisible(),'tapping an empty paper area enters text edit mode');
+   await page.locator('#paper-text-input').fill('กำลังเขียนขณะซิงก์');
   await b.page.locator('#paper-title').fill('อีกเครื่องอัปเดตชื่อ');await b.page.locator('#paper-title').blur();await b.page.locator('[data-paper="save"]').click();await wait(()=>b.page.locator('[data-paper="save"]').isEnabled());
   await page.evaluate(()=>{window.__paperNode=document.querySelector('#paper-svg');window.dispatchEvent(new Event('focus'));});await page.waitForTimeout(300);
   assert.equal(await page.locator('#paper-text-input').inputValue(),'กำลังเขียนขณะซิงก์');assert.equal(await page.evaluate(()=>window.__paperNode===document.querySelector('#paper-svg')),true);await click('save');assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.text==='กำลังเขียนขณะซิงก์'));assert.equal(row.payload.notebook.notes[0].title,'อีกเครื่องอัปเดตชื่อ');
