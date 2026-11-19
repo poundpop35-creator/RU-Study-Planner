@@ -65,7 +65,7 @@ function unifiedWeekly(mode,state={},focus=today(),canEdit=true){
    lanes[lane]=finish;
    return `<a class="unified-lecture" style="--course-bg:${schoolColor(x.course)};left:${(begin-660)/720*100}%;width:${(finish-begin)/720*100}%;top:${lane*74+3}px" href="#course/${e(x.course)}"><b>${e(x.course)}</b><small>${e(x.startTime)}–${e(x.endTime)}</small><small>${e(x.room)}${x.clash?' · ชน':''}</small></a>`;
   }).join('');
-  const replayCards=replays.map((x,i)=>`<div class="unified-replay ${x.done?'is-done':''}" style="--course-bg:${schoolColor(x.course)};top:${i*73+3}px;left:75%;width:24.6%" >
+  const replayCards=replays.map((x,i)=>`<div class="unified-replay ${x.done?'is-done':''}" style="--course-bg:${schoolColor(x.course)};top:${i*73+3}px;left:${Math.max(0,Math.min(82,(minutes(x.startTime)-660)/720*100))}%;width:${Math.min(25,100-Math.max(0,Math.min(82,(minutes(x.startTime)-660)/720*100))-.4)}%" >
    <b>▶ ${e(x.course)}</b><small>${e(x.startTime)} · ย้อนหลัง</small>
    <button class="unified-done" type="button" data-action="cal-replay-done" data-key="${e(x.key)}" aria-pressed="${x.done}"${canEdit?'':' disabled'}>${x.done?'✓ ดูแล้ว':'○ ยังไม่ดู'}</button>
   </div>`).join('');
