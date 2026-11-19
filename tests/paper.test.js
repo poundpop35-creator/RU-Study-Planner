@@ -52,7 +52,7 @@ test('pen width presets and custom slider bounds match the existing stroke schem
   assert.equal(penWidth(String(size)),size);
   const value=book();
   value.notes[0].paper.pages[0].objects.push(strokeObject([[20,30,.5],[50,80,.5]],{tool:'pen',color:'#172033',width:size}));
-  assert.equal(validatePaper(value.notes[0].paper).pages[0].objects[0].width,size);
+  assert.equal(validatePaper(value.notes[0].paper).pages[0].objects.find(o=>o.type==='stroke').width,size);
  }
  for(const bad of [0,-1,13,40,NaN,Infinity,'bad','5.5']){
   assert.equal(penWidth(bad),5);
