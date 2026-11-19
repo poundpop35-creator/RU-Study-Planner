@@ -84,7 +84,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  function updatePenWidth(value){
   width=penWidth(value,width);
   const slider=$('#paper-width'),output=$('#paper-width-value'),preview=$('#paper-pen-preview');
-  slider.value=String(width);output.textContent=String(width);
+  slider.value=String(width);output.textContent=String(width);$('#paper-width-mobile-value').textContent=String(width);
   preview.style.width=width+'px';preview.style.height=width+'px';
   root.querySelectorAll('[data-paper-width]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.paperWidth)===width)));
   try{localStorage.setItem(widthKey,String(width));}catch{/* still available for this editing session */}
@@ -302,7 +302,16 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
    if(unsaved&&b.dataset.paper!=='save'&&b.dataset.paper!=='draft'&&b.dataset.paper!=='discard-draft')throw Error('มีงานค้าง กรุณาบันทึกหรือสำรองก่อนทำรายการต่อ');
    if(b.dataset.paperPage){finishText();pageId=b.dataset.paperPage;selected.clear();viewport.scrollTop=0;root.classList.remove('pages-open');draw();thumbs();return;}
    if(b.dataset.paperColor){color=b.dataset.paperColor;if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type!=='image'?{...o,color}:o);});draw();return;}
-    if(b.dataset.paperWidth){updatePenWidth(b.dataset.paperWidth);return;}
+    if(b.dataset.paperSizeToggle){
+     const picker=$('.paper-pen-sizes'),open=picker.classList.toggle('is-open');
+     b.setAttribute('aria-expanded',String(open));return;
+    }
+    if(b.dataset.paperWidth){
+     updatePenWidth(b.dataset.paperWidth);
+     $('.paper-pen-sizes').classList.remove('is-open');
+     $('[data-paper-size-toggle]').setAttribute('aria-expanded','false');
+     return;
+    }
    const action=b.dataset.paper;if(!action)return;
    if(action==='word-link'){await linkWord();return;}
    if(action==='multi'){
