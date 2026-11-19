@@ -39,6 +39,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await typingBox.fill('จด');const small=await size();
    if(mobile){
     assert.ok(await page.locator('#paper-mobile-editor').isVisible(),'mobile edit panel visible');
+     assert.ok(await page.locator('#paper-selection-tools').isHidden(),'floating selection tools must not cover text while iPhone keyboard is open');
     assert.ok(small.w>=200&&small.h>=120,'mobile editable text is legible');
     assert.ok(Number.parseFloat(await typingBox.evaluate(el=>getComputedStyle(el).fontSize))>=16);
     assert.ok(await typingBox.evaluate(el=>el.parentElement.id==='paper-mobile-editor'));
