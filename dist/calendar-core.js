@@ -32,6 +32,14 @@ export function firstLecture(schedule){
 // Faculty notice dated 3 Nov 2569: keep the first meeting in MR30.
 export function regularLecture(s){return s.id==='POL2200-269-lecture'?{...s,weekday:4,room:'VPB 501'}:s;}
 export function calendarEvents({start=calendar.lectureStart,end=calendar.examEnd,type='all',course=''}={}){
+ // Personal replay plan: derived from real lecture dates; two-day lag is an estimate, not verified uploads.
+ if(type==='replay'){
+  return calendarEvents({start:addDays(start,-2),end:addDays(end,-2),type:'lecture',course})
+   .filter(x=>x.type==='lecture').map(x=>({
+    ...x,id:'replay-'+x.id,type:'replay',date:addDays(x.date,2),
+    sourceDate:x.date,sourceTime:x.time,startTime:'20:00',endTime:'21:00',time:'20:00',clash:false
+   })).sort((a,b)=>a.date.localeCompare(b.date)||a.sourceTime.localeCompare(b.sourceTime)||a.course.localeCompare(b.course));
+ }
  const rows=[],clashes=lectureClashes();
  const selected=courses.filter(c=>c.enrolled&&(!course||c.id===course));
  if(type!=='exam')for(let d=start<calendar.lectureStart?calendar.lectureStart:start;d<=end&&d<=calendar.lectureEnd;d=addDays(d,1)){
@@ -56,6 +64,18 @@ const utc=(day,time)=>new Date(`${day}T${time}:00+07:00`).toISOString().replace(
 export function scheduleICS({type='all',course=''}={}){
  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RU Study Planner//Class and Exam Calendar//TH','CALSCALE:GREGORIAN','X-WR-CALNAME:'+icsEscape('RU Study Planner · 2/2569')];
  for(const event of calendarEvents({type,course}).filter(x=>x.type!=='notice')){
+  if(event.type==='replay'){
+   // One-hour calendar reminder to begin watching, NOT the clip duration.
+   lines.push('BEGIN:VEVENT',`UID:${event.id}@ru-study-planner`,'DTSTAMP:20261119T000000Z',
+    'DTSTART:'+utc(event.date,'20:00'),'DTEND:'+utc(event.date,'21:00'),'STATUS:TENTATIVE',
+    'SUMMARY:'+icsEscape('เริ่มดูคลิปย้อนหลัง '+event.course),
+    'DESCRIPTION:'+icsEscape(event.title+'\nคาบจริง '+event.sourceDate+' '+event.sourceTime+
+     '\nคาดว่าคลิปเข้าระบบประมาณ 2 วันหลังเรียน (ไม่รับประกันว่าอัปโหลดแล้ว)'+
+     '\n20:00–21:00 เป็นช่วงเตือนเริ่มดู ไม่ใช่ความยาวคลิปทั้งหมด'+
+     '\nเปิด RU Course on Demand: https://ondemand.ru.ac.th/'),
+    'END:VEVENT');
+   continue;
+  }
   const exam=event.type==='exam';
   lines.push('BEGIN:VEVENT',`UID:${exam?event.course+'-269':event.id}@ru-study-planner`,exam?'DTSTAMP:20261014T000000Z':event.facultyNote?'DTSTAMP:20261111T000000Z':'DTSTAMP:20261106T000000Z');
   if(exam)lines.push('DTSTART;VALUE=DATE:'+event.date.replaceAll('-',''),'DTEND;VALUE=DATE:'+addDays(event.date,1).replaceAll('-',''));
