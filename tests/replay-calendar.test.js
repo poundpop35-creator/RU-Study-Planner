@@ -63,7 +63,7 @@ test('calendar export of personal replays uses Asia/Bangkok and leaves official 
 });
 test('mobile-friendly weekly replay view lists every clip and editable controls',()=>{
  const html=weeklyPlanner('replay',freshState(),'2026-11-19',true);
- assert.ok(html.includes('ตารางเรียนย้อนหลัง'));
+ assert.ok(html.includes('ตารางเรียนของฉัน'));
  assert.ok(html.includes('POL1101'));
  assert.ok(html.includes('POL2303'));
  assert.ok(html.includes('POL2104'));
@@ -71,8 +71,47 @@ test('mobile-friendly weekly replay view lists every clip and editable controls'
  assert.ok(html.includes('data-action="cal-replay-done"'));
  assert.ok(html.includes('class="replay-date"'));
  assert.ok(html.includes('class="replay-time-input"'));
- assert.ok(html.includes('replay-overlap'));
+ assert.ok(html.includes('unified-replay'));
  assert.ok(html.includes('ondemand.ru.ac.th'));
  const disabled=weeklyPlanner('replay',freshState(),'2026-11-19',false);
  assert.ok(disabled.includes(' disabled'));
+});
+
+test('one weekly timetable combines original lecture and two-day replay in pastel blocks',()=>{
+ const html=weeklyPlanner('first',freshState(),'2026-11-19',true);
+ assert.match(html,/class="unified-weekday/);
+ assert.match(html,/class="unified-lecture"/);
+ assert.match(html,/class="unified-replay/);
+ assert.ok(html.includes('POL1101'));
+ assert.ok(html.includes('POL2301'));
+ assert.ok(html.includes('data-action="cal-replay-done"'));
+ assert.ok(html.includes('▶ POL1101'));
+ assert.ok(html.includes('▶ POL2303'));
+ assert.ok(html.includes('▶ POL2301'));
+ assert.ok(html.includes('▶ POL2104'));
+ assert.ok(html.includes('▶ POL2106'));
+ assert.ok(html.includes('✓ ดูแล้ว')===false);
+ assert.equal((html.match(/class="unified-weekday /g)||[]).length,7);
+ const state=freshState();state.replay['POL1101@2026-11-16']={done:true};
+ const done=weeklyPlanner('first',state,'2026-11-19',true);
+ assert.ok(done.includes('✓ ดูแล้ว'));
+ assert.ok(done.includes('ดูแล้ว 1/7 คลิป'));
+});
+
+test('recorded sessions stay in the same weekly layout after shifting dates and retain their check status',()=>{
+ const state=freshState();state.replay['POL2104@2026-11-18']={date:'2026-11-21',time:'22:00',done:true};
+ const html=weeklyPlanner('first',state,'2026-11-19',true);
+ assert.ok(html.includes('22:00 · ย้อนหลัง'));
+ assert.ok(html.includes('value="2026-11-21"'));
+ assert.ok(html.includes('ดูแล้ว 1/7'));
+ assert.ok(html.includes('POL2104'));
+});
+
+test('manual full calendar export includes recorded sessions while public subscribed feed stays official-only',()=>{
+ const personal=scheduleICS({type:'all',includeReplay:true,replay:{'POL1101@2026-11-16':{time:'21:15'}}});
+ assert.ok(personal.includes('เริ่มดูคลิปย้อนหลัง'));
+ assert.ok(personal.includes('DTSTART:20261118T141500Z'));
+ assert.ok(personal.includes('DTSTART:20261116T041000Z'));
+ assert.ok(personal.includes('DTSTART;VALUE=DATE:20270310'));
+ assert.ok(!scheduleICS({type:'all'}).includes('เริ่มดูคลิปย้อนหลัง'));
 });

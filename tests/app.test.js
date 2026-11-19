@@ -245,10 +245,10 @@ test('reading and registration are separate routes with independent controls and
 
 
 test('recorded lecture timetable saves watched state and custom timing in existing shared progress',()=>{
- navigate('#calendar');click('cal-board',{board:'replay'});
- assert.ok(html().includes('ตารางเรียนย้อนหลัง'));assert.ok(html().includes('POL1101'));
+ navigate('#calendar');click('cal-board',{board:'first'});
+ assert.ok(html().includes('ตารางเรียนของฉัน'));assert.ok(html().includes('POL1101'));
  assert.ok(html().includes('POL2104'));assert.ok(html().includes('POL2106'));
- assert.ok(html().includes('เวลาเดียวกัน'));
+ assert.ok(html().includes('unified-replay'));assert.ok(html().includes('unified-lecture'));
  const key='POL1101@2026-11-16';
  click('cal-replay-done',{key});assert.equal(saved().replay[key].done,true);
  const change=(cls,value)=>listeners.change({target:{classList:{contains:x=>x===cls},dataset:{key},value,id:''}});
@@ -262,4 +262,15 @@ test('recorded lecture timetable saves watched state and custom timing in existi
  assert.ok(html().includes('calendar-chip replay'));
  click('cal-view',{view:'list'});assert.ok(html().includes('replay-event'));
  click('cal-board',{board:'regular'});
+});
+
+test('default monthly calendar shows lectures and replay together; checking a replay changes the month marker',()=>{
+ navigate('#calendar');click('cal-filter',{type:'all'});click('cal-view',{view:'month'});click('cal-jump',{month:'2026-11',type:'all'});
+ const initial=html();assert.ok(initial.includes('calendar-chip lecture'));assert.ok(initial.includes('calendar-chip replay'));
+ click('cal-day',{date:'2026-11-18'});assert.ok(html().includes('class="unified-done'));
+ const key='POL1101@2026-11-16';
+ click('cal-replay-done',{key});
+ assert.equal(saved().replay[key].done,true);
+ assert.ok(html().includes('replay-check-symbol'));
+ click('cal-replay-done',{key});assert.equal(saved().replay[key],undefined);
 });

@@ -1,4 +1,4 @@
-try { await import('./app.js?v=replay-20261119'); }
+try { await import('./app.js?v=integrated-replay-20261119'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

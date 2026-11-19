@@ -74,9 +74,11 @@ export function personalReplayEvents(replay={}, {start=calendar.lectureStart,end
 const icsEscape=v=>String(v).replaceAll('\\','\\\\').replace(/\r?\n/g,'\\n').replaceAll(',','\\,').replaceAll(';','\\;');
 export function foldICS(line){let result='',row='',bytes=0;const encoder=new TextEncoder();for(const ch of line){const n=encoder.encode(ch).length;if(bytes+n>75){result+=row+'\r\n';row=' ';bytes=1;}row+=ch;bytes+=n;}return result+row;}
 const utc=(day,time)=>new Date(`${day}T${time}:00+07:00`).toISOString().replace(/[-:]/g,'').replace('.000','');
-export function scheduleICS({type='all',course='',replay={}}={}){
+export function scheduleICS({type='all',course='',replay={},includeReplay=false}={}){
  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RU Study Planner//Class and Exam Calendar//TH','CALSCALE:GREGORIAN','X-WR-CALNAME:'+icsEscape('RU Study Planner · 2/2569')];
- for(const event of (type==='replay'?personalReplayEvents(replay,{course}):calendarEvents({type,course}).filter(x=>x.type!=='notice'))){
+ for(const event of (type==='replay'?personalReplayEvents(replay,{course}):includeReplay&&type==='all'?
+  [...calendarEvents({type,course}).filter(x=>x.type!=='notice'),...personalReplayEvents(replay,{course})].sort((a,b)=>a.date.localeCompare(b.date)||(a.startTime||'').localeCompare(b.startTime||''))
+  :calendarEvents({type,course}).filter(x=>x.type!=='notice'))){
   if(event.type==='replay'){
    // One-hour calendar reminder to begin watching, NOT the clip duration.
    lines.push('BEGIN:VEVENT',`UID:${event.id}@ru-study-planner`,'DTSTAMP:20261119T000000Z',
