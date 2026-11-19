@@ -45,6 +45,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  function scheduleDraw(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw();});}
  function draw(){
   const p=page();if(cachedPage!==p||cachedImageVersion!==imageVersion){cachedContent=pageSVG(p,images);cachedPage=p;cachedImageVersion=imageVersion;}let content=cachedContent;
+  if(editing)content=pageSVG({...p,objects:p.objects.filter(o=>o.id!==editing.id)},images);
   if(gesture?.kind==='shape'&&gesture.object)content+=objectSVG(gesture.object);
   if(gesture?.kind==='stroke'&&gesture.points.length)content+=objectSVG(strokeObject(gesture.points,{tool:gesture.tool,color:gesture.color,width:gesture.width}),images);
   const visible=gesture?.preview||p.objects;
@@ -106,6 +107,9 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   textMeasure.textContent=textarea.value;
   const availableWidth=Math.max(1,PAGE_W-o.x);
   const width=Math.min(availableWidth,Math.max(32,textMeasure.offsetWidth+5));
+  editing.paperWidth=width;
+  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
+  if(editing.mobile){textarea.style.width='100%';textarea.style.height='clamp(130px,25dvh,300px)';textarea.style.overflowY='auto';return;}
   textarea.style.width=width+'px';
   textarea.style.overflowY='hidden';
   textarea.style.height='1px';
@@ -136,17 +140,19 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  }
  function startText(o){
   finishText();wordSelection=null;editing={lastText:o.text,links:o.links||[],id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};selected=new Set([o.id]);textarea.value=o.text;
-  Object.assign(textarea.style,{left:o.x+'px',top:o.y+'px',fontSize:o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;
+  editing.mobile=window.matchMedia('(max-width:720px)').matches;
+  if(editing.mobile){$('#paper-mobile-editor').hidden=false;$('#paper-mobile-editor').append(textarea);}
+  Object.assign(textarea.style,{left:editing.mobile?'0':o.x+'px',top:editing.mobile?'0':o.y+'px',fontSize:editing.mobile?'17px':o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;
   const style=getComputedStyle(textarea);
-  Object.assign(textMeasure.style,{fontFamily:style.fontFamily,fontSize:style.fontSize,fontWeight:style.fontWeight,letterSpacing:style.letterSpacing});
-  fitTextBox();draw();textarea.focus();textarea.setSelectionRange(textarea.value.length,textarea.value.length);textarea.scrollIntoView({block:'nearest',inline:'nearest'});
+  Object.assign(textMeasure.style,{fontFamily:style.fontFamily,fontSize:editing.mobile?o.size+'px':style.fontSize,fontWeight:style.fontWeight,letterSpacing:style.letterSpacing});
+  fitTextBox();draw();textarea.focus();textarea.setSelectionRange(textarea.value.length,textarea.value.length);if(!editing.mobile)textarea.scrollIntoView({block:'nearest',inline:'nearest'});
  }
  let textTimer;
  function finishText(keepOpen=false){
   clearTimeout(textTimer);
   if(!editing)return;const edit=editing,w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
-  if(!keepOpen){editing=null;textarea.hidden=true;}
-  const o={...edit.object,text:textarea.value,w,h};if(edit.links.length)o.links=edit.links;else delete o.links;
+  if(!keepOpen){editing=null;textarea.hidden=true;if(edit.mobile){$('#paper-mobile-editor').hidden=true;sheet.append(textarea);}}
+  const o={...edit.object,text:textarea.value,w:edit.mobile?edit.paperWidth:w,h:edit.mobile?edit.paperHeight:h};if(edit.links.length)o.links=edit.links;else delete o.links;
   if(edit.fresh&&!o.text.trim()){selected.clear();draw();return;}
   if(!edit.fresh&&o.text===edit.object.text&&o.w===edit.object.w&&o.h===edit.object.h){if(!keepOpen)draw();return;}
   if(change(p=>{const i=p.objects.findIndex(v=>v.id===o.id);if(i>=0)p.objects[i]=o;else p.objects.push(o);})&&keepOpen){edit.object=o;edit.fresh=false;}
@@ -317,6 +323,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
      return;
     }
    const action=b.dataset.paper;if(!action)return;
+   if(action==='finish-text'){finishText();return;}
    if(action==='word-link'){await linkWord();return;}
    if(action==='multi'){
     multiSelect=!multiSelect;setTool('select');
