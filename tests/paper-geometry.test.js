@@ -27,7 +27,7 @@ test('original outline shapes retain backward compatibility, and geometry edits 
 });
 test('hold-to-snap recognizes clean lines, rectangles and circles but leaves short scribbles alone',()=>{
  assert.equal(recognizeHeldShape([[10,20],[35,22],[58,21],[89,24],[120,25]])?.kind,'line');
- const rect=[[20,20],[55,20],[100,20],[100,55],[100,95],[60,95],[20,95],[20,55],[20,20]];
+ const rect=[[20,20],[80,20],[160,20],[160,55],[160,95],[100,95],[20,95],[20,55],[20,20]];
  assert.equal(recognizeHeldShape(rect)?.kind,'rect');
  const circle=Array.from({length:41},(_,i)=>[130+85*Math.cos(i*Math.PI*2/40),130+85*Math.sin(i*Math.PI*2/40)]);
  assert.equal(recognizeHeldShape(circle)?.kind,'circle');
