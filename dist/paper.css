@@ -121,3 +121,15 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app[data-paper-tool="highlight"] .paper-pen-sizes,
  .paper-app[data-paper-tool="shape"] .paper-pen-sizes{display:flex}
 }
+
+/* Compact mobile pen thickness picker. Keep the drawing surface available. */
+@media(max-width:720px){
+ .paper-app .paper-pen-sizes{order:0;flex:0 0 auto;width:auto;min-height:0;padding:0;border:0;background:transparent}
+ .paper-app .paper-size-toggle{display:inline-flex!important;align-items:center;gap:4px;min-height:36px;padding:5px 10px;background:#eaf0ff;border:1px solid #98b0eb;border-radius:9px;color:#21439a;font-size:12px}
+ .paper-app .paper-pen-sizes .paper-size-controls{display:none!important;position:absolute;top:calc(100% - 1px);right:8px;z-index:20;width:min(360px,calc(100vw - 16px));max-width:calc(100vw - 16px);box-sizing:border-box;padding:12px;border:1px solid #c3d1e7;border-radius:14px;background:#fff;box-shadow:0 12px 28px #18355b35;gap:8px;justify-content:center}
+ .paper-app .paper-pen-sizes.is-open .paper-size-controls{display:flex!important}
+ .paper-app .paper-pen-sizes .paper-size-label{width:100%;text-align:left;font-size:12px}
+ .paper-app .paper-pen-sizes .paper-size-slider{order:3;flex:1 1 130px}
+ .paper-app .paper-pen-sizes output{order:4}
+ .paper-app .paper-pen-sizes .paper-pen-preview{order:5}
+}

@@ -89,7 +89,12 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   root.querySelectorAll('[data-paper-width]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.paperWidth)===width)));
   try{localStorage.setItem(widthKey,String(width));}catch{/* still available for this editing session */}
  }
- function setTool(next){finishText();pointers.clear();gesture=null;tool=next;if(next!=='select')multiSelect=false;if(!['select','text'].includes(tool))selected.clear();say(({shape:'เลือกรูปทรง แล้วลากบนหน้ากระดาษ',pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะตำแหน่งบนกระดาษเพื่อพิมพ์',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูม'})[tool]);draw();}
+ function closePenSizePicker(){
+  const picker=$('.paper-pen-sizes'),toggle=$('[data-paper-size-toggle]');
+  picker?.classList.remove('is-open');
+  if(toggle)toggle.setAttribute('aria-expanded','false');
+ }
+ function setTool(next){closePenSizePicker();finishText();pointers.clear();gesture=null;tool=next;if(next!=='select')multiSelect=false;if(!['select','text'].includes(tool))selected.clear();say(({shape:'เลือกรูปทรง แล้วลากบนหน้ากระดาษ',pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะตำแหน่งบนกระดาษเพื่อพิมพ์',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูม'})[tool]);draw();}
  const textMeasure=document.createElement('span');
  Object.assign(textMeasure.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',whiteSpace:'pre',width:'max-content',maxWidth:'none',left:'0',top:'0'});
  const measureClip=document.createElement('div');
@@ -308,8 +313,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
     }
     if(b.dataset.paperWidth){
      updatePenWidth(b.dataset.paperWidth);
-     $('.paper-pen-sizes').classList.remove('is-open');
-     $('[data-paper-size-toggle]').setAttribute('aria-expanded','false');
+     closePenSizePicker();
      return;
     }
    const action=b.dataset.paper;if(!action)return;
@@ -363,7 +367,9 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   }catch(err){say(err.message,true);}
  });
  bind($('#paper-width'),'input',e=>updatePenWidth(e.target.value));
-  bind($('#paper-width'),'change',e=>updatePenWidth(e.target.value));
+ bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();});
+ bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();});
+ bind(root,'keydown',e=>{if(e.key==='Escape')closePenSizePicker();});
   bind($('#paper-finger'),'change',e=>{finger=e.target.checked;});
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
  bind($('#paper-font-size'),'change',e=>{fontSize=Number(e.target.value);change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text')o.size=fontSize;}));});
