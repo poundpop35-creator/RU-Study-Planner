@@ -22,7 +22,7 @@ test('original outline shapes retain backward compatibility, and geometry edits 
  const before=emptyPage(),after=copy(before);
  after.objects.push({id:'old-shape',type:'shape',kind:'rect',x:10,y:10,w:40,h:30,color:'#172033',width:2,reverseX:false,reverseY:false});
  const checked=validatePaper({version:1,pages:[after]});
- assert.equal(checked.pages[0].objects[0].lineStyle,undefined);
+ assert.equal(checked.pages[0].objects[0].dash,undefined);
  const h=pageHistory();h.record(before,after);assert.deepEqual(h.step(after),before);assert.deepEqual(h.step(before,false),after);
 });
 test('hold-to-snap recognizes clean lines, rectangles and circles but leaves short scribbles alone',()=>{
