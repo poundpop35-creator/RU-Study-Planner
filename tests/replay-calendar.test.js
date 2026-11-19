@@ -106,3 +106,12 @@ test('recorded sessions stay in the same weekly layout after shifting dates and 
  assert.ok(html.includes('ดูแล้ว 1/7'));
  assert.ok(html.includes('POL2104'));
 });
+
+test('manual full calendar export includes recorded sessions while public subscribed feed stays official-only',()=>{
+ const personal=scheduleICS({type:'all',includeReplay:true,replay:{'POL1101@2026-11-16':{time:'21:15'}}});
+ assert.ok(personal.includes('เริ่มดูคลิปย้อนหลัง'));
+ assert.ok(personal.includes('DTSTART:20261118T141500Z'));
+ assert.ok(personal.includes('DTSTART:20261116T041000Z'));
+ assert.ok(personal.includes('DTSTART;VALUE=DATE:20270310'));
+ assert.ok(!scheduleICS({type:'all'}).includes('เริ่มดูคลิปย้อนหลัง'));
+});
