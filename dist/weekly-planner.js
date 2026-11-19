@@ -1,6 +1,6 @@
 import {schedules,courses,calendar} from './data.js?v=20261027c';
-import {regularLecture,firstLecture,weekdays} from './calendar-core.js?v=20261111a';
-import {escapeHTML as e,thaiDate,today} from './core.js?v=20261027c';
+import {regularLecture,firstLecture,weekdays,personalReplayEvents} from './calendar-core.js?v=replay-20261119';
+import {escapeHTML as e,thaiDate,today,addDays} from './core.js?v=replay-20261119';
 // Public catalogue entries observed in RU-Study Planner, term 2/2569, 15 Nov 2026.
 const reference={
  POL1101:[1,'11:10','13:40','KTB 401','2027-03-12','B'],
@@ -13,12 +13,38 @@ const reference={
 };
 const colors=['#dbeafe','#d1fae5','#fef3c7','#fce7f3','#ede9fe','#cffafe','#ffedd5'];
 const minutes=s=>Number(s.slice(0,2))*60+Number(s.slice(3));
-export function weeklyPlanner(mode){
+function replayBoard(state={},focus=today(),canEdit=true){
+ const weekDay=new Date(focus+'T12:00:00Z').getUTCDay(),start=addDays(focus,-((weekDay+6)%7)),end=addDays(start,6);
+ const rows=personalReplayEvents(state.replay||{},{start,end});
+ const nDone=rows.filter(x=>x.done).length;
+ const disabled=canEdit?'':' disabled';
+ const days=Array.from({length:7},(_,i)=>addDays(start,i));
+ const content=days.map(date=>{
+  const entries=rows.filter(x=>x.date===date);
+  const dayTitle=weekdays[new Date(date+'T12:00:00Z').getUTCDay()];
+  const cards=entries.length?entries.map(x=>`<article class="replay-item ${x.done?'is-done':''}">
+   <div class="replay-item-head"><div><b><a href="#course/${e(x.course)}">${e(x.course)}</a> · ${e(x.title)}</b><small>คาบจริง ${thaiDate(x.sourceDate,true)} · ${e(x.sourceTime)}</small></div><span class="replay-time-pill">${e(x.startTime)} น.</span></div>
+   ${x.overlap?'<p class="replay-overlap">มีหลายคลิปเวลาเดียวกัน · เป็นคิวดูย้อนหลัง ไม่ใช่การดูพร้อมกัน กรุณาเลื่อนวันหรือเวลาตามความยาวคลิปจริง</p>':''}
+   <div class="replay-edit"><label>วันที่ดู <input type="date" class="replay-date" data-key="${e(x.key)}" value="${e(x.date)}" min="2026-11-16" max="2027-05-21"${disabled}></label>
+    <label>เวลาเริ่ม <input type="time" class="replay-time-input" data-key="${e(x.key)}" value="${e(x.startTime)}"${disabled}></label></div>
+   <div class="replay-actions"><button type="button" class="button ${x.done?'primary':'secondary'} small" data-action="cal-replay-done" data-key="${e(x.key)}"${disabled} aria-pressed="${x.done}">${x.done?'✓ ดูแล้ว · ยกเลิก':'ทำเครื่องหมายว่าดูแล้ว'}</button>
+    <button type="button" class="button secondary small" data-action="cal-replay-reset" data-key="${e(x.key)}"${disabled}>คืนวัน/เวลาเดิม</button></div>
+  </article>`).join(''):'<p class="replay-free">ไม่มีคลิปตามแผนในวันนี้</p>';
+  return `<section class="replay-day ${date===today()?'is-today':''}"><h3>${dayTitle} <small>${thaiDate(date,true)}</small></h3>${cards}</section>`;
+ }).join('');
+ return `<div class="replay-wrapper"><div class="replay-week-nav"><button class="button secondary small" data-action="cal-replay-week" data-delta="-7">← สัปดาห์ก่อน</button><strong>${thaiDate(start,true)} – ${thaiDate(end,true)}</strong><button class="button secondary small" data-action="cal-replay-week" data-delta="7">สัปดาห์ถัดไป →</button><button class="button secondary small" data-action="cal-replay-week" data-delta="0">สัปดาห์นี้</button></div>
+  <p class="replay-count">สัปดาห์นี้มี ${rows.length} คลิป · ทำเครื่องหมายดูแล้ว ${nDone}/${rows.length}</p>
+  <div class="replay-week-grid">${content}</div>
+  <p class="replay-note"><b>กำหนดส่วนตัว:</b> ดูย้อนหลังประมาณ 2 วันหลังบรรยาย เริ่ม 20:00 น. เวลาคลิปเข้าระบบอาจเปลี่ยนได้ ระบบนี้ไม่ได้ตรวจว่าคลิปถูกอัปโหลดแล้ว และไม่ทราบความยาวคลิป โปรดตรวจและปรับเวลาเองเมื่อวันหนึ่งมีหลายวิชา</p>
+  <p><a class="button secondary" href="https://ondemand.ru.ac.th/" target="_blank" rel="noopener noreferrer">▶ เปิด RU Course on Demand ↗</a></p></div>`;
+}
+export function weeklyPlanner(mode,replayState={},replayFocus=today(),canEdit=true){
  const list=schedules.filter(s=>courses.some(c=>c.enrolled&&c.id===s.course));
  const exams=courses.filter(c=>c.enrolled).sort((a,b)=>a.exam.localeCompare(b.exam));
  const regular=mode==='regular';
  const rows=list.map(s=>regular?regularLecture(s):s);
- const tabs=[['first','สัปดาห์แรก'],['regular','สัปดาห์ถัดไป'],['exam','ตารางสอบ']];
+ const tabs=[['first','สัปดาห์แรก'],['regular','สัปดาห์ถัดไป'],['replay','ดูย้อนหลัง 20:00'],['exam','ตารางสอบ']];
+ if(mode==='replay')return `<section class="panel"><h2>ตารางเรียนย้อนหลัง · 2/2569</h2><p>ตารางส่วนตัวจากคลิปบรรยาย · ตารางสอนจริงยังอยู่ในแท็บเดิม</p><div class="button-row">${tabs.map(([key,label])=>`<button class="button ${mode===key?'primary':'secondary'}" aria-pressed="${mode===key}" data-action="cal-board" data-board="${key}">${label}</button>`).join('')}</div>${replayBoard(replayState,replayFocus,canEdit)}</section>`;
  const hourLabels=[11,13,15,17,19].map(h=>`<small style="position:absolute;left:${(h-11)/9*100}%">${h}:00</small>`).join('');
  const board=`<div style="overflow-x:auto"><div style="min-width:560px"><div style="margin-left:48px;position:relative;height:28px">${hourLabels}</div>${[1,2,3,4,5].map(day=>{
  const items=rows.filter(s=>s.weekday===day).sort((a,b)=>a.startTime.localeCompare(b.startTime));let ends=[];
