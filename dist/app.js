@@ -261,6 +261,7 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
    if(!personalReplayEvents().some(x=>x.key===key))return;
    const before=state.replay||{},previous=before[key]||{};
    const next=action==='cal-replay-done'?{...previous,done:!previous.done}:{...previous};
+   if(!next.done)delete next.done;
    if(action==='cal-replay-reset'){delete next.date;delete next.time;}
    const copy={...before};if(Object.keys(next).length)copy[key]=next;else delete copy[key];
    state.replay=copy;
