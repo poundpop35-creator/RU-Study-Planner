@@ -180,7 +180,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(change(p=>{const i=p.objects.findIndex(v=>v.id===o.id);if(i>=0)p.objects[i]=o;else p.objects.push(o);})&&keepOpen){edit.object=o;edit.fresh=false;}
  }
  bind(textarea,'select',rememberWord);
- bind($('[data-paper="word-link"]'),'pointerdown',e=>{if(editing){rememberWord();e.preventDefault();}});
+ for(const linkButton of root.querySelectorAll('[data-paper="word-link"]'))bind(linkButton,'pointerdown',e=>{if(editing){rememberWord();e.preventDefault();}});
  bind(textarea,'input',()=>{if(editing){editing.links=moveLinks(editing.links,editing.lastText,textarea.value);editing.lastText=textarea.value;}clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);fitTextBox();});
  bind(textarea,'blur',()=>{if(!closed){rememberWord();finishText();}});
  bind(textarea,'keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();linkWord().catch(err=>say(err.message,true));return;}if(e.key==='Escape'){e.preventDefault();finishText();}});
