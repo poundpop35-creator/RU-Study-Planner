@@ -59,10 +59,23 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'2');
   await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'1');
   if(mobile)await click('multi');else await page.keyboard.up('Shift');
-  await click('pen');const from=await point(100,400),to=await point(350,450);
+  await click('pen');
+   const dots=page.locator('[data-paper-width]');
+   assert.equal(await dots.count(),6);
+   await page.locator('[data-paper-width="2"]').click();
+   assert.equal(await page.locator('#paper-width-value').innerText(),'2');
+   assert.equal(await page.locator('[data-paper-width="2"]').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'2px');
+   await page.locator('#paper-width').fill('12');
+   await page.locator('#paper-width').dispatchEvent('input');
+   assert.equal(await page.locator('#paper-width-value').innerText(),'12');
+   assert.equal(await page.locator('[data-paper-width="12"]').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'12px');
+   const from=await point(100,400),to=await point(350,450);
   if(mobile){await page.locator('#paper-finger').check();await tap(220,420);}
   else{await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(to.x,to.y,{steps:15});await page.mouse.up();}
   await click('save');await wait(()=>row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.type==='stroke'));
+   assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='stroke').width,12,'selected width must be persisted on new vector stroke');
   await click('undo');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,0);
   await click('redo');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,1);
   await click('select');await tap(220,420);await page.locator('[data-paper="delete-object"]').click();await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,0);
