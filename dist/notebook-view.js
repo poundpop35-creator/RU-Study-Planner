@@ -1,4 +1,4 @@
-import {paperPage} from './paper-view.js?v=pen-width-mobile-20261119';
+import {paperPage} from './paper-view.js?v=pen-width-visible-20261119';
 import {mountPaper,refreshPaper} from './paper-editor.js?v=pen-width-mobile-20261119';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
