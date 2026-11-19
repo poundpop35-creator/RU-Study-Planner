@@ -36,7 +36,7 @@ export function calendarEvents({start=calendar.lectureStart,end=calendar.examEnd
  if(type==='replay'){
   return calendarEvents({start:addDays(start,-2),end:addDays(end,-2),type:'lecture',course})
    .filter(x=>x.type==='lecture').map(x=>({
-    ...x,id:'replay-'+x.id,type:'replay',date:addDays(x.date,2),
+    ...x,id:'replay-'+x.course+'-'+x.date,key:x.course+'@'+x.date,type:'replay',date:addDays(x.date,2),
     sourceDate:x.date,sourceTime:x.time,startTime:'20:00',endTime:'21:00',time:'20:00',clash:false
    })).sort((a,b)=>a.date.localeCompare(b.date)||a.sourceTime.localeCompare(b.sourceTime)||a.course.localeCompare(b.course));
  }
@@ -58,20 +58,33 @@ export function calendarEvents({start=calendar.lectureStart,end=calendar.examEnd
  if(type!=='lecture')for(const c of selected.filter(c=>c.exam&&c.exam>=start&&c.exam<=end))rows.push({id:'exam-'+c.id,type:'exam',date:c.exam,course:c.id,title:c.title,slot:c.slot,time:'คาบ '+c.slot,source:'mr30'});
  return rows.sort((a,b)=>a.date.localeCompare(b.date)||(a.startTime||'').localeCompare(b.startTime||'')||a.course.localeCompare(b.course));
 }
+// Apply saved per-lecture decisions while keeping the campus timetable immutable.
+export function personalReplayEvents(replay={}, {start=calendar.lectureStart,end=addDays(calendar.examEnd,60),course=''}={}){
+ const base=calendarEvents({type:'replay',start:addDays(calendar.lectureStart,2),end:addDays(calendar.lectureEnd,2),course});
+ const events=base.map(event=>{
+  const saved=replay?.[event.key]||{};
+  return {...event,date:saved.date||event.date,startTime:saved.time||'20:00',
+   endTime:null,time:saved.time||'20:00',done:saved.done===true,custom:!!(saved.date||saved.time)};
+ }).filter(event=>event.date>=start&&event.date<=end)
+ .sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime)||a.sourceTime.localeCompare(b.sourceTime)||a.course.localeCompare(b.course));
+ const overlaps=new Map();
+ for(const event of events){const k=event.date+'T'+event.startTime;overlaps.set(k,(overlaps.get(k)||0)+1);}
+ return events.map(event=>({...event,overlap:overlaps.get(event.date+'T'+event.startTime)>1}));
+}
 const icsEscape=v=>String(v).replaceAll('\\','\\\\').replace(/\r?\n/g,'\\n').replaceAll(',','\\,').replaceAll(';','\\;');
 export function foldICS(line){let result='',row='',bytes=0;const encoder=new TextEncoder();for(const ch of line){const n=encoder.encode(ch).length;if(bytes+n>75){result+=row+'\r\n';row=' ';bytes=1;}row+=ch;bytes+=n;}return result+row;}
 const utc=(day,time)=>new Date(`${day}T${time}:00+07:00`).toISOString().replace(/[-:]/g,'').replace('.000','');
-export function scheduleICS({type='all',course=''}={}){
+export function scheduleICS({type='all',course='',replay={}}={}){
  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RU Study Planner//Class and Exam Calendar//TH','CALSCALE:GREGORIAN','X-WR-CALNAME:'+icsEscape('RU Study Planner · 2/2569')];
- for(const event of calendarEvents({type,course}).filter(x=>x.type!=='notice')){
+ for(const event of (type==='replay'?personalReplayEvents(replay,{course}):calendarEvents({type,course}).filter(x=>x.type!=='notice'))){
   if(event.type==='replay'){
    // One-hour calendar reminder to begin watching, NOT the clip duration.
    lines.push('BEGIN:VEVENT',`UID:${event.id}@ru-study-planner`,'DTSTAMP:20261119T000000Z',
-    'DTSTART:'+utc(event.date,'20:00'),'DTEND:'+utc(event.date,'21:00'),'STATUS:TENTATIVE',
+    'DTSTART:'+utc(event.date,event.startTime),'DTEND:'+utc(addDays(event.date,Number(event.startTime.slice(0,2))===23?1:0),new Date(Date.UTC(2026,0,1,Number(event.startTime.slice(0,2)),Number(event.startTime.slice(3))+60)).toISOString().slice(11,16)),'STATUS:TENTATIVE',
     'SUMMARY:'+icsEscape('เริ่มดูคลิปย้อนหลัง '+event.course),
     'DESCRIPTION:'+icsEscape(event.title+'\nคาบจริง '+event.sourceDate+' '+event.sourceTime+
      '\nคาดว่าคลิปเข้าระบบประมาณ 2 วันหลังเรียน (ไม่รับประกันว่าอัปโหลดแล้ว)'+
-     '\n20:00–21:00 เป็นช่วงเตือนเริ่มดู ไม่ใช่ความยาวคลิปทั้งหมด'+
+     '\nแจ้งเตือนเริ่มดู 1 ชั่วโมง ไม่ใช่ความยาวคลิปทั้งหมด'+
      '\nเปิด RU Course on Demand: https://ondemand.ru.ac.th/'),
     'END:VEVENT');
    continue;
