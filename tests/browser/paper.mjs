@@ -30,16 +30,25 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const page=await context.newPage();page.on('pageerror',err=>errors.push(err.message));await page.goto('http://127.0.0.1:3000/#note/browser-note');await page.locator('#paper-svg').waitFor();await page.waitForFunction(()=>document.body.classList.contains('paper-mode'));return {context,page};};
  try{
   const a=await setup(),b=await setup(),page=a.page;
-  const click=async key=>{const button=page.locator('[data-paper="'+key+'"]').first();await button.click();if(key==='save')await wait(()=>button.isEnabled());};
+  const click=async key=>{const button=key==='word-link'&&mobile&&await page.locator('#paper-mobile-editor').isVisible()?page.locator('#paper-mobile-editor [data-paper="word-link"]'):page.locator('[data-paper="'+key+'"]').first();await button.click();if(key==='save')await wait(()=>button.isEnabled());};
   const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();return {x:r.x+x*r.width/900,y:r.y+y*r.height/1273};};
   const tap=async(x,y)=>{const p=await point(x,y);if(mobile)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y);};
   // Text can be entered on touch without enabling finger drawing.
   assert.equal(await page.locator('[data-paper="text"]').getAttribute('aria-pressed'),'true');await tap(100,230);
   const typingBox=page.locator('#paper-text-input'),size=()=>typingBox.evaluate(el=>({w:el.offsetWidth,h:el.offsetHeight}));
-  await typingBox.fill('จด');const small=await size();assert.ok(small.w<90&&small.h<60);
-  await typingBox.fill('ข้อความสำหรับทดสอบการตัดบรรทัด '.repeat(18));const long=await size();assert.ok(long.w>small.w&&long.w<=801&&long.h>small.h);
-  await typingBox.fill('จด');assert.deepEqual(await size(),small);
-  await page.locator('#paper-text-input').fill('ความเข้าใจของฉัน');await click('save');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
+  await typingBox.fill('จด');const small=await size();
+   if(mobile){
+    assert.ok(await page.locator('#paper-mobile-editor').isVisible(),'mobile edit panel visible');
+     assert.ok(await page.locator('#paper-selection-tools').isHidden(),'floating selection tools must not cover text while iPhone keyboard is open');
+    assert.ok(small.w>=200&&small.h>=120,'mobile editable text is legible');
+    assert.ok(Number.parseFloat(await typingBox.evaluate(el=>getComputedStyle(el).fontSize))>=16);
+    assert.ok(await typingBox.evaluate(el=>el.parentElement.id==='paper-mobile-editor'));
+   }else assert.ok(small.w<90&&small.h<60);
+   await typingBox.fill('ข้อความสำหรับทดสอบการตัดบรรทัด '.repeat(18));const long=await size();
+   if(mobile)assert.ok(long.w>=200&&long.h>=120);else assert.ok(long.w>small.w&&long.w<=801&&long.h>small.h);
+   await typingBox.fill('จด');assert.deepEqual(await size(),small);
+   await page.locator('#paper-text-input').fill('ความเข้าใจของฉัน');await click('save');
+   if(mobile)assert.ok(await page.locator('#paper-mobile-editor').isHidden(),'mobile edit closes after saving');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
   const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
   // Real mouse/pen-style pointer flow; touch mode additionally checks pan-vs-ink behavior.
   await click('shape');await page.locator('#paper-shape').selectOption('arrow');
@@ -143,7 +152,18 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   // Second independent browser context receives the exact same objects without reloading editor.
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));await wait(()=>b.page.locator('#paper-title').inputValue().then(s=>s==='งานรอออนไลน์'));assert.equal(await b.page.locator('#paper-svg image').count(),1);
   // Remote updates during text entry preserve the editor node and pending text.
-  await click('text');await tap(100,600);await page.locator('#paper-text-input').fill('กำลังเขียนขณะซิงก์');
+  await click('text');await tap(650,600);
+   if(!await page.locator('#paper-text-input').isVisible()){
+    // If an image covers this position, write in the unused bottom-right page area.
+    const fallback=await point(850,1010);
+    await page.locator('#paper-svg').evaluate((svg,p)=>{
+     svg.setPointerCapture=()=>{};
+     for(const type of ['pointerdown','pointerup'])svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'pen',pointerId:115,clientX:p.x,clientY:p.y}));
+     delete svg.setPointerCapture;
+    },fallback);
+   }
+   assert.ok(await page.locator('#paper-text-input').isVisible(),'tapping an empty paper area enters text edit mode');
+   await page.locator('#paper-text-input').fill('กำลังเขียนขณะซิงก์');
   await b.page.locator('#paper-title').fill('อีกเครื่องอัปเดตชื่อ');await b.page.locator('#paper-title').blur();await b.page.locator('[data-paper="save"]').click();await wait(()=>b.page.locator('[data-paper="save"]').isEnabled());
   await page.evaluate(()=>{window.__paperNode=document.querySelector('#paper-svg');window.dispatchEvent(new Event('focus'));});await page.waitForTimeout(300);
   assert.equal(await page.locator('#paper-text-input').inputValue(),'กำลังเขียนขณะซิงก์');assert.equal(await page.evaluate(()=>window.__paperNode===document.querySelector('#paper-svg')),true);await click('save');assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.text==='กำลังเขียนขณะซิงก์'));assert.equal(row.payload.notebook.notes[0].title,'อีกเครื่องอัปเดตชื่อ');
@@ -158,6 +178,30 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const create=page.getByRole('dialog');await create.locator('[name="title"]').fill('Pol2104 ครั้งที่ 1');
   await create.locator('[name="course"]').fill('pol2104');await create.getByText('สร้างโน้ต',{exact:true}).click();
   await page.locator('#paper-svg').waitFor();await click('save');assert.ok(row.payload.notebook.notes.some(n=>n.course==='POL2104'&&n.source==='classroom'));
+   // Geometry is folded, but shape and ruler controls remain functional.
+   assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),false);
+   await click('shape');
+   assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),true);
+   await page.locator('#paper-shape').selectOption('hexagon');
+   await page.locator('#paper-line-style').selectOption('dotted');
+   const fromShape=await point(280,780),toShape=await point(400,890);
+   await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
+    svg.setPointerCapture=()=>{};
+    const evt=(type,p)=>svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'pen',pointerId:95,clientX:p.x,clientY:p.y}));
+    evt('pointerdown',a);evt('pointermove',b);evt('pointerup',b);
+    delete svg.setPointerCapture;
+   },[fromShape,toShape]);
+   await click('save');
+   assert.ok(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.some(o=>o.kind==='hexagon'&&o.dash==='dotted'));
+   await page.locator('#paper-geometry-menu summary').click();
+   await click('ruler');
+   assert.equal(await page.locator('[data-paper="ruler"]').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),1);
+   await click('ruler-plus');
+   assert.match(await page.locator('#paper-svg [data-ruler-overlay]').getAttribute('transform'),/rotate\(15\)/);
+   await click('ruler');
+   assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),0);
+   await page.locator('#paper-geometry-menu summary').click();
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
   const [download]=await Promise.all([b.page.waitForEvent('download'),fileButton.click()]);
