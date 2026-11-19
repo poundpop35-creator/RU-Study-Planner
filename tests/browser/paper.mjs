@@ -61,19 +61,34 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   if(mobile)await click('multi');else await page.keyboard.up('Shift');
   if(mobile)assert.ok(await page.locator('#paper-width').isHidden(),'pen controls should not occupy canvas when selecting text or objects');
   await click('pen');
-   if(mobile){assert.ok(await page.locator('#paper-width').isVisible(),'mobile thickness slider must be visible when choosing pen');}
+   if(mobile){
+    const toggle=page.locator('[data-paper-size-toggle]');
+    assert.ok(await toggle.isVisible(),'pen thickness trigger must be visible');
+    assert.ok(await page.locator('#paper-width').isHidden(),'picker must remain collapsed by default');
+    await toggle.click();
+    assert.equal(await toggle.getAttribute('aria-expanded'),'true');
+    assert.ok(await page.locator('#paper-width').isVisible());
+   }
    const dots=page.locator('[data-paper-width]');
    assert.equal(await dots.count(),6);
    await page.locator('[data-paper-width="2"]').click();
+   if(mobile){
+    assert.ok(await page.locator('#paper-width').isHidden(),'preset selection should collapse picker');
+    assert.equal(await page.locator('[data-paper-size-toggle]').getAttribute('aria-expanded'),'false');
+    await page.locator('[data-paper-size-toggle]').click();
+   }
    assert.equal(await page.locator('#paper-width-value').innerText(),'2');
    assert.equal(await page.locator('[data-paper-width="2"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'2px');
-   // The width chooser stays directly visible on mobile.
-   await page.locator('#paper-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));});
+   // Slider updates while open and collapses on change (finger release).
+   await page.locator('#paper-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));});
    assert.equal(await page.locator('#paper-width-value').innerText(),'12');
    assert.equal(await page.locator('[data-paper-width="12"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'12px');
-   // The width chooser stays directly visible on mobile.
+   if(mobile){
+    assert.ok(await page.locator('#paper-width').isHidden(),'finishing the slider closes the panel');
+    assert.equal(await page.locator('[data-paper-size-toggle]').getAttribute('aria-expanded'),'false');
+   }
    const from=await point(100,400),to=await point(350,450);
   if(mobile){await page.locator('#paper-finger').check();await tap(220,420);}
   else{await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(to.x,to.y,{steps:15});await page.mouse.up();}
