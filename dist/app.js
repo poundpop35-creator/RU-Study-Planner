@@ -13,12 +13,13 @@ import {createStudySpace} from './study-space.js?v=registration-status';
 import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261118-wordlinks';
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
-import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=20261111a';
+import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=replay-20261119';
+import {personalReplayEvents} from './calendar-core.js?v=replay-20261119';
 import {contentStatus} from './content.js?v=20261027c';
 import {meta,courses,terms,categories,categoryTargets,sources,courseColors,readingWeek,studyPhases,studyHours} from './data.js?v=20261027c';
 import {lessons} from './lessons.js?v=20261027c';
 import {prep} from './prep.js?v=20261027c';
-import {isEnrolled,DEBT_KEYS,validateState,loadState,escapeHTML as e,thaiDate,today,daysBetween,courseProgress,progress,nextLesson,exams,examClashes,planSummary,cardsForReview,reviewCard,quizItems,examICS,dailyPlan,phaseFor,hoursUntil,streak,prepResult,STUDY_START,weeklyCourses,addDays} from './core.js?v=registration-status';
+import {isEnrolled,DEBT_KEYS,validateState,loadState,escapeHTML as e,thaiDate,today,daysBetween,courseProgress,progress,nextLesson,exams,examClashes,planSummary,cardsForReview,reviewCard,quizItems,examICS,dailyPlan,phaseFor,hoursUntil,streak,prepResult,STUDY_START,weeklyCourses,addDays} from './core.js?v=replay-20261119';
 import {XP,XP_SOURCES,LEVELS,xpParts,xpTotal,levelInfo,bestStreak,weekDays,badges,nextBadge} from './gamify.js?v=20261027c';
 import {mascot,confetti,floatXP,levelUp,closeLevelUp} from './fun.js?v=20261027c';
 
@@ -230,7 +231,7 @@ function readProgress(){const root=document.documentElement,bar=document.getElem
 function render(keepScroll=false){
  destroyEditor();const oldY=window.scrollY;document.documentElement.dataset.font=state.font;document.documentElement.dataset.view=currentView;updateNav();
  const info=studySpace.info();
- main.innerHTML=({home,debt:()=>{adoptLocalDebt();if(!info.hydrated&&info.phase==='loading')return '<section class="panel" role="status">กำลังโหลดแผนหนี้และประวัติการจ่ายของพื้นที่นี้…</section>';return updatedPage(debtStore,currentId,info.canEdit)??(importPanel()+debtPage(debtStore));},practice:()=>studySections('practice')+practicePage(state,currentId),documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:classroomPage,course:()=>coursePage(currentId),prep:()=>prepPage(currentId),lesson:()=>lessonPage(currentId),review,plan,registration,calendar:()=>planningNav('calendar')+calendarPage(),menu:menuPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings,awards}[currentView]||missing)();
+ main.innerHTML=({home,debt:()=>{adoptLocalDebt();if(!info.hydrated&&info.phase==='loading')return '<section class="panel" role="status">กำลังโหลดแผนหนี้และประวัติการจ่ายของพื้นที่นี้…</section>';return updatedPage(debtStore,currentId,info.canEdit)??(importPanel()+debtPage(debtStore));},practice:()=>studySections('practice')+practicePage(state,currentId),documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:classroomPage,course:()=>coursePage(currentId),prep:()=>prepPage(currentId),lesson:()=>lessonPage(currentId),review,plan,registration,calendar:()=>planningNav('calendar')+calendarPage(state,info.canEdit),menu:menuPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings,awards}[currentView]||missing)();
  fresh=null;
  if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=info.status;if(el.classList?.contains('paper-cloud'))el.dataset.phase=info.phase;});
  document.title=`${currentView==='lesson'?(lessonById(currentId)?.title||'บทเรียน'):document.querySelector('#breadcrumb').textContent} · RU Study Planner`;
@@ -254,7 +255,20 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
  if(action.startsWith('account-')){accountAction(action,studySpace,render,toast);return;}
  if(action.startsWith('nb-')&&!studySpace.info().canEdit){toast(studySpace.info().status);return;}
  if(action.startsWith('nb-')){notebookAction(action,b.dataset,studySpace,state,render,toast);return;}
- if(action.startsWith('cal-')){if(action==='cal-export'){download('ru-study-calendar-2-2569.ics',calendarDownload(),'text/calendar;charset=utf-8');toast('ดาวน์โหลดปฏิทินทั้งเทอมตามตัวกรองแล้ว');}else if(calendarAction(action,b.dataset))render(true);return;}
+ if(action==='cal-replay-done'||action==='cal-replay-reset'){
+   if(!studySpace.info().canEdit){toast('กำลังเชื่อมต่อพื้นที่ส่วนตัว กรุณาลองอีกครั้ง');return;}
+   const key=b.dataset.key;
+   if(!personalReplayEvents().some(x=>x.key===key))return;
+   const before=state.replay||{},previous=before[key]||{};
+   const next=action==='cal-replay-done'?{...previous,done:!previous.done}:{...previous};
+   if(action==='cal-replay-reset'){delete next.date;delete next.time;}
+   const copy={...before};if(Object.keys(next).length)copy[key]=next;else delete copy[key];
+   state.replay=copy;
+   if(!save()){state.replay=before;toast('บันทึกไม่สำเร็จ กรุณาลองใหม่');}
+   else toast(action==='cal-replay-reset'?'คืนวันและเวลาเริ่มดูเป็นค่าเดิมแล้ว':next.done?'บันทึกว่าดูคลิปนี้แล้ว':'ยกเลิกสถานะดูแล้ว');
+   render(true);return;
+  }
+  if(action.startsWith('cal-')){if(action==='cal-export'){download('ru-study-calendar-2-2569.ics',calendarDownload(state),'text/calendar;charset=utf-8');toast('ดาวน์โหลดปฏิทินตามตัวกรองแล้ว');}else if(calendarAction(action,b.dataset))render(true);return;}
  if(action==='registration-term'||action==='registration-find'){const id=Number(b.dataset.term);if(terms.some(t=>t.id===id)){registrationTerm=id;regFocus=action==='registration-find'?b.dataset.course:'';render(true);document.querySelector('.registration-term.active')?.scrollIntoView?.({block:'nearest',inline:'nearest'});if(regFocus)document.querySelector('#reg-row-'+regFocus)?.scrollIntoView?.({block:'center',behavior:'smooth'});}return;}
  if(action==='refresh-content'){location.reload();return;}
  if(!studySpace.info().canEdit&&!['plan-today','section','mode','flip','next','prev','review-course'].includes(action)){toast('กำลังเชื่อมต่อพื้นที่บันทึก คุณอ่านบทเรียนและดูตารางได้ระหว่างรอ');return;}
@@ -322,7 +336,19 @@ document.addEventListener('change',async event=>{const el=event.target;if(!study
  if(el.id==='notebook-import'){try{if(el.files?.[0]){await importNotebook(el.files[0],studySpace);render();}}catch(err){toast(err.message);}return;}
  if(el.id==='after-course'){if(afterPlan(state,planDate).allowed.includes(el.value)){state.readCourse[planDate]=el.value;save();render(true);}return;}
  if(el.id==='study-plan-date'){if(/^\d{4}-\d{2}-\d{2}$/.test(el.value)&&el.value>=STUDY_START&&el.value<='2027-03-22'){planDate=el.value;planToolsOpen=true;render(true);}return;}
- if(el.id==='calendar-course'){calendarCourse(el.value);render(true);return;}
+ if(el.classList?.contains?.('replay-date')||el.classList?.contains?.('replay-time-input')){
+   const key=el.dataset.key;
+   const initial=personalReplayEvents().find(x=>x.key===key);
+   if(!initial||!studySpace.info().canEdit)return;
+   const isDate=el.classList.contains('replay-date');
+   if(isDate?(!/^\d{4}-\d{2}-\d{2}$/.test(el.value)||!Number.isFinite(Date.parse(el.value))||el.value<'2026-11-16'||el.value>'2027-05-21'):!/^([01]\d|2[0-3]):[0-5]\d$/.test(el.value)){toast('วันหรือเวลาไม่ถูกต้อง');render(true);return;}
+   const old=state.replay||{},next={...old,[key]:{...old[key],[isDate?'date':'time']:el.value}};
+   state.replay=next;
+   if(!save()){state.replay=old;toast('บันทึกเวลาเรียนย้อนหลังไม่สำเร็จ');}
+   else toast('บันทึกวันและเวลาสำหรับดูย้อนหลังแล้ว');
+   render(true);return;
+  }
+  if(el.id==='calendar-course'){calendarCourse(el.value);render(true);return;}
  if(el.id==='review-course'){reviewCourse=el.value;quizIndex=0;flipped=false;reviewQueue=null;render(true);}
  if(el.id==='mistakes-only'){mistakesOnly=el.checked;quizIndex=0;reviewQueue=null;render(true);}
  if(el.id==='include-unread'){includeUnread=el.checked;flipped=false;render(true);}
