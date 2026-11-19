@@ -1,5 +1,5 @@
 import {paperPage} from './paper-view.js?v=pen-width-visible-20261119';
-import {mountPaper,refreshPaper} from './paper-editor.js?v=pen-width-contextual-20261119';
+import {mountPaper,refreshPaper} from './paper-editor.js?v=pen-width-folded-20261119';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
