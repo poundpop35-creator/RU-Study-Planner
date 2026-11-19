@@ -66,8 +66,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(await page.locator('#paper-width-value').innerText(),'2');
    assert.equal(await page.locator('[data-paper-width="2"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'2px');
-   await page.locator('#paper-width').fill('12');
-   await page.locator('#paper-width').dispatchEvent('input');
+   await page.locator('#paper-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));});
    assert.equal(await page.locator('#paper-width-value').innerText(),'12');
    assert.equal(await page.locator('[data-paper-width="12"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'12px');
