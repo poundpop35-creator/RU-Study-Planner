@@ -137,7 +137,7 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 /* Mobile text editing should be legible even when paper is scaled down. */
 .paper-mobile-editor{display:none}
 @media(max-width:720px){
- .paper-app .paper-mobile-editor:not([hidden]){display:block;position:fixed;z-index:80;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 8px);max-height:48dvh;overflow:auto;background:#fff;border:2px solid #4364c5;border-radius:16px;box-shadow:0 12px 40px #17233b55;padding:12px}
+ .paper-app .paper-mobile-editor:not([hidden]){display:block;position:fixed;z-index:80;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 76px);max-height:45dvh;overflow:auto;background:#fff;border:2px solid #4364c5;border-radius:16px;box-shadow:0 12px 40px #17233b55;padding:12px}
  .paper-mobile-editor-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
  .paper-mobile-editor-top strong{font-size:15px;color:#1e40af}
  .paper-app .paper-mobile-editor-top button{background:#3155d9;color:white;min-height:40px;font-weight:750;padding:8px 15px}
