@@ -80,3 +80,20 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-size-preset{width:31px;min-width:31px;min-height:35px;height:35px}
 }
 @media(max-width:400px){.paper-size-slider{flex-basis:90%;order:3}.paper-pen-sizes output{order:4}.paper-pen-preview{order:5}}
+
+
+/* Keep the full pen size chooser visible on desktop, compact on mobile to protect canvas height. */
+.paper-size-toggle{display:none!important}
+.paper-size-controls{display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-width:0}
+@media(max-width:720px){
+ .paper-toolbar{position:relative}
+ .paper-pen-sizes{position:static;width:auto;min-height:0;padding:0;border:0;background:transparent;flex:0 0 auto}
+ .paper-app .paper-size-toggle{display:inline-flex!important;align-items:center;gap:4px;justify-content:center;min-height:34px;padding:5px 8px;font-size:11px;font-weight:700;background:#eaf0ff;border:1px solid #98b0eb;border-radius:9px;color:#21439a;white-space:nowrap}
+ .paper-size-toggle span{font-weight:800}
+ .paper-size-controls{display:none;position:absolute;top:calc(100% - 1px);right:8px;z-index:12;width:min(360px,calc(100vw - 16px));padding:12px;background:#fff;border:1px solid #c3d1e7;border-radius:14px;box-shadow:0 12px 28px #18355b35;justify-content:center;gap:8px}
+ .paper-pen-sizes.is-open .paper-size-controls{display:flex}
+ .paper-size-controls .paper-size-slider{flex:1 1 130px}
+ .paper-size-controls .paper-size-label{width:100%;font-size:12px;text-align:left}
+ .paper-size-controls .paper-size-presets{justify-content:space-between;flex:1 1 100%}
+ .paper-app .paper-size-controls .paper-size-preset{flex:1 1 0;min-width:34px}
+}
