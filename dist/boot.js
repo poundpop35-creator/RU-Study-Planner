@@ -1,4 +1,4 @@
-try { await import('./app.js?v=single-calendar-20261119'); }
+try { await import('./app.js?v=single-calendar-pen-20261119'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
