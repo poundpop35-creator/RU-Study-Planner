@@ -191,7 +191,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     delete svg.setPointerCapture;
    },[fromShape,toShape]);
    await click('save');
-   assert.ok(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.some(o=>o.kind==='hexagon'&&o.lineStyle==='dotted'));
+   assert.ok(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.some(o=>o.kind==='hexagon'&&o.dash==='dotted'));
    await page.locator('#paper-geometry-menu summary').click();
    await click('ruler');
    assert.equal(await page.locator('[data-paper="ruler"]').getAttribute('aria-pressed'),'true');
