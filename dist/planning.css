@@ -162,3 +162,10 @@ tr.reg-hit>td{background:#fef9c3!important}tr.reg-hit>td:first-child{box-shadow:
  .calendar-chip.replay,.calendar-chip.lecture{font-size:.7rem;padding:3px 1px;line-height:1.2}
  .calendar-chip.replay .calendar-chip-code,.calendar-chip.lecture .calendar-chip-code{display:inline-flex;flex-wrap:wrap}
 }
+
+/* Only one schedule is visible at a time. Nested weekly panel shares the main card surface. */
+.calendar-panel>.panel{margin:12px 0 0;padding:0;border:0;box-shadow:none;background:transparent}
+.calendar-panel>.panel>h2{margin-top:10px}
+.calendar-panel>.panel>.button-row{margin-bottom:10px}
+.calendar-panel .segmented{max-width:100%}
+@media(max-width:600px){.calendar-panel>.panel{padding:0}.calendar-panel .calendar-toolbar{gap:10px}}
