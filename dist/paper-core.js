@@ -1,6 +1,9 @@
 import {validateLinks} from './word-links.js';
 import {shapes} from './paper-shapes.js';
 export const PAGE_W=900,PAGE_H=1273;
+// Width is in paper coordinates. Highlighter uses 3x width; keep under the 40px schema cap.
+export const PEN_WIDTH_PRESETS=[1,2,3,5,8,12];
+export function penWidth(value,fallback=5){const n=Number(value);return Number.isInteger(n)&&n>=1&&n<=12?n:fallback;}
 export const PAPERS=['plain','ruled','grid','dots'];
 const idOK=x=>typeof x==='string'&&/^[a-zA-Z0-9_-]{1,90}$/.test(x);
 const num=(v,min,max)=>typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max;
