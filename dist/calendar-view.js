@@ -2,7 +2,7 @@ import {weeklyPlanner,timetableColors} from './weekly-planner.js?v=integrated-re
 import {calendarSubscriptionURL} from './calendar-feed.js?v=20261103a';
 import {calendar,courses,schedules,sources} from './data.js?v=20261027c';
 import {escapeHTML as e,thaiDate,today,addDays} from './core.js?v=20261027c';
-import {calendarEvents,personalReplayEvents,defaultMonth,activityMonth,regularLecture,firstLecture,lectureClashes,monthBounds,shiftMonth,weekdays,scheduleICS} from './calendar-core.js?v=replay-20261119';
+import {calendarEvents,personalReplayEvents,defaultMonth,activityMonth,regularLecture,firstLecture,lectureClashes,monthBounds,shiftMonth,weekdays,scheduleICS} from './calendar-core.js?v=integrated-replay-20261119';
 import {lectureInstructors} from './lecture-instructors.js?v=20261106a';
 let board=today()<'2026-11-23'?'first':'regular';
 let month=defaultMonth(),type='all',course='',view='month',selected='',replayShift=0;
