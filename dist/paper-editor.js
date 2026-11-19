@@ -121,17 +121,21 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  function fitTextBox(){
   if(!editing)return;
   const o=editing.object;
+  // Reset temporary measurements on every keystroke: stale widths must not stick.
+  textMeasure.style.display='inline-block';textMeasure.style.width='max-content';
+  textMeasure.style.maxWidth='none';textMeasure.style.whiteSpace='pre';
+  textMeasure.style.overflowWrap='normal';textMeasure.style.lineHeight='1.5';
   textMeasure.textContent=textarea.value;
   const availableWidth=Math.max(1,PAGE_W-o.x);
   const width=Math.min(availableWidth,Math.max(32,textMeasure.offsetWidth+5));
   editing.paperWidth=width;
-  // The on-screen iPhone textarea is deliberately larger than the SVG object.
-   // Measure the text at the original paper font size so multiline notes are never clipped on save.
-   textMeasure.style.display='inline-block';textMeasure.style.width=width+'px';
-   textMeasure.style.maxWidth=width+'px';textMeasure.style.whiteSpace='pre-wrap';
-   textMeasure.style.overflowWrap='anywhere';textMeasure.style.lineHeight='1.5';
+  if(editing.mobile){
+   // A readable overlay edits the text; save only its measured on-paper dimensions.
+   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
+   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
    editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
-  if(editing.mobile){textarea.style.width='100%';textarea.style.height='clamp(130px,25dvh,300px)';textarea.style.overflowY='auto';return;}
+   textarea.style.width='100%';textarea.style.height='clamp(130px,25dvh,300px)';textarea.style.overflowY='auto';return;
+  }
   textarea.style.width=width+'px';
   textarea.style.overflowY='hidden';
   textarea.style.height='1px';
