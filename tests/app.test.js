@@ -245,8 +245,8 @@ test('reading and registration are separate routes with independent controls and
 
 
 test('recorded lecture timetable saves watched state and custom timing in existing shared progress',()=>{
- navigate('#calendar');click('cal-board',{board:'first'});
- assert.ok(html().includes('ตารางเรียนของฉัน'));assert.ok(html().includes('POL1101'));
+ navigate('#calendar');click('cal-view',{view:'week'});
+ assert.ok(html().includes('ตารางเรียน–สอบของฉัน'));assert.ok(html().includes('POL1101'));
  assert.ok(html().includes('POL2104'));assert.ok(html().includes('POL2106'));
  assert.ok(html().includes('unified-replay'));assert.ok(html().includes('unified-lecture'));
  const key='POL1101@2026-11-16';
@@ -273,4 +273,30 @@ test('default monthly calendar shows lectures and replay together; checking a re
  assert.equal(saved().replay[key].done,true);
  assert.ok(html().includes('replay-check-symbol'));
  click('cal-replay-done',{key});assert.equal(saved().replay[key],undefined);
+});
+
+test('one calendar changes between week, month and list without showing duplicate timetable',()=>{
+ navigate('#calendar');
+ click('cal-view',{view:'week'});
+ let page=html();
+ assert.ok(page.includes('unified-weekly'),'weekly grid must be visible');
+ assert.ok(!page.includes('class="calendar-grid"'),'monthly grid must not appear under weekly grid');
+ assert.ok(!page.includes('class="calendar-month-nav"'),'monthly navigation must not appear in weekly mode');
+ assert.ok(page.includes('data-action="cal-view" data-view="month"'));
+ assert.ok(page.includes('data-action="cal-replay-done"'));
+ click('cal-view',{view:'month'});
+ page=html();
+ assert.ok(page.includes('class="calendar-grid"'));
+ assert.ok(!page.includes('class="unified-weekly"'),'weekly grid must disappear in month mode');
+ assert.ok(page.includes('calendar-chip replay'));
+ click('cal-view',{view:'list'});
+ page=html();
+ assert.ok(page.includes('class="calendar-agenda"'));
+ assert.ok(!page.includes('class="calendar-grid"'));
+ assert.ok(!page.includes('class="unified-weekly"'));
+ click('cal-filter',{type:'replay'});
+ click('cal-view',{view:'week'});
+ page=html();
+ assert.ok(page.includes('unified-lecture'),'returning to week restores all activity types');
+ assert.ok(page.includes('unified-replay'));
 });
