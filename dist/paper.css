@@ -133,3 +133,14 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-pen-sizes output{order:4}
  .paper-app .paper-pen-sizes .paper-pen-preview{order:5}
 }
+
+/* Mobile text editing should be legible even when paper is scaled down. */
+.paper-mobile-editor{display:none}
+@media(max-width:720px){
+ .paper-app .paper-mobile-editor:not([hidden]){display:block;position:fixed;z-index:80;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 8px);max-height:48dvh;overflow:auto;background:#fff;border:2px solid #4364c5;border-radius:16px;box-shadow:0 12px 40px #17233b55;padding:12px}
+ .paper-mobile-editor-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+ .paper-mobile-editor-top strong{font-size:15px;color:#1e40af}
+ .paper-app .paper-mobile-editor-top button{background:#3155d9;color:white;min-height:40px;font-weight:750;padding:8px 15px}
+ .paper-mobile-editor p{margin:7px 0;color:#54637a;font-size:12px}
+ .paper-mobile-editor #paper-text-input{position:static!important;display:block;width:100%!important;min-height:130px;max-height:32dvh;height:clamp(130px,25dvh,300px)!important;box-sizing:border-box;resize:vertical;background:#fff;color:#172033!important;font-size:17px!important;line-height:1.6;border:1px solid #9eafcc;border-radius:9px;outline:2px solid #3155d91f;box-shadow:none;padding:12px;overflow:auto;-webkit-text-size-adjust:100%}
+}
