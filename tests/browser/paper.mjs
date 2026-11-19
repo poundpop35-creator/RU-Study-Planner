@@ -60,16 +60,19 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'1');
   if(mobile)await click('multi');else await page.keyboard.up('Shift');
   await click('pen');
+   if(mobile)await page.locator('[data-paper-size-toggle]').click();
    const dots=page.locator('[data-paper-width]');
    assert.equal(await dots.count(),6);
    await page.locator('[data-paper-width="2"]').click();
    assert.equal(await page.locator('#paper-width-value').innerText(),'2');
    assert.equal(await page.locator('[data-paper-width="2"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'2px');
+   if(mobile)await page.locator('[data-paper-size-toggle]').click();
    await page.locator('#paper-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));});
    assert.equal(await page.locator('#paper-width-value').innerText(),'12');
    assert.equal(await page.locator('[data-paper-width="12"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'12px');
+   if(mobile)await page.locator('[data-paper-size-toggle]').click();
    const from=await point(100,400),to=await point(350,450);
   if(mobile){await page.locator('#paper-finger').check();await tap(220,420);}
   else{await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(to.x,to.y,{steps:15});await page.mouse.up();}
