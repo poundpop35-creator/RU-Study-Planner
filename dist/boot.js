@@ -1,4 +1,4 @@
-try { await import('./app.js?v=registration-status'); }
+try { await import('./app.js?v=replay-20261119'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

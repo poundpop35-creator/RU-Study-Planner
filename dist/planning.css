@@ -74,3 +74,33 @@ tr.reg-hit>td{background:#fef9c3!important}tr.reg-hit>td:first-child{box-shadow:
 .reg-enrollment.enrolled{background:#c8ecd2;color:#145834}
 .reg-enrollment.planned{background:#fff1ba;color:#654c0c}
 .reg-enrollment .enrollment-check{appearance:auto;accent-color:#217448;width:17px;height:17px;min-height:0;margin:0;padding:0;cursor:pointer}
+
+
+/* Recorded lecture replay: a separate personal study plan, readable on mobile. */
+.replay-wrapper{margin-top:12px}
+.replay-week-nav{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:16px 0}
+.replay-week-nav strong{flex:1 1 175px;text-align:center;color:#1e3a8a;font-size:.93rem}
+.replay-count{font-weight:650;color:#334155;margin:8px 0 16px}
+.replay-week-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:12px}
+.replay-day{background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:12px;min-width:0}
+.replay-day.is-today{background:#eff6ff;border:2px solid #2563eb}
+.replay-day h3{font-size:1.02rem;margin:0 0 10px;color:#1e3a8a}
+.replay-day h3 small{display:block;font-weight:500;color:#475569;font-size:.8rem}
+.replay-item{border-top:1px solid #cbd5e1;padding:12px 0}
+.replay-item.is-done{background:#ecfdf5;border-radius:8px;padding-inline:7px}
+.replay-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.replay-item-head b{font-size:.95rem;color:#1e293b}
+.replay-item-head a{font-weight:800;color:#1e40af;text-decoration:underline;text-underline-offset:2px}
+.replay-item-head small{display:block;margin-top:4px;color:#475569;font-size:.8rem}
+.replay-time-pill{white-space:nowrap;border-radius:8px;padding:4px 7px;background:#ede9fe;color:#5b21b6;font-weight:800;font-size:.85rem}
+.replay-edit{display:grid;grid-template-columns:1.25fr 1fr;gap:8px;margin-top:10px}
+.replay-edit label{font-weight:650;color:#334155;font-size:.83rem;min-width:0}
+.replay-edit input{font:inherit;width:100%;min-width:0;max-width:100%;box-sizing:border-box;margin:3px 0 0;padding:7px 5px;background:white;color:#0f172a;border:1px solid #94a3b8;border-radius:7px}
+.replay-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.replay-actions .button{white-space:normal;text-align:center;min-height:36px}
+.replay-overlap{color:#754600;background:#fff7db;border:1px solid #f7d282;border-radius:8px;padding:8px;margin:9px 0 0;font-size:.8rem;line-height:1.4}
+.replay-free{color:#475569;font-size:.85rem;margin:0}
+.replay-note{border-left:4px solid #8b5cf6;background:#f5f3ff;padding:12px;border-radius:7px;color:#37306b;margin-top:16px}
+.calendar-chip.replay{background:#ede9fe;color:#4c1d95;border:1px solid #a78bfa}
+.calendar-event.replay-event{border-left:4px solid #8b5cf6;background:#faf7ff}
+@media(max-width:650px){.replay-week-grid{grid-template-columns:1fr}.replay-day{padding:10px}.replay-week-nav strong{flex:1 1 100%;order:-1;text-align:left}}

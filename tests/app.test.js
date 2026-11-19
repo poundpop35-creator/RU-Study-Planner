@@ -242,3 +242,24 @@ test('reading and registration are separate routes with independent controls and
  assert.ok(html().includes('<tr id="reg-row-POL3382" class="reg-hit">'));assert.ok(html().includes('value="3382"'));
  listeners.input({target:{id:'registration-search',value:''}});click('registration-term',{term:'0'});
 });
+
+
+test('recorded lecture timetable saves watched state and custom timing in existing shared progress',()=>{
+ navigate('#calendar');click('cal-board',{board:'replay'});
+ assert.ok(html().includes('ตารางเรียนย้อนหลัง'));assert.ok(html().includes('POL1101'));
+ assert.ok(html().includes('POL2104'));assert.ok(html().includes('POL2106'));
+ assert.ok(html().includes('เวลาเดียวกัน'));
+ const key='POL1101@2026-11-16';
+ click('cal-replay-done',{key});assert.equal(saved().replay[key].done,true);
+ const change=(cls,value)=>listeners.change({target:{classList:{contains:x=>x===cls},dataset:{key},value,id:''}});
+ change('replay-time-input','21:15');assert.equal(saved().replay[key].time,'21:15');
+ change('replay-date','2026-11-19');assert.equal(saved().replay[key].date,'2026-11-19');
+ click('cal-replay-reset',{key});assert.equal(saved().replay[key].date,undefined);
+ assert.equal(saved().replay[key].time,undefined);
+ assert.equal(saved().replay[key].done,true,'reset date/time must not erase watched flag');
+ click('cal-replay-done',{key});assert.equal(saved().replay[key],undefined);
+ click('cal-filter',{type:'replay'});click('cal-jump',{month:'2026-11'});
+ assert.ok(html().includes('calendar-chip replay'));
+ click('cal-view',{view:'list'});assert.ok(html().includes('replay-event'));
+ click('cal-board',{board:'regular'});
+});
