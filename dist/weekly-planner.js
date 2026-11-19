@@ -82,9 +82,9 @@ function unifiedWeekly(mode,state={},focus=today(),canEdit=true){
  </div>`).join('');
  return `<div class="unified-weekly">
   <div class="replay-week-nav">
-   ${mode==='first'?'':`<button class="button secondary small" data-action="cal-replay-week" data-delta="-7">← ก่อนหน้า</button>`}
+   ${start==='2026-11-16'?'':`<button class="button secondary small" data-action="cal-replay-week" data-delta="-7">← ก่อนหน้า</button>`}
    <strong>${thaiDate(start,true)} – ${thaiDate(end,true)}</strong>
-   ${mode==='first'?'':`<button class="button secondary small" data-action="cal-replay-week" data-delta="7">ถัดไป →</button><button class="button secondary small" data-action="cal-replay-week" data-delta="0">สัปดาห์นี้</button>`}
+   ${start>='2027-03-01'?'':`<button class="button secondary small" data-action="cal-replay-week" data-delta="7">ถัดไป →</button>`}<button class="button secondary small" data-action="cal-replay-week" data-delta="0">สัปดาห์นี้</button>
   </div>
   <p class="unified-legend"><span>● คาบบรรยายจริง</span><span>▶ คลิปย้อนหลังประมาณ 2 วัน</span><b>ดูแล้ว ${complete}/${recorded.length} คลิป</b></p>
   <div class="unified-scroll"><div class="unified-grid">
@@ -96,6 +96,10 @@ function unifiedWeekly(mode,state={},focus=today(),canEdit=true){
  </div>`;
 }
 export function weeklyPlanner(mode,replayState={},replayFocus=today(),canEdit=true){
+ // Inline mode is the only visible schedule when the shared calendar is in weekly view.
+ // Preserve previous helper modes for compatibility with existing tests/links.
+ if(mode==='inline')return unifiedWeekly(mondayOf(replayFocus)<'2026-11-23'?'first':'regular',replayState,replayFocus,canEdit);
+
  const list=schedules.filter(s=>courses.some(c=>c.enrolled&&c.id===s.course));
  const exams=courses.filter(c=>c.enrolled).sort((a,b)=>a.exam.localeCompare(b.exam));
  const regular=mode==='regular';

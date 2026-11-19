@@ -115,3 +115,13 @@ test('manual full calendar export includes recorded sessions while public subscr
  assert.ok(personal.includes('DTSTART;VALUE=DATE:20270310'));
  assert.ok(!scheduleICS({type:'all'}).includes('เริ่มดูคลิปย้อนหลัง'));
 });
+
+test('unified inline weekly view includes live and saved replay sessions without its own second panel',()=>{
+ const s=freshState();s.replay['POL1101@2026-11-16']={done:true};
+ const html=weeklyPlanner('inline',s,'2026-11-19',true);
+ assert.ok(html.includes('unified-weekly'));
+ assert.ok(html.includes('unified-lecture'));
+ assert.ok(html.includes('unified-replay'));
+ assert.ok(html.includes('✓ ดูแล้ว'));
+ assert.ok(!html.includes('class="panel"'),'weekly widget must be embedded inside one calendar panel');
+});
