@@ -16,7 +16,7 @@ import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAct
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
 import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=horizontal-timeline-20261120';
-import {personalReplayEvents} from './calendar-core.js?v=replay-20261119';
+import {personalReplayEvents,personalSkimEvents} from './calendar-core.js?v=balanced-replay-20261120';
 import {contentStatus} from './content.js?v=20261027c';
 import {meta,courses,terms,categories,categoryTargets,sources,courseColors,readingWeek,studyPhases,studyHours} from './data.js?v=20261027c';
 import {lessons} from './lessons.js?v=20261027c';
@@ -268,6 +268,20 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
    }
    return;
   }
+  if(action==='cal-skim-done'){
+   const previousHorizontalScroll=document.querySelector('.unified-scroll')?.scrollLeft||0;
+   if(!studySpace.info().canEdit){toast('กำลังเชื่อมต่อพื้นที่ส่วนตัว กรุณาลองอีกครั้ง');return;}
+   const key=b.dataset.key;
+   if(!personalSkimEvents().some(x=>x.key===key))return;
+   const before=state.skimDone||{},next={...before};
+   if(next[key])delete next[key];else next[key]=true;
+   state.skimDone=next;
+   if(!save()){state.skimDone=before;toast('บันทึกการทวนเบา ๆ ไม่สำเร็จ');}
+   else toast(next[key]?'บันทึกว่าทวนเบา ๆ แล้ว (ยังไม่ถือว่าดูจริงจังจบ)':'ยกเลิกสถานะทวนแล้ว');
+   render(true);
+   const nextScroller=document.querySelector('.unified-scroll');if(nextScroller)nextScroller.scrollLeft=previousHorizontalScroll;
+   return;
+  }
   if(action==='cal-replay-done'||action==='cal-replay-reset'){
    const previousHorizontalScroll=document.querySelector('.unified-scroll')?.scrollLeft||0;
    if(!studySpace.info().canEdit){toast('กำลังเชื่อมต่อพื้นที่ส่วนตัว กรุณาลองอีกครั้ง');return;}
@@ -359,7 +373,7 @@ document.addEventListener('change',async event=>{const el=event.target;if(!study
    const initial=personalReplayEvents().find(x=>x.key===key);
    if(!initial||!studySpace.info().canEdit)return;
    const isDate=el.classList.contains('replay-date');
-   if(isDate?(!/^\d{4}-\d{2}-\d{2}$/.test(el.value)||!Number.isFinite(Date.parse(el.value))||el.value<'2026-11-16'||el.value>'2027-05-21'):!/^([01]\d|2[0-3]):[0-5]\d$/.test(el.value)){toast('วันหรือเวลาไม่ถูกต้อง');render(true);return;}
+   if(isDate?(!/^\d{4}-\d{2}-\d{2}$/.test(el.value)||!Number.isFinite(Date.parse(el.value))||el.value<initial.availableOn||el.value>'2027-05-21'):!/^([01]\d|2[0-3]):[0-5]\d$/.test(el.value)){toast('วันหรือเวลาไม่ถูกต้อง');render(true);return;}
    const old=state.replay||{},next={...old,[key]:{...old[key],[isDate?'date':'time']:el.value}};
    state.replay=next;
    if(!save()){state.replay=old;toast('บันทึกเวลาเรียนย้อนหลังไม่สำเร็จ');}
