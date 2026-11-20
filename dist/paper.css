@@ -544,3 +544,5 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-context-actions [data-paper="course-materials"]{font-size:11px}
  .paper-app .paper-course-materials{padding:6px 10px}
 }
+
+.paper-legacy-content{white-space:pre-wrap;overflow-wrap:anywhere}.paper-legacy-content img{max-width:100%;height:auto}.paper-legacy-content p{margin:0}

@@ -539,6 +539,18 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  bind(rich,'pointerup',()=>{richSelection=richOffsets();textRibbonState();});
  bind(rich,'blur',e=>{if(!closed&&!e.relatedTarget?.closest?.('.paper-text-ribbon,.paper-word-menu')){rememberWord();finishText();}});
  bind(rich,'paste',e=>{e.preventDefault();document.execCommand('insertText',false,e.clipboardData?.getData('text/plain')||'');});
+ bind(rich,'dragover',event=>event.preventDefault());
+ bind(rich,'drop',event=>{
+  event.preventDefault();
+  const text=event.dataTransfer?.getData('text/plain');
+  if(!text)return;
+  const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY);
+  if(caret&&rich.contains(caret.startContainer)){
+   const selection=window.getSelection();
+   selection.removeAllRanges();selection.addRange(caret);
+  }
+  if(rich.contains(window.getSelection()?.anchorNode))document.execCommand('insertText',false,text);
+ });
  bind(rich,'beforeinput',e=>{if(e.inputType==='insertParagraph'){e.preventDefault();document.execCommand('insertText',false,'\n');}});
  const textKeydown=e=>{
   if(e.ctrlKey||e.metaKey){

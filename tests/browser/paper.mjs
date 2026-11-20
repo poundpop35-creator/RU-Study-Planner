@@ -224,7 +224,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await page.evaluate(()=>{window.__paperNode=document.querySelector('#paper-svg');window.dispatchEvent(new Event('focus'));});await page.waitForTimeout(300);
   assert.equal(await page.locator('#paper-text-input').inputValue(),'กำลังเขียนขณะซิงก์');assert.equal(await page.evaluate(()=>window.__paperNode===document.querySelector('#paper-svg')),true);await click('save');assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.text==='กำลังเขียนขณะซิงก์'));assert.equal(row.payload.notebook.notes[0].title,'อีกเครื่องอัปเดตชื่อ');
   await page.reload();await page.waitForFunction(()=>document.body.classList.contains('paper-mode'));assert.equal(await page.locator('#paper-svg image').count(),1);
-  await page.locator('.paper-menu summary').click();await click('legacy');await page.getByRole('dialog').waitFor();await page.locator('.paper-legacy .ql-editor').waitFor();assert.match(await page.locator('.paper-legacy-content').innerText(),/ต้นฉบับบทเรียน/);await page.getByRole('button',{name:'กลับหน้ากระดาษ',exact:true}).click();
+  await page.locator('.paper-menu summary').click();await click('legacy');await page.getByRole('dialog').waitFor();await page.locator('.paper-legacy-content p').first().waitFor();assert.match(await page.locator('.paper-legacy-content').innerText(),/ต้นฉบับบทเรียน/);await page.getByRole('button',{name:'กลับหน้ากระดาษ',exact:true}).click();
   await page.locator('.paper-back').click();await page.locator('.note-card').waitFor();assert.equal(await page.locator('.note-card p').count(),0);await page.screenshot({path:'test-results/library-'+name+'.png'});
   await page.locator('[data-action="nb-classify"]').first().click();
   const category=page.getByRole('dialog');await category.locator('[name="source"]').selectOption('prep');
@@ -418,6 +418,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await wordRibbon.locator('[data-paper="word-link"]').isVisible(),'per-word link/file action must be visible without opening extra settings');
    await miniToolbar.locator('[data-word-menu-format="bold"]').click();
    assert.ok(await page.locator('#paper-rich-editor').isVisible(),'mini toolbar formats only the selected word and enters rich editing');
+   const dropBlocked=await page.locator('#paper-rich-editor').evaluate(editor=>{
+    const before=editor.innerHTML,transfer=new DataTransfer();
+    transfer.setData('text/html','<b>sample</b>');
+    const event=new Event('drop',{bubbles:true,cancelable:true});
+    Object.defineProperty(event,'dataTransfer',{value:transfer});
+    editor.dispatchEvent(event);
+    return event.defaultPrevented&&editor.innerHTML===before;
+   });
+   assert.ok(dropBlocked,'formatted HTML drops must not invoke native rich-text insertion');
    await wordRibbon.locator('[data-word-format="italic"]').click();
    await wordRibbon.locator('[data-word-format="underline"]').click();
    await page.locator('#paper-rich-editor').dispatchEvent('contextmenu',{bubbles:true,cancelable:true,clientX:140,clientY:235});
