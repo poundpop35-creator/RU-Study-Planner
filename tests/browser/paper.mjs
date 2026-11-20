@@ -252,8 +252,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    },[fromShape,toShape]);
    await click('save');
    assert.ok(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.some(o=>o.kind==='hexagon'&&o.dash==='dotted'));
-    assert.ok(await page.locator('#paper-selected-shape').isVisible(),'selected shape displays shape type picker');
-    await page.locator('#paper-selected-shape').selectOption('triangle');
+    assert.ok(await page.locator('[data-open-shapes="selected"]').isVisible(),'selected shape supports icon gallery');
+    await page.locator('[data-open-shapes="selected"]').click();
+    await page.locator('[data-shape-pick="triangle"]').click();
     await page.locator('#paper-selected-line-style').selectOption('dashed');
     await click('save');
     const savedShape=()=>row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.find(o=>o.type==='shape');
