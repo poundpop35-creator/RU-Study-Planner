@@ -1,5 +1,5 @@
 import {calendar,courses,schedules} from './data.js?v=20261027c';
-import {addDays,today} from './core.js?v=20261027c';
+import {addDays,today} from './core.js?v=balanced-friday-replays-20261120';
 import {lectureInstructors} from './lecture-instructors.js?v=20261106a';
 export const weekdays=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
 export function monthBounds(month){
