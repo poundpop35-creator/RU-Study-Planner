@@ -229,7 +229,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   // The single weekly planner must fit replay cards, including watch buttons, at iPhone widths.
   // Render a fixed sample week so this regression check remains independent of the current date.
   await page.evaluate(async()=>{
-   const {weeklyPlanner}=await import('/weekly-planner.js?v=replay-card-mobile-20261120');
+   const {weeklyPlanner}=await import('/weekly-planner.js?v=horizontal-timeline-20261120');
    const {freshState}=await import('/core.js?v=replay-20261119');
    const fixture=document.createElement('section');
    fixture.id='replay-layout-fixture';
@@ -261,8 +261,28 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    if(i)assert.ok(day.cards[i-1].bottom<=card.top+1,'same-day replay cards must not overlap');
   }
   if(mobile){
-   assert.ok(await schedule.locator('.unified-grid').evaluate(el=>el.scrollWidth<=el.clientWidth+2),
-    'mobile weekly schedule should not require sideways panning');
+   const scrollState=await schedule.locator('.unified-scroll').evaluate(el=>({
+    containerWidth:el.clientWidth,
+    contentWidth:el.scrollWidth,
+    headerVisible:getComputedStyle(el.querySelector('.unified-axis')).display!=='none',
+    hasTimeHeaders:el.querySelectorAll('.unified-axis span').length>=7,
+    dayColumnSticky:getComputedStyle(el.querySelector('.unified-weekday-name')).position==='sticky',
+    horizontalScroll:['auto','scroll'].includes(getComputedStyle(el).overflowX)
+   }));
+   assert.ok(scrollState.contentWidth>scrollState.containerWidth+400,
+    'the timeline must remain wide and horizontally scrollable');
+   assert.ok(scrollState.headerVisible&&scrollState.hasTimeHeaders,
+    'mobile must show the time-axis columns');
+   assert.ok(scrollState.dayColumnSticky,'weekday labels must remain sticky when panning');
+   assert.ok(scrollState.horizontalScroll,'the schedule must allow a horizontal finger swipe');
+   const stickyResult=await schedule.locator('.unified-scroll').evaluate(el=>{
+    el.scrollLeft=520;
+    const date=el.querySelector('.unified-weekday-name'),scroll=el.getBoundingClientRect();
+    return {left:date.getBoundingClientRect().left,containerLeft:scroll.left,scrollLeft:el.scrollLeft};
+   });
+   assert.ok(stickyResult.scrollLeft>200,'the timetable should respond to a sideways swipe');
+   assert.ok(Math.abs(stickyResult.left-stickyResult.containerLeft)<7,
+    'weekday labels must stay visible when scrolling horizontally');
   }
   await page.screenshot({path:'test-results/replay-calendar-'+name+'.png',fullPage:true});
   assert.deepEqual(errors,[]);console.log(name+': editor, text, vector ink, undo/redo, selection, images, pages, confirmation, offline save, cross-device sync, no remount, legacy original PASS');

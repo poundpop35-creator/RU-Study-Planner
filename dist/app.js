@@ -13,7 +13,7 @@ import {createStudySpace} from './study-space.js?v=geometry-20261119';
 import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=geometry-20261119';
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
-import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=replay-card-mobile-20261120';
+import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=horizontal-timeline-20261120';
 import {personalReplayEvents} from './calendar-core.js?v=replay-20261119';
 import {contentStatus} from './content.js?v=20261027c';
 import {meta,courses,terms,categories,categoryTargets,sources,courseColors,readingWeek,studyPhases,studyHours} from './data.js?v=20261027c';
@@ -255,7 +255,18 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
  if(action.startsWith('account-')){accountAction(action,studySpace,render,toast);return;}
  if(action.startsWith('nb-')&&!studySpace.info().canEdit){toast(studySpace.info().status);return;}
  if(action.startsWith('nb-')){notebookAction(action,b.dataset,studySpace,state,render,toast);return;}
- if(action==='cal-replay-done'||action==='cal-replay-reset'){
+ if(action==='cal-scroll-time'){
+   const scroller=document.querySelector('.unified-scroll');
+   const track=scroller?.querySelector?.('.unified-weekday-track');
+   if(scroller&&track&&['day','night'].includes(b.dataset.target)){
+    const hour=b.dataset.target==='night'?20:11;
+    const left=Math.max(0,60+8+(hour-11)/14*track.clientWidth-78);
+    scroller.scrollTo?.({left,behavior:'smooth'});
+   }
+   return;
+  }
+  if(action==='cal-replay-done'||action==='cal-replay-reset'){
+   const previousHorizontalScroll=document.querySelector('.unified-scroll')?.scrollLeft||0;
    if(!studySpace.info().canEdit){toast('กำลังเชื่อมต่อพื้นที่ส่วนตัว กรุณาลองอีกครั้ง');return;}
    const key=b.dataset.key;
    if(!personalReplayEvents().some(x=>x.key===key))return;
@@ -267,7 +278,10 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
    state.replay=copy;
    if(!save()){state.replay=before;toast('บันทึกไม่สำเร็จ กรุณาลองใหม่');}
    else toast(action==='cal-replay-reset'?'คืนวันและเวลาเริ่มดูเป็นค่าเดิมแล้ว':next.done?'บันทึกว่าดูคลิปนี้แล้ว':'ยกเลิกสถานะดูแล้ว');
-   render(true);return;
+   render(true);
+   const nextScroller=document.querySelector('.unified-scroll');
+   if(nextScroller)nextScroller.scrollLeft=previousHorizontalScroll;
+   return;
   }
   if(action.startsWith('cal-')){if(action==='cal-export'){download('ru-study-calendar-2-2569.ics',calendarDownload(state),'text/calendar;charset=utf-8');toast('ดาวน์โหลดปฏิทินตามตัวกรองแล้ว');}else if(calendarAction(action,b.dataset))render(true);return;}
  if(action==='registration-term'||action==='registration-find'){const id=Number(b.dataset.term);if(terms.some(t=>t.id===id)){registrationTerm=id;regFocus=action==='registration-find'?b.dataset.course:'';render(true);document.querySelector('.registration-term.active')?.scrollIntoView?.({block:'nearest',inline:'nearest'});if(regFocus)document.querySelector('#reg-row-'+regFocus)?.scrollIntoView?.({block:'center',behavior:'smooth'});}return;}

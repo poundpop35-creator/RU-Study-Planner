@@ -1,4 +1,4 @@
-try { await import('./app.js?v=extra-pol-practice-20261120'); }
+try { await import('./app.js?v=horizontal-timeline-20261120'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
