@@ -112,7 +112,8 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   picker?.classList.remove('is-open');
   if(toggle)toggle.setAttribute('aria-expanded','false');
  }
- function setTool(next){cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;tool=next;if(next==='shape')$('#paper-geometry-menu').open=true;if(next!=='select')multiSelect=false;if(!['select','text'].includes(tool))selected.clear();say(({shape:'เลือกรูปทรง แล้วลากบนหน้ากระดาษ',pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะตำแหน่งบนกระดาษเพื่อพิมพ์',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูม'})[tool]);draw();}
+ function closeExtraTools(){const menu=$('#paper-toolbar-more');if(menu)menu.open=false;}
+ function setTool(next){cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;tool=next;if(next==='shape'){$('#paper-toolbar-more').open=true;$('#paper-geometry-menu').open=true;}else closeExtraTools();if(next!=='select')multiSelect=false;if(!['select','text'].includes(tool))selected.clear();say(({shape:'เลือกรูปทรง แล้วลากบนหน้ากระดาษ',pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะตำแหน่งบนกระดาษเพื่อพิมพ์',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูม'})[tool]);draw();}
  const textMeasure=document.createElement('span');
  Object.assign(textMeasure.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',whiteSpace:'pre',width:'max-content',maxWidth:'none',left:'0',top:'0'});
  const measureClip=document.createElement('div');
@@ -368,19 +369,19 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   try{
    if(unsaved&&b.dataset.paper!=='save'&&b.dataset.paper!=='draft'&&b.dataset.paper!=='discard-draft')throw Error('มีงานค้าง กรุณาบันทึกหรือสำรองก่อนทำรายการต่อ');
    if(b.dataset.paperPage){finishText();pageId=b.dataset.paperPage;selected.clear();viewport.scrollTop=0;root.classList.remove('pages-open');draw();thumbs();return;}
-   if(b.dataset.paperColor){color=b.dataset.paperColor;if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type!=='image'?{...o,color}:o);});draw();return;}
+   if(b.dataset.paperColor){color=b.dataset.paperColor;if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type!=='image'?{...o,color}:o);});draw();closeExtraTools();return;}
     if(b.dataset.paperSizeToggle){
      const picker=$('.paper-pen-sizes'),open=picker.classList.toggle('is-open');
      b.setAttribute('aria-expanded',String(open));return;
     }
     if(b.dataset.paperWidth){
      updatePenWidth(b.dataset.paperWidth);
-     closePenSizePicker();
+     closePenSizePicker();closeExtraTools();
      return;
     }
    const action=b.dataset.paper;if(!action)return;
    if(action==='finish-text'){finishText();return;}
-   if(action==='ruler'){ruler.active=!ruler.active;draw();return;}
+   if(action==='ruler'){ruler.active=!ruler.active;draw();closeExtraTools();return;}
    if(['ruler-minus','ruler-plus','ruler-zero'].includes(action)){
     ruler.angle=action==='ruler-zero'?0:Math.round((ruler.angle+(action==='ruler-plus'?15:-15)+360)%360);ruler.active=true;draw();return;
    }
@@ -434,9 +435,9 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   }catch(err){say(err.message,true);}
  });
  bind($('#paper-width'),'input',e=>updatePenWidth(e.target.value));
- bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();});
- bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();});
- bind(root,'keydown',e=>{if(e.key==='Escape')closePenSizePicker();});
+ bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();closeExtraTools();});
+ bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
+ bind(root,'keydown',e=>{if(e.key==='Escape'){closePenSizePicker();closeExtraTools();}});
   bind($('#paper-finger'),'change',e=>{finger=e.target.checked;});
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
  bind($('#paper-smart-shape'),'change',e=>{smartEnabled=e.target.checked;if(!smartEnabled)cancelSmartTimer();});
