@@ -65,12 +65,13 @@ test('switching exams back to classes leaves March and returns to the relevant l
 test('pre-class material and actual classroom content are separate, and notes have a visible mobile menu',()=>{
  navigate('#courses');assert.ok(html().includes('<h1>ติวก่อนเรียน</h1>'));assert.ok(html().includes('ไม่ใช่คำบรรยายหรือเอกสารของอาจารย์'));
  assert.ok(get('#bottom-nav').innerHTML.includes('href="#notes"'));assert.ok(get('#bottom-nav').innerHTML.includes('สมุดจด'));
- navigate('#classroom');assert.ok(html().includes('ยังไม่ได้รับเนื้อหาจากอาจารย์'));assert.ok(!html().includes('class="lesson-row'));
+ navigate('#classroom');assert.ok(html().includes('ห้องเรียนและสมุดจด'));assert.ok(html().includes('เอกสารหลักวิชา'));assert.ok(!html().includes('class="lesson-row'));
  assert.equal((html().match(/data-source="classroom"/g)||[]).length,7);
  click('nb-new',{course:'POL2301',source:'classroom'});navigate(location.hash);
  assert.ok(get('#bottom-nav').innerHTML.includes('href="#notes" aria-current="page"'));
  assert.ok(html().includes('paper-app'));assert.ok(html().includes('data-paper="pen"'));
- navigate('#notes');listeners.change({target:{id:'notebook-source',value:'classroom'}});assert.ok(html().includes('note-origin classroom'));
+ navigate('#classroom');assert.ok(html().includes('classroom-note-link'),'classroom must link existing note');
+  navigate('#notes');listeners.change({target:{id:'notebook-source',value:'classroom'}});assert.ok(html().includes('note-origin classroom'));
  listeners.change({target:{id:'notebook-source',value:''}});
 });
 test('notes save immediately and render as text, never executable user HTML',()=>{
@@ -156,7 +157,7 @@ test('five places on the phone bar, each page lights its place, and the menu rea
  const bar=()=>get('#bottom-nav').innerHTML,current=key=>bar().includes(`href="#${key}" aria-current="page"`);
  navigate('#home');assert.equal((bar().match(/<a /g)||[]).length,5);for(const key of ['home','courses','plan','notes','menu'])assert.ok(bar().includes(`href="#${key}"`),key);
  for(const [route,place] of [['home','home'],['lesson/POL1101-1','courses'],['classroom','courses'],['practice','courses'],['review','courses'],['prep/POL2106','courses'],['calendar','plan'],['registration','plan'],['notes','notes'],['settings','menu'],['debt','menu']]){navigate('#'+route);assert.ok(current(place),route);assert.equal((bar().match(/aria-current/g)||[]).length,1,route);}
- navigate('#menu');for(const key of ['courses','classroom','practice','review','exams','notes','plan','calendar','registration','documents','resources','awards','account','debt','settings','about'])assert.ok(html().includes(`href="#${key}"`),key);
+ navigate('#menu');for(const key of ['courses','classroom','practice','review','exams','plan','calendar','registration','documents','resources','awards','account','debt','settings','about'])assert.ok(html().includes(`href="#${key}"`),key);
  for(const route of ['courses','classroom','practice','review']){navigate('#'+route);assert.ok(html().includes('class="hub-tabs"'),route);assert.ok(html().includes(`href="#${route}" aria-current="page"`),route);}
  for(const route of ['plan','calendar','registration']){navigate('#'+route);assert.equal((html().match(/class="hub-tabs"/g)||[]).length,1,route);assert.ok(html().includes(`href="#${route}" aria-current="page"`),route);}
 });
