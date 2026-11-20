@@ -1,4 +1,4 @@
-try { await import('./app.js?v=balanced-friday-replays-20261120'); }
+try { await import('./app.js?v=editable-note-tables-20261120'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
