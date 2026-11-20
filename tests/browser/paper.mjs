@@ -573,6 +573,33 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     'weekday labels must stay visible when scrolling horizontally');
   }
   await page.screenshot({path:'test-results/replay-calendar-'+name+'.png',fullPage:true});
+  // Standalone HTML design lab must be interactive rather than a static mockup.
+  await page.goto('http://127.0.0.1:3000/demo.html');
+  await page.locator('#view-home.active').waitFor();
+  await page.locator('[data-jump="notes"]').first().click();
+  await page.locator('#view-notes.active').waitFor();
+  await page.locator('[data-tool="table"]').click();
+  await page.locator('#tableModal.open').waitFor();
+  await page.locator('#rowsInput').fill('4');
+  await page.locator('#rowsInput').press('Tab');
+  await page.locator('#cellGrid textarea[data-r="0"][data-c="0"]').fill('นักคิด');
+  await page.locator('#cellGrid textarea[data-r="1"][data-c="0"]').fill('เพลโต');
+  await page.locator('#saveTable').click();
+  assert.equal(await page.locator('#tableModal.open').count(),0);
+  assert.equal(await page.locator('.paper-object.table-object').count(),2,
+    'new table appears beside the sample table');
+  await page.reload();
+  await page.locator('#view-home.active').waitFor();
+  await page.evaluate(()=>document.querySelector('[data-view="notes"]').click());
+  assert.equal(await page.locator('.paper-object.table-object').count(),2,'preview stores tables across reloads');
+  await page.evaluate(()=>document.querySelector('[data-view="schedule"]').click());
+  await page.locator('#view-schedule.active').waitFor();
+  await page.locator('[data-schedule-mode="light"]').first().click();
+  assert.match(await page.locator('#lightCount').innerText(),/1/);
+  await page.locator('[data-schedule-mode="deep"]').first().click();
+  assert.match(await page.locator('#deepCount').innerText(),/1/);
+  assert.match(await page.locator('#lightCount').innerText(),/1/,'light review is independent of deep watch');
+  await page.screenshot({path:'test-results/interactive-demo-'+name+'.png',fullPage:true});
   assert.deepEqual(errors,[]);console.log(name+': editor, text, vector ink, undo/redo, selection, images, pages, confirmation, offline save, cross-device sync, no remount, legacy original PASS');
  }catch(err){console.error(name,err);let shot=0;for(const c of browser.contexts())for(const p of c.pages())await p.screenshot({path:'test-results/failure-'+name+'-'+shot+++'.png'}).catch(()=>{});process.exitCode=1;}
  finally{await browser.close();}
