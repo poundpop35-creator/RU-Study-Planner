@@ -272,3 +272,9 @@ tr.reg-hit>td{background:#fef9c3!important}tr.reg-hit>td:first-child{box-shadow:
  .unified-time-nav span{flex-basis:100%;order:-1;font-size:.8rem}
  .unified-time-nav .button{flex:1 1 0}
 }
+
+@media screen and (max-width:600px){
+ .hub-tabs{flex-wrap:wrap}
+ .hub-tabs a{flex:1 1 auto}
+ .hub-tabs:has(>a:nth-child(4)) a{flex-basis:calc(50% - 4px)}
+}

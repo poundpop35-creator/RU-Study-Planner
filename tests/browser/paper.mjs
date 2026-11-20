@@ -460,6 +460,17 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await page.locator('#paper-svg span[style*="color:#dc4343"]').count(),'per-word color survives reload');
    await page.screenshot({path:'test-results/notebook-word-format-'+name+'.png'});
    
+  await page.evaluate(()=>{location.hash='#home';});
+  await page.locator('.hero').waitFor();
+  const sideNotebook=page.locator('#navigation a[href="#notes"]');
+  const notebookEntry=await sideNotebook.isVisible()?sideNotebook:page.locator('#bottom-nav a[href="#notes"]');
+  await notebookEntry.click();
+  await page.locator('.hub-tabs a[href="#classroom"]').click();
+  await page.locator('.classroom-grid').waitFor();
+  assert.ok(await page.locator('.hub-tabs a[href="#classroom"][aria-current="page"]').isVisible());
+  await page.locator('.hub-tabs a[href="#notes"]').click();
+  await page.locator('.hub-tabs a[href="#notes"][aria-current="page"]').waitFor();
+
   // The single weekly planner must fit replay cards, including watch buttons, at iPhone widths.
   // Render a fixed sample week so this regression check remains independent of the current date.
   await page.evaluate(async()=>{
