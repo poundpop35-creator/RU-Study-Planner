@@ -7,6 +7,7 @@ import {replaceLink,moveLinks} from './word-links.js';
 import {textSize,textColor,formattedTextHTML,normalizeMarks,toggleTextFormat,applyTextFormat,moveMarks} from './paper-rich-text.js?v=word-format-20261120';
 import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
+import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape} from './paper-shapes.js?v=notebook-shape-tools-20261120';
 import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=geometry-20261119';
 let active=null;
@@ -796,6 +797,19 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    }
    if(['select','pen','highlight','eraser','text','shape','hand','line','arrow','straighten'].includes(action)){setTool(action);if(action==='shape')setShapesOpen(true);return;}
    if(action==='files'){fileList();$('#paper-files').showModal();return;}
+   if(action==='course-materials'){
+    const course=currentNote()?.course;
+    if(!course)throw Error('เลือกวิชาในรายละเอียดโน้ตก่อน');
+    await openSharedCourseMaterials(space,course,()=>{
+     const count=courseMaterialCount(space.notebook(),course);
+     let details=$('.paper-course-materials');
+     if(count){
+      if(!details){details=document.createElement('details');details.className='paper-course-materials';$('.paper-context').after(details);}
+      details.innerHTML='<summary>📚 เอกสารหลัก '+course+' · '+count+' รายการ ▾</summary>'+courseMaterialList(space.notebook(),course);
+     }else details?.remove();
+    },say);
+    return;
+   }
    if(action==='image-link'){
     const target=page().objects.find(o=>selected.has(o.id)&&o.type==='image');
     if(!target)return;
