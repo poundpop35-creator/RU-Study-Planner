@@ -1,4 +1,4 @@
-import {courseMaterialLabel} from './course-materials-ui.js?v=course-files';
+import {courseMaterialLabel,uploadSharedCourseFile} from './course-materials-ui.js?v=inline-course-upload-20261120';
 import {registrationChecklist,enrollmentControl} from './registration-checklist.js?v=registration-status';
 import {readingStart,afterPlan,firstChecklist,weekView,mayConfirm} from './after-class.js?v=20261112a';
 import {importPanel,resolvePlan} from './debt-import.js?v=20261111b';
@@ -363,7 +363,17 @@ document.addEventListener('submit',async event=>{
  render(true);document.querySelector('#debt-creditor').value=creditor;document.querySelector('#debt-payment-amount').focus({preventScroll:true});toast('บันทึกยอดจ่ายสะสมแล้ว');
 });
 document.addEventListener('input',event=>{const el=event.target;if(el.id==='registration-search'){regQuery=el.value;document.querySelector('#registration-search-results').innerHTML=regResults();return;}if(!studySpace.info().canEdit&&el.id!=='lesson-search')return;if(el.id==='notebook-search'){notebookSearch(studySpace,el.value);return;}if(el.id==='lesson-search'){searchQuery=el.value;document.querySelector('#library-results').innerHTML=libraryResults();}if(el.id==='lesson-note'){state.notes[el.dataset.lesson]=el.value;const ok=save();document.querySelector('#note-status').textContent=ok?studySpace.info().status:'ยังไม่บันทึกใน Supabase กรุณาลองอีกครั้ง';}});
-document.addEventListener('change',async event=>{const el=event.target;if(!studySpace.info().canEdit&&!['study-plan-date','calendar-course','review-course','mistakes-only','include-unread'].includes(el.id))return;
+document.addEventListener('change',async event=>{const el=event.target;
+ if(el.dataset?.courseUploadDirect){
+  const file=el.files?.[0],course=el.dataset.courseUploadDirect;
+  if(!file)return;
+  el.disabled=true;
+  try{await uploadSharedCourseFile(studySpace,course,file,()=>render(true),toast);}
+  catch(err){toast(err.message||'แนบไฟล์หลักไม่สำเร็จ');}
+  finally{el.value='';el.disabled=false;}
+  return;
+ }
+ if(!studySpace.info().canEdit&&!['study-plan-date','calendar-course','review-course','mistakes-only','include-unread'].includes(el.id))return;
  if(el.id==='notebook-course'||el.id==='notebook-source'){notebookFilter(el.value,el.id==='notebook-source'?'source':'course');render(true);return;}
  if(el.id==='notebook-import'){try{if(el.files?.[0]){await importNotebook(el.files[0],studySpace);render();}}catch(err){toast(err.message);}return;}
  if(el.id==='after-course'){if(afterPlan(state,planDate).allowed.includes(el.value)){state.readCourse[planDate]=el.value;save();render(true);}return;}
