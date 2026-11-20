@@ -43,6 +43,13 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    children:Array.from(el.children).map(c=>({class:c.className,height:c.getBoundingClientRect().height,display:getComputedStyle(c).display,position:getComputedStyle(c).position})),
    display:getComputedStyle(el).display,flexWrap:getComputedStyle(el).flexWrap}));
   assert.ok(toolbarMetrics.height<=90,'notebook toolbar should remain a compact single row: '+JSON.stringify(toolbarMetrics));
+   if(mobile)assert.ok(await page.locator('#paper-quickbar').isHidden(),'phone keeps compact toolbar and advanced options');
+   else{
+    assert.ok(await page.locator('#paper-quickbar').isVisible(),'desktop and tablet show an always-visible second tool row');
+    assert.ok(await page.locator('#paper-quick-text-size').isVisible(),'default text size is directly editable');
+    await page.locator('[data-quick-color="#8756c6"]').click();
+    assert.equal(await page.locator('[data-paper-color="#8756c6"]').getAttribute('aria-pressed'),'true','quick swatch changes the active pen/text color');
+   }
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
   assert.ok(await page.locator('.paper-tool-options').isHidden(),'extra options must not occupy canvas when closed');
    assert.ok(await page.locator('.paper-pages').isHidden(),'page thumbnails start collapsed to maximize writing space');
@@ -119,6 +126,11 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('[data-paper-width="28"]').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'28');
    await click('pen');
+   if(!mobile){
+    assert.ok(await page.locator('#paper-quick-width').isVisible(),'pen width slider stays visible when pen is active');
+    await page.locator('#paper-quick-width').evaluate(el=>{el.value='7';el.dispatchEvent(new Event('input',{bubbles:true}));});
+    assert.equal(await page.locator('#paper-width-value').textContent(),'7','visible slider syncs with advanced picker');
+   }
    await page.locator('#paper-toolbar-more > summary').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'12','pen remembers its own width after switching from highlighter');
    await page.keyboard.press('Escape');
