@@ -51,6 +51,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.equal(await page.locator('[data-paper-color="#8756c6"]').getAttribute('aria-pressed'),'true','quick swatch changes the active pen/text color');
    }
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
+   if(mobile)assert.ok(await page.locator('#paper-text-ribbon').isHidden(),'Word toolbar is inside the editor on narrow phones');
+   else assert.ok(await page.locator('#paper-text-ribbon').isVisible(),'Word-style Home ribbon is visible in text mode');
   assert.ok(await page.locator('.paper-tool-options').isHidden(),'extra options must not occupy canvas when closed');
    assert.ok(await page.locator('.paper-pages').isHidden(),'page thumbnails start collapsed to maximize writing space');
    await click('pages');
@@ -305,7 +307,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   else await page.mouse.click(following.x,following.y);
   assert.equal(await follow.inputValue(),'รัฐ','tapping after the word must resume its textbox');
   assert.equal(await follow.evaluate(el=>el.selectionStart),await follow.inputValue().then(v=>v.length),'cursor should be at the end ready for Scribble');
-  await follow.fill('รัฐศาสตร์');await click('save');
+  if(await follow.isVisible())await follow.fill('รัฐศาสตร์');
+   else{const rich=page.locator('#paper-rich-editor');assert.ok(await rich.isVisible());await rich.fill('รัฐศาสตร์');}
+   await click('save');
   const continued=activeNote().paper.pages[0].objects.find(o=>o.id===originalText.id);
   assert.equal(continued.text,'รัฐศาสตร์','new handwriting text should be stored on same object');
   assert.equal(activeNote().paper.pages[0].objects.filter(o=>o.text==='รัฐศาสตร์').length,1);
@@ -370,6 +374,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await page.locator('#paper-rich-editor').isVisible(),'formatting a selection enters editable rich text');
    await wordRibbon.locator('[data-word-format="italic"]').click();
    await wordRibbon.locator('[data-word-format="underline"]').click();
+   await wordRibbon.locator('[data-word-color="#dc4343"]').click();
+   assert.ok((await page.locator('#paper-rich-editor').innerHTML()).includes('color:#dc4343'),'selected word receives color preview');
    await page.locator('#paper-word-size').fill('19');
    await page.locator('#paper-word-size').press('Tab');
    assert.ok((await page.locator('#paper-rich-editor').innerHTML()).includes('font-size:19px'),'exact size is visible while editing');
@@ -387,10 +393,14 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(wordObject.marks[0].bold,true);
    assert.equal(wordObject.marks[0].italic,true);
    assert.equal(wordObject.marks[0].underline,true);
+   assert.equal(wordObject.marks[0].color,'#dc4343','selected word color saved');
+   assert.equal(wordObject.marks[0].start,0);
+   assert.equal(wordObject.marks[0].end,4,'color does not spread to unselected words');
    assert.equal(wordObject.links[0].url,'https://example.org/word');
    await page.reload();await page.locator('#paper-svg').waitFor();
    assert.ok(await page.locator('#paper-svg [data-word-link]').count(),'word link must survive reload alongside formatting');
    assert.ok(await page.locator('#paper-svg span[style*="font-weight:700"]').count(),'individual word style must survive reload');
+   assert.ok(await page.locator('#paper-svg span[style*="color:#dc4343"]').count(),'per-word color survives reload');
    await page.screenshot({path:'test-results/notebook-word-format-'+name+'.png'});
    
   // The single weekly planner must fit replay cards, including watch buttons, at iPhone widths.
