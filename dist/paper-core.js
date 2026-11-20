@@ -1,6 +1,7 @@
 import {validateLinks} from './word-links.js';
 import {validateMarks} from './paper-rich-text.js?v=word-format-20261120';
 import {shapes,lineStyles} from './paper-shapes.js?v=notebook-shape-tools-20261120';
+import {validateTableCells} from './paper-table.js?v=20261120-table';
 export const PAGE_W=900,PAGE_H=1273;
 // Pen and highlighter widths are independent paper-coordinate stroke widths.
 export const PEN_WIDTH_PRESETS=[1,2,3,5,8,12];
@@ -28,7 +29,7 @@ export function validatePaper(value){
  return {version:1,pages:value.pages.map(page=>{
   if(!idOK(page.id)||ids.has(page.id)||!PAPERS.includes(page.template)||!Array.isArray(page.objects)||page.objects.length>5000)throw Error('ข้อมูลหน้ากระดาษไม่ถูกต้อง');ids.add(page.id);
   return {id:page.id,template:page.template,objects:page.objects.map(o=>{
-   if(!idOK(o.id)||ids.has(o.id)||!['stroke','text','image','shape'].includes(o.type)||!num(o.x,-PAGE_W,PAGE_W*2)||!num(o.y,-PAGE_H,PAGE_H*2)||!num(o.w,1,PAGE_W*3)||!num(o.h,1,PAGE_H*3))throw Error('วัตถุบนกระดาษไม่ถูกต้อง');ids.add(o.id);
+   if(!idOK(o.id)||ids.has(o.id)||!['stroke','text','image','shape','table'].includes(o.type)||!num(o.x,-PAGE_W,PAGE_W*2)||!num(o.y,-PAGE_H,PAGE_H*2)||!num(o.w,1,PAGE_W*3)||!num(o.h,1,PAGE_H*3))throw Error('วัตถุบนกระดาษไม่ถูกต้อง');ids.add(o.id);
    const out={id:o.id,type:o.type,x:o.x,y:o.y,w:o.w,h:o.h};
    if(o.type==='stroke'){
     if(!['pen','highlight'].includes(o.tool)||!color(o.color)||!num(o.width,1,40)||!Array.isArray(o.points)||!o.points.length)throw Error('เส้นปากกาไม่ถูกต้อง');points+=o.points.length;if(points>120000)throw Error('ลายมือในโน้ตนี้เต็มแล้ว กรุณาสร้างโน้ตใหม่');
@@ -38,6 +39,8 @@ export function validatePaper(value){
     Object.assign(out,{kind:o.kind,color:o.color,width:o.width,reverseX:o.reverseX===true,reverseY:o.reverseY===true});
     if(o.lineStyle!==undefined){if(!Object.hasOwn(lineStyles,o.lineStyle))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.lineStyle=o.lineStyle;}
     if(o.dash!==undefined){if(!Object.hasOwn(lineStyles,o.dash))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.dash=o.dash;}
+   }else if(o.type==='table'){
+    out.cells=validateTableCells(o.cells);
    }else if(o.type==='text'){
     if(typeof o.text!=='string'||o.text.length>20000||!color(o.color)||!num(o.size,10,96))throw Error('ข้อความบนกระดาษไม่ถูกต้อง');Object.assign(out,{text:o.text,color:o.color,size:Math.round(o.size),bold:o.bold===true});if(o.links?.length)out.links=validateLinks(o.links,o.text);if(o.marks?.length)out.marks=validateMarks(o.marks,o.text);
    }else {if(typeof o.imageId!=='string'||!/^[a-f0-9-]{36}\.(png|jpg|webp|gif)$/.test(o.imageId))throw Error('รูปภาพไม่ถูกต้อง');out.imageId=o.imageId;if(o.stretch===true)out.stretch=true;if(o.link)out.link=imageLink(o.link);}
