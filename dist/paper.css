@@ -384,3 +384,39 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 @media(max-width:720px){
  .paper-app .paper-quickbar{display:none!important}
 }
+
+
+/* Word-like contextual Home ribbon when text is the selected tool:
+   drawing palette disappears so users do not juggle unrelated controls. */
+.paper-app[data-paper-tool="text"]>.paper-quickbar{display:none}
+.paper-app .paper-ribbon-format,.paper-app .paper-ribbon-colors{
+ display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;
+ border-left:1px solid #dbe3f1;padding-left:10px;
+}
+.paper-app .paper-ribbon-colors span{font-size:12px;font-weight:650;color:#3b527a;margin-right:4px}
+.paper-app .paper-text-ribbon .paper-word-swatch{
+ min-width:0;width:26px;height:26px;min-height:0;padding:0;
+ background:var(--word-ink);border:3px solid white;border-radius:6px;
+ box-shadow:0 0 0 1px #aebeda;flex:0 0 26px;
+}
+.paper-app .paper-text-ribbon .paper-word-swatch[aria-pressed="true"]{
+ box-shadow:0 0 0 2px #285be1,0 0 0 4px #d5e4ff;
+}
+.paper-app .paper-word-custom{display:inline-flex;align-items:center;gap:4px;
+ font-size:11px;white-space:nowrap;color:#415776;border:1px solid #c8d6e9;
+ background:#fff;border-radius:7px;padding:2px 5px;height:32px}
+.paper-app .paper-word-custom input[type="color"]{
+ appearance:none;width:27px;height:24px;cursor:pointer;padding:0;
+ background:transparent;border:0;border-radius:4px}
+.paper-app .paper-text-ribbon .paper-ribbon-help{flex:1 0 100%;padding-left:2px}
+.paper-app .paper-text-ribbon button:disabled{opacity:.45;cursor:not-allowed}
+.paper-app .paper-text-ribbon .paper-ribbon-done[hidden]{display:none!important}
+@media(max-width:720px){
+ .paper-app[data-paper-tool="text"]>.paper-text-ribbon{display:none!important}
+ .paper-app .paper-mobile-editor:not([hidden]) .paper-text-ribbon{display:flex!important}
+ .paper-app .paper-mobile-editor .paper-ribbon-colors{flex-wrap:wrap;min-width:0;gap:6px}
+ .paper-app .paper-mobile-editor .paper-ribbon-format{gap:3px}
+ .paper-app .paper-mobile-editor .paper-ribbon-size{flex:0 0 auto}
+ .paper-app .paper-mobile-editor .paper-word-swatch{width:25px;height:25px;flex-basis:25px}
+}
+@media print{.paper-app .paper-quickbar,.paper-app .paper-text-ribbon{display:none!important}}
