@@ -32,12 +32,26 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  const scope=space.info().scope,images=new Map(),loading=new Set(),history=new Map(),events=[],pointers=new Map();
  const draftKey='ru-paper-draft:'+scope+':'+id;
  const widthKey='ru-paper-pen-width.v1:'+scope;
+ // iPad defaults to stylus-only contact on the page; the user can change this per device.
+ const isIPad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const palmKey='ru-paper-palm-guard.v1';
+ let palmGuard=isIPad,lastStylusAt=0;
+ try{const saved=localStorage.getItem(palmKey);if(saved!==null)palmGuard=saved==='true';}catch{}
  try{width=penWidth(localStorage.getItem(widthKey));}catch{/* unavailable device preference: keep 5 */}
  const $=s=>root.querySelector(s),svg=$('#paper-svg'),sheet=$('#paper-sheet'),wrap=$('#paper-wrap'),viewport=$('#paper-viewport'),textarea=$('#paper-text-input');
  const bind=(el,type,fn,opts)=>{el.addEventListener(type,fn,opts);events.push(()=>el.removeEventListener(type,fn,opts));};
+ const palmToggle=$('#paper-palm-guard');
+ palmToggle.checked=palmGuard;root.classList.toggle('paper-palm-guard-on',palmGuard);
  const page=()=>model.pages.find(p=>p.id===pageId)||model.pages[0];
  const h=()=>{if(!history.has(pageId))history.set(pageId,pageHistory());return history.get(pageId);};
  const say=(text,bad=false)=>{const el=$('#paper-hint');el.textContent=text;el.classList.toggle('error',bad);};
+ function setPalmGuard(value){
+  palmGuard=!!value;palmToggle.checked=palmGuard;
+  root.classList.toggle('paper-palm-guard-on',palmGuard);
+  if(palmGuard){pointers.clear();gesture=null;cancelSmartTimer();scheduleDraw();}
+  try{localStorage.setItem(palmKey,String(palmGuard));}catch{}
+  say(palmGuard?'กันฝ่ามือแล้ว · Apple Pencil เขียนได้ · ใช้ปุ่ม +/− เพื่อซูม':'ปิดกันฝ่ามือแล้ว · ใช้สองนิ้วซูมได้');
+ }
  const currentNote=()=>space.notebook().notes.find(n=>n.id===id);
  const writable=()=>{const i=space.info();if(i.scope!==scope||!i.canEdit)throw Error('ยังเชื่อมต่อพื้นที่จดไม่ได้ กรุณารอหรือลองเชื่อมต่อใหม่');if(i.conflict)throw Error('มีการแก้พร้อมกัน เปิด “ข้อมูลและการซิงก์” เพื่อเลือกฉบับก่อน');};
  function persist(next,record=true){
@@ -113,7 +127,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(toggle)toggle.setAttribute('aria-expanded','false');
  }
  function closeExtraTools(){const menu=$('#paper-toolbar-more');if(menu)menu.open=false;}
- function setTool(next){cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;tool=next;if(next==='shape'){$('#paper-toolbar-more').open=true;$('#paper-geometry-menu').open=true;}else closeExtraTools();if(next!=='select')multiSelect=false;if(!['select','text'].includes(tool))selected.clear();say(({shape:'เลือกรูปทรง แล้วลากบนหน้ากระดาษ',pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะตำแหน่งบนกระดาษเพื่อพิมพ์',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูม'})[tool]);draw();}
+ function setTool(next){cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;tool=next;if(next==='shape'){$('#paper-toolbar-more').open=true;$('#paper-geometry-menu').open=true;}else closeExtraTools();if(next!=='select')multiSelect=false;if(!['select','text'].includes(tool))selected.clear();say(({shape:'เลือกรูปทรง แล้วลากบนหน้ากระดาษ',pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะที่ข้อความเดิมหรือชิดท้ายคำเพื่อเขียนต่อ · แตะพื้นที่ว่างเพื่อสร้างใหม่',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูมเมื่อปิดกันฝ่ามือ'})[tool]);draw();}
  const textMeasure=document.createElement('span');
  Object.assign(textMeasure.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',whiteSpace:'pre',width:'max-content',maxWidth:'none',left:'0',top:'0'});
  const measureClip=document.createElement('div');
@@ -137,7 +151,9 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
    editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
    textarea.style.width='100%';textarea.style.height='clamp(130px,25dvh,300px)';textarea.style.overflowY='auto';return;
   }
-  textarea.style.width=width+'px';
+  // Leave a wider editable target for Apple Pencil Scribble *without* storing
+  // that extra whitespace as the object's final bounds.
+  textarea.style.width=Math.min(availableWidth,Math.max(250,width))+'px';
   textarea.style.overflowY='hidden';
   textarea.style.height='1px';
   const height=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textarea.scrollHeight));
@@ -189,11 +205,25 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  bind(textarea,'input',()=>{if(editing){editing.links=moveLinks(editing.links,editing.lastText,textarea.value);editing.lastText=textarea.value;}clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);fitTextBox();});
  bind(textarea,'blur',()=>{if(!closed){rememberWord();finishText();}});
  bind(textarea,'keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();linkWord().catch(err=>say(err.message,true));return;}if(e.key==='Escape'){e.preventDefault();finishText();}});
+ // Follow-up Scribble strokes placed slightly after the last word should
+ // reopen that very same text object rather than create a separate textbox.
+ function findTextToContinue(p){
+  const objects=[...page().objects].reverse().filter(o=>o.type==='text');
+  const exact=objects.find(o=>contains(p,o,3));if(exact)return exact;
+  const near=objects.filter(o=>o.text&&p.x>=o.x+o.w-8&&
+   p.x<=o.x+o.w+Math.min(150,o.size*7)&&p.y>=o.y-12&&
+   p.y<=o.y+o.h+Math.min(12,o.size*.5));
+  return near.sort((a,b)=>Math.abs(p.x-(a.x+a.w))-Math.abs(p.x-(b.x+b.w)))[0]||null;
+ }
  function pointerDown(e){
+  if(e.pointerType==='pen')lastStylusAt=Date.now();
+  // Resting hands are often interpreted as a two-finger pinch by the browser.
+  // Ignore touch contact on the page while protected or immediately after pen use.
+  if(e.pointerType==='touch'&&(palmGuard||[...pointers.values()].some(p=>p.pointerType==='pen')||
+    Date.now()-lastStylusAt<900)){if(e.cancelable)e.preventDefault();return;}
   if(e.target.closest('[data-word-link],[data-word-file]')&&['text','select'].includes(tool)&&!multiSelect&&!e.shiftKey)return;
   wordSelection=null;
   if(e.pointerType==='mouse'&&e.button!==0)return;
-  if(e.pointerType==='touch'&&[...pointers.values()].some(p=>p.pointerType==='pen'))return;
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,pointerType:e.pointerType});
   if(pointers.size===2&&gesture?.image){
    const [a,b]=[...pointers.values()];gesture={kind:'image-pinch',image:gesture.preview?.find(o=>o.id===gesture.image.id)||gesture.image,before:gesture.before,distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),cx:(a.x+b.x)/2,cy:(a.y+b.y)/2};
@@ -229,7 +259,10 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
    }
   }
   if(tool==='text'){
-   const target=[...page().objects].reverse().find(o=>o.type==='text'&&contains(p,o));startText(target||{id:uid(),type:'text',x:Math.min(p.x,PAGE_W-32),y:Math.min(p.y,PAGE_H-Math.ceil(fontSize*1.5)),w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color,bold});return;
+   const target=findTextToContinue(p);
+   startText(target||{id:uid(),type:'text',x:Math.min(p.x,PAGE_W-32),y:Math.min(p.y,PAGE_H-Math.ceil(fontSize*1.5)),w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color,bold});
+   if(target)say('กำลังเขียนต่อในกล่องเดิม · เขียนจากเคอร์เซอร์ได้เลย');
+   return;
   }
   if(tool==='select'){
    const box=bounds(page().objects.filter(o=>selected.has(o.id)));
@@ -250,6 +283,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   scheduleDraw();
  }
  function pointerMove(e){
+  if(e.pointerType==='pen')lastStylusAt=Date.now();
   if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,pointerType:e.pointerType});if(!gesture)return;e.preventDefault();
   if(gesture.multiTap&&!gesture.moved){
    if(Math.hypot(e.clientX-gesture.px,e.clientY-gesture.py)<4)return;
@@ -289,6 +323,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   scheduleDraw();
  }
  function pointerUp(e){
+  if(e.pointerType==='pen')lastStylusAt=Date.now();
   if(!pointers.has(e.pointerId))return;const g=gesture;
   cancelSmartTimer();
   if(g?.kind==='stroke'&&e.type==='pointerup'){const p=point(e),to=g.rulerEdge?rulerProject(p,ruler,g.rulerEdge):p;g.points.push([to.x,to.y,e.pointerType==='pen'&&e.pressure>0?e.pressure:.5]);}
@@ -439,6 +474,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
  bind(root,'keydown',e=>{if(e.key==='Escape'){closePenSizePicker();closeExtraTools();}});
   bind($('#paper-finger'),'change',e=>{finger=e.target.checked;closeExtraTools();});
+ bind(palmToggle,'change',e=>{setPalmGuard(e.target.checked);closeExtraTools();});
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
  bind($('#paper-shape'),'change',()=>closeExtraTools());
  bind($('#paper-smart-shape'),'change',e=>{smartEnabled=e.target.checked;if(!smartEnabled)cancelSmartTimer();});
