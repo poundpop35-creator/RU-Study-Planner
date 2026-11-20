@@ -1,4 +1,4 @@
-try { await import('./app.js?v=word-canva-classroom-20261120'); }
+try { await import('./app.js?v=study-navigation-20261120'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

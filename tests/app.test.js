@@ -156,10 +156,22 @@ test('game layer: level chip, awards page and celebrations',()=>{
 test('five places on the phone bar, each page lights its place, and the menu reaches every page',()=>{
  const bar=()=>get('#bottom-nav').innerHTML,current=key=>bar().includes(`href="#${key}" aria-current="page"`);
  navigate('#home');assert.equal((bar().match(/<a /g)||[]).length,5);for(const key of ['home','courses','plan','notes','menu'])assert.ok(bar().includes(`href="#${key}"`),key);
- for(const [route,place] of [['home','home'],['lesson/POL1101-1','courses'],['classroom','courses'],['practice','courses'],['review','courses'],['prep/POL2106','courses'],['calendar','plan'],['registration','plan'],['notes','notes'],['settings','menu'],['debt','menu']]){navigate('#'+route);assert.ok(current(place),route);assert.equal((bar().match(/aria-current/g)||[]).length,1,route);}
+ for(const [route,place] of [['home','home'],['lesson/POL1101-1','courses'],['classroom','notes'],['practice','courses'],['review','courses'],['prep/POL2106','courses'],['calendar','plan'],['registration','plan'],['notes','notes'],['settings','menu'],['debt','menu']]){navigate('#'+route);assert.ok(current(place),route);assert.equal((bar().match(/aria-current/g)||[]).length,1,route);}
  navigate('#menu');for(const key of ['courses','classroom','practice','review','exams','plan','calendar','registration','documents','resources','awards','account','debt','settings','about'])assert.ok(html().includes(`href="#${key}"`),key);
  for(const route of ['courses','classroom','practice','review']){navigate('#'+route);assert.ok(html().includes('class="hub-tabs"'),route);assert.ok(html().includes(`href="#${route}" aria-current="page"`),route);}
  for(const route of ['plan','calendar','registration']){navigate('#'+route);assert.equal((html().match(/class="hub-tabs"/g)||[]).length,1,route);assert.ok(html().includes(`href="#${route}" aria-current="page"`),route);}
+});
+test('the sidebar has one entry per section and every grouped page links to its siblings',()=>{
+ const groups=[['courses','practice','review','exams'],['notes','classroom'],['plan','calendar','registration'],['documents','resources','about'],['account','settings']];
+ for(const pages of groups)for(const page of pages){
+  navigate('#'+page);
+  const side=get('#navigation').innerHTML;
+  assert.equal((side.match(/class="nav-link /g)||[]).length,8);
+  assert.ok(side.includes(`href="#${pages[0]}" aria-current="page"`),page);
+  const tabs=html().match(/<nav class="hub-tabs"[^>]*>(.*?)<\/nav>/s)?.[1]||'';
+  for(const sibling of pages)assert.ok(tabs.includes(`href="#${sibling}"`),sibling);
+  assert.equal((tabs.match(/aria-current/g)||[]).length,1);
+ }
 });
 test('the date and hour tools fold under the day plan and stay open while in use',async()=>{
  navigate('#home');listeners.toggle({target:{classList:{contains:c=>c==='plan-tools'},open:false}});navigate('#home');assert.ok(html().includes('<details class="plan-tools">'));
@@ -221,7 +233,7 @@ test('reading and registration are separate routes with independent controls and
  navigate('#registration');assert.ok(html().includes('<h1>แผนลงทะเบียน</h1>'));
  assert.ok(!html().includes('id="study-plan-date"'));assert.ok(!html().includes('id="hours-weekday"'));
  assert.equal((html().match(/class="grade-select"/g)||[]).length,7);
- assert.ok(get('#navigation').innerHTML.includes('href="#registration" aria-current="page"'));
+ assert.ok(get('#navigation').innerHTML.includes('href="#plan" aria-current="page"'));
  click('registration-term',{term:'1'});assert.ok(html().includes('aria-label="ย้าย POL2300"'));
  const mark=checked=>listeners.change({target:{classList:{contains:c=>c==='enrollment-check'},dataset:{course:'POL2300'},checked}});
  mark(true);assert.equal(saved().enrollment.POL2300,true);assert.ok(html().includes('aria-label="ลงทะเบียนแล้ว POL2300" checked'));

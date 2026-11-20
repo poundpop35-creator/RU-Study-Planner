@@ -2,21 +2,13 @@ import {courses} from './data.js?v=20261027c';
 import {escapeHTML as e} from './core.js?v=20261027c';
 import {courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=shared-course-20261120';
 
-// One row of tabs links pages that belong together; the open page's tab is marked.
-export function hubTabs(tabs,active,label){
- return `<nav class="hub-tabs" aria-label="${label}">${tabs.map(([key,name])=>`<a href="#${key}" ${active===key?'aria-current="page"':''}>${name}</a>`).join('')}</nav>`;
-}
-// The learning area: pre-class material and classroom content stay separate tabs, next to practice and review.
-export function studySections(active='courses'){
- return hubTabs([['courses','ติวก่อนเรียน'],['classroom','ห้องเรียน'],['practice','ฝึกสอบ'],['review','ทบทวน']],active,'ส่วนของการเรียน');
-}
 export function prepNotice(){
  return '<p class="content-origin"><strong>ติวก่อนเรียน</strong> คือเนื้อหาที่เรียบเรียงเพื่อปูพื้นฐาน ไม่ใช่คำบรรยายหรือเอกสารของอาจารย์ <a href="#classroom">ดูเนื้อหาจากห้องเรียน →</a></p>';
 }
 export function classroomPage(space){
  const book=space?.notebook?.()||{notes:[]},active=courses.filter(c=>c.enrolled);
  const count=active.reduce((sum,c)=>sum+book.notes.filter(n=>n.course===c.id&&!n.archived).length,0);
- return `${studySections('classroom')}
+ return `
  <div class="page-heading"><div><h1>ห้องเรียนและสมุดจด</h1><p>โน้ตที่เคยจดอยู่ที่นี่ด้วย ไม่ต้องสร้างหรือคัดลอกใหม่ · เอกสารหลักของวิชาเปิดร่วมกันได้ทุกครั้ง</p></div></div>
  <div class="classroom-overview panel"><b>สมุดจดที่มีแล้ว ${count} รายการ</b><a class="button secondary" href="#notes">เปิดสมุดจดทั้งหมด</a></div>
  <div class="classroom-grid">${active.map(c=>{
