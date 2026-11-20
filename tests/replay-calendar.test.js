@@ -1,156 +1,156 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {calendarEvents,personalReplayEvents,scheduleICS} from '../dist/calendar-core.js';
+import {calendarEvents,defaultWeekendReplays,personalReplayEvents,personalSkimEvents,scheduleICS} from '../dist/calendar-core.js';
 import {freshState,validateState} from '../dist/core.js';
-import {weeklyPlanner} from '../dist/weekly-planner.js';
+import {weeklyPlanner,timelinePosition} from '../dist/weekly-planner.js';
 
-test('replay sessions are derived from the actual lecture date plus two days',()=>{
- const first=calendarEvents({type:'replay',start:'2026-11-16',end:'2026-11-22'});
- const get=id=>first.find(x=>x.course===id);
- assert.equal(first.length,7);
- assert.deepEqual([get('POL1101').sourceDate,get('POL1101').date,get('POL1101').time],['2026-11-16','2026-11-18','20:00']);
- assert.equal(get('POL2303').date,'2026-11-19');
- assert.deepEqual(first.filter(x=>x.date==='2026-11-20').map(x=>x.course),['POL2301','POL2104','POL2106']);
- assert.equal(get('POL2107').date,'2026-11-21');
- assert.equal(get('POL2200').date,'2026-11-22');
- assert.equal(new Set(first.map(x=>x.key)).size,7);
-});
+const deepWeek=()=>calendarEvents({type:'replay',start:'2026-11-16',end:'2026-11-22'});
+const skimOn=date=>personalSkimEvents({}, {start:date,end:date});
 
-test('POL2200 follows its real first-Friday then Thursday timetable and cancellation removes replay',()=>{
- const pol=calendarEvents({type:'replay',course:'POL2200'});
- assert.deepEqual(pol.slice(0,3).map(x=>[x.sourceDate,x.date]),[
-  ['2026-11-20','2026-11-22'],['2026-11-26','2026-11-28'],['2026-12-03','2026-12-05']
- ]);
- const cancelled=personalReplayEvents({}, {start:'2027-01-22',end:'2027-01-22'});
- assert.equal(cancelled.length,0);
-});
-
-test('saved changes are validated and affect only the personal replay, not lectures',()=>{
- const s=freshState();
- s.replay['POL1101@2026-11-16']={date:'2026-11-19',time:'21:15',done:true};
- s.replay['POL2106@2026-11-18']={time:'25:99',done:true};
- s.replay['NOT-A-COURSE@2026-11-16']={done:true};
- const checked=validateState(s);
- assert.deepEqual(checked.replay['POL1101@2026-11-16'],s.replay['POL1101@2026-11-16']);
- assert.deepEqual(checked.replay['POL2106@2026-11-18'],{done:true});
- assert.equal(checked.replay['NOT-A-COURSE@2026-11-16'],undefined);
- const item=personalReplayEvents(checked.replay,{start:'2026-11-19',end:'2026-11-19'}).find(x=>x.course==='POL1101');
- assert.equal(item.startTime,'21:15');
- assert.equal(item.done,true);
- assert.equal(calendarEvents({type:'lecture',course:'POL1101'})[0].date,'2026-11-16');
- assert.equal(personalReplayEvents({}, {start:'2026-11-18',end:'2026-11-18'})[0].date,'2026-11-18');
-});
-test('simultaneous default replay slots are flagged without claiming their video lengths',()=>{
- const friday=personalReplayEvents({}, {start:'2026-11-20',end:'2026-11-20'});
- assert.equal(friday.length,3);
- assert.ok(friday.every(x=>x.overlap));
- const changed=personalReplayEvents({'POL2104@2026-11-18':{date:'2026-11-21',time:'21:00'}},
-  {start:'2026-11-20',end:'2026-11-20'});
- assert.equal(changed.length,2);
- assert.ok(changed.every(x=>x.overlap));
- const saturday=personalReplayEvents({'POL2104@2026-11-18':{date:'2026-11-21',time:'21:00'}},
-  {start:'2026-11-21',end:'2026-11-21'});
- assert.equal(saturday.find(x=>x.course==='POL2104').startTime,'21:00');
-});
-test('calendar export of personal replays uses Asia/Bangkok and leaves official feeds unchanged',()=>{
- const exportText=scheduleICS({type:'replay',course:'POL1101',replay:{'POL1101@2026-11-16':{time:'21:15'}}}).replace(/\r\n /g,'');
- assert.ok(exportText.includes('DTSTART:20261118T141500Z'));
- assert.ok(exportText.includes('DTEND:20261118T151500Z'));
- assert.ok(exportText.includes('STATUS:TENTATIVE'));
- assert.ok(exportText.includes('ondemand.ru.ac.th'));
- assert.ok(exportText.includes('UID:replay-POL1101-2026-11-16@ru-study-planner'));
- assert.ok(!scheduleICS().includes('เริ่มดูคลิปย้อนหลัง'));
-});
-test('mobile-friendly weekly replay view lists every clip and editable controls',()=>{
- const html=weeklyPlanner('replay',freshState(),'2026-11-19',true);
- assert.ok(html.includes('ตารางเรียนของฉัน'));
- assert.ok(html.includes('POL1101'));
- assert.ok(html.includes('POL2303'));
- assert.ok(html.includes('POL2104'));
- assert.ok(html.includes('POL2106'));
- assert.ok(html.includes('data-action="cal-replay-done"'));
- assert.ok(html.includes('class="replay-date"'));
- assert.ok(html.includes('class="replay-time-input"'));
- assert.ok(html.includes('unified-replay'));
- assert.ok(html.includes('ondemand.ru.ac.th'));
- const disabled=weeklyPlanner('replay',freshState(),'2026-11-19',false);
- assert.ok(disabled.includes(' disabled'));
-});
-
-test('one weekly timetable combines original lecture and two-day replay in pastel blocks',()=>{
- const html=weeklyPlanner('first',freshState(),'2026-11-19',true);
- assert.match(html,/class="unified-weekday/);
- assert.match(html,/class="unified-lecture"/);
- assert.match(html,/class="unified-replay/);
- assert.ok(html.includes('POL1101'));
- assert.ok(html.includes('POL2301'));
- assert.ok(html.includes('data-action="cal-replay-done"'));
- assert.ok(html.includes('▶ POL1101'));
- assert.ok(html.includes('▶ POL2303'));
- assert.ok(html.includes('▶ POL2301'));
- assert.ok(html.includes('▶ POL2104'));
- assert.ok(html.includes('▶ POL2106'));
- assert.ok(html.includes('✓ ดูแล้ว')===false);
- assert.equal((html.match(/class="unified-weekday /g)||[]).length,7);
- const state=freshState();state.replay['POL1101@2026-11-16']={done:true};
- const done=weeklyPlanner('first',state,'2026-11-19',true);
- assert.ok(done.includes('✓ ดูแล้ว'));
- assert.ok(done.includes('ดูแล้ว 1/7 คลิป'));
-});
-
-test('recorded sessions stay in the same weekly layout after shifting dates and retain their check status',()=>{
- const state=freshState();state.replay['POL2104@2026-11-18']={date:'2026-11-21',time:'22:00',done:true};
- const html=weeklyPlanner('first',state,'2026-11-19',true);
- assert.ok(html.includes('22:00 · ย้อนหลัง'));
- assert.ok(html.includes('value="2026-11-21"'));
- assert.ok(html.includes('ดูแล้ว 1/7'));
- assert.ok(html.includes('POL2104'));
-});
-
-test('manual full calendar export includes recorded sessions while public subscribed feed stays official-only',()=>{
- const personal=scheduleICS({type:'all',includeReplay:true,replay:{'POL1101@2026-11-16':{time:'21:15'}}});
- assert.ok(personal.includes('เริ่มดูคลิปย้อนหลัง'));
- assert.ok(personal.includes('DTSTART:20261118T141500Z'));
- assert.ok(personal.includes('DTSTART:20261116T041000Z'));
- assert.ok(personal.includes('DTSTART;VALUE=DATE:20270310'));
- assert.ok(!scheduleICS({type:'all'}).includes('เริ่มดูคลิปย้อนหลัง'));
-});
-
-test('unified inline weekly view includes live and saved replay sessions without its own second panel',()=>{
- const s=freshState();s.replay['POL1101@2026-11-16']={done:true};
- const html=weeklyPlanner('inline',s,'2026-11-19',true);
- assert.ok(html.includes('unified-weekly'));
- assert.ok(html.includes('unified-lecture'));
- assert.ok(html.includes('unified-replay'));
- assert.ok(html.includes('✓ ดูแล้ว'));
- assert.ok(!html.includes('class="panel"'),'weekly widget must be embedded inside one calendar panel');
-});
-
-test('three Friday catch-up clips each get a full-height card with room for their buttons',()=>{
- const html=weeklyPlanner('inline',freshState(),'2026-11-19',true);
- const friday=html.match(/<div class="unified-weekday ">(?:(?!<div class="unified-weekday ").)*?<\/div><\/div>/gs)||[];
- assert.ok(html.includes('height:366px'),'Friday row requires three 122px replay slots');
- for(const code of ['POL2301','POL2104','POL2106']){
-  assert.ok(html.includes('▶ '+code),'missing replay for '+code);
-  assert.ok(html.includes('aria-label="'+code+' ยังไม่ดู กดเพื่อทำเครื่องหมายดูแล้ว"'));
+test('Friday 20 Nov is still a live POL2200 lecture; every Friday from 27 Nov is free of live classes',()=>{
+ const first=calendarEvents({type:'lecture',start:'2026-11-20',end:'2026-11-20'});
+ assert.ok(first.some(x=>x.course==='POL2200'&&x.startTime==='13:30'));
+ for(const date of ['2026-11-27','2026-12-04','2026-12-11']){
+  assert.deepEqual(calendarEvents({type:'lecture',start:date,end:date}).filter(x=>x.type==='lecture'),[]);
  }
- assert.ok(html.includes('top:247px'),'third card should begin below the second');
- assert.ok(!html.includes('width:8%'),'replay moved to late hours must remain readable');
- const moved=freshState();moved.replay['POL2104@2026-11-18']={time:'22:00'};
- const late=weeklyPlanner('inline',moved,'2026-11-19',true);
- assert.ok(late.includes('22:00 · ย้อนหลัง'));
- assert.ok(late.includes('left:78.57142857142857%'),'a 22:00 replay belongs under 22:00, not the 20:00 column');
- assert.ok(late.includes('width:20.92857142857143%'),'the late replay keeps a readable box before the next-day boundary');
+ const thursday=calendarEvents({type:'lecture',start:'2026-11-26',end:'2026-11-26'});
+ assert.ok(thursday.some(x=>x.course==='POL2200'&&x.room==='VPB 501'));
 });
 
-test('wide clock-based timetable keeps fixed hour columns and explicit jump to evening',async()=>{
- const html=weeklyPlanner('inline',freshState(),'2026-11-19',true);
- assert.match(html,/class="unified-axis"/);
- for(const h of ['11:00','13:00','15:00','17:00','19:00','21:00','23:00','01:00 +1'])
-  assert.ok(html.includes('>'+h+'</span>'),'missing hourly column '+h);
- assert.ok(html.includes('data-action="cal-scroll-time" data-target="night"'));
- assert.ok(html.includes('data-action="cal-scroll-time" data-target="day"'));
- assert.ok(html.includes('aria-label="ตารางรายสัปดาห์แนวนอน'));
- assert.ok(html.includes('left:64.28571428571429%'),'20:00 placed at the evening clock column');
- assert.equal((html.match(/class="unified-weekday /g)||[]).length,7);
+test('first weekend balances four 75-minute Saturday clips and three 100-minute Sunday clips',()=>{
+ const rows=deepWeek();
+ assert.equal(rows.length,7);
+ const sat=rows.filter(x=>x.date==='2026-11-21');
+ const sun=rows.filter(x=>x.date==='2026-11-22');
+ assert.deepEqual(sat.map(x=>x.course),['POL2106','POL2104','POL1101','POL2303']);
+ assert.deepEqual(sat.map(x=>x.startTime),['09:00','10:30','13:00','14:30']);
+ assert.deepEqual(sun.map(x=>x.course),['POL2301','POL2107','POL2200']);
+ assert.deepEqual(sun.map(x=>x.startTime),['10:00','13:00','16:00']);
+ assert.equal(sat.reduce((sum,x)=>sum+x.durationMinutes,0),300);
+ assert.equal(sun.reduce((sum,x)=>sum+x.durationMinutes,0),300);
+ assert.equal(rows[0].course,'POL2106','first serious session must be political philosophy');
+ assert.deepEqual([sun.at(-1).sourceDate,sun.at(-1).availableOn],['2026-11-20','2026-11-22']);
+});
+
+test('deep sessions never precede the two-day estimated availability window',()=>{
+ const all=defaultWeekendReplays();
+ assert.ok(all.length>50);
+ const seen=new Set();
+ for(const item of all){
+  const weekday=new Date(item.date+'T12:00:00Z').getUTCDay();
+  assert.ok([0,6].includes(weekday),'deep watching only on Saturday or Sunday');
+  assert.ok(item.date>=item.availableOn,'watching must not start before estimated upload');
+  assert.ok(item.durationMinutes>=60&&item.durationMinutes<=120);
+  assert.ok(!seen.has(item.key),'one deep session per recorded lecture');
+  seen.add(item.key);
+ }
+ const changed=personalReplayEvents({'POL2106@2026-11-18':{time:'15:15',done:true}});
+ assert.equal(changed.find(x=>x.key==='POL2106@2026-11-18').done,true);
+ assert.equal(changed.find(x=>x.key==='POL2106@2026-11-18').endTime,'16:30');
+});
+
+test('weekday light listening starts 20:00 and never marks weekend serious watching as done',()=>{
+ const wed=skimOn('2026-11-18');
+ const thu=skimOn('2026-11-19');
+ assert.equal(wed.length,1);
+ assert.equal(thu.length,1);
+ assert.ok([...wed,...thu].every(x=>x.startTime==='20:00'&&x.durationMinutes===40&&x.type==='skim'));
+ assert.deepEqual(skimOn('2026-11-21'),[]);
+ assert.deepEqual(skimOn('2026-11-22'),[]);
+ const firstFriday=skimOn('2026-11-20');
+ assert.deepEqual(firstFriday.map(x=>x.startTime),['20:00','20:45','21:30']);
+ assert.equal(firstFriday[0].course,'POL2106');
+ assert.equal(personalReplayEvents({}, {start:'2026-11-21',end:'2026-11-21'}).find(x=>x.course==='POL2106').done,false);
+});
+
+test('Friday 27 Nov and later start POL2106 in a daytime slot while Friday live remains empty',()=>{
+ const friday=skimOn('2026-11-27');
+ assert.deepEqual(friday.map(x=>x.startTime),['10:00','13:00','15:00']);
+ assert.deepEqual(friday.map(x=>x.durationMinutes),[60,45,45]);
+ assert.equal(friday[0].course,'POL2106');
+ assert.equal(friday[0].sourceDate,'2026-11-25');
+ assert.ok(friday.every(x=>x.availableOn<=x.date));
+ const next=skimOn('2026-12-04');
+ assert.equal(next[0].course,'POL2106');
+ assert.equal(next[0].startTime,'10:00');
+ assert.equal(next[0].sourceDate,'2026-12-02');
+});
+
+test('reviewed and serious-watch flags validate independently and survive reload',()=>{
+ const s=freshState(),key='POL2106@2026-11-18';
+ s.skimDone[key]=true;
+ s.replay[key]={done:false,date:'2026-11-22',time:'16:00'};
+ const checked=validateState(JSON.parse(JSON.stringify(s)));
+ assert.equal(checked.skimDone[key],true);
+ assert.equal(checked.replay[key].done,undefined);
+ assert.equal(personalSkimEvents(checked.skimDone,{start:'2026-11-20',end:'2026-11-20'})[0].done,true);
+ assert.equal(personalReplayEvents(checked.replay,{start:'2026-11-22',end:'2026-11-22'}).find(x=>x.course==='POL2106').done,false);
+ assert.deepEqual(validateState({...checked,skimDone:{'NOT-A-COURSE@2026-11-18':true}}).skimDone,{});
+ assert.equal(calendarEvents({type:'lecture',course:'POL2106'})[0].date,'2026-11-18');
+});
+
+test('saved deep-watch date and time remain adjustable, but cannot move before estimated availability',()=>{
+ const key='POL2106@2026-11-18';
+ const altered=personalReplayEvents({[key]:{date:'2026-11-19',time:'16:40',done:true}},
+  {start:'2026-11-20',end:'2026-11-23'});
+ const row=altered.find(x=>x.key===key);
+ assert.ok(row);
+ assert.equal(row.date,'2026-11-21','too-early manual dates are repaired');
+ assert.equal(row.startTime,'16:40');
+ assert.equal(row.endTime,'17:55');
+ assert.equal(row.done,true);
+ const moved=personalReplayEvents({[key]:{date:'2026-11-22',time:'18:00'}},
+  {start:'2026-11-22',end:'2026-11-22'}).find(x=>x.key===key);
+ assert.equal(moved.date,'2026-11-22');
+ assert.equal(moved.startTime,'18:00');
+});
+
+test('ICS exports use actual planned session durations, separate recurring types and no fake university events',()=>{
+ const deep=scheduleICS({type:'replay',course:'POL2106'}).replace(/\r\n /g,'');
+ assert.ok(deep.includes('DTSTART:20261121T020000Z'));
+ assert.ok(deep.includes('DTEND:20261121T031500Z'),'75 minutes, not an arbitrary one-hour reminder');
+ assert.ok(deep.includes('ดูคลิปจริงจัง POL2106'));
+ const skim=scheduleICS({type:'skim',course:'POL2106'}).replace(/\r\n /g,'');
+ assert.ok(skim.includes('DTSTART:20261120T130000Z'));
+ assert.ok(skim.includes('DTEND:20261120T134000Z'));
+ assert.ok(skim.includes('ทวนเบา ๆ POL2106'));
+ const all=scheduleICS({type:'all',includeReplay:true});
+ assert.ok(all.includes('ดูคลิปจริงจัง'));
+ assert.ok(all.includes('ทวนเบา ๆ'));
+ assert.ok(all.includes('DTSTART:20261116T041000Z'),'original university live slot still present');
+ assert.ok(!scheduleICS({type:'all'}).includes('ดูคลิปจริงจัง'));
+});
+
+test('unified weekly calendar preserves hour columns, live lessons and two different study status buttons',()=>{
+ const first=weeklyPlanner('inline',freshState(),'2026-11-19',true);
+ assert.ok(first.includes('unified-weekly'));
+ assert.ok(first.includes('unified-lecture'));
+ assert.ok(first.includes('unified-deep'));
+ assert.ok(first.includes('unified-skim'));
+ assert.ok(first.includes('data-action="cal-replay-done"'));
+ assert.ok(first.includes('data-action="cal-skim-done"'));
+ assert.ok(first.includes('▶ POL2106'));
+ assert.ok(first.includes('↻ POL2106'));
+ assert.equal((first.match(/class="unified-weekday /g)||[]).length,7);
+ for(const hour of ['09:00','11:00','13:00','15:00','17:00','19:00','21:00','23:00','01:00 +1'])assert.ok(first.includes('>'+hour+'</span>'),hour);
+ assert.equal(timelinePosition('20:00'),68.75);
+ assert.ok(!first.includes('class="panel"'),'one integrated weekly timetable');
+ const friday=weeklyPlanner('inline',freshState(),'2026-11-27',true);
+ assert.ok(friday.includes('10:00–11:00 · ทวนเบา ๆ'),'Friday POL2106 should be in daylight');
+ assert.ok(friday.includes('ศุกร์ 27 พ.ย.'));
+ assert.ok(friday.includes('data-action="cal-scroll-time" data-target="day"'));
+});
+
+test('one saved light flag leaves deep watching independently undone',()=>{
+ const state=freshState(),key='POL2106@2026-11-18';
+ state.skimDone[key]=true;
+ let html=weeklyPlanner('first',state,'2026-11-19',true);
+ assert.ok(html.includes('✓ ทวนแล้ว'));
+ assert.ok(html.includes('○ ยังไม่ดู'));
+ assert.ok(html.includes('ทวนแล้ว 1/5'));
+ assert.ok(html.includes('ดูจริงจัง 0/7'));
+ state.replay[key]={done:true};
+ html=weeklyPlanner('first',state,'2026-11-19',true);
+ assert.ok(html.includes('✓ ดูจบแล้ว'));
+ assert.ok(html.includes('ดูจริงจัง 1/7'));
 });

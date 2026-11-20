@@ -493,7 +493,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    document.body.replaceChildren(fixture);
   });
   const schedule=page.locator('#replay-layout-fixture');
-  assert.equal(await schedule.locator('.unified-replay').count(),7);
+  assert.equal(await schedule.locator('.unified-replay').count(),12,
+    'first week has five weekday skims and seven serious weekend clips');
+   assert.equal(await schedule.locator('.unified-skim').count(),5);
+   assert.equal(await schedule.locator('.unified-deep').count(),7);
+   assert.ok(await schedule.getByText('09:00–10:15 · ดูจริงจัง').count(),'first Saturday POL2106 starts at 09:00');
+   assert.ok(await schedule.getByText('20:00–20:40 · ทวนเบา ๆ').count(),'Friday initial skim remains at night after live POL2200');
   const layout=await schedule.locator('.unified-weekday').evaluateAll(rows=>rows.map(row=>{
    const cards=Array.from(row.querySelectorAll('.unified-replay'));
    const track=row.querySelector('.unified-weekday-track');

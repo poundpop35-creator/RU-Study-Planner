@@ -11,17 +11,17 @@ import {documentsPage} from './documents-view.js?v=20261027c';
 import {examEvidenceTable,examEvidenceCard,readingExamFormats,registrationExam} from './exam-evidence.js?v=20261113b';
 import {sections,sectionFor,sectionTabs} from './navigation.js';
 import {prepNotice,classroomPage} from './study-sections.js?v=study-navigation-20261120';
-import {createStudySpace} from './study-space.js?v=word-canva-classroom-20261120';
+import {createStudySpace} from './study-space.js?v=balanced-friday-replays-20261120';
 import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=word-canva-classroom-20261120';
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
-import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=horizontal-timeline-20261120';
-import {personalReplayEvents} from './calendar-core.js?v=replay-20261119';
+import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=balanced-friday-replays-20261120';
+import {personalReplayEvents,personalSkimEvents} from './calendar-core.js?v=balanced-replay-20261120';
 import {contentStatus} from './content.js?v=20261027c';
 import {meta,courses,terms,categories,categoryTargets,sources,courseColors,readingWeek,studyPhases,studyHours} from './data.js?v=20261027c';
 import {lessons} from './lessons.js?v=20261027c';
 import {prep} from './prep.js?v=20261027c';
-import {isEnrolled,DEBT_KEYS,validateState,loadState,escapeHTML as e,thaiDate,today,daysBetween,courseProgress,progress,nextLesson,exams,examClashes,planSummary,cardsForReview,reviewCard,quizItems,examICS,dailyPlan,phaseFor,hoursUntil,streak,prepResult,STUDY_START,weeklyCourses,addDays} from './core.js?v=replay-20261119';
+import {isEnrolled,DEBT_KEYS,validateState,loadState,escapeHTML as e,thaiDate,today,daysBetween,courseProgress,progress,nextLesson,exams,examClashes,planSummary,cardsForReview,reviewCard,quizItems,examICS,dailyPlan,phaseFor,hoursUntil,streak,prepResult,STUDY_START,weeklyCourses,addDays} from './core.js?v=balanced-friday-replays-20261120';
 import {XP,XP_SOURCES,LEVELS,xpParts,xpTotal,levelInfo,bestStreak,weekDays,badges,nextBadge} from './gamify.js?v=20261027c';
 import {mascot,confetti,floatXP,levelUp,closeLevelUp} from './fun.js?v=20261027c';
 
@@ -262,10 +262,24 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
    const scroller=document.querySelector('.unified-scroll');
    const track=scroller?.querySelector?.('.unified-weekday-track');
    if(scroller&&track&&['day','night'].includes(b.dataset.target)){
-    const hour=b.dataset.target==='night'?20:11;
-    const left=Math.max(0,60+8+(hour-11)/14*track.clientWidth-78);
+    const hour=b.dataset.target==='night'?20:9;
+    const left=Math.max(0,60+8+(hour-9)/16*track.clientWidth-78);
     scroller.scrollTo?.({left,behavior:'smooth'});
    }
+   return;
+  }
+  if(action==='cal-skim-done'){
+   const previousHorizontalScroll=document.querySelector('.unified-scroll')?.scrollLeft||0;
+   if(!studySpace.info().canEdit){toast('กำลังเชื่อมต่อพื้นที่ส่วนตัว กรุณาลองอีกครั้ง');return;}
+   const key=b.dataset.key;
+   if(!personalSkimEvents().some(x=>x.key===key))return;
+   const before=state.skimDone||{},next={...before};
+   if(next[key])delete next[key];else next[key]=true;
+   state.skimDone=next;
+   if(!save()){state.skimDone=before;toast('บันทึกการทวนเบา ๆ ไม่สำเร็จ');}
+   else toast(next[key]?'บันทึกว่าทวนเบา ๆ แล้ว (ยังไม่ถือว่าดูจริงจังจบ)':'ยกเลิกสถานะทวนแล้ว');
+   render(true);
+   const nextScroller=document.querySelector('.unified-scroll');if(nextScroller)nextScroller.scrollLeft=previousHorizontalScroll;
    return;
   }
   if(action==='cal-replay-done'||action==='cal-replay-reset'){
@@ -359,7 +373,7 @@ document.addEventListener('change',async event=>{const el=event.target;if(!study
    const initial=personalReplayEvents().find(x=>x.key===key);
    if(!initial||!studySpace.info().canEdit)return;
    const isDate=el.classList.contains('replay-date');
-   if(isDate?(!/^\d{4}-\d{2}-\d{2}$/.test(el.value)||!Number.isFinite(Date.parse(el.value))||el.value<'2026-11-16'||el.value>'2027-05-21'):!/^([01]\d|2[0-3]):[0-5]\d$/.test(el.value)){toast('วันหรือเวลาไม่ถูกต้อง');render(true);return;}
+   if(isDate?(!/^\d{4}-\d{2}-\d{2}$/.test(el.value)||!Number.isFinite(Date.parse(el.value))||el.value<initial.availableOn||el.value>'2027-05-21'):!/^([01]\d|2[0-3]):[0-5]\d$/.test(el.value)){toast('วันหรือเวลาไม่ถูกต้อง');render(true);return;}
    const old=state.replay||{},next={...old,[key]:{...old[key],[isDate?'date':'time']:el.value}};
    state.replay=next;
    if(!save()){state.replay=old;toast('บันทึกเวลาเรียนย้อนหลังไม่สำเร็จ');}

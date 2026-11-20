@@ -3,7 +3,7 @@ import {courses,terms,categoryTargets,readingWeek,studyPhases,studyHours,calenda
 import {lessons} from './lessons.js?v=20261027c';
 import {prep} from './prep.js?v=20261027c';
 export const STORAGE_KEY='ru-study-planner.v1';
-export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},enrollment:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,firstHeard:{},readExtra:{},readCourse:{},practiceMigrationVersion:1,practiceReview:{},legacyPracticePending:[],hours:{weekday:2,weekend:2},hourOverrides:{},planDone:{},prep:{},debt:{},replay:{}};}
+export function freshState(){return {version:1,completed:[],notes:{},answers:{},reviews:{},grades:{},enrollment:{},termMoves:{},lastLesson:null,transfer:{general:0,free:0},sessions:[],dailyGoal:1,font:'normal',planVersion:2,firstHeard:{},readExtra:{},readCourse:{},practiceMigrationVersion:1,practiceReview:{},legacyPracticePending:[],hours:{weekday:2,weekend:2},hourOverrides:{},planDone:{},prep:{},debt:{},replay:{},skimDone:{}};}
 const lessonIds=new Set(lessons.map(l=>l.id));
 const courseIds=new Set(courses.map(c=>c.id));
 const cardIds=new Set(lessons.flatMap(l=>l.cards.map((_,i)=>`${l.id}:${i}`)));
@@ -47,6 +47,12 @@ export function validateState(input){
   if(validHourDay(value.date)&&value.date>=calendar.lectureStart&&value.date<=addDays(calendar.examEnd,60))item.date=value.date;
   if(typeof value.time==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(value.time))item.time=value.time;
   if(Object.keys(item).length)s.replay[key]=item;
+ }
+ // Separate status for weekday quick reviews; never marks the weekend deep-watch as finished.
+ if(plain(input.skimDone))for(const [key,value] of Object.entries(input.skimDone).slice(0,500)){
+  const match=/^(POL\d{4})@(\d{4}-\d{2}-\d{2})$/.exec(key);
+  if(match&&enrolled.has(match[1])&&validHourDay(match[2])&&match[2]>=calendar.lectureStart&&match[2]<=calendar.lectureEnd&&value===true)
+   s.skimDone[key]=true;
  }
  if(plain(input.prep))for(const [k,v]of Object.entries(input.prep)){if(!Object.hasOwn(prep,k)||!plain(v))continue;const n=prep[k].questions.length,score=x=>Number.isInteger(x)&&x>=0&&x<=n?x:null,answers={};if(plain(v.answers))for(const [i,a]of Object.entries(v.answers)){if(/^\d+$/.test(i)&&Number(i)<n&&Number.isInteger(a)&&a>=0&&a<prep[k].questions[Number(i)].options.length)answers[i]=a;}s.prep[k]={answers,submitted:v.submitted===true,best:score(v.best),last:score(v.last)};}
  // Personal debt plan (numbers only), kept here so it syncs with the study space; the debt modules validate the contents on read.
