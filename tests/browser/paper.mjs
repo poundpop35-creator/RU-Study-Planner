@@ -43,7 +43,20 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    children:Array.from(el.children).map(c=>({class:c.className,height:c.getBoundingClientRect().height,display:getComputedStyle(c).display,position:getComputedStyle(c).position})),
    display:getComputedStyle(el).display,flexWrap:getComputedStyle(el).flexWrap}));
   assert.ok(toolbarMetrics.height<=90,'notebook toolbar should remain a compact single row: '+JSON.stringify(toolbarMetrics));
+   if(mobile)assert.ok(await page.locator('#paper-quickbar').isHidden(),'phone keeps compact toolbar and advanced options');
+   else{
+    assert.ok(await page.locator('#paper-text-ribbon').isVisible(),'text mode displays Word formatting ribbon');
+    assert.ok(await page.locator('#paper-quickbar').isHidden(),'text mode hides drawing-specific quick controls');
+    assert.ok(await page.locator('#paper-word-size').isVisible(),'Word ribbon offers exact text size');
+    await click('pen');
+    assert.ok(await page.locator('#paper-quickbar').isVisible(),'pen mode shows desktop and tablet quick drawing controls');
+    await page.locator('[data-quick-color="#8756c6"]').click();
+    assert.equal(await page.locator('[data-paper-color="#8756c6"]').getAttribute('aria-pressed'),'true','quick swatch changes the active pen color');
+    await click('text');
+   }
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
+   if(mobile)assert.ok(await page.locator('#paper-text-ribbon').isHidden(),'Word toolbar is inside the editor on narrow phones');
+   else assert.ok(await page.locator('#paper-text-ribbon').isVisible(),'Word-style Home ribbon is visible in text mode');
   assert.ok(await page.locator('.paper-tool-options').isHidden(),'extra options must not occupy canvas when closed');
    assert.ok(await page.locator('.paper-pages').isHidden(),'page thumbnails start collapsed to maximize writing space');
    await click('pages');
@@ -79,7 +92,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    if(mobile)assert.ok(await page.locator('#paper-mobile-editor').isHidden(),'mobile edit closes after saving');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
   const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
   // Real mouse/pen-style pointer flow; touch mode additionally checks pan-vs-ink behavior.
-  await click('shape');await page.locator('#paper-shape').selectOption('arrow');
+  await click('shape');await page.locator(mobile?'#paper-shape':'#paper-quick-shape').selectOption('arrow');
   const startShape=await point(160,360),endShape=await point(70,300);
   if(mobile){
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
@@ -119,6 +132,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('[data-paper-width="28"]').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'28');
    await click('pen');
+   if(!mobile){
+    assert.ok(await page.locator('#paper-quick-width').isVisible(),'pen width slider stays visible when pen is active');
+    await page.locator('#paper-quick-width').evaluate(el=>{el.value='7';el.dispatchEvent(new Event('input',{bubbles:true}));});
+    assert.equal(await page.locator('#paper-width-value').textContent(),'7','visible slider syncs with advanced picker');
+    await page.locator('#paper-quick-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));});
+   }
    await page.locator('#paper-toolbar-more > summary').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'12','pen remembers its own width after switching from highlighter');
    await page.keyboard.press('Escape');
@@ -210,11 +229,11 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    // Geometry is folded, but shape and ruler controls remain functional.
    assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),false);
    await click('shape');
-   assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),true);
-   await page.locator('#paper-shape').selectOption('hexagon');
+   assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),mobile,'geometry menu opens only for compact screens');
+   await page.locator(mobile?'#paper-shape':'#paper-quick-shape').selectOption('hexagon');
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'shape selection must uncover the paper');
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
-   await page.locator('#paper-line-style').selectOption('dotted');
+   if(mobile)await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
+   await page.locator(mobile?'#paper-line-style':'#paper-quick-line-style').selectOption('dotted');
    const fromShape=await point(280,780),toShape=await point(400,890);
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
     svg.setPointerCapture=()=>{};
@@ -292,7 +311,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   else await page.mouse.click(following.x,following.y);
   assert.equal(await follow.inputValue(),'รัฐ','tapping after the word must resume its textbox');
   assert.equal(await follow.evaluate(el=>el.selectionStart),await follow.inputValue().then(v=>v.length),'cursor should be at the end ready for Scribble');
-  await follow.fill('รัฐศาสตร์');await click('save');
+  if(await follow.isVisible())await follow.fill('รัฐศาสตร์');
+   else{const rich=page.locator('#paper-rich-editor');assert.ok(await rich.isVisible());await rich.fill('รัฐศาสตร์');}
+   await click('save');
   const continued=activeNote().paper.pages[0].objects.find(o=>o.id===originalText.id);
   assert.equal(continued.text,'รัฐศาสตร์','new handwriting text should be stored on same object');
   assert.equal(activeNote().paper.pages[0].objects.filter(o=>o.text==='รัฐศาสตร์').length,1);
@@ -350,13 +371,21 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await wordInput.isVisible(),'fresh notebook text box should open on stylus input');
    await wordInput.fill('Word text with link');
    await wordInput.evaluate(el=>el.setSelectionRange(0,4));
+   await wordInput.dispatchEvent('contextmenu',{bubbles:true,cancelable:true,clientX:120,clientY:200});
+   const miniToolbar=page.locator('#paper-word-menu');
+   assert.ok(await miniToolbar.isVisible(),'right-click must open the Word selection mini toolbar');
+   assert.ok(await miniToolbar.locator('[data-word-menu-link]').isVisible(),'mini toolbar must expose link/file for the selected word');
    const wordRibbon=page.locator('#paper-text-ribbon');
    assert.ok(await wordRibbon.isVisible(),'contextual formatting toolbar must be visible while typing');
    assert.ok(await wordRibbon.locator('[data-paper="word-link"]').isVisible(),'per-word link/file action must be visible without opening extra settings');
-   await wordRibbon.locator('[data-word-format="bold"]').click();
-   assert.ok(await page.locator('#paper-rich-editor').isVisible(),'formatting a selection enters editable rich text');
+   await miniToolbar.locator('[data-word-menu-format="bold"]').click();
+   assert.ok(await page.locator('#paper-rich-editor').isVisible(),'mini toolbar formats only the selected word and enters rich editing');
    await wordRibbon.locator('[data-word-format="italic"]').click();
    await wordRibbon.locator('[data-word-format="underline"]').click();
+   await page.locator('#paper-rich-editor').dispatchEvent('contextmenu',{bubbles:true,cancelable:true,clientX:140,clientY:235});
+   assert.ok(await miniToolbar.isVisible(),'right-click works on rich text after formatting');
+   await miniToolbar.locator('[data-word-menu-color="#dc4343"]').click();
+   assert.ok((await page.locator('#paper-rich-editor').innerHTML()).includes('color:#dc4343'),'mini toolbar changes only the selected word color');
    await page.locator('#paper-word-size').fill('19');
    await page.locator('#paper-word-size').press('Tab');
    assert.ok((await page.locator('#paper-rich-editor').innerHTML()).includes('font-size:19px'),'exact size is visible while editing');
@@ -374,10 +403,14 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(wordObject.marks[0].bold,true);
    assert.equal(wordObject.marks[0].italic,true);
    assert.equal(wordObject.marks[0].underline,true);
+   assert.equal(wordObject.marks[0].color,'#dc4343','selected word color saved');
+   assert.equal(wordObject.marks[0].start,0);
+   assert.equal(wordObject.marks[0].end,4,'color does not spread to unselected words');
    assert.equal(wordObject.links[0].url,'https://example.org/word');
    await page.reload();await page.locator('#paper-svg').waitFor();
    assert.ok(await page.locator('#paper-svg [data-word-link]').count(),'word link must survive reload alongside formatting');
    assert.ok(await page.locator('#paper-svg span[style*="font-weight:700"]').count(),'individual word style must survive reload');
+   assert.ok(await page.locator('#paper-svg span[style*="color:#dc4343"]').count(),'per-word color survives reload');
    await page.screenshot({path:'test-results/notebook-word-format-'+name+'.png'});
    
   // The single weekly planner must fit replay cards, including watch buttons, at iPhone widths.

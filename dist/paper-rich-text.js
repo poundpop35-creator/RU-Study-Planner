@@ -1,15 +1,26 @@
 // Safe per-word formatting in UTF-16 offsets, compatible with textarea selections.
 const FLAGS=['bold','italic','underline','strike'];
+export function textColor(value,fallback=null){
+ if(typeof value!=='string')return fallback;
+ const hex=value.trim();
+ if(/^#[0-9a-fA-F]{6}$/.test(hex))return hex.toLowerCase();
+ const match=/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*1(?:\.0+)?)?\s*\)$/.exec(hex);
+ if(!match)return fallback;
+ const channels=match.slice(1,4).map(Number);
+ if(channels.some(n=>n>255))return fallback;
+ return '#'+channels.map(n=>n.toString(16).padStart(2,'0')).join('');
+}
 export const TEXT_SIZE_MIN=10,TEXT_SIZE_MAX=96;
 export function textSize(value,fallback=24){
  const n=Number(value);
  return Number.isInteger(n)&&n>=TEXT_SIZE_MIN&&n<=TEXT_SIZE_MAX?n:fallback;
 }
-const sameStyle=(a,b)=>FLAGS.every(k=>!!a[k]===!!b[k])&&(a.size||null)===(b.size||null);
+const sameStyle=(a,b)=>FLAGS.every(k=>!!a[k]===!!b[k])&&(a.size||null)===(b.size||null)&&(a.color||null)===(b.color||null);
 function formatOf(m){
  const out={};
  for(const key of FLAGS)if(m[key]===true)out[key]=true;
  if(m.size!==undefined)out.size=m.size;
+ if(m.color!==undefined)out.color=m.color;
  return out;
 }
 export function normalizeMarks(marks,textLength){
@@ -34,11 +45,12 @@ export function validateMarks(marks,text){
   if(!m||typeof m!=='object'||!Number.isInteger(m.start)||!Number.isInteger(m.end)||m.start<0||m.start>=m.end||m.end>text.length)throw Error('ช่วงจัดรูปแบบข้อความไม่ถูกต้อง');
   for(const flag of FLAGS)if(m[flag]!==undefined&&m[flag]!==true)throw Error('รูปแบบตัวอักษรไม่ถูกต้อง');
   if(m.size!==undefined&&textSize(m.size,null)===null)throw Error('ขนาดตัวอักษรไม่ถูกต้อง');
+  if(m.color!==undefined&&textColor(m.color,null)===null)throw Error('สีตัวอักษรไม่ถูกต้อง');
  }
  return normalizeMarks(marks,text.length);
 }
 export function applyTextFormat(marks,text,start,end,key,value){
- if(![...FLAGS,'size'].includes(key)||!Number.isInteger(start)||!Number.isInteger(end)||start<0||end>text.length||start>=end)return normalizeMarks(marks||[],text.length);
+ if(![...FLAGS,'size','color'].includes(key)||!Number.isInteger(start)||!Number.isInteger(end)||start<0||end>text.length||start>=end)return normalizeMarks(marks||[],text.length);
  const existing=normalizeMarks(marks||[],text.length);
  const boundaries=[...new Set([0,text.length,start,end,...existing.flatMap(m=>[m.start,m.end])])].sort((a,b)=>a-b);
  const result=[];
@@ -48,6 +60,7 @@ export function applyTextFormat(marks,text,start,end,key,value){
   const style=old?formatOf(old):{};
   if(a>=start&&b<=end){
    if(key==='size'){if(value===null)delete style.size;else style.size=textSize(value,24);}
+   else if(key==='color'){if(value===null)delete style.color;else{const c=textColor(value);if(!c)throw Error('สีตัวอักษรไม่ถูกต้อง');style.color=c;}}
    else if(value===true)style[key]=true;
    else delete style[key];
   }
@@ -95,7 +108,7 @@ export function formattedTextHTML(o,escape,interactive=true,includeLinks=true){
   const span=m?'<span style="'+[
    m.bold?'font-weight:700':'',m.italic?'font-style:italic':'',
    m.underline||m.strike?'text-decoration:'+[(m.underline?'underline':''),(m.strike?'line-through':'')].filter(Boolean).join(' '):'',
-   m.size?'font-size:'+m.size+'px':''].filter(Boolean).join(';')+'">':'';
+   m.size?'font-size:'+m.size+'px':'',textColor(m.color)?'color:'+textColor(m.color):''].filter(Boolean).join(';')+'">':'';
   let content=span+escape(text.slice(a,b))+(span?'</span>':'');
   if(l){
    if(!interactive)content='<span class="paper-word-mark">'+content+'</span>';
