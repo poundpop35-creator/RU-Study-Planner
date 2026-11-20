@@ -464,3 +464,70 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-word-menu-actions{justify-content:space-between}
 }
 @media print{.paper-app .paper-word-menu{display:none!important}}
+
+
+/* Word + Canva: simple primary commands, gallery icons instead of text options,
+   and a small selection bar with advanced actions tucked away. */
+.paper-app .paper-shape-icon{display:inline-block;vertical-align:middle;pointer-events:none;flex:0 0 auto}
+.paper-app .paper-shapes-popup{
+ position:fixed;z-index:55;display:block;
+ width:min(345px,calc(100vw - 16px));max-height:min(58dvh,405px);
+ overflow-y:auto;background:#fff;border:1px solid #cbd7ee;
+ border-radius:13px;padding:12px;box-sizing:border-box;
+ box-shadow:0 18px 40px #1f345b38;
+}
+.paper-app .paper-shapes-popup[hidden]{display:none!important}
+.paper-app .paper-shapes-popup-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.paper-app .paper-shapes-popup-head b{font-size:13px}
+.paper-app .paper-shapes-popup-head button{min-width:30px;min-height:30px;border-radius:8px;padding:0}
+.paper-app .paper-shapes-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.paper-app .paper-shapes-grid button{
+ display:flex;align-items:center;justify-content:center;
+ min-height:49px;padding:7px 2px;border-radius:9px;
+ border:1px solid #dce4f1;background:#f8faff;color:#33486f;
+}
+.paper-app .paper-shapes-grid button:hover,.paper-app .paper-shapes-grid button[aria-pressed="true"]{
+ background:#deebff;border-color:#7b9ce8;color:#174bb2;
+}
+.paper-app .paper-quick-shapes{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.paper-app .paper-quick-shapes button,.paper-app .paper-shapes-open{
+ display:inline-flex;align-items:center;gap:5px;justify-content:center;
+ height:35px;min-height:35px;padding:4px 8px;
+ border:1px solid #c8d6ea;border-radius:9px;background:white;
+ color:#2c4676;font-size:11px;white-space:nowrap;flex:0 0 auto;
+}
+.paper-app .paper-quick-shapes button[aria-pressed="true"]{background:#dce9ff;border-color:#5f86e2;color:#2452b7}
+.paper-app .paper-shape-hidden-select{display:none!important}
+.paper-app .paper-quickbar .paper-shapes-open{flex:0 0 auto}
+.paper-app .paper-selected-shapes{
+ display:inline-flex;gap:4px;align-items:center;justify-content:center;
+ min-height:34px;padding:4px 7px;font-size:12px;white-space:nowrap;
+ border:1px solid #d2dff1;border-radius:8px;background:#f8faff;
+}
+.paper-app .paper-select-shape-legacy{display:none!important}
+.paper-app .paper-selection-more{position:relative;flex:0 0 auto}
+.paper-app .paper-selection-more>summary{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:34px;padding:5px 9px;border-radius:8px;
+ border:1px solid #d8e1ef;background:#fff;cursor:pointer;white-space:nowrap;
+ list-style:none;color:#344766;font-size:11px;
+}
+.paper-app .paper-selection-more>summary::-webkit-details-marker{display:none}
+.paper-app .paper-selection-more>div{
+ position:absolute;z-index:16;right:0;bottom:calc(100% + 6px);
+ display:flex;flex-direction:column;gap:6px;padding:8px;min-width:130px;
+ border-radius:10px;border:1px solid #cad7e9;background:#fff;
+ box-shadow:0 8px 28px #20355f33;
+}
+.paper-app .paper-selection-more>div button{white-space:nowrap;min-height:34px}
+.paper-app .paper-selection-tools{
+ bottom:40px;padding:6px 8px;gap:5px;border-radius:10px;
+ max-width:min(92vw,570px);
+}
+.paper-app .paper-quickbar{gap:9px;min-height:44px}
+@media(max-width:720px){
+ .paper-app .paper-selection-tools{bottom:60px;max-width:94vw;padding:5px 7px}
+ .paper-app .paper-shapes-popup{width:min(325px,calc(100vw - 16px));max-height:55dvh}
+ .paper-app .paper-shapes-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media print{.paper-app .paper-shapes-popup{display:none!important}}
