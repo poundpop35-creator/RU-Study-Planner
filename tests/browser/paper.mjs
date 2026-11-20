@@ -79,17 +79,18 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const typingBox=page.locator('#paper-text-input'),size=()=>typingBox.evaluate(el=>({w:el.offsetWidth,h:el.offsetHeight}));
   await typingBox.fill('จด');const small=await size();
    if(mobile){
-    assert.ok(await page.locator('#paper-mobile-editor').isVisible(),'mobile edit panel visible');
-     assert.ok(await page.locator('#paper-selection-tools').isHidden(),'floating selection tools must not cover text while iPhone keyboard is open');
-    assert.ok(small.w>=200&&small.h>=120,'mobile editable text is legible');
-    assert.ok(Number.parseFloat(await typingBox.evaluate(el=>getComputedStyle(el).fontSize))>=16);
-    assert.ok(await typingBox.evaluate(el=>el.parentElement.id==='paper-mobile-editor'));
+    assert.ok(await page.locator('#paper-mobile-editor').isHidden(),'mobile text must not launch a floating editor');
+    assert.ok(await page.locator('#paper-selection-tools').isHidden(),'selection toolbar must not obscure mobile text');
+    assert.ok(await typingBox.evaluate(el=>el.parentElement.id==='paper-sheet'),'editor stays on the paper itself');
+    assert.ok(small.w>=60&&small.h<70,'inline editor stays small instead of covering the screen');
+    assert.ok(await typingBox.evaluate(el=>Number.parseFloat(getComputedStyle(el).fontSize)*el.getBoundingClientRect().width/el.offsetWidth>=15),'inline text is legible at the active zoom');
+    assert.ok(await page.locator('#paper-text-ribbon').isVisible(),'formatting tools remain accessible without a modal');
    }else assert.ok(small.w>=250&&small.h<60,'leave room to handwrite after existing words');
    await typingBox.fill('ข้อความสำหรับทดสอบการตัดบรรทัด '.repeat(18));const long=await size();
-   if(mobile)assert.ok(long.w>=200&&long.h>=120);else assert.ok(long.w>small.w&&long.w<=801&&long.h>small.h);
+   if(mobile)assert.ok(long.w>small.w&&long.h>small.h,'inline mobile box grows with actual content');else assert.ok(long.w>small.w&&long.w<=801&&long.h>small.h);
    await typingBox.fill('จด');assert.deepEqual(await size(),small);
    await page.locator('#paper-text-input').fill('ความเข้าใจของฉัน');await click('save');
-   if(mobile)assert.ok(await page.locator('#paper-mobile-editor').isHidden(),'mobile edit closes after saving');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
+   if(mobile)assert.ok(await page.locator('#paper-text-input').isHidden(),'inline text edit closes after saving');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
   const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');
    assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
    assert.equal(text.size,16,'new text defaults to 16px');
@@ -98,6 +99,14 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('#paper-svg').dispatchEvent('dblclick',{bubbles:true,clientX:editAt.x,clientY:editAt.y});
    assert.ok(await page.locator('#paper-text-input').isVisible(),'double-click opens text for editing immediately');
    await click('save');
+   if(mobile){
+    const tapTarget=await point(text.x+10,text.y+8);
+    await page.touchscreen.tap(tapTarget.x,tapTarget.y);
+    await page.touchscreen.tap(tapTarget.x,tapTarget.y);
+    assert.ok(await page.locator('#paper-text-input').isVisible(),'two touch taps edit an existing text object on the paper');
+    assert.ok(await page.locator('#paper-mobile-editor').isHidden(),'double tapping never opens the old floating editor');
+    await click('save');
+   }
    await click('text');
   // Real mouse/pen-style pointer flow; touch mode additionally checks pan-vs-ink behavior.
   await click('arrow');assert.equal(await page.locator('#paper-shape').inputValue(),'arrow');
