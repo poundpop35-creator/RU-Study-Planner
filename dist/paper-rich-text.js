@@ -94,7 +94,7 @@ export function formattedTextHTML(o,escape,interactive=true,includeLinks=true){
   const m=marks.find(m=>m.start<=a&&m.end>=b),l=links.find(l=>l.start<=a&&l.end>=b);
   const span=m?'<span style="'+[
    m.bold?'font-weight:700':'',m.italic?'font-style:italic':'',
-   m.underline?'text-decoration:underline':'',m.strike?'text-decoration:line-through':'',
+   m.underline||m.strike?'text-decoration:'+[(m.underline?'underline':''),(m.strike?'line-through':'')].filter(Boolean).join(' '):'',
    m.size?'font-size:'+m.size+'px':''].filter(Boolean).join(';')+'">':'';
   let content=span+escape(text.slice(a,b))+(span?'</span>':'');
   if(l){
