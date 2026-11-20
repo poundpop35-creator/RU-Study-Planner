@@ -598,7 +598,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   }
   if(pointers.size===2){finishText();const [a,b]=[...pointers.values()];gesture={kind:'pinch',distance:Math.hypot(a.x-b.x,a.y-b.y),zoom,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2};scheduleDraw();svg.setPointerCapture(e.pointerId);e.preventDefault();return;}
   if(pointers.size>2)return;
-  finishText();e.preventDefault();svg.setPointerCapture(e.pointerId);const p=point(e);
+  const p=point(e);finishText();e.preventDefault();svg.setPointerCapture(e.pointerId);
   const rulerHit=e.target.closest('[data-ruler]');
   if(ruler.active&&rulerHit){
    gesture={kind:rulerHit.dataset.ruler==='rotate'?'ruler-rotate':'ruler-move',
@@ -700,7 +700,17 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   if(g?.kind==='pinch'){if(pointers.size<2)gesture=null;return;}
   gesture=null;
   if(g?.multiTap&&!g.moved&&g.alreadySelected&&e.type==='pointerup')selected.delete(g.multiTap);
-  if(g?.kind==='stroke'&&e.type!=='pointercancel'){
+  // iOS does not reliably dispatch dblclick on SVG. Two short taps on the
+   // same text enter inline editing, without treating drags as taps.
+   if(e.type==='pointerup'&&tool==='select'&&['touch','pen'].includes(e.pointerType)&&g?.kind==='move'&&!g.preview){
+    const at=point(e),hit=[...page().objects].reverse().find(o=>o.type==='text'&&contains(at,o,4));
+    const now=Date.now(),prior=lastTextTap;
+    lastTextTap=hit?{id:hit.id,time:now,x:at.x,y:at.y}:null;
+    if(hit&&prior?.id===hit.id&&now-prior.time<420&&Math.hypot(at.x-prior.x,at.y-prior.y)<28){
+     lastTextTap=null;startText(hit);return;
+    }
+   }
+   if(g?.kind==='stroke'&&e.type!=='pointercancel'){
    let result;
    if(g.straighten&&g.points.length>1){
     const first=g.points[0],last=g.points.at(-1);
