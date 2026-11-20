@@ -11,7 +11,7 @@ export function courseMaterialCount(book,course){
 export function courseMaterialList(book,course){
  const {files,links}=materialFor(book,course);
  return '<div class="course-material-links">'+
-  files.map(f=>'<button type="button" data-course-open-file="'+f.id+'" title="เปิด '+escape(f.name)+'">📄 '+escape(f.name)+'</button>').join('')+
+  files.map(f=>'<button type="button" data-action="nb-course-open-file" data-course="'+course+'" data-file-id="'+f.id+'" title="เปิด '+escape(f.name)+'">📄 '+escape(f.name)+'</button>').join('')+
   links.map(l=>'<a href="'+escape(l.url)+'" target="_blank" rel="noopener noreferrer" title="'+escape(l.name)+'">🔗 '+escape(l.name)+'</a>').join('')+
   '</div>';
 }
