@@ -262,7 +262,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
 
   // Touch contacts on the writing surface must not trigger zoom or new text
   // while palm protection is enabled. Pen input must still work.
-  await page.locator('#paper-toolbar-more summary').click();
+  await page.locator('#paper-toolbar-more > summary').click();
   await page.locator('#paper-palm-guard').check();
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
   const beforeZoom=await page.locator('#paper-zoom').innerText();
