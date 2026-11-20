@@ -172,3 +172,67 @@ tr.reg-hit>td{background:#fef9c3!important}tr.reg-hit>td:first-child{box-shadow:
 .calendar-panel .unified-weekly{margin-top:14px}
 .calendar-toolbar .segmented[aria-label="รูปแบบปฏิทิน"]{flex-wrap:wrap}
 @media(max-width:600px){.calendar-view-intro{font-size:13px}.calendar-panel .unified-weekly{margin-top:10px}.calendar-toolbar .segmented[aria-label="รูปแบบปฏิทิน"] button{padding:8px 10px;white-space:nowrap}}
+
+
+/* Replay cards were 70px high even though the button and two text rows need more.
+   Give each 20:00 card a full 112px slot on the desktop timeline. */
+.unified-replay{
+ height:112px;
+ gap:6px;
+ justify-content:flex-start;
+ padding:9px 8px;
+ overflow:visible;
+}
+.unified-replay>b{line-height:1.3;overflow:visible}
+.unified-replay>small{line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+.unified-replay .unified-done{
+ width:100%;
+ min-height:36px;
+ flex:0 0 36px;
+ margin-top:auto;
+ overflow:visible;
+ font-size:.8rem;
+}
+.unified-lecture{overflow:visible}
+.unified-scroll{overflow-y:visible}
+
+/* On iPhone the old 680px-wide timeline forced a sideways pan and clipped the
+   replay controls. Keep one timetable, but stack full-width pastel cards per day. */
+@media(max-width:600px){
+ .unified-scroll{overflow-x:visible;overflow-y:visible;padding-bottom:0}
+ .unified-grid{min-width:0;width:100%}
+ .unified-axis{display:none}
+ .unified-weekday{grid-template-columns:46px minmax(0,1fr)}
+ .unified-weekday-name{padding:10px 3px;overflow-wrap:anywhere}
+ .unified-weekday-track{
+  position:relative;
+  height:auto!important;
+  min-height:72px;
+  margin:0;
+  padding:8px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  background:none;
+ }
+ .unified-lecture,.unified-replay{
+  position:relative!important;
+  inset:auto!important;
+  left:auto!important;
+  top:auto!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:72px;
+  margin:0;
+  padding:9px 11px;
+  overflow:visible;
+  box-sizing:border-box;
+ }
+ .unified-replay{min-height:112px;gap:6px}
+ .unified-lecture b,.unified-replay b{font-size:1rem;white-space:normal;overflow-wrap:anywhere}
+ .unified-lecture small{font-size:.83rem;white-space:normal}
+ .unified-replay>small{font-size:.85rem}
+ .unified-replay .unified-done{min-height:42px;flex-basis:42px;font-size:.92rem;touch-action:manipulation}
+ .unified-no-class{padding:13px 4px}
+}
