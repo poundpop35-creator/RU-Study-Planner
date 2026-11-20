@@ -330,7 +330,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.ok(activeNote().paper.pages[0].objects.some(o=>o.type==='stroke'),'Apple Pencil input should work with palm guard enabled');
 
   // Word-style selection, exact size and one-word links must survive cloud save.
-   await page.locator('.paper-back').click();await page.locator('.note-card').waitFor();
+   await page.locator('.paper-back').click();await page.locator('.note-card').first().waitFor();
    await page.locator('[data-action="nb-new"]').first().click();
    const createWord=page.getByRole('dialog');
    await createWord.locator('[name="title"]').fill('Word style link test');
