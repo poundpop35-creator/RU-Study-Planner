@@ -19,7 +19,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  let note=space.notebook().notes.find(n=>n.id===id);if(!note)return ()=>{};
  let conversionWarning='';let initial;try{initial=paperFor(note);}catch{initial={version:1,pages:[emptyPage()]};conversionWarning='ต้นฉบับยาวเกินหน้ากระดาษที่รองรับ ดูฉบับเต็มได้ในเมนู ดูต้นฉบับเดิม';}
  let model=initial,pageId=model.pages[0].id,tool='text',color='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=false,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
- let multiSelect=false,wordSelection=null,lineStyle='solid',smartEnabled=true,smartTimer=0;
+ let multiSelect=false,wordSelection=null,lineStyle='solid',smartEnabled=true,smartTimer=0,lastTextTap=null;
  let lastSelectionSignature='';
  let ruler={active:false,x:PAGE_W/2,y:PAGE_H/2,angle:0,length:440,height:44};
  function cancelSmartTimer(){clearTimeout(smartTimer);smartTimer=0;}
@@ -343,7 +343,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   editing.paperWidth=width;
   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
   rich.style.width=Math.min(available,Math.max(250,width))+'px';
-  if(!editing.mobile)rich.style.minHeight=Math.max(o.size*1.5,editing.paperHeight)+'px';
+  rich.style.minHeight=Math.max(o.size*1.5,editing.paperHeight)+'px';
  }
  function activateRich(){
   if(!editing)return;
@@ -355,11 +355,11 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(editing.object.bold){original.marks=applyTextFormat(original.marks,original.text,0,original.text.length,'bold',true);editing.object.bold=false;}
   editing.marks=original.marks;
   rich.innerHTML=formattedTextHTML(original,esc,false,false);
-  rich.style.left=editing.mobile?'0':editing.object.x+'px';
-  rich.style.top=editing.mobile?'0':editing.object.y+'px';
+  rich.style.left=editing.object.x+'px';
+  rich.style.top=editing.object.y+'px';
   rich.style.fontSize=editing.object.size+'px';rich.style.fontWeight='400';rich.style.color=editing.object.color;
   rich.hidden=false;textarea.hidden=true;
-  if(editing.mobile){$('#paper-mobile-editor').append(rich);}
+  
   fitRichBox();rich.focus();selectRichOffsets(selection.start,selection.end);textRibbonState();
  }
  function applyWordFormat(kind,value){
@@ -399,13 +399,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   const availableWidth=Math.max(1,PAGE_W-o.x);
   const width=Math.min(availableWidth,Math.max(32,textMeasure.offsetWidth+5));
   editing.paperWidth=width;
-  if(editing.mobile){
-   // A readable overlay edits the text; save only its measured on-paper dimensions.
-   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
-   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
-   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
-   textarea.style.width='100%';textarea.style.height='clamp(130px,25dvh,300px)';textarea.style.overflowY='auto';return;
-  }
+  
   // Leave a wider editable target for Apple Pencil Scribble *without* storing
   // that extra whitespace as the object's final bounds.
   textarea.style.width=Math.min(availableWidth,Math.max(250,width))+'px';
@@ -440,22 +434,31 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(change(p=>{const o=p.objects.find(o=>o.id===range.id);o.links=replaceLink(o.links||[],range.start,range.end,result.target);}))say(result.target?'แตะคำที่ขีดเส้นใต้เพื่อเปิด':'ลบลิงก์จากคำแล้ว');
   wordSelection=null;
  }
+ // iPhone: enlarge the actual paper, keeping the caret on its original
+ // coordinates instead of detaching the field into a floating dialog.
+ function focusInlineText(o){
+  if(!editing?.mobile)return;
+  const targetScale=Math.min(1.45,Math.max(1,17/Math.max(10,o.size)));
+  if(scale<targetScale)zoomAt(Math.min(4,targetScale/fit));
+  viewport.scrollLeft=Math.max(0,(o.x-24)*scale);
+  viewport.scrollTop=Math.max(0,(o.y-54)*scale);
+ }
  function startText(o){
   closeWordMenu();finishText();wordSelection=null;richSelection=null;
   editing={lastText:o.text,links:o.links||[],marks:o.marks||[],rich:false,id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};
   selected=new Set([o.id]);textarea.value=o.text;
   editing.mobile=window.matchMedia('(max-width:720px)').matches;
-  ribbon.hidden=false;
-  if(editing.mobile){
-   root.classList.add('paper-is-editing');
-   $('#paper-mobile-editor').hidden=false;
-   $('#paper-mobile-editor').append(ribbon,textarea);
-  }else root.querySelector('.paper-toolbar').after(ribbon);
+   if(editing.mobile){
+    editing.view={zoom,left:viewport.scrollLeft,top:viewport.scrollTop};
+    root.classList.add('paper-is-editing');
+   }
+   ribbon.hidden=false;
+   root.querySelector('.paper-toolbar').after(ribbon);
   $('#paper-word-size').value=o.size;
-  Object.assign(textarea.style,{left:editing.mobile?'0':o.x+'px',top:editing.mobile?'0':o.y+'px',fontSize:editing.mobile?'17px':o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;
+  Object.assign(textarea.style,{left:o.x+'px',top:o.y+'px',fontSize:o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;
   const style=getComputedStyle(textarea);
-  Object.assign(textMeasure.style,{fontFamily:style.fontFamily,fontSize:editing.mobile?o.size+'px':style.fontSize,fontWeight:style.fontWeight,letterSpacing:style.letterSpacing});
-  fitTextBox();draw();textarea.focus();textarea.setSelectionRange(textarea.value.length,textarea.value.length);
+  Object.assign(textMeasure.style,{fontFamily:style.fontFamily,fontSize:style.fontSize,fontWeight:style.fontWeight,letterSpacing:style.letterSpacing});
+  fitTextBox();draw();focusInlineText(o);textarea.focus({preventScroll:true});textarea.setSelectionRange(textarea.value.length,textarea.value.length);
   if(o.marks?.length)activateRich();
   textRibbonState();
   if(!editing.mobile&&!editing.rich)textarea.scrollIntoView({block:'nearest',inline:'nearest'});
@@ -474,7 +477,10 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(content.marks.length)o.marks=content.marks;else delete o.marks;
   if(!keepOpen){
    editing=null;rich.hidden=true;textarea.hidden=true;richSelection=null;
-   if(edit.mobile){root.classList.remove('paper-is-editing');$('#paper-mobile-editor').hidden=true;sheet.append(textarea,rich);root.querySelector('.paper-toolbar').after(ribbon);}
+   if(edit.mobile){
+     root.classList.remove('paper-is-editing');
+     if(edit.view){zoom=edit.view.zoom;sizing();viewport.scrollLeft=edit.view.left;viewport.scrollTop=edit.view.top;}
+    }
    showTextRibbon();
   }
   if(edit.fresh&&!o.text.trim()){selected.clear();draw();return;}
