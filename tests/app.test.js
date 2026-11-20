@@ -300,3 +300,10 @@ test('one calendar changes between week, month and list without showing duplicat
  assert.ok(page.includes('unified-lecture'),'returning to week restores all activity types');
  assert.ok(page.includes('unified-replay'));
 });
+
+test('weekly timetable exposes the same time axis and a shortcut to replay at 20:00',()=>{
+ navigate('#calendar');click('cal-view',{view:'week'});
+ assert.ok(html().includes('class="unified-axis"'));
+ assert.ok(html().includes('data-action="cal-scroll-time" data-target="night"'));
+ assert.ok(html().includes('ช่วงค่ำ 20:00'));
+});
