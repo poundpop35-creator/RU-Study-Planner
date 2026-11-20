@@ -1,10 +1,12 @@
 import {PAGE_W,PAGE_H} from './paper-core.js?v=word-format-20261120';
 import {formattedTextHTML} from './paper-rich-text.js?v=word-format-20261120';
 import {shapeSVG} from './paper-shapes.js?v=notebook-shape-tools-20261120';
+import {tableSVG} from './paper-table.js?v=20261120-table';
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const round=n=>Math.round(n*100)/100;
 export function objectSVG(o,images=new Map(),interactive=true){
  if(o.type==='shape')return shapeSVG(o);
+ if(o.type==='table')return tableSVG(o,esc);
  if(o.type==='image')return `<image data-object="${o.id}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}" href="${esc(images.get(o.imageId)||'')}" preserveAspectRatio="${o.stretch?'none':'xMidYMid meet'}"/>`;
  if(o.type==='text')return `<foreignObject data-object="${o.id}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:'Noto Sans Thai',sans-serif;font-size:${o.size}px;line-height:1.5;font-weight:${o.bold?700:400};color:${o.color};white-space:pre-wrap;overflow-wrap:anywhere;height:100%;overflow:hidden">${formattedTextHTML(o,esc,interactive)}</div></foreignObject>`;
  const points=o.points.map(p=>[o.x+p[0]*o.w,o.y+p[1]*o.h,p[2]]);
