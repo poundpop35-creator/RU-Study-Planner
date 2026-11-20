@@ -189,6 +189,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('shape');
    assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),true);
    await page.locator('#paper-shape').selectOption('hexagon');
+   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'shape selection must uncover the paper');
+   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
    await page.locator('#paper-line-style').selectOption('dotted');
    const fromShape=await point(280,780),toShape=await point(400,890);
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
