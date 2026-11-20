@@ -326,7 +326,14 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
 
   // Apple Pencil Scribble should reopen the SAME text object when the user writes
   // immediately after the last word (within a small right-side continuation area).
-  await click('text');await tap(510,620);
+  await click('text');
+  const blankSpot=await point(760,1120);
+  await page.locator('#paper-svg').evaluate((svg,p)=>{
+   svg.setPointerCapture=()=>{};
+   for(const type of ['pointerdown','pointerup'])
+    svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'pen',pointerId:982,clientX:p.x,clientY:p.y}));
+   delete svg.setPointerCapture;
+  },blankSpot);
   const follow=page.locator('#paper-text-input');
   await follow.fill('รัฐ');await click('save');
   const activeNote=()=>row.payload.notebook.notes.find(n=>n.course==='POL2104');
