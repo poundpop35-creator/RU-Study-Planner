@@ -1,10 +1,12 @@
 import {lessons} from './lessons.js?v=20261027c';
 import {prep} from './prep.js?v=20261027c';
+import {originalExamPractice} from './extra-practice.js?v=20261120a';
 
 // Stable source + original index: existing answers keep their original meaning.
 export const questionBank = [
   ...lessons.flatMap(l => l.questions.map((q, index) => ({...q, key:`lesson:${l.id}:${index}`, course:l.course, lesson:l.id, source:'lesson', index}))),
-  ...Object.entries(prep).flatMap(([course, g]) => g.questions.map((q, index) => ({...q, key:`prep:${course}:${index}`, course, source:'prep', index})))
+  ...Object.entries(prep).flatMap(([course, g]) => g.questions.map((q, index) => ({...q, key:`prep:${course}:${index}`, course, source:'prep', index}))),
+  ...originalExamPractice
 ];
 const byKey = new Map(questionBank.map(q => [q.key, q]));
 export const practiceQuestion = key => byKey.get(key);
@@ -51,8 +53,8 @@ export function importLegacyMistakes(state) {
   }
   state.legacyPracticePending=validateLegacyPracticePending([...pending],state.practiceReview);
 }
-export function practiceQueue(state, {course='', mode='daily', day, limit=15}={}) {
-  const pool=questionBank.filter(q=>!course || q.course===course), records=state.practiceReview||{};
+export function practiceQueue(state, {course='', mode='daily', source='', day, limit=15}={}) {
+  const pool=questionBank.filter(q=>(!course || q.course===course)&&(!source||q.source===source)), records=state.practiceReview||{};
   const due=pool.filter(q=>records[q.key]?.due<=day).sort((a,b)=>records[a.key].due.localeCompare(records[b.key].due) || records[b.key].wrong-records[a.key].wrong || a.key.localeCompare(b.key));
   const pendingKeys=new Set(validateLegacyPracticePending(state.legacyPracticePending,records));
   const pending=pool.filter(q=>pendingKeys.has(q.key));

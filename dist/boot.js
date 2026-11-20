@@ -1,4 +1,4 @@
-try { await import('./app.js?v=replay-card-mobile-20261120'); }
+try { await import('./app.js?v=extra-pol-practice-20261120'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
