@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {textSize,validateMarks,applyTextFormat,toggleTextFormat,moveMarks,formattedTextHTML} from '../dist/paper-rich-text.js';
+import {textSize,textColor,validateMarks,applyTextFormat,toggleTextFormat,moveMarks,formattedTextHTML} from '../dist/paper-rich-text.js';
 import {validatePaper,emptyPage} from '../dist/paper-core.js';
 
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -61,4 +61,37 @@ test('paper persistence keeps per-word formats together with per-word links',()=
  const saved=validatePaper({version:1,pages:[p]});
  assert.deepEqual(saved.pages[0].objects[0].marks,p.objects[0].marks);
  assert.deepEqual(saved.pages[0].objects[0].links,p.objects[0].links);
+});
+
+test('Word colors only the selected word, retains existing formatting and word link, and roundtrips',()=>{
+ const phrase='รัฐศาสตร์ และการเมือง';
+ const selectedEnd=phrase.indexOf(' ');
+ let marks=applyTextFormat([],phrase,0,selectedEnd,'color','#DC4343');
+ marks=toggleTextFormat(marks,phrase,0,selectedEnd,'bold');
+ marks=applyTextFormat(marks,phrase,0,selectedEnd,'size',19);
+ assert.deepEqual(marks,[{start:0,end:selectedEnd,bold:true,size:19,color:'#dc4343'}]);
+ const html=formattedTextHTML({text:phrase,marks,links:[{start:0,end:selectedEnd,url:'https://example.org/word'}]},escape);
+ assert.match(html,/font-weight:700/);
+ assert.match(html,/font-size:19px/);
+ assert.match(html,/color:#dc4343/);
+ assert.ok(html.includes('> และการเมือง'),'unselected text must be outside the styled span');
+ assert.ok(html.includes('href="https://example.org/word"'));
+ const p=emptyPage();
+ p.objects.push({id:'color-test',type:'text',x:20,y:20,w:400,h:80,text:phrase,size:24,color:'#172033',bold:false,marks,links:[{start:0,end:selectedEnd,url:'https://example.org/word'}]});
+ const saved=validatePaper({version:1,pages:[p]}).pages[0].objects[0];
+ assert.deepEqual(saved.marks,marks);
+ assert.equal(saved.color,'#172033','object default ink stays unchanged');
+ assert.equal(saved.links[0].url,'https://example.org/word');
+});
+test('rich text color parser accepts only safe opaque RGB or six-digit hex',()=>{
+ assert.equal(textColor('#DC4343'),'#dc4343');
+ assert.equal(textColor('rgb(220, 67, 67)'),'#dc4343');
+ assert.equal(textColor('rgba(220,67,67,1)'),'#dc4343');
+ assert.equal(textColor('rgb(256,1,1)'),null);
+ assert.equal(textColor('red'),null);
+ assert.equal(textColor('#fff;position:absolute'),null);
+ const sample='word';
+ for(const unsafe of ['rgb(1,1,1);background:red','var(--ink)','red','#123','javascript:alert(1)']){
+  assert.throws(()=>validateMarks([{start:0,end:4,color:unsafe}],sample));
+ }
 });
