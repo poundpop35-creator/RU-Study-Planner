@@ -399,7 +399,12 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   const availableWidth=Math.max(1,PAGE_W-o.x);
   const width=Math.min(availableWidth,Math.max(32,textMeasure.offsetWidth+5));
   editing.paperWidth=width;
-  
+  if(editing.mobile){
+   // Store the natural on-paper height, not the temporary interactive target.
+   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
+   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
+   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
+  }
   // Leave a wider editable target for Apple Pencil Scribble *without* storing
   // that extra whitespace as the object's final bounds.
   textarea.style.width=Math.min(availableWidth,Math.max(250,width))+'px';
