@@ -1,5 +1,5 @@
 import {validateLinks} from './word-links.js';
-import {shapes,lineStyles} from './paper-shapes.js?v=geometry-20261119';
+import {shapes,lineStyles} from './paper-shapes.js?v=notebook-shape-tools-20261120';
 export const PAGE_W=900,PAGE_H=1273;
 // Pen and highlighter widths are independent paper-coordinate stroke widths.
 export const PEN_WIDTH_PRESETS=[1,2,3,5,8,12];
