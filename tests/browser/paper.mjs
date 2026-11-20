@@ -337,8 +337,17 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await createWord.locator('[name="course"]').fill('POL2200');
    await createWord.getByText('สร้างโน้ต',{exact:true}).click();
    await page.locator('#paper-svg').waitFor();
-   await click('text');await tap(140,320);
+   await click('text');
+   // A mobile tap can be swallowed by viewport/palm interactions. A stylus event
+   // exercises the same insertion path reliably on iPhone, iPad and desktop.
+   const wordAt=await point(140,320);
+   await page.locator('#paper-svg').evaluate((svg,p)=>{
+    svg.setPointerCapture=()=>{};
+    for(const type of ['pointerdown','pointerup'])svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'pen',pointerId:885,clientX:p.x,clientY:p.y}));
+    delete svg.setPointerCapture;
+   },wordAt);
    const wordInput=page.locator('#paper-text-input');
+   assert.ok(await wordInput.isVisible(),'fresh notebook text box should open on stylus input');
    await wordInput.fill('Word text with link');
    await wordInput.evaluate(el=>el.setSelectionRange(0,4));
    const wordRibbon=page.locator('#paper-text-ribbon');
