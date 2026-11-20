@@ -234,6 +234,22 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const create=page.getByRole('dialog');await create.locator('[name="title"]').fill('Pol2104 ครั้งที่ 1');
   await create.locator('[name="course"]').fill('pol2104');await create.getByText('สร้างโน้ต',{exact:true}).click();
   await page.locator('#paper-svg').waitFor();await click('save');assert.ok(row.payload.notebook.notes.some(n=>n.course==='POL2104'&&n.source==='classroom'));
+   // A primary teacher file belongs to the course, not this one note page.
+   await click('course-materials');
+   const courseDialog=page.locator('.course-materials-dialog');
+   await courseDialog.waitFor();
+   await courseDialog.locator('[data-course-upload]').setInputFiles({name:'POL2104-syllabus.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 test course')});
+   await wait(()=>row.payload.notebook.courseMaterials?.POL2104?.files?.[0]?.name==='POL2104-syllabus.pdf');
+   await courseDialog.locator('[data-course-close]').click();
+   assert.ok(await page.locator('.paper-course-materials').count(),'note shows the shared course file shortcut');
+   const courseNoteId=row.payload.notebook.notes.find(n=>n.course==='POL2104').id;
+   await page.evaluate(()=>{location.hash='#classroom';});
+   await page.locator('.classroom-grid').waitFor();
+   assert.ok(await page.locator('.classroom-note-link[href="#note/'+courseNoteId+'"]').isVisible(),'classroom links to the existing note without creating another');
+   assert.ok(await page.locator('.classroom-course').filter({hasText:'POL2104'}).getByText('POL2104-syllabus.pdf').isVisible(),'classroom shows the same primary PDF');
+   await page.locator('.classroom-note-link[href="#note/'+courseNoteId+'"]').click();
+   await page.locator('#paper-svg').waitFor();
+
    // Geometry is folded, but shape and ruler controls remain functional.
    assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),false);
    await click('shape');
