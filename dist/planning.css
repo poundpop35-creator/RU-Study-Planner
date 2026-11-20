@@ -196,43 +196,79 @@ tr.reg-hit>td{background:#fef9c3!important}tr.reg-hit>td:first-child{box-shadow:
 .unified-lecture{overflow:visible}
 .unified-scroll{overflow-y:visible}
 
-/* On iPhone the old 680px-wide timeline forced a sideways pan and clipped the
-   replay controls. Keep one timetable, but stack full-width pastel cards per day. */
+
+/* Keep the full clock-column layout at all screen sizes. The phone scrolls
+   horizontally (with a sticky day column) instead of stacking away the times. */
+.unified-time-nav{
+ display:flex;align-items:center;gap:8px;justify-content:space-between;
+ margin:9px 0 10px;flex-wrap:wrap
+}
+.unified-time-nav span{color:#526580;font-size:.81rem;text-align:center;flex:1 1 130px}
+.unified-time-nav .button{min-height:36px;white-space:nowrap;touch-action:manipulation}
+.unified-scroll{
+ overflow-x:auto;overflow-y:hidden;
+ -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+ max-width:100%;scrollbar-width:thin;scrollbar-color:#97b2df transparent;
+ padding-bottom:10px
+}
+.unified-grid{width:max(100%,1100px);min-width:1100px}
+.unified-axis,.unified-weekday{grid-template-columns:60px minmax(0,1fr)}
+.unified-axis{display:grid;background:#edf3fe}
+.unified-axis>b{
+ position:sticky;left:0;z-index:5;background:#edf3fe;
+ display:flex;justify-content:center;align-items:center;height:100%
+}
+.unified-weekday-name{
+ position:sticky;left:0;z-index:4;
+ background:#fff;box-shadow:1px 0 0 #d1daea
+}
+.unified-weekday.is-today .unified-weekday-name{background:#f1f6ff}
+.unified-weekday-track{
+ position:relative;display:block;
+ margin:0 8px;padding:0;
+ background:repeating-linear-gradient(to right,#dce3f0 0,#dce3f0 1px,transparent 1px,transparent 14.2857%)
+}
+.unified-lecture,.unified-replay{
+ position:absolute;inset:auto auto auto auto;
+ height:70px;min-height:0;max-width:none;
+ box-sizing:border-box;overflow:hidden
+}
+.unified-replay{
+ height:112px;min-height:112px;
+ border:2px dashed #7557bc;
+ padding:9px 8px;display:flex;flex-direction:column;gap:6px
+}
+.unified-replay.is-done{border-style:solid}
+.unified-replay .unified-done{
+ display:flex;width:100%;min-height:36px;flex:0 0 36px;margin-top:auto;
+ font-size:.82rem;white-space:nowrap
+}
+.unified-lecture b,.unified-replay b{font-size:.94rem;white-space:nowrap}
+.unified-lecture small,.unified-replay>small{font-size:.8rem;white-space:nowrap}
+.unified-weekday-track:empty{min-height:86px}
 @media(max-width:600px){
- .unified-scroll{overflow-x:visible;overflow-y:visible;padding-bottom:0}
- .unified-grid{min-width:0;width:100%}
- .unified-axis{display:none}
- .unified-weekday{grid-template-columns:46px minmax(0,1fr)}
- .unified-weekday-name{padding:10px 3px;overflow-wrap:anywhere}
+ .unified-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:10px}
+ .unified-grid{min-width:1100px;width:1100px}
+ .unified-axis{display:grid;height:48px}
+ .unified-weekday{grid-template-columns:60px minmax(0,1fr)}
+ .unified-weekday-name{padding:10px 5px;overflow-wrap:normal}
  .unified-weekday-track{
-  position:relative;
-  height:auto!important;
-  min-height:72px;
-  margin:0;
-  padding:8px;
-  box-sizing:border-box;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  background:none;
+  display:block;position:relative;
+  height:auto;min-height:0;
+  margin:0 8px;padding:0;
+  background:repeating-linear-gradient(to right,#dce3f0 0,#dce3f0 1px,transparent 1px,transparent 14.2857%)
  }
  .unified-lecture,.unified-replay{
-  position:relative!important;
-  inset:auto!important;
-  left:auto!important;
-  top:auto!important;
-  width:100%!important;
-  height:auto!important;
-  min-height:72px;
-  margin:0;
-  padding:9px 11px;
-  overflow:visible;
-  box-sizing:border-box;
+  position:absolute;min-width:0;max-width:none;
+  margin:0;padding:8px;overflow:hidden;
  }
- .unified-replay{min-height:112px;gap:6px}
- .unified-lecture b,.unified-replay b{font-size:1rem;white-space:normal;overflow-wrap:anywhere}
- .unified-lecture small{font-size:.83rem;white-space:normal}
- .unified-replay>small{font-size:.85rem}
- .unified-replay .unified-done{min-height:42px;flex-basis:42px;font-size:.92rem;touch-action:manipulation}
- .unified-no-class{padding:13px 4px}
+ .unified-lecture{height:70px;min-height:70px}
+ .unified-replay{height:112px;min-height:112px;gap:6px}
+ .unified-replay>b,.unified-lecture b{font-size:.92rem;white-space:nowrap}
+ .unified-replay .unified-done{
+  font-size:.85rem;min-height:38px;flex:0 0 38px;touch-action:manipulation
+ }
+ .unified-time-nav{gap:6px}
+ .unified-time-nav span{flex-basis:100%;order:-1;font-size:.8rem}
+ .unified-time-nav .button{flex:1 1 0}
 }
