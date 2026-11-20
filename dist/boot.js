@@ -1,4 +1,4 @@
-try { await import('./app.js?v=ipad-pencil-palm-20261120'); }
+try { await import('./app.js?v=notebook-shape-tools-20261120'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
