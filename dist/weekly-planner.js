@@ -13,6 +13,8 @@ const reference={
 };
 const colors=['#dbeafe','#d1fae5','#fef3c7','#fce7f3','#ede9fe','#cffafe','#ffedd5'];
 const minutes=s=>Number(s.slice(0,2))*60+Number(s.slice(3));
+// Desktop timeline cards must fully fit three lines plus a tap target; mobile stacks them naturally.
+export const REPLAY_CARD_HEIGHT=112,REPLAY_CARD_STEP=122;
 function replayBoard(state={},focus=today(),canEdit=true){
  const weekDay=new Date(focus+'T12:00:00Z').getUTCDay(),start=addDays(focus,-((weekDay+6)%7)),end=addDays(start,6);
  const rows=personalReplayEvents(state.replay||{},{start,end});
@@ -65,11 +67,11 @@ function unifiedWeekly(mode,state={},focus=today(),canEdit=true){
    lanes[lane]=finish;
    return `<a class="unified-lecture" style="--course-bg:${schoolColor(x.course)};left:${(begin-660)/720*100}%;width:${(finish-begin)/720*100}%;top:${lane*74+3}px" href="#course/${e(x.course)}"><b>${e(x.course)}</b><small>${e(x.startTime)}–${e(x.endTime)}</small><small>${e(x.room)}${x.clash?' · ชน':''}</small></a>`;
   }).join('');
-  const replayCards=replays.map((x,i)=>`<div class="unified-replay ${x.done?'is-done':''}" style="--course-bg:${schoolColor(x.course)};top:${i*73+3}px;left:${Math.max(0,Math.min(82,(minutes(x.startTime)-660)/720*100))}%;width:${Math.min(25,100-Math.max(0,Math.min(82,(minutes(x.startTime)-660)/720*100))-.4)}%" >
+  const replayCards=replays.map((x,i)=>`<div class="unified-replay ${x.done?'is-done':''}" style="--course-bg:${schoolColor(x.course)};top:${i*REPLAY_CARD_STEP+3}px;left:${Math.max(0,Math.min(75,(minutes(x.startTime)-660)/720*100))}%;width:24.6%" >
    <b>▶ ${e(x.course)}</b><small>${e(x.startTime)} · ย้อนหลัง</small>
-   <button class="unified-done" type="button" data-action="cal-replay-done" data-key="${e(x.key)}" aria-pressed="${x.done}"${canEdit?'':' disabled'}>${x.done?'✓ ดูแล้ว':'○ ยังไม่ดู'}</button>
+   <button class="unified-done" type="button" data-action="cal-replay-done" data-key="${e(x.key)}" aria-label="${e(x.course)} ${x.done?'ดูแล้ว กดยกเลิก':'ยังไม่ดู กดเพื่อทำเครื่องหมายดูแล้ว'}" aria-pressed="${x.done}"${canEdit?'':' disabled'}>${x.done?'✓ ดูแล้ว':'○ ยังไม่ดู'}</button>
   </div>`).join('');
-  const height=Math.max(78,lanes.length*74,replays.length*73);
+  const height=Math.max(86,lanes.length*74,replays.length*REPLAY_CARD_STEP);
   return `<div class="unified-weekday ${day===today()?'is-today':''}">
    <div class="unified-weekday-name"><b>${['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'][weekday]}</b><small>${Number(day.slice(8))}/${Number(day.slice(5,7))}</small></div>
    <div class="unified-weekday-track" style="height:${height}px">${lectureCards}${replayCards}${!lectures.length&&!replays.length?'<span class="unified-no-class">—</span>':''}</div></div>`;
