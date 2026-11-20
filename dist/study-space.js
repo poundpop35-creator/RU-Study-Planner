@@ -83,6 +83,30 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
   if(user)await sync();
  }
  function listen(target,event,fn){target?.addEventListener?.(event,fn);removeListeners.push(()=>target?.removeEventListener?.(event,fn));}
+ async function restoreWorkspace(value,readImage){
+  requireAccount();
+  const next=validateEnvelope(value,validateState),ticket=epoch,startEdit=edit,uid=user.id;
+  const expectedRevision=revision+(dirty?1:0);
+  function checkCurrent(){
+   if(disposed||ticket!==epoch||edit!==startEdit||revision!==expectedRevision||conflict||locked)
+    throw Error('ข้อมูลเปลี่ยนระหว่างนำเข้า กรุณาตรวจข้อมูลแล้วลองอีกครั้ง');
+  }
+  if(payload.migrations)next.migrations=[...new Set([...(next.migrations||[]),...payload.migrations])];
+  assertCapacity(next);
+  await api.flush();
+  checkCurrent();
+  if(!cacheBackup('before-import',payload))throw Error('เก็บสำเนาก่อนนำเข้าไม่ได้ กรุณาเพิ่มพื้นที่ในเครื่องแล้วลองอีกครั้ง');
+  for(const id of referencedImages(next.notebook)){
+   const blob=await readImage(id);
+   checkCurrent();
+   if(blob){
+    newImageId(blob);await upload(id,blob,uid);checkCurrent();uploaded.add(id);
+    try{await imageStore.put(scope,id,blob);}catch{}
+   }else await api.image(id);
+   checkCurrent();
+  }
+  payload=next;changed();onProgress(payload.progress);onChange();await api.flush();
+ }
  const api={
   dispose(){disposed=true;clearTimeout(timer);clearInterval(poll);epoch++;subscription?.unsubscribe();removeListeners.forEach(fn=>fn());},
   info:()=>({scope,user,shared:!!client?.shared,accountEmail:membership.email,linked:!!membership.key,status,phase,lastSync,dirty,busy,conflict,locked,personal:!!client?.personal,providers,ready:!!client,initialized,hydrated,canEdit:!!user&&hydrated&&!locked,cacheWarning:migrationWarning||(client?.access?.().remembered===false?'เครื่องนี้จำลิงก์ส่วนตัวไม่ได้ กรุณาคัดลอกลิงก์ในเมนูข้อมูลไว้ก่อนปิดแอป':cacheWarning)}),
@@ -90,7 +114,7 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
   notebook:()=>payload.notebook,
   snapshot:()=>clone(payload),
   requireAccount,
-  saveProgress(value){requireAccount();const next=validateState(value);if(JSON.stringify(next)===JSON.stringify(payload.progress))return true;payload.progress=next;return changed();},
+  saveProgress(value){requireAccount();const next=validateState(value);if(JSON.stringify(next)===JSON.stringify(payload.progress))return true;assertCapacity({...payload,progress:next});payload.progress=next;return changed();},
   saveNotebook(value){requireAccount();const next=validateNotebook(value);assertCapacity({...payload,notebook:next});payload.notebook=next;return changed();},
   sync,
   async flush(){
@@ -99,7 +123,7 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
     while(busy){if(Date.now()>deadline)throw Error('การบันทึกใช้เวลานาน กรุณาตรวจการเชื่อมต่อ');await new Promise(resolve=>setTimeout(resolve,50));}
     if(ticket!==epoch||disposed)throw Error('พื้นที่เปลี่ยน กรุณาเปิดโน้ตใหม่');
     if(conflict||locked)throw Error(status);
-    await sync();if(conflict||locked||phase==='error')throw Error(status);
+    await sync();if(ticket!==epoch||disposed)throw Error('พื้นที่เปลี่ยน กรุณาเปิดโน้ตใหม่');if(conflict||locked||phase==='error')throw Error(status);
     if(Date.now()>deadline)throw Error('ยังบันทึกไม่เสร็จ กรุณาลองอีกครั้ง');
    }while(dirty||busy);
   },
@@ -151,8 +175,11 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
   },
   async importGuest(){
    requireAccount();const raw=storage.getItem(workspaceKey('guest'));const guest=raw?validateEnvelope(JSON.parse(raw).payload,validateState):{...empty(),progress};
-   for(const id of referencedImages(guest.notebook)){const b=await imageStore.get('guest',id);if(!b)throw Error('ไม่พบรูปเดิม กรุณานำเข้าจากเครื่องที่เคยจด');await upload(id,b,user.id);uploaded.add(id);try{await imageStore.put(scope,id,b);}catch{}}
-   cacheBackup('before-import',payload);payload=guest;changed();onProgress(payload.progress);onChange();await sync();
+   await restoreWorkspace(guest,async id=>{
+    const blob=await imageStore.get('guest',id);
+    if(!blob)throw Error('ไม่พบรูปเดิม กรุณานำเข้าจากเครื่องที่เคยจด');
+    return blob;
+   });
   },
   async uploadImage(file){
    requireAccount();const ticket=epoch,uid=user.id,id=newImageId(file);setStatus('กำลังส่งรูปเข้า Supabase…','saving');
@@ -161,8 +188,12 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
   },
   async image(id){requireAccount();const ticket=epoch,uid=user.id;let blob;try{blob=await imageStore.get(scope,id);}catch{}if(!blob){const {data,error}=await client.storage.from('ru-study-notes').download(uid+'/'+id);if(error)throw error;if(ticket!==epoch)throw Error('บัญชีเปลี่ยน');blob=data;try{await imageStore.put(scope,id,blob);}catch{}}return blob;},
   async importSnapshot(value,images={}){
-   requireAccount();const next=validateEnvelope(value,validateState);if(payload.migrations)next.migrations=[...new Set([...(next.migrations||[]),...payload.migrations])];for(const id of referencedImages(next.notebook)){if(images[id]){const blob=await (await fetch(images[id])).blob();newImageId(blob);await upload(id,blob,user.id);uploaded.add(id);try{await imageStore.put(scope,id,blob);}catch{}}else await api.image(id);}
-   cacheBackup('before-import',payload);payload=next;changed();onProgress(payload.progress);onChange();await sync();
+   await restoreWorkspace(value,async id=>{
+    if(!Object.hasOwn(images,id))return null;
+    const data=images[id];
+    if(typeof data!=='string'||data.length>7100000||!/^data:image\/(png|jpeg|webp|gif);base64,/.test(data))throw Error('รูปในไฟล์สำรองไม่ถูกต้อง');
+    return (await fetch(data)).blob();
+   });
   }
  };
  return api;

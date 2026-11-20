@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {cleanDelta,deltaText,validateNotebook,newNote,findNotes,legacyNotes,referencedImages,validateEnvelope} from '../dist/notebook-core.js';
+import {lessons} from '../dist/lessons.js';
 import {freshState,validateState} from '../dist/core.js';
 import {createStudySpace,workspaceKey} from '../dist/study-space.js';
 import {memoryStorage,cloudFixture,imageCache,settingsFetcher} from './cloud-fixture.js';
@@ -81,4 +82,39 @@ test('initial cloud failure keeps editing locked rather than starting an empty o
  const cloud=cloudFixture();cloud.fail(Error('offline'));const space=makeSpace(cloud);await space.init();
  assert.equal(space.info().canEdit,false);assert.throws(()=>space.saveNotebook({version:1,notes:[]}),/ยังโหลด/);assert.equal(cloud.rows.size,0);
  cloud.fail(null);await space.sync();assert.equal(space.info().canEdit,true);space.dispose();
+});
+
+test('restore preserves the current workspace when a recovery copy cannot be saved',async t=>{
+ const cloud=cloudFixture(),storage=memoryStorage(),space=makeSpace(cloud,{storage});
+ t.after(()=>space.dispose());await space.init();
+ space.saveNotebook({version:1,notes:[newNote({id:'original'})]});await space.flush();
+ const incoming=space.snapshot();incoming.notebook.notes=[];
+ const write=storage.setItem;storage.setItem=(key,value)=>{
+  if(key.includes(':before-import:'))throw Error('storage full');
+  write(key,value);
+ };
+ await assert.rejects(space.importSnapshot(incoming),/เก็บสำเนา/);
+ assert.equal(space.notebook().notes[0].id,'original');
+ assert.equal(cloud.rows.get(cloud.owner.id).payload.notebook.notes[0].id,'original');
+});
+
+test('restore reports a rejected cloud write and retains the pending edit for retry',async t=>{
+ const cloud=cloudFixture(),space=makeSpace(cloud);
+ t.after(()=>space.dispose());await space.init();
+ const incoming=space.snapshot();incoming.notebook.notes.push(newNote({id:'restored'}));
+ const rpc=cloud.client.rpc;cloud.client.rpc=async()=>({error:Error('offline')});
+ await assert.rejects(space.importSnapshot(incoming),/offline/);
+ assert.equal(space.info().dirty,true);
+ cloud.client.rpc=rpc;await space.flush();
+ assert.equal(cloud.rows.get(cloud.owner.id).payload.notebook.notes[0].id,'restored');
+});
+
+test('oversized progress and backups leave the editable workspace intact',async t=>{
+ const cloud=cloudFixture(),space=makeSpace(cloud);
+ t.after(()=>space.dispose());await space.init();
+ const initial=space.snapshot(),incoming=space.snapshot();
+ for(const lesson of lessons)incoming.progress.notes[lesson.id]='ก'.repeat(50000);
+ assert.throws(()=>space.saveProgress(incoming.progress),/พื้นที่ข้อมูล/);
+ await assert.rejects(space.importSnapshot(incoming),/พื้นที่ข้อมูล/);
+ assert.deepEqual(space.snapshot(),initial);assert.equal(space.info().dirty,false);
 });

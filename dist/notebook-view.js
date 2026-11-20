@@ -34,7 +34,7 @@ async function noteDetails(chosenCourse,chosenSource,note){
 }
 export async function notebookAction(action,data,space,progress,render,toast){
  if(!space.info().canEdit){toast('กำลังเชื่อมต่อสมุดจดกับ Supabase กรุณาลองอีกครั้ง');return;}
- const book=space.notebook(),n=book.notes.find(x=>x.id===data.id);
+ const book=['nb-pin','nb-archive','nb-import-legacy'].includes(action)?structuredClone(space.notebook()):space.notebook(),n=book.notes.find(x=>x.id===data.id);
  try{
   if(action==='nb-filter-course'){
    if(!isCourseCode(data.course))throw Error('รหัสวิชาไม่ถูกต้อง');
@@ -54,7 +54,7 @@ export async function notebookAction(action,data,space,progress,render,toast){
    const buttons=[...document.querySelectorAll('[data-action="nb-save"]')];
    buttons.forEach(b=>{b.disabled=true;b.textContent='กำลังบันทึก…';});
    try{
-    await space.sync();
+    await space.flush();
     const info=space.info();
     const saved=info.phase==='saved'&&!info.dirty&&!info.busy&&!info.conflict&&!info.locked;
     const text=saved?'บันทึกงานใน Supabase แล้ว':info.status;

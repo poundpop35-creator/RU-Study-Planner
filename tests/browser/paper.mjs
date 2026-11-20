@@ -418,6 +418,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await wordRibbon.locator('[data-paper="word-link"]').isVisible(),'per-word link/file action must be visible without opening extra settings');
    await miniToolbar.locator('[data-word-menu-format="bold"]').click();
    assert.ok(await page.locator('#paper-rich-editor').isVisible(),'mini toolbar formats only the selected word and enters rich editing');
+   const dropBlocked=await page.locator('#paper-rich-editor').evaluate(editor=>{
+    const before=editor.innerHTML,transfer=new DataTransfer();
+    transfer.setData('text/html','<b>sample</b>');
+    const event=new Event('drop',{bubbles:true,cancelable:true});
+    Object.defineProperty(event,'dataTransfer',{value:transfer});
+    editor.dispatchEvent(event);
+    return event.defaultPrevented&&editor.innerHTML===before;
+   });
+   assert.ok(dropBlocked,'formatted HTML drops must not invoke native rich-text insertion');
    await wordRibbon.locator('[data-word-format="italic"]').click();
    await wordRibbon.locator('[data-word-format="underline"]').click();
    await page.locator('#paper-rich-editor').dispatchEvent('contextmenu',{bubbles:true,cancelable:true,clientX:140,clientY:235});
