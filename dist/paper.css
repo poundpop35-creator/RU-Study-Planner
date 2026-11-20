@@ -531,3 +531,16 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-shapes-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 @media print{.paper-app .paper-shapes-popup{display:none!important}}
+
+
+.paper-app .paper-course-materials{
+ flex:0 0 auto;padding:5px 15px;border-bottom:1px solid #dfe7f3;
+ background:#f7faff;color:#314b75;font-size:12px
+}
+.paper-app .paper-course-materials>summary{cursor:pointer;font-weight:700}
+.paper-app .paper-course-materials .course-material-links{padding:5px 0}
+.paper-app .paper-context-actions{flex-wrap:wrap}
+@media(max-width:720px){
+ .paper-app .paper-context-actions [data-paper="course-materials"]{font-size:11px}
+ .paper-app .paper-course-materials{padding:6px 10px}
+}
