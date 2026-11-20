@@ -257,7 +257,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('[data-shape-pick="hexagon"]').click();
    assert.ok(await page.locator('#paper-shapes-popup').isHidden());
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'shape selection must uncover the paper');
-   if(mobile)await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
+   if(mobile){await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu').evaluate(el=>el.open=true);}
    await page.locator(mobile?'#paper-line-style':'#paper-quick-line-style').selectOption('dotted');
    const fromShape=await point(280,780),toShape=await point(400,890);
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
