@@ -329,6 +329,48 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await click('save');
   assert.ok(activeNote().paper.pages[0].objects.some(o=>o.type==='stroke'),'Apple Pencil input should work with palm guard enabled');
 
+  // Word-style selection, exact size and one-word links must survive cloud save.
+   await page.locator('.paper-back').click();await page.locator('.note-card').waitFor();
+   await page.locator('[data-action="nb-new"]').first().click();
+   const createWord=page.getByRole('dialog');
+   await createWord.locator('[name="title"]').fill('Word style link test');
+   await createWord.locator('[name="course"]').fill('POL2200');
+   await createWord.getByText('สร้างโน้ต',{exact:true}).click();
+   await page.locator('#paper-svg').waitFor();
+   await click('text');await tap(140,320);
+   const wordInput=page.locator('#paper-text-input');
+   await wordInput.fill('Word text with link');
+   await wordInput.evaluate(el=>el.setSelectionRange(0,4));
+   const wordRibbon=page.locator('#paper-text-ribbon');
+   assert.ok(await wordRibbon.isVisible(),'contextual formatting toolbar must be visible while typing');
+   assert.ok(await wordRibbon.locator('[data-paper="word-link"]').isVisible(),'per-word link/file action must be visible without opening extra settings');
+   await wordRibbon.locator('[data-word-format="bold"]').click();
+   assert.ok(await page.locator('#paper-rich-editor').isVisible(),'formatting a selection enters editable rich text');
+   await wordRibbon.locator('[data-word-format="italic"]').click();
+   await wordRibbon.locator('[data-word-format="underline"]').click();
+   await page.locator('#paper-word-size').fill('19');
+   await page.locator('#paper-word-size').press('Tab');
+   assert.ok((await page.locator('#paper-rich-editor').innerHTML()).includes('font-size:19px'),'exact size is visible while editing');
+   await wordRibbon.locator('[data-paper="word-link"]').click();
+   const wordLinkDialog=page.getByRole('dialog').filter({hasText:'เชื่อมคำกับเว็บหรือไฟล์'});
+   assert.equal(await wordLinkDialog.locator('blockquote').innerText(),'Word');
+   assert.ok(await wordLinkDialog.locator('[name="kind"] option[value="upload"]').count(),'file attachment is still supported for selected words');
+   await wordLinkDialog.locator('[name="address"]').fill('https://example.org/word');
+   await wordLinkDialog.getByText('บันทึกลิงก์').click();
+   await click('save');
+   const wordNote=()=>row.payload.notebook.notes.find(n=>n.title==='Word style link test');
+   await wait(()=>!!wordNote()?.paper?.pages?.[0]?.objects?.some(o=>o.type==='text'&&o.marks?.length&&o.links?.length));
+   const wordObject=wordNote().paper.pages[0].objects.find(o=>o.type==='text');
+   assert.equal(wordObject.marks[0].size,19);
+   assert.equal(wordObject.marks[0].bold,true);
+   assert.equal(wordObject.marks[0].italic,true);
+   assert.equal(wordObject.marks[0].underline,true);
+   assert.equal(wordObject.links[0].url,'https://example.org/word');
+   await page.reload();await page.locator('#paper-svg').waitFor();
+   assert.ok(await page.locator('#paper-svg [data-word-link]').count(),'word link must survive reload alongside formatting');
+   assert.ok(await page.locator('#paper-svg span[style*="font-weight:700"]').count(),'individual word style must survive reload');
+   await page.screenshot({path:'test-results/notebook-word-format-'+name+'.png'});
+   
   // The single weekly planner must fit replay cards, including watch buttons, at iPhone widths.
   // Render a fixed sample week so this regression check remains independent of the current date.
   await page.evaluate(async()=>{
