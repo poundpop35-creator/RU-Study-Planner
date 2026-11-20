@@ -1,5 +1,5 @@
 import {schedules,courses,calendar} from './data.js?v=20261027c';
-import {regularLecture,firstLecture,weekdays,personalReplayEvents,calendarEvents} from './calendar-core.js?v=replay-20261119';
+import {regularLecture,firstLecture,weekdays,personalReplayEvents,personalSkimEvents,calendarEvents} from './calendar-core.js?v=balanced-replay-20261120';
 import {escapeHTML as e,thaiDate,today,addDays} from './core.js?v=replay-20261119';
 // Public catalogue entries observed in RU-Study Planner, term 2/2569, 15 Nov 2026.
 const reference={
@@ -58,13 +58,15 @@ function unifiedWeekly(mode,state={},focus=today(),canEdit=true){
  const start=mode==='first'?'2026-11-16':(mondayOf(focus)<'2026-11-23'?'2026-11-23':mondayOf(focus));
  const end=addDays(start,6);
  const live=calendarEvents({start,end,type:'lecture'}).filter(x=>x.type==='lecture');
- const recorded=personalReplayEvents(state.replay||{},{start,end});
- const complete=recorded.filter(x=>x.done).length;
+ const deep=personalReplayEvents(state.replay||{},{start,end});
+ const light=personalSkimEvents(state.skimDone||{},{start,end});
+ const deepDone=deep.filter(x=>x.done).length,lightDone=light.filter(x=>x.done).length;
  const days=Array.from({length:7},(_,i)=>addDays(start,i));
  const grid=days.map(day=>{
   const weekday=new Date(day+'T12:00:00Z').getUTCDay();
   const lectures=live.filter(x=>x.date===day).sort((a,b)=>a.startTime.localeCompare(b.startTime));
-  const replays=recorded.filter(x=>x.date===day);
+  const sessions=[...light.filter(x=>x.date===day),...deep.filter(x=>x.date===day)]
+   .sort((a,b)=>a.startTime.localeCompare(b.startTime)||a.course.localeCompare(b.course));
   let lanes=[];
   const lectureCards=lectures.map(x=>{
    const begin=minutes(x.startTime),finish=minutes(x.endTime);
@@ -73,18 +75,23 @@ function unifiedWeekly(mode,state={},focus=today(),canEdit=true){
    lanes[lane]=finish;
    return `<a class="unified-lecture" style="--course-bg:${schoolColor(x.course)};left:${timelinePosition(x.startTime)}%;width:${(finish-begin)/TIMELINE_DURATION*100}%;top:${lane*74+3}px" href="#course/${e(x.course)}"><b>${e(x.course)}</b><small>${e(x.startTime)}–${e(x.endTime)}</small><small>${e(x.room)}${x.clash?' · ชน':''}</small></a>`;
   }).join('');
-  const replayCards=replays.map((x,i)=>{const position=replayPosition(x.startTime);return `<div class="unified-replay ${x.done?'is-done':''}" style="--course-bg:${schoolColor(x.course)};top:${i*REPLAY_CARD_STEP+3}px;left:${position.left}%;width:${position.width}%" >
-   <b>▶ ${e(x.course)}</b><small>${e(x.startTime)} · ย้อนหลัง</small>
-   <button class="unified-done" type="button" data-action="cal-replay-done" data-key="${e(x.key)}" aria-label="${e(x.course)} ${x.done?'ดูแล้ว กดยกเลิก':'ยังไม่ดู กดเพื่อทำเครื่องหมายดูแล้ว'}" aria-pressed="${x.done}"${canEdit?'':' disabled'}>${x.done?'✓ ดูแล้ว':'○ ยังไม่ดู'}</button>
-  </div>`}).join('');
-  const height=Math.max(86,lanes.length*74,replays.length*REPLAY_CARD_STEP);
+  const replayCards=sessions.map((x,i)=>{
+   const position=replayPosition(x.startTime),isLight=x.type==='skim';
+   const action=isLight?'cal-skim-done':'cal-replay-done';
+   const label=isLight?'ทวนเบา ๆ':'ดูจริงจัง',status=isLight?'ทวนแล้ว':'ดูจบแล้ว';
+   return `<div class="unified-replay ${isLight?'unified-skim':'unified-deep'} ${x.done?'is-done':''}" style="--course-bg:${schoolColor(x.course)};top:${i*REPLAY_CARD_STEP+3}px;left:${position.left}%;width:${position.width}%" >
+    <b>${isLight?'↻':'▶'} ${e(x.course)}</b><small>${e(x.startTime)}–${e(x.endTime)} · ${label}</small>
+    <button class="unified-done" type="button" data-action="${action}" data-key="${e(x.key)}" aria-label="${e(x.course)} ${x.done?status+' กดยกเลิก':'ยังไม่'+(isLight?'ทวน':'ดูจริงจัง')+' กดเพื่อทำเครื่องหมาย'}" aria-pressed="${x.done}"${canEdit?'':' disabled'}>${x.done?'✓ '+status:'○ '+(isLight?'ยังไม่ทวน':'ยังไม่ดู')}</button>
+   </div>`;
+  }).join('');
+  const height=Math.max(86,lanes.length*74,sessions.length*REPLAY_CARD_STEP);
   return `<div class="unified-weekday ${day===today()?'is-today':''}">
    <div class="unified-weekday-name"><b>${['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'][weekday]}</b><small>${Number(day.slice(8))}/${Number(day.slice(5,7))}</small></div>
-   <div class="unified-weekday-track" style="height:${height}px">${lectureCards}${replayCards}${!lectures.length&&!replays.length?'<span class="unified-no-class">—</span>':''}</div></div>`;
+   <div class="unified-weekday-track" style="height:${height}px">${lectureCards}${replayCards}${!lectures.length&&!sessions.length?'<span class="unified-no-class">—</span>':''}</div></div>`;
  }).join('');
- const edits=recorded.map(x=>`<div class="unified-replay-edit">
-  <span style="--course-bg:${schoolColor(x.course)}"><b>${e(x.course)}</b><small>คาบจริง ${thaiDate(x.sourceDate,true)}</small></span>
-  <label>วันที่ดู <input type="date" class="replay-date" data-key="${e(x.key)}" value="${e(x.date)}" min="2026-11-16" max="2027-05-21"${canEdit?'':' disabled'}></label>
+ const edits=deep.map(x=>`<div class="unified-replay-edit">
+  <span style="--course-bg:${schoolColor(x.course)}"><b>${e(x.course)}</b><small>คาบจริง ${thaiDate(x.sourceDate,true)}</small><small>ดูจริงจัง ${x.durationMinutes} นาที</small></span>
+  <label>วันที่ดู <input type="date" class="replay-date" data-key="${e(x.key)}" value="${e(x.date)}" min="${e(x.availableOn)}" max="2027-05-21"${canEdit?'':' disabled'}></label>
   <label>เวลาเริ่ม <input type="time" class="replay-time-input" data-key="${e(x.key)}" value="${e(x.startTime)}"${canEdit?'':' disabled'}></label>
   <button type="button" class="button secondary small" data-action="cal-replay-reset" data-key="${e(x.key)}"${canEdit?'':' disabled'}>คืนค่า</button>
  </div>`).join('');
@@ -94,14 +101,16 @@ function unifiedWeekly(mode,state={},focus=today(),canEdit=true){
    <strong>${thaiDate(start,true)} – ${thaiDate(end,true)}</strong>
    ${start>='2027-03-01'?'':`<button class="button secondary small" data-action="cal-replay-week" data-delta="7">ถัดไป →</button>`}<button class="button secondary small" data-action="cal-replay-week" data-delta="0">สัปดาห์นี้</button>
   </div>
-  <p class="unified-legend"><span>● คาบบรรยายจริง</span><span>▶ คลิปย้อนหลังประมาณ 2 วัน</span><b>ดูแล้ว ${complete}/${recorded.length} คลิป</b></p>
+  <p class="unified-legend"><span>● คาบเรียนสดตาม ม.ร.30</span><span>↻ จ.–ศ. 20:00 · ทวนเบา ๆ</span><span>▶ ส.–อา. · ดูจริงจัง</span><b>ทวนแล้ว ${lightDone}/${light.length} · ดูจริงจัง ${deepDone}/${deep.length}</b></p>
+  <p class="replay-week-plan"><b>แผน 2 ระดับ:</b> จ.–พฤ. 20:00 ฟังผ่าน ๆ 40 นาที · ศุกร์ 20:00 ฟัง 3 รอบ รอบละ 30 นาที (ไม่มีคาบสดวันศุกร์ตั้งแต่ 27 พ.ย.) · เสาร์–อาทิตย์ดูจริงจังประมาณ 5 ชั่วโมง/วัน เริ่ม POL2106 ก่อน</p>
   <div class="unified-time-nav" aria-label="เลื่อนตารางตามช่วงเวลา"><button type="button" class="button secondary small" data-action="cal-scroll-time" data-target="day">◀ ช่วงกลางวัน</button><span>ตารางแนวนอน · เลื่อนซ้าย–ขวาเพื่อดูเวลา</span><button type="button" class="button secondary small" data-action="cal-scroll-time" data-target="night">ช่วงค่ำ 20:00 ▶</button></div>
   <div class="unified-scroll" role="region" tabindex="0" aria-label="ตารางรายสัปดาห์แนวนอน เลื่อนเพื่อดูเวลา 11 ถึง 01 นาฬิกา"><div class="unified-grid">
    <div class="unified-axis"><b>วัน</b><div>${[11,13,15,17,19,21,23,25].map(h=>`<span style="left:${(h-11)/14*100}%">${h===25?'01:00 +1':h+':00'}</span>`).join('')}</div></div>
    ${grid}
   </div></div>
-  <details class="unified-edit-panel"><summary>ปรับวันและเวลาที่จะดูคลิปย้อนหลัง</summary><p>การจัดเวลา 20.00 น. เป็นค่าเริ่มต้น ไม่ใช่เวลาที่คลิปอัปโหลดจริง วันศุกร์มีหลายวิชา สามารถเลื่อนวันหรือเวลาเองได้</p>${edits||'<p>ไม่มีคลิปในสัปดาห์นี้</p>'}</details>
-  <p class="replay-note">ตารางย้อนหลังเป็นแผนส่วนตัว สร้างจากคาบจริง +2 วันโดยประมาณ ไม่ยืนยันว่ามหาวิทยาลัยอัปโหลดคลิปแล้ว · <a href="https://ondemand.ru.ac.th/" target="_blank" rel="noopener noreferrer">▶ เปิด RU Course on Demand</a></p>
+  <details class="unified-edit-panel"><summary>ปรับวันและเวลาที่จะดูจริงจัง</summary><p>เวลาเรียนย้อนหลังเป็นแผนส่วนตัว เปลี่ยนได้โดยไม่แก้คาบเรียนสดหรือสถานะทวนเบา ๆ และควรดูหลังคลิปเผยแพร่จริง</p>${edits||'<p>ไม่มีคลิปในสัปดาห์นี้</p>'}</details>
+  <p class="replay-note">คลิปอาจปรากฏประมาณ 2 วันหลังสอนจริง ระบบยังไม่ยืนยันว่าอัปโหลดแล้ว · `+
+   `<a href="https://ondemand.ru.ac.th/" target="_blank" rel="noopener noreferrer">▶ เปิด RU Course on Demand</a></p>
  </div>`;
 }
 export function weeklyPlanner(mode,replayState={},replayFocus=today(),canEdit=true){
@@ -114,7 +123,7 @@ export function weeklyPlanner(mode,replayState={},replayFocus=today(),canEdit=tr
  const regular=mode==='regular';
  const rows=list.map(s=>regular?regularLecture(s):s);
  const tabs=[['first','สัปดาห์แรก'],['regular','สัปดาห์ถัดไป'],['exam','ตารางสอบ']];
- if(mode!=='exam')return `<section class="panel"><h2>ตารางเรียนของฉัน · 2/2569</h2><p>บรรยายจริงและดูย้อนหลังในตารางเดียว สีเดียวกันตามรายวิชา · ติ๊กดูแล้วได้ในบล็อกย้อนหลัง</p><div class="button-row">${tabs.map(([key,label])=>`<button class="button ${mode===key?'primary':'secondary'}" aria-pressed="${mode===key}" data-action="cal-board" data-board="${key}">${label}</button>`).join('')}</div>${unifiedWeekly(mode==='replay'?'regular':mode,replayState,replayFocus,canEdit)}</section>`;
+ if(mode!=='exam')return `<section class="panel"><h2>ตารางเรียนของฉัน · 2/2569</h2><p>คาบสด · ทวนเบา ๆ วันธรรมดา · ดูจริงจังวันหยุด ในตารางเดียว โดยใช้สถานะติ๊กแยกกัน</p><div class="button-row">${tabs.map(([key,label])=>`<button class="button ${mode===key?'primary':'secondary'}" aria-pressed="${mode===key}" data-action="cal-board" data-board="${key}">${label}</button>`).join('')}</div>${unifiedWeekly(mode==='replay'?'regular':mode,replayState,replayFocus,canEdit)}</section>`;
  const hourLabels=[11,13,15,17,19].map(h=>`<small style="position:absolute;left:${(h-11)/9*100}%">${h}:00</small>`).join('');
  const board=`<div style="overflow-x:auto"><div style="min-width:560px"><div style="margin-left:48px;position:relative;height:28px">${hourLabels}</div>${[1,2,3,4,5].map(day=>{
  const items=rows.filter(s=>s.weekday===day).sort((a,b)=>a.startTime.localeCompare(b.startTime));let ends=[];
