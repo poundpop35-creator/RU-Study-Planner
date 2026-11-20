@@ -18,6 +18,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  let conversionWarning='';let initial;try{initial=paperFor(note);}catch{initial={version:1,pages:[emptyPage()]};conversionWarning='ต้นฉบับยาวเกินหน้ากระดาษที่รองรับ ดูฉบับเต็มได้ในเมนู ดูต้นฉบับเดิม';}
  let model=initial,pageId=model.pages[0].id,tool='text',color='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=false,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
  let multiSelect=false,wordSelection=null,lineStyle='solid',smartEnabled=true,smartTimer=0;
+ let lastSelectionSignature='';
  let ruler={active:false,x:PAGE_W/2,y:PAGE_H/2,angle:0,length:440,height:44};
  function cancelSmartTimer(){clearTimeout(smartTimer);smartTimer=0;}
  function scheduleSmartHold(g){
@@ -75,6 +76,8 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  function change(fn){const next=copy(unsaved||model);fn(next.pages.find(p=>p.id===pageId),next);return persist(next);}
  function scheduleDraw(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw();});}
  function draw(){
+  const signature=[...selected].sort().join('|');
+  if(signature!==lastSelectionSignature){$('#paper-selection-more').open=false;lastSelectionSignature=signature;}
   const p=page();if(cachedPage!==p||cachedImageVersion!==imageVersion){cachedContent=pageSVG(p,images);cachedPage=p;cachedImageVersion=imageVersion;}let content=cachedContent;
   if(editing)content=pageSVG({...p,objects:p.objects.filter(o=>o.id!==editing.id)},images);
   if(gesture?.kind==='shape'&&gesture.object)content+=objectSVG(gesture.object);
