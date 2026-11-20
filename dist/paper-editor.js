@@ -33,7 +33,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  let cachedPage=null,cachedContent='',imageVersion=0,cachedImageVersion=-1;
  const scope=space.info().scope,images=new Map(),loading=new Set(),history=new Map(),events=[],pointers=new Map();
  const draftKey='ru-paper-draft:'+scope+':'+id;
- const widthKey='ru-paper-pen-width.v1:'+scope,highlightKey='ru-paper-highlight-width.v1:'+scope,pagesKey='ru-paper-pages-open.v1',textSizeKey='ru-paper-text-font-size.v1';
+ const widthKey='ru-paper-pen-width.v1:'+scope,highlightKey='ru-paper-highlight-width.v1:'+scope,pagesKey='ru-paper-pages-open.v1',textSizeKey='ru-paper-text-font-size.v2';
  // iPad defaults to stylus-only contact on the page; the user can change this per device.
  const isIPad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
  const palmKey='ru-paper-palm-guard.v1';
