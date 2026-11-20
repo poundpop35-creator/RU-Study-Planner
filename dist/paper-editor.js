@@ -96,12 +96,20 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   const rulerButton=$('[data-paper="ruler"]');
   rulerButton.setAttribute('aria-pressed',String(ruler.active));
   rulerButton.textContent=ruler.active?'📏 ปิดไม้บรรทัด':'📏 เปิดไม้บรรทัด';
-  root.querySelectorAll('[data-paper]').forEach(b=>{if(['pen','highlight','eraser','text','shape','select','hand'].includes(b.dataset.paper))b.setAttribute('aria-pressed',String(tool===b.dataset.paper));});
+  root.querySelectorAll('[data-paper]').forEach(b=>{
+   if(['pen','highlight','eraser','text','shape','select','hand','line','arrow','straighten'].includes(b.dataset.paper))
+    b.setAttribute('aria-pressed',String(['line','arrow'].includes(b.dataset.paper)
+     ?tool==='shape'&&$('#paper-shape').value===b.dataset.paper:tool===b.dataset.paper));
+  });
   root.querySelectorAll('[data-paper-color]').forEach(b=>b.setAttribute('aria-pressed',String(color===b.dataset.paperColor)));
    root.querySelectorAll('[data-quick-color]').forEach(b=>b.setAttribute('aria-pressed',String(color===b.dataset.quickColor)));
    $('[data-quick-action="ruler"]').setAttribute('aria-pressed',String(ruler.active));
    $('[data-quick-action="multi"]').setAttribute('aria-pressed',String(multiSelect));
    $('#paper-quick-shape').value=$('#paper-shape').value;
+   root.querySelectorAll('[data-quick-draw]').forEach(b=>b.setAttribute('aria-pressed',
+    String(b.dataset.quickDraw==='straighten'?tool==='straighten':tool==='shape'&&$('#paper-shape').value===b.dataset.quickDraw)));
+   root.querySelectorAll('[data-shape-pick]').forEach(b=>b.setAttribute('aria-pressed',
+    String(b.dataset.shapePick===$('#paper-shape').value)));
    $('#paper-quick-line-style').value=$('#paper-line-style').value;
    $('#paper-quick-text-size').value=fontSize;
   $('[data-paper="undo"]').disabled=!h().canUndo; $('[data-paper="redo"]').disabled=!h().canRedo;
@@ -180,7 +188,31 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(toggle)toggle.setAttribute('aria-expanded','false');
  }
  function closeExtraTools(){const menu=$('#paper-toolbar-more');if(menu)menu.open=false;}
- function setTool(next){cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;tool=next;if(next==='shape'&&window.matchMedia('(max-width:720px)').matches){$('#paper-toolbar-more').open=true;$('#paper-geometry-menu').open=true;}else closeExtraTools();if(next!=='select')multiSelect=false;if(!['select','text'].includes(tool))selected.clear();syncPenWidthControls();showTextRibbon();say(({shape:'เลือกรูปทรง แล้วลากบนหน้ากระดาษ',pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะที่ข้อความเดิมหรือชิดท้ายคำเพื่อเขียนต่อ · แตะพื้นที่ว่างเพื่อสร้างใหม่',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูมเมื่อปิดกันฝ่ามือ'})[tool]);draw();}
+ function setShapesOpen(open){
+  const panel=$('#paper-shapes-popup');panel.hidden=!open;
+  if(open){
+   const anchor=$('[data-paper="shape"]').getBoundingClientRect();
+   panel.style.left=Math.max(8,Math.min(anchor.left,window.innerWidth-360))+'px';
+   panel.style.top=Math.max(8,Math.min(anchor.bottom+6,window.innerHeight-250))+'px';
+  }
+ }
+ function setTool(next){
+  cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;
+  if(next==='line'||next==='arrow'){
+   $('#paper-shape').value=next;$('#paper-quick-shape').value=next;tool='shape';
+  }else tool=next;
+  closeExtraTools();setShapesOpen(false);
+  if(next!=='select')multiSelect=false;
+  if(!['select','text'].includes(tool))selected.clear();
+  syncPenWidthControls();showTextRibbon();
+  say(({shape:'เลือกชนิดรูปทรงจากไอคอน แล้วลากบนกระดาษ',
+   straighten:'ลากเส้นด้วยมือแล้วปล่อยให้จัดเป็นเส้นตรงทันที',
+   pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',
+   highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',
+   select:'คลิกเพื่อเลือก · ดับเบิลคลิกข้อความเพื่อแก้ทันที',
+   text:'คลิกข้อความเดิมเพื่อแก้ · คลิกพื้นที่ว่างเพื่อสร้างใหม่',
+   hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูมเมื่อปิดกันฝ่ามือ'})[tool]);draw();
+ }
  const textMeasure=document.createElement('span');
  Object.assign(textMeasure.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',whiteSpace:'pre',width:'max-content',maxWidth:'none',left:'0',top:'0'});
  const measureClip=document.createElement('div');
@@ -585,7 +617,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   }
   if(tool==='eraser'){gesture={kind:'erase',before:copy(page().objects),preview:page().objects.filter(o=>o.type!=='stroke'||!strokeHit(o,p))};scheduleDraw();return;}
   const snapped=tool==='pen'?rulerSnap(p,ruler):null,initial=snapped||p;
-  gesture={kind:'stroke',tool,color:tool==='highlight'&&color==='#172033'?'#f4cd45':color,width:tool==='highlight'?highlighterSize:width,
+  gesture={kind:'stroke',tool:tool==='straighten'?'pen':tool,straighten:tool==='straighten',color:tool==='highlight'&&color==='#172033'?'#f4cd45':color,width:tool==='highlight'?highlighterSize:width,
    points:[[initial.x,initial.y,e.pointerType==='pen'&&e.pressure>0?e.pressure:.5]],
    rulerEdge:snapped?.edge||0,pointer:e.pointerId};
   scheduleDraw();
@@ -640,19 +672,24 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   if(g?.multiTap&&!g.moved&&g.alreadySelected&&e.type==='pointerup')selected.delete(g.multiTap);
   if(g?.kind==='stroke'&&e.type!=='pointercancel'){
    let result;
-   if(g.snap)result=g.snap;
+   if(g.straighten&&g.points.length>1){
+    const first=g.points[0],last=g.points.at(-1);
+    if(Math.hypot(last[0]-first[0],last[1]-first[1])>=2)
+     result=makeShape(uid(),'line',{x:first[0],y:first[1]},{x:last[0],y:last[1]},g.color,g.width,lineStyle);
+   }
+   else if(g.snap)result=g.snap;
    else if(g.rulerEdge&&g.points.length>1){
     const first=g.points[0],last=g.points.at(-1);
     result=makeShape(uid(),'line',{x:first[0],y:first[1]},{x:last[0],y:last[1]},g.color,g.width,lineStyle);
    }
    if(result)change(p=>p.objects.push(result));
-   else{const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width});change(p=>p.objects.push(stroke));}
+   else if(!g.straighten){const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width});change(p=>p.objects.push(stroke));}
   }
   else if(g?.kind==='shape'&&e.type==='pointerup'){
    const end=point(e);
    if(Math.hypot(end.x-g.start.x,end.y-g.start.y)>2){
     const shape=makeShape(g.id,g.shape,g.start,end,g.color,g.width,g.lineStyle);
-    if(change(p=>p.objects.push(shape))){tool='select';selected=new Set([shape.id]);$('#paper-geometry-menu').open=false;}
+    if(change(p=>p.objects.push(shape))){tool='select';selected=new Set([shape.id]);$('#paper-geometry-menu').open=false;setShapesOpen(false);showTextRibbon();}
    }
   }
   else if(g?.preview&&e.type!=='pointercancel')change(p=>{p.objects=g.preview;});
@@ -721,6 +758,19 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    }
    if(unsaved&&b.dataset.paper!=='save'&&b.dataset.paper!=='draft'&&b.dataset.paper!=='discard-draft'&&b.dataset.paper!=='pages')throw Error('มีงานค้าง กรุณาบันทึกหรือสำรองก่อนทำรายการต่อ');
    if(b.dataset.paperPage){finishText();pageId=b.dataset.paperPage;selected.clear();viewport.scrollTop=0;if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);draw();thumbs();return;}
+   if(b.hasAttribute('data-open-shapes')){setShapesOpen($('#paper-shapes-popup').hidden);return;}
+   if(b.hasAttribute('data-shapes-close')){setShapesOpen(false);return;}
+   if(b.dataset.shapePick){
+    const kind=b.dataset.shapePick;
+    const single=page().objects.find(o=>selected.size===1&&selected.has(o.id)&&o.type==='shape');
+    if(single&&tool==='select'){
+     change(p=>p.objects.forEach(o=>{
+      if(o.id===single.id){o.kind=kind;if(['square','circle'].includes(kind)){const side=Math.max(o.w,o.h);o.w=side;o.h=side;}}
+     }));
+    }else{$('#paper-shape').value=kind;$('#paper-quick-shape').value=kind;setTool('shape');}
+    setShapesOpen(false);draw();return;
+   }
+   if(b.dataset.quickDraw){setTool(b.dataset.quickDraw);return;}
    if(b.dataset.quickColor){$('[data-paper-color="'+b.dataset.quickColor+'"]').click();return;}
     if(b.dataset.quickAction){$('[data-paper="'+b.dataset.quickAction+'"]').click();return;}
     if(b.dataset.paperColor){color=b.dataset.paperColor;if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type!=='image'?{...o,color}:o);});draw();closeExtraTools();return;}
@@ -744,7 +794,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     multiSelect=!multiSelect;setTool('select');
     say(multiSelect?'แตะเพื่อเพิ่มหรือนำออกจากกลุ่ม · ลากชิ้นที่เลือกเพื่อย้ายพร้อมกัน':'แตะเพื่อเลือก · Shift + คลิกเพื่อเลือกเพิ่ม');return;
    }
-   if(['select','pen','highlight','eraser','text','shape','hand'].includes(action)){setTool(action);return;}
+   if(['select','pen','highlight','eraser','text','shape','hand','line','arrow','straighten'].includes(action)){setTool(action);if(action==='shape')setShapesOpen(true);return;}
    if(action==='files'){fileList();$('#paper-files').showModal();return;}
    if(action==='image-link'){
     const target=page().objects.find(o=>selected.has(o.id)&&o.type==='image');
@@ -824,8 +874,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   });
   bind($('#paper-width'),'input',e=>updatePenWidth(e.target.value));
  bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();closeExtraTools();});
- bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
- bind(root,'keydown',e=>{if(e.key==='Escape'){closeWordMenu();closePenSizePicker();closeExtraTools();}});
+ bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-shapes-popup,[data-open-shapes],[data-paper="shape"]'))setShapesOpen(false);if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
+ bind(root,'keydown',e=>{if(e.key==='Escape'){setShapesOpen(false);closeWordMenu();closePenSizePicker();closeExtraTools();}});
   bind($('#paper-finger'),'change',e=>{finger=e.target.checked;closeExtraTools();});
  bind(palmToggle,'change',e=>{setPalmGuard(e.target.checked);closeExtraTools();});
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
