@@ -1,7 +1,7 @@
-import {esc} from './paper-render.js?v=notebook-shape-tools-20261120';
+import {esc} from './paper-render.js?v=word-format-20261120';
 import {NOTE_SOURCES,noteSource} from './notebook-core.js?v=geometry-20261119';
 import {shapes,lineStyles} from './paper-shapes.js?v=notebook-shape-tools-20261120';
-import {PEN_WIDTH_PRESETS} from './paper-core.js?v=notebook-shape-tools-20261120';
+import {PEN_WIDTH_PRESETS} from './paper-core.js?v=word-format-20261120';
 export const colors=['#172033','#3155d9','#15966d','#dc4343','#8756c6','#ef9e39'];
 const icons={select:'↖',pen:'✎',highlight:'▰',eraser:'◇',text:'T',shape:'△',image:'▧',hand:'✋',undo:'↶',redo:'↷'};
 export function paperPage(space,n){return `<section class="paper-app" aria-label="สมุดกระดาษ"><header class="paper-header"><a class="paper-back" href="#notes" aria-label="กลับสมุดจด">‹</a><div class="paper-heading"><span class="paper-eyebrow">MY NOTEBOOK <span> / ${esc(n.course||'ทั่วไป')}</span></span><input id="paper-title" aria-label="ชื่อโน้ต" maxlength="160" value="${esc(n.title)}"><span class="paper-cloud" data-sync-status role="status">${esc(space.info().status)}</span></div><button class="paper-save" data-paper="save">บันทึกงาน</button><details class="paper-menu"><summary aria-label="ตัวเลือกโน้ต">•••</summary><div><button data-action="nb-pin" data-id="${n.id}">${n.pinned?'เลิกปักหมุด':'ปักหมุดโน้ต'}</button><button data-action="nb-archive" data-id="${n.id}">${n.archived?'นำกลับมาใช้':'เก็บเข้าคลัง'}</button><button data-action="nb-print">พิมพ์หน้านี้</button><button data-action="nb-export">สำรองโน้ตพร้อมรูป</button><button data-paper="legacy">ดูต้นฉบับเดิม</button><button data-action="nb-delete" data-id="${n.id}" class="paper-danger">ลบโน้ต</button></div></details></header>
