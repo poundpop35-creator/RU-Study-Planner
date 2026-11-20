@@ -1,4 +1,4 @@
-try { await import('./app.js?v=horizontal-timeline-20261120'); }
+try { await import('./app.js?v=compact-toolbar-20261120'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
