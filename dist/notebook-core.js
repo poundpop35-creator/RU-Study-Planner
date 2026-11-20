@@ -1,4 +1,4 @@
-import {validatePaper} from './paper-core.js?v=geometry-20261119';
+import {validatePaper} from './paper-core.js?v=20261120-table';
 import {validateFiles} from './note-files.js';
 import {validateCourseMaterials} from './course-materials.js?v=shared-course-20261120';
 // Store a small, validated Delta rather than trusting saved HTML.
@@ -33,7 +33,7 @@ export function cleanDelta(d){
  return {ops};
 }
 export function deltaText(d){return d.ops.map(o=>typeof o.insert==='string'?o.insert:'[รูปภาพ]').join('');}
-export const noteText=n=>n.paper?n.paper.pages.flatMap(p=>p.objects.filter(o=>o.type==='text').map(o=>o.text)).join('\n'):deltaText(n.delta);
+export const noteText=n=>n.paper?n.paper.pages.flatMap(p=>p.objects.flatMap(o=>o.type==='text'?[o.text]:o.type==='table'?o.cells.flat():[])).join('\n'):deltaText(n.delta);
 export function referencedImages(notebook){return [...new Set(notebook.notes.flatMap(n=>[...n.delta.ops.map(o=>o.insert?.studyImage),...(n.paper?.pages||[]).flatMap(p=>p.objects.map(o=>o.imageId))]).filter(imageId))];}
 export function freshNotebook(){return {version:1,notes:[]};}
 export function validateNotebook(v){
