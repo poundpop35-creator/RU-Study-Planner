@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#edf3ff">
+<meta name="description" content="RU Study Planner Interactive Demo: สมุดจด ตารางเรียน เอกสารรายวิชา และติวย้อนหลัง">
+<title>ทดลอง RU Study Planner | Interactive Demo</title>
+<style>
+:root{font-family:system-ui,"Noto Sans Thai",Tahoma,sans-serif;color:#172d50;background:#eef3fc;font-synthesis:none}
+*{box-sizing:border-box}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}a{color:inherit;text-decoration:none}
+body{margin:0;min-height:100dvh}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #7a99f7;outline-offset:2px}
+.shell{min-height:100dvh;display:grid;grid-template-columns:236px minmax(0,1fr)}
+.sidebar{position:sticky;top:0;height:100dvh;background:#fff;border-right:1px solid #dae4f4;padding:22px 14px;display:flex;flex-direction:column;gap:9px;z-index:6}
+.brand{display:flex;align-items:center;gap:11px;margin-bottom:22px;padding:7px}
+.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(140deg,#356af2,#142e8e);color:#fff;display:grid;place-items:center;font-size:25px;box-shadow:0 5px 0 #12235b}
+.brand b{display:block;font-size:16px}.brand small{font-size:11px;color:#7485a1;display:block}
+.nav{display:flex;align-items:center;gap:12px;border:0;background:transparent;padding:12px 14px;text-align:left;color:#4c6080;border-radius:13px;font-weight:700;width:100%}
+.nav span{font-size:21px}.nav.active{background:#e9efff;color:#2458d4}.nav:hover{background:#edf3fc}
+.sidebar-footer{margin-top:auto;font-size:12px;line-height:1.6;color:#60718e;background:#f2f6fe;padding:12px;border-radius:12px}
+.main{min-width:0;min-height:100dvh}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px clamp(14px,3vw,35px) 14px}
+.eyebrow{color:#3f6ac5;font-size:11px;letter-spacing:.12em;font-weight:800;text-transform:uppercase}.top h1{font-size:clamp(20px,2.4vw,27px);margin:3px 0}.top p{margin:5px 0 0;color:#71829a;font-size:13px}
+.topright{display:flex;align-items:center;gap:9px}.pill{background:#fff;border:1px solid #cfddf0;border-radius:30px;padding:9px 13px;color:#45617f;font-size:12px;font-weight:750;white-space:nowrap}
+.demo-pill{background:#fff7dc;border-color:#f5cd65;color:#94610b}.content{padding:0 clamp(12px,3vw,35px) 100px;max-width:1620px;margin:auto}
+.view{display:none}.view.active{display:block}.panel{background:#fff;border:1px solid #dce5f4;border-radius:18px;padding:18px;box-shadow:0 8px 35px #294d8910}.panel h2{font-size:17px;margin:0 0 12px}
+.btn{min-height:40px;display:inline-flex;gap:7px;align-items:center;justify-content:center;border:1px solid #c8d5ec;border-radius:11px;background:#fff;color:#24436c;font-size:13px;font-weight:750;padding:9px 13px}.btn:hover{background:#f2f7ff}.btn.primary{background:#2959d5;color:white;border-color:#2959d5}.btn.mini{min-height:33px;padding:5px 9px;font-size:12px}.btn.danger{color:#b52e42}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.stat{background:#fff;border:1px solid #d8e4f4;border-radius:15px;padding:19px}.stat strong{font-size:28px;display:block;color:#275bd1;margin:8px 0 0}.muted{color:#70819a;font-size:13px;line-height:1.7}.section{margin-top:17px}.tag{font-size:11px;background:#e9efff;color:#2453ae;border-radius:7px;padding:3px 7px;font-weight:750}.tag.yellow{background:#fff5d8;color:#8c630e}.tag.green{background:#e3f8ed;color:#177748}
+.feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.feature{display:flex;gap:11px;align-items:start;padding:13px;border:1px solid #e0e7f5;border-radius:12px;background:#fbfcff}.feature>span{font-size:24px}.feature b{display:block;font-size:13px}.feature small{font-size:11px;color:#72819b;line-height:1.5}
+.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.grow{flex:1}.note-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between;margin-bottom:10px}
+.field{border:1px solid #cad7ec;background:white;border-radius:9px;padding:9px 11px;min-height:38px;color:#253754;min-width:0}.note-title{font-size:16px;font-weight:800;flex:1;min-width:170px}
+.editor-shell{background:#fff;border:1px solid #d5e0f1;border-radius:17px;overflow:visible;box-shadow:0 14px 35px #19396b12}
+.toolbar{display:flex;gap:5px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid #e1e8f4;background:#fff;border-radius:17px 17px 0 0}
+.tool{border:1px solid transparent;background:#f3f6fc;border-radius:9px;min-height:39px;min-width:41px;padding:6px 10px;color:#304766;font-size:12px;font-weight:800;white-space:nowrap}
+.tool[data-active="true"]{background:#dfeaff;color:#1e51c1;border-color:#9bb5f4}.tool:hover{background:#e8efff}
+.tgroup{display:flex;gap:4px;align-items:center;flex-wrap:wrap}.tsep{height:27px;width:1px;background:#dce3f0;margin:0 4px}
+.tools-extra{position:relative}.tools-extra summary{list-style:none;user-select:none}.tools-extra summary::-webkit-details-marker{display:none}
+.extra-body{position:absolute;top:43px;right:0;width:min(330px,90vw);z-index:10;box-shadow:0 14px 32px #21396433;background:#fff;border:1px solid #ccdaee;border-radius:13px;padding:12px;display:flex;flex-wrap:wrap;gap:6px}
+.color{width:24px;height:24px;min-width:24px;padding:0;border-radius:50%;border:2px solid #fff;outline:1px solid #aebad0}
+.paper-area{display:grid;grid-template-columns:125px minmax(0,1fr);min-height:640px;background:#edf2fb}
+.page-sidebar{background:#f8faff;border-right:1px solid #d6e1f2;padding:12px 8px}
+.page-sidebar>strong{display:block;text-align:center;font-size:11px;color:#4b627f;margin:5px}
+.page-item{border:1px solid #d6e1f1;border-radius:8px;background:#fff;padding:11px;margin:8px 0;font-weight:800;text-align:center;width:100%}.page-item.active{border:2px solid #3568e4;color:#2957c6}
+.stage-scroll{overflow:auto;max-height:850px;padding:26px 14px 55px;display:flex;justify-content:center;align-items:start}
+.paper{position:relative;width:min(100%,680px);aspect-ratio:900/1273;background:#fff;border:1px solid #d0d8e8;box-shadow:0 12px 23px #23365322;overflow:hidden;flex:0 0 auto}
+.paper.ruled{background-image:linear-gradient(#e8eef5 1px,transparent 1px);background-size:100% 30px}.paper.dots{background-image:radial-gradient(#d0ddeb 1px,transparent 1px);background-size:23px 23px}.paper.grid{background-image:linear-gradient(#e4eaf4 1px,transparent 1px),linear-gradient(90deg,#e4eaf4 1px,transparent 1px);background-size:24px 24px}
+.paper-object{position:absolute;min-height:28px;touch-action:none;border:1.5px solid transparent;border-radius:3px}.paper-object.selected{border:2px solid #315fe3;box-shadow:0 0 0 2px #a4bbfa70}
+.paper-object .handle{position:absolute;right:-1px;top:-28px;background:#315fe3;color:white;display:none;padding:4px 8px;min-height:26px;border-radius:7px 7px 0 0;font-size:12px;cursor:grab}.paper-object.selected .handle{display:block}
+.paper-object .edit-content{padding:7px 10px;min-height:25px;outline:0;white-space:pre-wrap;overflow-wrap:anywhere}.paper-object .edit-content[contenteditable=true]{background:#fffdf0;box-shadow:0 0 0 1px #f8d97d}
+.paper-object.shape{border-width:2px;border-style:solid}.paper-object.circle{border-radius:50%}.paper-object.line{height:3px!important;min-height:0;border-radius:0}.paper-object.arrow{height:3px!important;min-height:0;border-radius:0}
+.paper-object.arrow:after{content:"";position:absolute;right:-2px;top:-6px;border-left:12px solid currentColor;border-top:7px solid transparent;border-bottom:7px solid transparent}
+.paper-object.photo img{display:block;width:100%;height:100%;object-fit:contain}
+.paper-object.table-object{background:white;padding:0;overflow:visible}.paper-object table{width:100%;height:100%;border-collapse:collapse;table-layout:fixed;font-size:clamp(8px,1.4vw,14px);line-height:1.45}
+.paper-object th,.paper-object td{border:1px solid #9fb6d4;padding:5px;vertical-align:top;overflow-wrap:anywhere;white-space:pre-wrap}.paper-object th{background:#e8f1ff}
+#inkCanvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;pointer-events:none}.paper.drawing #inkCanvas{pointer-events:auto;cursor:crosshair}
+#ruler{display:none;pointer-events:none;position:absolute;left:15%;top:33%;width:65%;height:34px;border:1px solid #ce9536;border-radius:5px;background:repeating-linear-gradient(90deg,#ffdf9a88 0,#ffdf9a88 9px,#be8422 9px,#be8422 10px);transform:rotate(-10deg)}
+#ruler.visible{display:block}
+.editor-bottom{border-top:1px solid #dfe7f2;background:#fff;padding:10px 13px;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;border-radius:0 0 17px 17px}.editor-bottom small{color:#75839a}
+.course-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.course-card{padding:16px;background:#fff;border:1px solid #d9e4f2;border-radius:15px}.course-card h3{font-size:15px;margin:6px 0}
+.course-card p{font-size:12px;color:#71809a;margin:7px 0}.course-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.document-list{display:grid;gap:7px;margin-top:10px}.document{border:1px solid #e1e8f2;padding:9px;border-radius:9px;font-size:12px;background:#fcfdff}
+.week{display:grid;grid-template-columns:repeat(7,minmax(125px,1fr));gap:8px;min-width:960px}
+.weekday{background:#fff;border:1px solid #d9e5f4;border-radius:13px;padding:10px;min-height:280px}.weekday h3{font-size:13px;color:#526a8a;margin:0 0 12px}.schedule-item{padding:10px 8px;border:1px dashed #9c72df;background:#f1ebff;margin-bottom:8px;border-radius:10px;font-size:12px;line-height:1.4}.schedule-item.live{background:#e7f0ff;border-color:#6a91d5}.schedule-item.deep{background:#e4faed;border-color:#58b783}.schedule-item b{display:block}.schedule-item small{color:#67768c}.schedule-item button{margin-top:6px;width:100%;min-height:31px;font-size:11px;background:white;color:#3157a1;border:1px solid #aabce0;border-radius:7px}
+.schedule-scroll{overflow-x:auto;padding-bottom:11px}.quiz-option{display:block;width:100%;text-align:left;margin:7px 0;padding:13px 14px;background:#fbfcff;border:1px solid #dce5f4;border-radius:10px}.quiz-option:hover{background:#eef3ff}.quiz-option.correct{border-color:#319862;background:#e5fbf0}.quiz-option.wrong{border-color:#d36464;background:#fff0f0}
+.modal{position:fixed;inset:0;z-index:30;background:#142b4e7d;display:none;place-items:center;padding:12px}.modal.open{display:grid}.modal-box{width:min(850px,96vw);max-height:90dvh;background:#fff;border-radius:18px;padding:17px;overflow:auto;box-shadow:0 20px 70px #0003}
+.modal-title{display:flex;justify-content:space-between;align-items:center;gap:15px}.modal-title h2{font-size:19px;margin:2px 0 11px}
+.cells{max-height:48dvh;overflow:auto;display:grid;gap:0;border:1px solid #c6d4e8;border-radius:10px;margin:12px 0}
+.cell-field{min-width:130px;border:1px solid #dbe4f0;padding:8px;background:#fff}.cell-field.head{background:#eef4ff}.cell-field label{font-size:10px;color:#6d7c95;display:block}.cell-field textarea{border:1px solid #bdcce3;border-radius:7px;width:100%;padding:8px;min-height:58px;resize:vertical;font-size:13px}
+.help-banner{padding:11px 13px;border:1px solid #c5d8f9;background:#eef5ff;border-radius:12px;color:#3d5a83;line-height:1.6;font-size:12px;margin-bottom:13px}
+.status{display:inline-flex;gap:6px;align-items:center;font-size:11px;border-radius:99px;padding:5px 10px;background:#ecf9f0;color:#237748;font-weight:750}.status:before{content:"";background:#28a464;width:7px;height:7px;border-radius:50%}
+.bottom-nav{display:none}
+@media(max-width:1050px){.shell{grid-template-columns:74px minmax(0,1fr)}.sidebar{padding:16px 7px}.brand{padding:4px}.brand>div:last-child,.nav .text,.sidebar-footer{display:none}.nav{justify-content:center}.nav span{font-size:25px}.course-list,.feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.shell{display:block}.sidebar{display:none}.top{padding:15px 14px 11px}.top h1{font-size:20px}.topright .pill:not(.demo-pill){display:none}.content{padding:0 10px 103px}.grid,.feature-grid,.course-list{grid-template-columns:1fr 1fr;gap:9px}.panel{padding:12px;border-radius:14px}.toolbar{gap:5px;padding:7px;overflow-x:auto;flex-wrap:nowrap}.tool{min-height:39px}.paper-area{grid-template-columns:0 minmax(0,1fr)}.page-sidebar{display:none}.stage-scroll{padding:14px 8px 30px;max-height:74dvh}.paper{width:100%}.editor-bottom{padding:9px}.bottom-nav{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;bottom:0;left:0;right:0;padding:5px 4px calc(7px + env(safe-area-inset-bottom));border-top:1px solid #cbd9ef;background:#fff;z-index:20;box-shadow:0 -5px 22px #1f3e6f18}.bottom-nav button{display:grid;justify-items:center;gap:2px;background:transparent;border:0;font-size:10px;font-weight:750;color:#5d6d86;padding:6px 0}.bottom-nav button.active{color:#2759df;background:#e8efff;border-radius:12px}.bottom-nav span{font-size:22px}.modal{align-items:end;padding:0}.modal-box{width:100vw;max-height:92dvh;border-radius:17px 17px 0 0;padding:12px}.cells{max-height:52dvh}.cell-field{min-width:125px}.feature small{font-size:10px}}
+@media(max-width:420px){.feature-grid,.course-list,.grid{grid-template-columns:1fr}.topright{gap:4px}.demo-pill{font-size:10px;padding:7px}}
+</style>
+</head>
+<body>
+<div class="shell">
+ <aside class="sidebar"><div class="brand"><div class="logo">▣</div><div><b>RU Study Planner</b><small>INTERACTIVE DEMO</small></div></div><div id="sideNav"></div><div class="sidebar-footer">ตัวอย่างแยกจากระบบจริง<br><b>ไม่มีการส่งข้อมูลไป Supabase</b><br>บันทึกในเบราว์เซอร์เครื่องนี้เท่านั้น</div></aside>
+ <div class="main">
+  <header class="top"><div><div class="eyebrow">DESIGN LAB · RU STUDY PLANNER</div><h1 id="screenTitle">สำรวจแอปของฉัน</h1><p id="screenSubtitle">ทดลองการใช้งานแต่ละส่วนได้โดยไม่กระทบข้อมูลจริง</p></div><div class="topright"><span class="pill">📚 ภาค 2/2569</span><span class="pill demo-pill">ทดลอง HTML</span></div></header>
+  <main class="content">
+   <section class="view active" id="view-home"><div class="help-banner"><b>ทดลองได้ทันที</b> — ตัวอย่างนี้จำลองการทำงานของเครื่องมือและหน้าตาเพื่อให้คุณลองกดจริง ข้อมูลที่ทดลองไม่เชื่อมกับบัญชีของคุณ</div><div class="grid"><div class="stat"><small class="muted">รายวิชาที่ลงเรียน</small><strong>7 วิชา</strong><small class="muted">ตัวอย่างรายวิชารัฐศาสตร์</small></div><div class="stat"><small class="muted">สมุดจดทดลอง</small><strong id="homePages">1 หน้า</strong><small class="muted">พิมพ์ / วาด / ตาราง / รูปภาพ</small></div><div class="stat"><small class="muted">แผนอ่าน</small><strong id="homeDone">0 งาน</strong><small class="muted">ทวนคร่าว ๆ แยกจากดูจริงจัง</small></div></div><div class="panel section"><h2>ทดลองฟีเจอร์ที่คุยกันมา</h2><div class="feature-grid" id="featureGrid"></div></div><div class="panel section"><h2>เริ่มจากตรงไหน?</h2><div class="row"><button class="btn primary" data-jump="notes">▣ เปิดสมุดจด ทดลองสร้างตาราง</button><button class="btn" data-jump="schedule">▦ ดูตารางเรียนแนวกว้าง</button><button class="btn" data-jump="classroom">📚 เอกสารประจำวิชา</button></div></div></section>
+   <section class="view" id="view-notes">
+    <div class="note-head"><div class="row"><label>รายวิชา <select class="field" id="noteCourse"></select></label><input class="field note-title" id="noteTitle" value="POL2106 · ปรัชญาการเมือง"></div><span class="status" id="saveStatus">เก็บในเครื่องตัวอย่าง</span></div>
+    <div class="editor-shell">
+     <div class="toolbar" id="toolbar">
+      <div class="tgroup"><button class="tool" data-tool="select" title="เลือกวัตถุ">↖ เลือก</button><button class="tool" data-tool="text" title="เพิ่มข้อความ">T ข้อความ</button><button class="tool" data-tool="pen" title="ปากกาเขียนลงหน้า">✎ ปากกา</button><button class="tool" data-tool="highlight" title="ไฮไลต์ลงกระดาษ">▰ ไฮไลต์</button><button class="tool" data-tool="eraser" title="ลบเส้นที่วาด">◇ ลบเส้น</button></div><div class="tsep"></div>
+      <div class="tgroup"><button class="tool" data-tool="table">▦ ตาราง</button><button class="tool" data-tool="rect">▢ สี่เหลี่ยม</button><button class="tool" data-tool="circle">○ วงกลม</button><button class="tool" data-tool="line">／ เส้น</button><button class="tool" data-tool="arrow">↗ ลูกศร</button><button class="tool" data-tool="image">▧ รูปภาพ</button></div><div class="tsep"></div>
+      <div class="tgroup"><button class="tool" id="boldBtn" title="ตัวหนาของข้อความที่เลือก"><b>B</b></button><label style="font-size:11px">ขนาด <input class="field" style="width:65px" id="textSize" type="number" min="10" max="48" value="16"></label><input type="color" id="inkColor" value="#172d50" title="สีเส้นและข้อความ" aria-label="เลือกสีเส้นและข้อความ"></div><div class="tsep"></div>
+      <div class="tgroup"><button class="tool" id="undoBtn" title="ย้อนกลับ">↶</button><button class="tool" id="redoBtn" title="ทำซ้ำ">↷</button><button class="tool" id="rulerBtn">📏 ไม้บรรทัด</button></div>
+      <details class="tools-extra"><summary class="tool">⚙️ เพิ่มเติม ▾</summary><div class="extra-body"><button class="btn mini" id="duplicateBtn">ทำสำเนาวัตถุ</button><button class="btn mini danger" id="deleteBtn">ลบวัตถุ</button><button class="btn mini" id="linkBtn">🔗 ลิงก์ข้อความ</button><button class="btn mini" id="addPageBtn">＋ เพิ่มหน้า</button><button class="btn mini" id="downloadBtn">⬇ ส่งออก JSON</button><button class="btn mini" id="resetBtn">คืนค่าตัวอย่าง</button></div></details>
+     </div>
+     <div class="paper-area"><div class="page-sidebar"><strong>หน้ากระดาษ</strong><div id="pageList"></div><button class="btn mini" id="addPageSide" style="width:100%">＋ เพิ่มหน้า</button></div>
+      <div class="stage-scroll"><div class="paper ruled" id="paper"><canvas id="inkCanvas" width="900" height="1273"></canvas><div id="ruler"></div><div id="objectLayer"></div></div></div></div>
+     <div class="editor-bottom"><div class="row"><select class="field" id="paperTemplate" aria-label="รูปแบบกระดาษ"><option value="ruled">เส้นบรรทัด</option><option value="plain">กระดาษเปล่า</option><option value="grid">เส้นตาราง</option><option value="dots">กระดาษจุด</option></select><button class="btn mini" id="editSelected">✎ แก้วัตถุ</button><button class="btn mini" id="addRowBtn">＋ แถว</button><button class="btn mini" id="addColBtn">＋ คอลัมน์</button><button class="btn mini" id="removeRowBtn">− แถว</button><button class="btn mini" id="removeColBtn">− คอลัมน์</button></div><small id="paperHint">แตะวัตถุเพื่อเลือก · ดับเบิลคลิกข้อความหรือตารางเพื่อแก้ไข</small><strong id="pageNumber">หน้า 1/1</strong></div>
+    </div>
+    <div class="panel section"><h2>เอกสารที่ใช้ร่วมกับวิชานี้</h2><div class="row"><input class="field grow" id="materialUrl" placeholder="วางลิงก์ PDF / Google Drive / สไลด์อาจารย์" type="url"><button class="btn" id="addMaterialBtn">＋ เพิ่มลิงก์</button><label class="btn">📎 เลือกไฟล์<input id="materialFile" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" hidden></label></div><div id="materialList" class="document-list"></div><p class="muted">ในตัวอย่างนี้เก็บชื่อไฟล์และลิงก์ไว้ในเครื่องเท่านั้น ไม่อัปโหลดเนื้อหาไฟล์หรือเชื่อม Supabase</p></div>
+   </section>
+   <section class="view" id="view-classroom"><div class="help-banner">เอกสารหลักวิชาใช้ร่วมกับโน้ตทุกหน้าของวิชาเดียวกัน · ปุ่มเลือกวิชาจะพาไปยังสมุดจดของวิชานั้น</div><div class="course-list" id="courseList"></div></section>
+   <section class="view" id="view-schedule"><div class="help-banner"><b>ตารางตัวอย่างสัปดาห์ 23–29 พฤศจิกายน 2569</b> — คาบสดคงแยกจากแผนทวนส่วนตัว คลิปคาดว่าเข้า 2 วันหลังบรรยาย ยังไม่ได้ตรวจว่าคลิปอัปโหลดแล้ว · ปัดซ้าย–ขวาบนมือถือเพื่อดูวันทั้งหมด</div><div class="panel"><div class="row" style="justify-content:space-between"><h2>แผนเรียนและติวย้อนหลัง</h2><span class="tag">จ.–พฤ. 20:00 · ศุกร์กลางวัน · เสาร์–อาทิตย์จริงจัง</span></div><div class="schedule-scroll"><div class="week" id="week"></div></div></div><div class="panel section"><h2>สถานะการทวน</h2><p class="muted">“ทวนแล้ว” และ “ดูจริงจังจบแล้ว” เก็บแยกกัน คนละปุ่ม ไม่ถือว่าดูจบเพียงเพราะฟังผ่าน ๆ</p><div class="row"><span id="lightCount" class="tag">ทวน 0</span><span id="deepCount" class="tag green">ดูจริงจัง 0</span><button class="btn mini" data-jump="notes">ไปจดสรุป POL2106</button></div></div></section>
+   <section class="view" id="view-study"><div class="panel"><h2>แผนอ่านตามความเข้าใจ</h2><div class="help-banner">แบ่งการเรียนเป็น 3 ระดับ: เรียนสดตามเวลา / ทวนเบา ๆ ตอน 20:00 / ดูจริงจังช่วงว่าง พร้อมเวลาอ่านต่อหลังคลิป</div><div id="studyTasks"></div></div></section>
+   <section class="view" id="view-exams"><div class="panel"><h2>ทดลองทำข้อสอบรัฐศาสตร์</h2><p class="muted">ตัวอย่างคำถามที่เขียนขึ้นใหม่เพื่อแสดงปุ่มเลือกคำตอบและเฉลยทันที ไม่ใช่ชุดข้อสอบจริงที่เผยแพร่จากหน่วยงาน</p><div id="quiz"></div></div></section>
+   <section class="view" id="view-more"><div class="panel"><h2>ฟีเจอร์ทั้งหมดในตัวอย่าง</h2><div class="feature-grid" id="allFeatures"></div><hr style="border:0;border-top:1px solid #e3e9f4;margin:20px 0"><h2>สถานะข้อมูล</h2><p class="muted">นี่คือหน้า <b>Interactive Demo</b> ที่สร้างให้ทดลอง UX เท่านั้น ฟีเจอร์บางส่วนในแอปหลักมีการซิงก์กับ Supabase แต่ไฟล์นี้ <b>ไม่เชื่อมระบบใด ไม่ส่งไฟล์ ไม่ย้ายโน้ตจริง</b> และรายการเรียนในตัวอย่างไม่รับรองว่ามหาวิทยาลัยเผยแพร่คลิปแล้ว</p><div class="row"><button class="btn" id="exportAllBtn">⬇ ดาวน์โหลดข้อมูลทดลอง</button><button class="btn danger" id="resetAllBtn">ล้างข้อมูลทดลอง</button><a class="btn primary" href="./#notes">↗ เปิดแอปจริง</a></div></div></section>
+  </main>
+ </div>
+</div>
+<nav class="bottom-nav" id="bottomNav" aria-label="เมนูหลัก"></nav>
+<div class="modal" id="tableModal" role="dialog" aria-modal="true" aria-label="สร้างและแก้ไขตาราง"><div class="modal-box">
+ <div class="modal-title"><h2 id="tableHeading">แทรกตาราง</h2><button class="btn mini" id="closeTable">✕ ปิด</button></div>
+ <p class="muted">กำหนดแถวและคอลัมน์ พิมพ์ในแต่ละช่อง แล้วกดบันทึก แถวแรกจะเป็นหัวตาราง</p>
+ <div class="row"><label>แถว <input class="field" id="rowsInput" type="number" min="1" max="16" value="3" style="width:80px"></label><label>คอลัมน์ <input class="field" id="colsInput" type="number" min="1" max="8" value="3" style="width:80px"></label><button class="btn mini" data-dim="addrow">＋ แถว</button><button class="btn mini" data-dim="delrow">− แถว</button><button class="btn mini" data-dim="addcol">＋ คอลัมน์</button><button class="btn mini" data-dim="delcol">− คอลัมน์</button></div>
+ <div class="cells" id="cellGrid"></div><p id="tableError" class="muted" role="status"></p>
+ <div class="row" style="justify-content:flex-end"><button class="btn" id="cancelTable">ยกเลิก</button><button class="btn primary" id="saveTable">✓ บันทึกตาราง</button></div>
+</div></div>
+<input type="file" id="imageFile" accept="image/*" hidden>
+<script>
+(function(){
+"use strict";
+var courses=[["POL1101","การเมืองและการปกครองเบื้องต้น"],["POL2104","การปกครองเปรียบเทียบ"],["POL2106","ปรัชญาการเมือง"],["POL2107","วิชารัฐศาสตร์"],["POL2301","วิชารัฐศาสตร์"],["POL2303","วิชารัฐศาสตร์"],["POL2200","วิชารัฐศาสตร์"]];
+var nav=[["home","⌂","วันนี้"],["classroom","▣","เรียน"],["schedule","▦","แผน"],["notes","✎","สมุดจด"],["exams","◉","ข้อสอบ"],["more","☰","เมนู"]];
+var features=[["📝","พิมพ์และจัดรูปแบบข้อความ","กล่องข้อความบนกระดาษ ปรับตัวหนา ขนาด สี"],["▦","สร้างและแก้ไขตาราง","แทรกตาราง แก้ช่อง เพิ่ม/ลบแถวและคอลัมน์"],["✎","ปากกา/ไฮไลต์","ลองวาดลงบนกระดาษด้วยเมาส์หรือนิ้ว"],["▢","รูปทรง/เส้น/ลูกศร","เพิ่มสี่เหลี่ยม วงกลม เส้น และลูกศร"],["📏","ไม้บรรทัด","แสดงแนวบรรทัดสำหรับวางเส้น"],["▧","รูปภาพ","นำภาพจากเครื่องเข้าหน้าโน้ต"],["↶","ย้อนกลับ/ทำซ้ำ","ทดลองการแก้ไขวัตถุและข้อความ"],["📚","เอกสารหลักรายวิชา","ผูกลิงก์กับรายวิชาเดียวกัน"],["▤","หลายหน้า/ชนิดกระดาษ","สลับหน้า เส้นบรรทัด จุด และช่องตาราง"],["▦","ตารางเรียนแนวกว้าง","เลื่อนแนวนอนบนมือถือเพื่อดูทุกวัน"],["↻","ทวนเบา ๆ / ดูจริงจัง","สองสถานะไม่ทับกัน"],["◉","ทำข้อสอบพร้อมเฉลย","ลองตอบแล้วดูผลทันที"]];
+var $=function(s){return document.querySelector(s)},$$=function(s){return Array.from(document.querySelectorAll(s))};
+var clone=function(x){return JSON.parse(JSON.stringify(x))};
+function escapeHTML(s){return String(s==null?"":s).replace(/[&<>"']/g,function(ch){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]})}
+function defaults(){return {course:"POL2106",title:"ปรัชญาการเมือง · สรุปบทเรียน",pages:[{template:"ruled",objects:[
+{id:"intro",type:"text",x:9,y:8,w:77,h:11,size:22,color:"#174ca8",bold:true,text:"POL2106  |  ปรัชญาการเมือง"},
+{id:"desc",type:"text",x:9,y:22,w:78,h:12,size:16,color:"#26395a",bold:false,text:"คำถามหลัก: รัฐที่ดีคืออะไร? ความยุติธรรมเกิดขึ้นได้อย่างไร?\nวันศุกร์ทวนพื้นฐาน → วันหยุดดูคลิปจริงจัง"},
+{id:"tb1",type:"table",x:9,y:40,w:82,h:17,cells:[["นักคิด","แนวคิดเบื้องต้น"],["เพลโต","ความยุติธรรมและรัฐในอุดมคติ"],["อริสโตเติล","มนุษย์กับชุมชนการเมือง"]]}],ink:""}],
+files:{},light:{},deep:{},tasks:{},currentPage:0,quiz:0}};
+var storageKey="ru-study-20261120-demo-only";
+var state;try{state=JSON.parse(localStorage.getItem(storageKey)||"null");if(!state||!state.pages||!Array.isArray(state.pages))throw Error();}catch(e){state=defaults();}
+var currentView="home",tool="select",selected=null,undoStack=[],redoStack=[],tableEditing=null,tableCells=[],drawing=false,canvasCtx,inkColor="#172d50",isSaved=true;
+function saveLocal(){try{localStorage.setItem(storageKey,JSON.stringify(state));isSaved=true;$("#saveStatus").textContent="เก็บในเครื่องตัวอย่าง";}catch(e){$("#saveStatus").textContent="เครื่องนี้ไม่อนุญาตให้เก็บข้อมูล";}}
+function checkpoint(){undoStack.push(JSON.stringify(state));if(undoStack.length>30)undoStack.shift();redoStack=[];}
+function commit(){saveLocal();renderPaper();renderPages();renderMaterials();renderHome();renderStudy();renderSchedule();}
+function page(){return state.pages[state.currentPage]}
+function getObj(){return page().objects.find(function(o){return o.id===selected})}
+function id(){return "item"+Math.random().toString(36).slice(2,9)}
+function jump(view){
+ currentView=view;$$(".view").forEach(function(el){el.classList.toggle("active",el.id==="view-"+view)});
+ $$(".nav,[data-bottom-nav]").forEach(function(el){el.classList.toggle("active",(el.dataset.view||el.dataset.bottomNav)===view)});
+ var labels={home:["สำรวจแอปของฉัน","ดูภาพรวมและฟีเจอร์ที่ทดลองได้"],notes:["สมุดจดของฉัน","ทดลองเครื่องมือ Word + Canva บนกระดาษเดียวกัน"],classroom:["ห้องเรียนและเอกสารวิชา","เลือกวิชาแล้วแนบลิงก์เอกสารหลัก"],schedule:["ตารางเรียนและติวย้อนหลัง","ตารางแนวกว้าง · คาบจริง · ทวนเบา ๆ · ดูจริงจัง"],study:["แผนอ่านและทบทวน","จัดลำดับตามคาบเรียนและความเข้าใจ"],exams:["ฝึกทำข้อสอบ","เลือกคำตอบแล้วแสดงเฉลยทันที"],more:["รายการฟีเจอร์และข้อมูลทดลอง","รายละเอียดของตัวอย่าง HTML"]};
+ $("#screenTitle").textContent=labels[view][0];$("#screenSubtitle").textContent=labels[view][1];
+ if(view==="notes")renderPaper();
+ window.scrollTo({top:0,behavior:"instant"});
+}
+function initNav(){
+ $("#sideNav").innerHTML=nav.map(function(n){return '<button class="nav" data-view="'+n[0]+'"><span>'+n[1]+'</span><span class="text">'+n[2]+'</span></button>'}).join("");
+ $("#bottomNav").innerHTML=nav.map(function(n){return '<button data-bottom-nav="'+n[0]+'"><span>'+n[1]+'</span>'+n[2]+'</button>'}).join("");
+ $$("[data-view],[data-bottom-nav],[data-jump]").forEach(function(el){el.addEventListener("click",function(){jump(el.dataset.view||el.dataset.bottomNav||el.dataset.jump)})});
+ $("#featureGrid").innerHTML=$("#allFeatures").innerHTML=features.map(function(f){return '<div class="feature"><span>'+f[0]+'</span><div><b>'+f[1]+'</b><small>'+f[2]+'</small></div></div>'}).join("");
+}
+function renderHome(){$("#homePages").textContent=state.pages.length+" หน้า";$("#homeDone").textContent=Object.keys(state.light).length+Object.keys(state.deep).length+" งาน"}
+function renderPages(){
+ $("#pageList").innerHTML=state.pages.map(function(p,i){return '<button class="page-item '+(i===state.currentPage?"active":"")+'" data-page="'+i+'">▤<br>หน้า '+(i+1)+'</button>'}).join("");
+ $$("[data-page]").forEach(function(b){b.onclick=function(){state.currentPage=Number(b.dataset.page);selected=null;saveLocal();renderPaper();renderPages()}});
+ $("#pageNumber").textContent="หน้า "+(state.currentPage+1)+"/"+state.pages.length;
+}
+function renderPaper(){
+ var paper=$("#paper");paper.className="paper "+page().template+(["pen","highlight"].includes(tool)?" drawing":"");
+ $("#paperTemplate").value=page().template;
+ var layer=$("#objectLayer");layer.innerHTML="";
+ page().objects.forEach(function(o){
+  var el=document.createElement("div");el.className="paper-object "+(o.type==="shape"?o.kind:o.type==="image"?"photo":o.type==="table"?"table-object":"")+(o.id===selected?" selected":"");
+  el.dataset.obj=o.id;
+  el.style.left=o.x+"%";el.style.top=o.y+"%";el.style.width=o.w+"%";if(o.h)el.style.height=o.h+"%";
+  if(o.type==="text"){
+   el.innerHTML='<div class="edit-content" data-edit-text="true" style="font-size:'+o.size+'px;color:'+escapeHTML(o.color)+';font-weight:'+(o.bold?"750":"400")+'">'+escapeHTML(o.text)+'</div>';
+  } else if(o.type==="table"){
+   el.innerHTML='<table><tbody>'+o.cells.map(function(row,r){return '<tr>'+row.map(function(cell){return '<'+(r===0?"th":"td")+'>'+escapeHTML(cell).replace(/\n/g,"<br>")+'</'+(r===0?"th":"td")+'>'}).join("")+'</tr>'}).join("")+'</tbody></table>';
+  } else if(o.type==="image"){
+   el.innerHTML='<img alt="ภาพแนบ" src="'+escapeHTML(o.src)+'">';
+  } else if(o.type==="shape"){
+   el.classList.add("shape");el.style.color=o.color;el.style.borderColor=o.color;
+  }
+  el.insertAdjacentHTML("beforeend",'<span class="handle" data-drag="true" title="ลากเพื่อย้าย">✥ ย้าย</span>');
+  el.addEventListener("click",function(e){if(e.target.closest("[data-drag]"))return;selected=o.id;renderPaper()});
+  el.addEventListener("dblclick",function(e){e.preventDefault();selected=o.id;if(o.type==="table")openTable(o);if(o.type==="text")editText(o.id)});
+  var handle=el.querySelector("[data-drag]");
+  handle.addEventListener("pointerdown",function(e){
+   e.preventDefault();e.stopPropagation();checkpoint();selected=o.id;handle.setPointerCapture(e.pointerId);
+   var rect=paper.getBoundingClientRect(),startX=e.clientX,startY=e.clientY,ox=o.x,oy=o.y;
+   var move=function(ev){o.x=Math.max(0,Math.min(95,ox+(ev.clientX-startX)/rect.width*100));o.y=Math.max(0,Math.min(94,oy+(ev.clientY-startY)/rect.height*100));el.style.left=o.x+"%";el.style.top=o.y+"%"};
+   var end=function(){handle.removeEventListener("pointermove",move);handle.removeEventListener("pointerup",end);commit()};
+   handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",end,{once:true});
+  });
+  layer.appendChild(el);
+ });
+ canvasCtx=$("#inkCanvas").getContext("2d");
+ var ink=page().ink;if(ink){var img=new Image();img.onload=function(){canvasCtx.clearRect(0,0,900,1273);canvasCtx.drawImage(img,0,0,900,1273)};img.src=ink;}else canvasCtx.clearRect(0,0,900,1273);
+ $$("[data-tool]").forEach(function(b){b.dataset.active=String(b.dataset.tool===tool)});
+ var obj=getObj();$("#editSelected").disabled=!obj;$("#addRowBtn").disabled=$("#addColBtn").disabled=$("#removeRowBtn").disabled=$("#removeColBtn").disabled=!(obj&&obj.type==="table");
+ $("#undoBtn").disabled=!undoStack.length;$("#redoBtn").disabled=!redoStack.length;
+}
+function setTool(value){
+ if(value==="text"){checkpoint();var o={id:id(),type:"text",x:12,y:15+(page().objects.length*8)%55,w:75,h:10,text:"คลิกสองครั้งเพื่อแก้ไขข้อความ",size:Number($("#textSize").value)||16,color:inkColor,bold:false};page().objects.push(o);selected=o.id;tool="select";commit();editText(o.id);return;}
+ if(value==="table"){openTable();return}
+ if(value==="image"){$("#imageFile").click();return}
+ if(value==="eraser"){checkpoint();page().ink="";tool="select";commit();return}
+ if(["rect","circle","line","arrow"].includes(value)){checkpoint();var o={id:id(),type:"shape",kind:value,x:18,y:55,w:50,h:value==="line"||value==="arrow"?1:14,color:inkColor};page().objects.push(o);selected=o.id;tool="select";commit();return}
+ tool=value;selected=null;renderPaper();$("#paperHint").textContent=["pen","highlight"].includes(tool)?"ลากเมาส์/นิ้วบนหน้ากระดาษเพื่อวาด":"แตะวัตถุเพื่อเลือก · คลิกสองครั้งเพื่อแก้ไข";
+}
+function editText(key){
+ var object=page().objects.find(function(o){return o.id===key});if(!object)return;
+ var el=$('.paper-object[data-obj="'+key+'"] .edit-content');if(!el)return;
+ el.contentEditable="true";el.focus();var sel=window.getSelection(),range=document.createRange();range.selectNodeContents(el);range.collapse(false);sel.removeAllRanges();sel.addRange(range);
+ var initial=object.text;
+ var save=function(){el.contentEditable="false";if(el.innerText!==initial){checkpoint();object.text=el.innerText;object.h=Math.max(10,7+object.text.split("\n").length*4);commit();}else renderPaper()};
+ el.addEventListener("blur",save,{once:true});
+ el.addEventListener("keydown",function(ev){if(ev.key==="Escape"){ev.preventDefault();el.innerText=initial;el.blur()}if((ev.ctrlKey||ev.metaKey)&&ev.key==="Enter"){ev.preventDefault();el.blur()}});
+}
+function currentTableText(){return tableCells.map(function(row){return row.slice()})}
+function openTable(original){
+ tableEditing=original?original.id:null;
+ tableCells=original?clone(original.cells):[["","",""],["","",""],["","",""]];
+ $("#tableHeading").textContent=original?"แก้ไขตาราง":"สร้างตาราง";
+ $("#tableError").textContent="";
+ $("#tableModal").classList.add("open");renderTableFields();
+}
+function readTableFields(){
+ $$("#cellGrid textarea").forEach(function(t){var r=Number(t.dataset.r),c=Number(t.dataset.c);if(tableCells[r])tableCells[r][c]=t.value.slice(0,500)});
+}
+function renderTableFields(){
+ $("#rowsInput").value=tableCells.length;$("#colsInput").value=tableCells[0].length;
+ $("#cellGrid").style.gridTemplateColumns="repeat("+tableCells[0].length+", minmax(135px,1fr))";
+ $("#cellGrid").innerHTML=tableCells.map(function(row,r){return row.map(function(cell,c){return '<div class="cell-field '+(r===0?"head":"")+'"><label>แถว '+(r+1)+' · ช่อง '+(c+1)+'</label><textarea data-r="'+r+'" data-c="'+c+'" maxlength="500" placeholder="'+(r===0?"หัวตาราง":"ข้อความ")+'">'+escapeHTML(cell)+'</textarea></div>'}).join("")}).join("");
+}
+function resizeTable(rows,cols){
+ readTableFields();if(rows<1||cols<1||rows>16||cols>8){$("#tableError").textContent="จำกัด 1–16 แถว และ 1–8 คอลัมน์";return}
+ tableCells=Array.from({length:rows},function(_,r){return Array.from({length:cols},function(_,c){return tableCells[r]&&tableCells[r][c]||""})});renderTableFields();
+}
+function closeTable(){$("#tableModal").classList.remove("open");tableEditing=null;}
+function saveTable(){
+ readTableFields();if(tableCells.flat().some(function(x){return x.length>500})){ $("#tableError").textContent="ข้อความในช่องยาวเกิน 500 ตัวอักษร";return}
+ checkpoint();
+ var obj=tableEditing?page().objects.find(function(o){return o.id===tableEditing}):null;
+ if(obj){obj.cells=clone(tableCells);obj.h=Math.max(obj.h,Math.min(66,tableCells.length*5+5));}
+ else{obj={id:id(),type:"table",x:9,y:41,w:82,h:Math.min(70,tableCells.length*6+5),cells:clone(tableCells)};page().objects.push(obj);}
+ selected=obj.id;closeTable();tool="select";commit();
+}
+function resizeSelectedTable(r,c){
+ var obj=getObj();if(!obj||obj.type!=="table")return;
+ var nr=obj.cells.length+r,nc=obj.cells[0].length+c;
+ if(nr<1||nr>16||nc<1||nc>8)return;
+ checkpoint();obj.cells=Array.from({length:nr},function(_,i){return Array.from({length:nc},function(_,j){return obj.cells[i]&&obj.cells[i][j]||""})});
+ obj.h=Math.max(14,Math.min(70,nr*5+6));commit();
+}
+function addPage(){checkpoint();state.pages.push({template:page().template,objects:[],ink:""});state.currentPage=state.pages.length-1;selected=null;commit()}
+function actionUndo(){if(!undoStack.length)return;redoStack.push(JSON.stringify(state));state=JSON.parse(undoStack.pop());saveLocal();renderAll()}
+function actionRedo(){if(!redoStack.length)return;undoStack.push(JSON.stringify(state));state=JSON.parse(redoStack.pop());saveLocal();renderAll()}
+function renderMaterials(){
+ var entries=state.files[state.course]||[];
+ $("#materialList").innerHTML=entries.length?entries.map(function(x,i){return '<div class="document">📄 '+escapeHTML(x.name)+(x.url?' · <a href="'+escapeHTML(x.url)+'" target="_blank" rel="noopener noreferrer">เปิดลิงก์ ↗</a>':' · ไฟล์ทดลอง (ไม่ได้อัปโหลด)')+' <button class="btn mini danger" data-remove-file="'+i+'">ลบ</button></div>'}).join(""):'<span class="muted">ยังไม่ได้แนบไฟล์วิชานี้</span>';
+ $$("[data-remove-file]").forEach(function(b){b.onclick=function(){checkpoint();state.files[state.course].splice(Number(b.dataset.removeFile),1);commit();renderClassroom()}});
+}
+function renderClassroom(){
+ $("#courseList").innerHTML=courses.map(function(c){var docs=(state.files[c[0]]||[]).length;return '<div class="course-card"><span class="tag">'+c[0]+'</span><h3>'+escapeHTML(c[1])+'</h3><p>📚 เอกสารหลักวิชา: '+docs+' รายการ</p><p>ดูเอกสารและโน้ตรายวิชาจากจุดเดียว</p><div class="course-actions"><button class="btn mini primary" data-open-course="'+c[0]+'">เปิดสมุดจด</button><button class="btn mini" data-link-course="'+c[0]+'">＋ เอกสาร</button></div></div>'}).join("");
+ $$("[data-open-course]").forEach(function(b){b.onclick=function(){state.course=b.dataset.openCourse;$("#noteCourse").value=state.course;saveLocal();renderMaterials();jump("notes")}});
+ $$("[data-link-course]").forEach(function(b){b.onclick=function(){state.course=b.dataset.linkCourse;$("#noteCourse").value=state.course;saveLocal();renderMaterials();jump("notes");$("#materialUrl").focus()}});
+}
+var plans=[
+[["สด","POL2104 • POL2106","13:30","live"],["ทวน","POL2303","20:00","light"]],
+[["สด","POL2301","ตามตารางจริง","live"],["ทวน","POL2303","20:00","light"]],
+[["สด","POL2104 • POL2106","ตามตารางจริง","live"],["ทวน","POL2106","20:00","light"]],
+[["สด","POL2200 (ย้ายจากศุกร์)","13:30–15:20","live"],["ทวน","POL2301","20:00","light"]],
+[["ทวน","POL2106 ปรัชญาการเมือง","10:00–11:00","light"],["ทวน","POL2104","13:00–13:45","light"],["ทวน","POL2303","15:00–15:45","light"]],
+[["จริงจัง","POL2106","09:00–10:15","deep"],["จริงจัง","POL2104","10:30–11:45","deep"],["จริงจัง","POL2303","13:00–14:15","deep"]],
+[["จริงจัง","POL2301","10:00–11:40","deep"],["จริงจัง","POL2200","13:00–14:40","deep"],["จริงจัง","POL2107","16:00–17:40","deep"]]
+];
+function renderSchedule(){
+ var weekdays=["จ. 23","อ. 24","พ. 25","พฤ. 26","ศ. 27","ส. 28","อา. 29"];
+ $("#week").innerHTML=plans.map(function(entries,day){return '<div class="weekday"><h3>'+weekdays[day]+' พ.ย.</h3>'+entries.map(function(item,i){
+ var mode=item[3],key=day+"-"+i,done=mode==="deep"?state.deep[key]:state.light[key];
+ return '<div class="schedule-item '+(mode==="live"?"live":mode==="deep"?"deep":"")+'"><b>'+item[0]+' · '+item[1]+'</b><small>'+item[2]+'</small>'+(mode==="live"?'':'<button data-schedule-mode="'+mode+'" data-schedule-key="'+key+'">'+(done?"✓ "+(mode==="deep"?"ดูจบแล้ว":"ทวนแล้ว"):"○ "+(mode==="deep"?"ยังไม่ดู":"ยังไม่ทวน"))+'</button>')+'</div>';
+ }).join("")+'</div>'}).join("");
+ $$("[data-schedule-mode]").forEach(function(b){b.onclick=function(){var target=b.dataset.scheduleMode==="deep"?state.deep:state.light;var key=b.dataset.scheduleKey;checkpoint();target[key]=!target[key];if(!target[key])delete target[key];commit()}});
+ $("#lightCount").textContent="ทวนแล้ว "+Object.keys(state.light).length;
+ $("#deepCount").textContent="ดูจริงจังจบ "+Object.keys(state.deep).length;
+}
+function renderStudy(){
+ var tasks=[["POL2106 · ทวนคร่าว ๆ ก่อนเริ่มจริงจัง","ศุกร์ 27 พ.ย. 10:00–11:00"],["ดู POL2106 อย่างตั้งใจ","เสาร์ 28 พ.ย. 09:00–10:15"],["สรุปแนวคิดเพลโต–อริสโตเติล","หลังดูคลิปจริงจัง"],["ทบทวนความแตกต่างของแนวคิด","อาทิตย์ 29 พ.ย."],["จดคำถามที่ยังสงสัยลงสมุด","ทำต่อเนื่องตามบทเรียน"]];
+ $("#studyTasks").innerHTML=tasks.map(function(t,i){return '<label style="display:flex;gap:12px;padding:13px 6px;border-bottom:1px solid #e3eaf4"><input type="checkbox" data-task="'+i+'" '+(state.tasks[i]?"checked":"")+' style="width:19px;height:19px"><span><b>'+t[0]+'</b><small class="muted" style="display:block">'+t[1]+'</small></span></label>'}).join("");
+ $$("[data-task]").forEach(function(el){el.onchange=function(){state.tasks[el.dataset.task]=el.checked;saveLocal()}});
+}
+var quizzes=[
+["ปรัชญาการเมืองตั้งคำถามสำคัญเกี่ยวกับเรื่องใด",["รูปแบบทางธรณีวิทยา","ความยุติธรรม อำนาจ และรัฐที่ดี","การเคลื่อนที่ของดวงดาว","โครงสร้างทางเคมี"],1,"ศึกษาว่ารัฐและอำนาจทางการเมืองควรมีความชอบธรรมและความยุติธรรมอย่างไร"],
+["แนวคิดเรื่องรัฐในอุดมคติมักเชื่อมโยงกับนักคิดคนใด",["เพลโต","ดาร์วิน","นิวตัน","ฟาราเดย์"],0,"เพลโตเสนอการอภิปรายเรื่องรัฐในอุดมคติและความยุติธรรมใน The Republic"],
+["ทำไมการวิเคราะห์ปรัชญาการเมืองจึงต้องดูบริบทของนักคิด",["เพื่อจำปีให้ครบเท่านั้น","เพราะแนวคิดเป็นเรื่องที่ไม่เปลี่ยน","เพื่อเข้าใจปัญหาการเมืองในยุคที่แนวคิดถูกเสนอ","เพื่อแยกวิชานี้ออกจากรัฐศาสตร์"],2,"บริบทช่วยให้เข้าใจว่าแนวคิดตอบคำถามหรือปัญหาใดในช่วงเวลานั้น"]
+];
+function renderQuiz(){
+ var q=quizzes[state.quiz%quizzes.length],out='<span class="tag">ข้อ '+((state.quiz%quizzes.length)+1)+' / '+quizzes.length+'</span><h3>'+q[0]+'</h3>';
+ out+=q[1].map(function(op,i){return '<button class="quiz-option" data-answer="'+i+'">'+String.fromCharCode(65+i)+'. '+escapeHTML(op)+'</button>'}).join("");
+ out+='<div class="muted" id="quizResult" style="margin:12px 0"></div><div class="row"><button class="btn" id="quizNext">ข้อต่อไป →</button></div>';
+ $("#quiz").innerHTML=out;
+ $$("[data-answer]").forEach(function(btn){btn.onclick=function(){var choice=Number(btn.dataset.answer);$$("[data-answer]").forEach(function(b){b.disabled=true;b.classList.toggle("correct",Number(b.dataset.answer)===q[2]);b.classList.toggle("wrong",Number(b.dataset.answer)===choice&&choice!==q[2])});$("#quizResult").textContent=(choice===q[2]?"✓ ถูกต้อง — ":"✕ ยังไม่ถูก — ")+q[3]}});
+ $("#quizNext").onclick=function(){state.quiz=(state.quiz+1)%quizzes.length;saveLocal();renderQuiz()};
+}
+function renderAll(){renderPages();renderPaper();renderMaterials();renderClassroom();renderSchedule();renderStudy();renderQuiz();renderHome();}
+function downloadJSON(){var blob=new Blob([JSON.stringify({format:"ru-study-planner-demo-only",note:"Not a production backup",data:state},null,2)],{type:"application/json"});var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="RU-Study-Planner-Interactive-Demo.json";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000)}
+initNav();
+$("#noteCourse").innerHTML=courses.map(function(c){return '<option value="'+c[0]+'">'+c[0]+'</option>'}).join("");$("#noteCourse").value=state.course;$("#noteTitle").value=state.title;
+$("#noteCourse").onchange=function(){state.course=this.value;saveLocal();renderMaterials();renderClassroom()};
+$("#noteTitle").onchange=function(){state.title=this.value;saveLocal()};
+$$("[data-tool]").forEach(function(b){b.onclick=function(){setTool(b.dataset.tool)}});
+$("#boldBtn").onclick=function(){var o=getObj();if(o&&o.type==="text"){checkpoint();o.bold=!o.bold;commit();}};
+$("#textSize").onchange=function(){var o=getObj();if(o&&o.type==="text"){checkpoint();o.size=Math.max(10,Math.min(48,Number(this.value)||16));commit();}};
+$("#inkColor").onchange=function(){inkColor=this.value;var o=getObj();if(o&&(o.type==="text"||o.type==="shape")){checkpoint();o.color=inkColor;commit();}};
+$("#undoBtn").onclick=actionUndo;$("#redoBtn").onclick=actionRedo;
+$("#rulerBtn").onclick=function(){$("#ruler").classList.toggle("visible");this.dataset.active=String($("#ruler").classList.contains("visible"))};
+$("#editSelected").onclick=function(){var o=getObj();if(o?.type==="table")openTable(o);else if(o?.type==="text")editText(o.id)};
+$("#addRowBtn").onclick=function(){resizeSelectedTable(1,0)};$("#removeRowBtn").onclick=function(){resizeSelectedTable(-1,0)};
+$("#addColBtn").onclick=function(){resizeSelectedTable(0,1)};$("#removeColBtn").onclick=function(){resizeSelectedTable(0,-1)};
+$("#addPageBtn").onclick=$("#addPageSide").onclick=addPage;
+$("#paperTemplate").onchange=function(){checkpoint();page().template=this.value;commit()};
+$("#duplicateBtn").onclick=function(){var o=getObj();if(!o)return;checkpoint();var copy=clone(o);copy.id=id();copy.x=Math.min(85,copy.x+5);copy.y=Math.min(85,copy.y+5);page().objects.push(copy);selected=copy.id;commit()};
+$("#deleteBtn").onclick=function(){if(!getObj())return;checkpoint();page().objects=page().objects.filter(function(o){return o.id!==selected});selected=null;commit()};
+$("#linkBtn").onclick=function(){var o=getObj();if(!o||o.type!=="text"){alert("เลือกกล่องข้อความก่อน");return}var url=prompt("ใส่ลิงก์เว็บไซต์ของข้อความที่เลือก (ตัวอย่าง)",o.link||"https://");if(!url)return;try{var p=new URL(url);if(!["https:","http:"].includes(p.protocol))throw Error();checkpoint();o.link=p.href;commit();alert("เพิ่มลิงก์ไว้กับข้อความแล้ว (ตัวอย่าง)") }catch(e){alert("กรุณาใช้ลิงก์ https:// หรือ http://")}};
+$("#downloadBtn").onclick=$("#exportAllBtn").onclick=downloadJSON;
+function resetDemo(){if(!confirm("ล้างเฉพาะข้อมูลทดลองในหน้านี้? ข้อมูลแอปจริงไม่ได้รับผลกระทบ"))return;state=defaults();undoStack=[];redoStack=[];selected=null;tool="select";saveLocal();$("#noteCourse").value=state.course;$("#noteTitle").value=state.title;renderAll();}
+$("#resetBtn").onclick=$("#resetAllBtn").onclick=resetDemo;
+$("#imageFile").onchange=function(e){var file=e.target.files?.[0];if(!file)return;if(file.size>2*1024*1024){alert("ตัวอย่างนี้รองรับรูปไม่เกิน 2 MB");return}var reader=new FileReader();reader.onload=function(){checkpoint();var o={id:id(),type:"image",x:16,y:42,w:58,h:25,src:reader.result};page().objects.push(o);selected=o.id;tool="select";commit()};reader.readAsDataURL(file);this.value=""};
+$("#addMaterialBtn").onclick=function(){var input=$("#materialUrl"),value=input.value.trim();try{var p=new URL(value);if(!["https:","http:"].includes(p.protocol))throw Error();checkpoint();(state.files[state.course]||(state.files[state.course]=[])).push({name:"ลิงก์เอกสาร · "+p.hostname,url:p.href});input.value="";commit();renderClassroom()}catch(e){alert("กรุณาวางลิงก์ที่ขึ้นต้นด้วย https:// หรือ http://")}};
+$("#materialFile").onchange=function(e){var f=e.target.files?.[0];if(!f)return;checkpoint();(state.files[state.course]||(state.files[state.course]=[])).push({name:f.name,url:""});commit();renderClassroom();this.value=""};
+$("#closeTable").onclick=$("#cancelTable").onclick=closeTable;$("#saveTable").onclick=saveTable;
+$$("[data-dim]").forEach(function(btn){btn.onclick=function(){var cmd=btn.dataset.dim,r=tableCells.length,c=tableCells[0].length;resizeTable(r+(cmd==="addrow"?1:cmd==="delrow"?-1:0),c+(cmd==="addcol"?1:cmd==="delcol"?-1:0))}});
+$("#rowsInput").onchange=function(){resizeTable(Number(this.value),tableCells[0].length)};
+$("#colsInput").onchange=function(){resizeTable(tableCells.length,Number(this.value))};
+$("#tableModal").addEventListener("click",function(ev){if(ev.target===this)closeTable()});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&$("#tableModal").classList.contains("open"))closeTable();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"&&!/INPUT|TEXTAREA/.test(e.target.tagName)){e.preventDefault();e.shiftKey?actionRedo():actionUndo()}});
+var cv=$("#inkCanvas");cv.addEventListener("pointerdown",function(e){if(!["pen","highlight"].includes(tool))return;checkpoint();drawing=true;cv.setPointerCapture(e.pointerId);canvasCtx.beginPath();canvasCtx.lineWidth=tool==="highlight"?21:4;canvasCtx.strokeStyle=tool==="highlight"?"#efcf49":inkColor;canvasCtx.globalAlpha=tool==="highlight"?.37:1;canvasCtx.lineCap="round";var r=cv.getBoundingClientRect();canvasCtx.moveTo((e.clientX-r.left)/r.width*900,(e.clientY-r.top)/r.height*1273)});
+cv.addEventListener("pointermove",function(e){if(!drawing)return;var r=cv.getBoundingClientRect();canvasCtx.lineTo((e.clientX-r.left)/r.width*900,(e.clientY-r.top)/r.height*1273);canvasCtx.stroke()});
+function finishInk(){if(!drawing)return;drawing=false;canvasCtx.globalAlpha=1;page().ink=cv.toDataURL("image/png");saveLocal();renderPaper()}
+cv.addEventListener("pointerup",finishInk);cv.addEventListener("pointercancel",finishInk);
+renderAll();jump("home");
+})();
+</script>
+</body>
+</html>
