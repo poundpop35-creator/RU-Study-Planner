@@ -16,16 +16,23 @@ export function paperPage(space,n){return `<section class="paper-app" aria-label
   <button type="button" class="paper-quick-action" data-quick-action="ruler" aria-pressed="false" title="เปิดหรือปิดไม้บรรทัด">📏 ไม้บรรทัด</button>
   <button type="button" class="paper-quick-action" data-quick-action="multi" aria-pressed="false" title="เลือกวัตถุหลายชิ้น">เลือกหลายชิ้น</button>
  </div>
- <div class="paper-text-ribbon" id="paper-text-ribbon" role="toolbar" aria-label="จัดรูปแบบข้อความแบบ Word" hidden>
- <span class="paper-ribbon-title">จัดรูปแบบข้อความ</span>
- <button type="button" data-word-format="bold" aria-label="ตัวหนา" aria-pressed="false" title="ตัวหนา Ctrl+B"><b>B</b></button>
- <button type="button" data-word-format="italic" aria-label="ตัวเอียง" aria-pressed="false" title="ตัวเอียง Ctrl+I"><em>I</em></button>
- <button type="button" data-word-format="underline" aria-label="ขีดเส้นใต้" aria-pressed="false" title="ขีดเส้นใต้ Ctrl+U"><u>U</u></button>
- <button type="button" data-word-format="strike" aria-label="ขีดฆ่าข้อความ" aria-pressed="false" title="ขีดฆ่าข้อความ"><s>S</s></button>
- <label class="paper-ribbon-size">ขนาด <button type="button" data-word-step="-1" aria-label="ลดขนาดตัวอักษร">−</button><input id="paper-word-size" type="number" min="10" max="96" step="1" value="24" inputmode="numeric" aria-label="ขนาดตัวอักษรที่เลือก"><button type="button" data-word-step="1" aria-label="เพิ่มขนาดตัวอักษร">＋</button></label>
- <button type="button" data-paper="word-link" class="paper-ribbon-link" title="เลือกคำเพื่อแนบเว็บไซต์หรือไฟล์">🔗 ลิงก์ / ไฟล์เฉพาะคำ</button>
- <button type="button" data-paper="finish-text" class="paper-ribbon-done">✓ เสร็จสิ้น</button>
- <small class="paper-ribbon-help">เลือกคำก่อนจัดรูปแบบหรือลิงก์</small>
+ <div class="paper-text-ribbon" id="paper-text-ribbon" role="toolbar" aria-label="หน้าแรก — จัดรูปแบบข้อความคล้าย Microsoft Word" hidden>
+  <strong class="paper-ribbon-title">หน้าแรก · ข้อความ</strong>
+  <label class="paper-ribbon-size">ขนาด <button type="button" data-word-step="-1" aria-label="ลดขนาดตัวอักษร">−</button><input id="paper-word-size" type="number" min="10" max="96" step="1" value="24" inputmode="numeric" aria-label="ขนาดตัวอักษรที่เลือก"><button type="button" data-word-step="1" aria-label="เพิ่มขนาดตัวอักษร">＋</button></label>
+  <div class="paper-ribbon-format" role="group" aria-label="รูปแบบตัวอักษร">
+   <button type="button" data-word-format="bold" aria-label="ตัวหนา" aria-pressed="false" title="ตัวหนา Ctrl+B"><b>B</b></button>
+   <button type="button" data-word-format="italic" aria-label="ตัวเอียง" aria-pressed="false" title="ตัวเอียง Ctrl+I"><em>I</em></button>
+   <button type="button" data-word-format="underline" aria-label="ขีดเส้นใต้" aria-pressed="false" title="ขีดเส้นใต้ Ctrl+U"><u>U</u></button>
+   <button type="button" data-word-format="strike" aria-label="ขีดฆ่าข้อความ" aria-pressed="false" title="ขีดฆ่าข้อความ"><s>S</s></button>
+  </div>
+  <div class="paper-ribbon-colors" role="group" aria-label="เลือกสีตัวอักษรเฉพาะคำ">
+   <span>สีตัวอักษร</span>
+   ${colors.map(c=>`<button type="button" class="paper-word-swatch" data-word-color="${c}" style="--word-ink:${c}" title="เปลี่ยนข้อความที่เลือกเป็นสี ${c}" aria-label="เปลี่ยนเฉพาะคำเป็นสี ${c}" aria-pressed="false"></button>`).join('')}
+   <label class="paper-word-custom" title="เลือกสีตัวอักษรเพิ่มเติม">สีอื่น <input id="paper-word-custom-color" type="color" value="#172033" aria-label="เลือกสีตัวอักษรอื่น"></label>
+  </div>
+  <button type="button" data-paper="word-link" class="paper-ribbon-link" title="เลือกคำเพื่อแนบเว็บไซต์หรือไฟล์">🔗 ลิงก์ / ไฟล์เฉพาะคำ</button>
+  <button type="button" data-paper="finish-text" class="paper-ribbon-done">✓ เสร็จสิ้น</button>
+  <small class="paper-ribbon-help">ลากเลือกเฉพาะคำ แล้วกด B, I, U, สี หรือ ลิงก์</small>
  </div>
  <div class="paper-workspace"><aside class="paper-pages" id="paper-pages-sidebar" aria-label="รายการหน้ากระดาษ"><div class="paper-pages-heading"><b>หน้ากระดาษ</b><button data-paper="add-page" aria-label="เพิ่มหน้า">＋</button></div><div id="paper-page-list"></div><button data-paper="add-page" class="paper-add-page">＋ เพิ่มหน้า</button></aside><div class="paper-center"><div class="paper-context"><label>กระดาษ <select id="paper-template"><option value="plain">ว่าง</option><option value="ruled">เส้นบรรทัด</option><option value="grid">ตาราง</option><option value="dots">จุด</option></select></label><div class="paper-context-actions"><button data-paper="duplicate-page" title="ทำสำเนาหน้า">ทำสำเนา</button><button data-paper="delete-page">ลบหน้า</button><button data-paper="files" title="แนบ PDF, Word หรือ PowerPoint">แนบไฟล์</button><button data-paper="info">รายละเอียด</button></div></div><div id="paper-viewport" class="paper-viewport"><div id="paper-wrap" class="paper-wrap"><div id="paper-sheet" class="paper-sheet"><svg id="paper-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1273" role="img" aria-label="หน้ากระดาษสำหรับเขียน พิมพ์ และวางรูป"></svg><textarea id="paper-text-input" hidden aria-label="แก้ข้อความบนกระดาษ และใช้ Apple Pencil เขียนต่อในช่องเดิม" spellcheck="false"></textarea></div></div></div><div class="paper-bottom"><span id="paper-page-label">กำลังเปิดสมุด…</span><span id="paper-hint" role="status">แตะบนกระดาษเพื่อพิมพ์ · แตะรูปเพื่อย้ายหรือปรับขนาด</span><div><button data-paper="zoom-out" aria-label="ย่อกระดาษ">−</button><button data-paper="fit" id="paper-zoom">พอดีหน้า</button><button data-paper="zoom-in" aria-label="ขยายกระดาษ">＋</button></div></div></div></div>
  <div id="paper-mobile-editor" class="paper-mobile-editor" hidden><div class="paper-mobile-editor-top"><strong>✎ แก้ไขข้อความ</strong><div class="paper-mobile-editor-actions"></div></div><p>แก้ไขในช่องนี้เพื่อให้อ่านชัดขณะพิมพ์</p></div>
