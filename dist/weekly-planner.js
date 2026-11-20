@@ -43,7 +43,7 @@ function replayBoard(state={},focus=today(),canEdit=true){
  return `<div class="replay-wrapper"><div class="replay-week-nav"><button class="button secondary small" data-action="cal-replay-week" data-delta="-7">← สัปดาห์ก่อน</button><strong>${thaiDate(start,true)} – ${thaiDate(end,true)}</strong><button class="button secondary small" data-action="cal-replay-week" data-delta="7">สัปดาห์ถัดไป →</button><button class="button secondary small" data-action="cal-replay-week" data-delta="0">สัปดาห์นี้</button></div>
   <p class="replay-count">สัปดาห์นี้มี ${rows.length} คลิป · ทำเครื่องหมายดูแล้ว ${nDone}/${rows.length}</p>
   <div class="replay-week-grid">${content}</div>
-  <p class="replay-note"><b>กำหนดส่วนตัว:</b> ดูย้อนหลังประมาณ 2 วันหลังบรรยาย เริ่ม 20:00 น. เวลาคลิปเข้าระบบอาจเปลี่ยนได้ ระบบนี้ไม่ได้ตรวจว่าคลิปถูกอัปโหลดแล้ว และไม่ทราบความยาวคลิป โปรดตรวจและปรับเวลาเองเมื่อวันหนึ่งมีหลายวิชา</p>
+  <p class="replay-note"><b>กำหนดส่วนตัว:</b> จ.–พฤ. ทวนเบา ๆ เวลา 20:00, ศุกร์หลังสัปดาห์แรกทวนกลางวัน และ ส.–อา. ดูย้อนหลังจริงจัง · คลิปอาจมา 2 วันหลังคาบจริง ยังไม่ได้ตรวจคลิปที่เผยแพร่จริง</p>
   <p><a class="button secondary" href="https://ondemand.ru.ac.th/" target="_blank" rel="noopener noreferrer">▶ เปิด RU Course on Demand ↗</a></p></div>`;
 }
 
