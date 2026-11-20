@@ -4,6 +4,7 @@ import {pageSVG,objectSVG,esc} from './paper-render.js?v=notebook-shape-tools-20
 import {imageHandles,resizeImage,cropImage} from './paper-images.js';
 import {readAttachment,downloadAttachment} from './note-files.js';
 import {replaceLink,moveLinks} from './word-links.js';
+import {textSize,formattedTextHTML,normalizeMarks,toggleTextFormat,applyTextFormat,moveMarks} from './paper-rich-text.js?v=word-format-20261120';
 import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
 import {makeShape,resizeShape} from './paper-shapes.js?v=notebook-shape-tools-20261120';
@@ -31,7 +32,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  let cachedPage=null,cachedContent='',imageVersion=0,cachedImageVersion=-1;
  const scope=space.info().scope,images=new Map(),loading=new Set(),history=new Map(),events=[],pointers=new Map();
  const draftKey='ru-paper-draft:'+scope+':'+id;
- const widthKey='ru-paper-pen-width.v1:'+scope,highlightKey='ru-paper-highlight-width.v1:'+scope,pagesKey='ru-paper-pages-open.v1';
+ const widthKey='ru-paper-pen-width.v1:'+scope,highlightKey='ru-paper-highlight-width.v1:'+scope,pagesKey='ru-paper-pages-open.v1',textSizeKey='ru-paper-text-font-size.v1';
  // iPad defaults to stylus-only contact on the page; the user can change this per device.
  const isIPad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
  const palmKey='ru-paper-palm-guard.v1';
@@ -40,6 +41,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  try{width=penWidth(localStorage.getItem(widthKey));}catch{/* unavailable device preference: keep 5 */}
  try{highlighterSize=highlightWidth(localStorage.getItem(highlightKey));}catch{/* keep 12 */}
  try{if(localStorage.getItem(pagesKey)==='1')root.classList.add('pages-open');}catch{/* default collapsed */}
+ try{fontSize=textSize(localStorage.getItem(textSizeKey),24);}catch{}
  const $=s=>root.querySelector(s),svg=$('#paper-svg'),sheet=$('#paper-sheet'),wrap=$('#paper-wrap'),viewport=$('#paper-viewport'),textarea=$('#paper-text-input');
  const bind=(el,type,fn,opts)=>{el.addEventListener(type,fn,opts);events.push(()=>el.removeEventListener(type,fn,opts));};
  const palmToggle=$('#paper-palm-guard');
@@ -107,6 +109,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   $('[data-paper="crop"]').hidden=!singleImage;
   const texts=p.objects.filter(o=>selected.has(o.id)&&o.type==='text');$('[data-paper="edit-text"]').hidden=texts.length!==1;$('#paper-font-size').parentElement.hidden=!texts.length;$('[data-paper="bold"]').hidden=!texts.length;
   $('#paper-font-size').value=texts[0]?.size||fontSize;
+  $('#paper-default-text-size').value=fontSize;
   loadImages();
  }
  function thumbs(){ $('#paper-page-list').innerHTML=model.pages.map((p,i)=>`<button class="paper-thumb ${p.id===pageId?'active':''}" data-paper-page="${p.id}" aria-label="หน้า ${i+1}" aria-current="${p.id===pageId?'page':'false'}"><svg viewBox="0 0 ${PAGE_W} ${PAGE_H}" aria-hidden="true">${pageSVG(p,images,'thumb-'+p.id)}</svg><span>${i+1}</span></button>`).join('');}
@@ -172,6 +175,101 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  const measureClip=document.createElement('div');
  Object.assign(measureClip.style,{position:'absolute',width:'0',height:'0',overflow:'hidden'});
  measureClip.append(textMeasure);sheet.append(measureClip);
+ const ribbon=$('#paper-text-ribbon'),rich=document.createElement('div');
+ rich.id='paper-rich-editor';rich.contentEditable='true';rich.setAttribute('role','textbox');
+ rich.setAttribute('aria-label','แก้ข้อความพร้อมตัวหนา ตัวเอียง ขีดเส้นใต้ และขนาดเฉพาะคำ');
+ rich.spellcheck=false;rich.hidden=true;sheet.append(rich);
+ let richSelection=null;
+ function richOffsets(){
+  const sel=window.getSelection();
+  if(!sel?.rangeCount||!rich.contains(sel.anchorNode)||!rich.contains(sel.focusNode))return null;
+  const count=(node,offset)=>{const r=document.createRange();r.selectNodeContents(rich);r.setEnd(node,offset);return r.toString().length;};
+  const a=count(sel.anchorNode,sel.anchorOffset),b=count(sel.focusNode,sel.focusOffset);
+  return {start:Math.min(a,b),end:Math.max(a,b)};
+ }
+ function selectRichOffsets(start,end){
+  const walker=document.createTreeWalker(rich,NodeFilter.SHOW_TEXT),nodes=[];let node,total=0;
+  while((node=walker.nextNode())){nodes.push({node,start:total,end:total+node.textContent.length});total+=node.textContent.length;}
+  if(!nodes.length)return;
+  const locate=n=>{for(const item of nodes)if(n<=item.end)return {node:item.node,offset:Math.max(0,n-item.start)};const last=nodes.at(-1);return {node:last.node,offset:last.node.textContent.length};};
+  const a=locate(start),b=locate(end),range=document.createRange(),selection=window.getSelection();
+  range.setStart(a.node,a.offset);range.setEnd(b.node,b.offset);selection.removeAllRanges();selection.addRange(range);
+  richSelection={start,end};
+ }
+ function readRich(){
+  let text='',parts=[];
+  const append=(value,style)=>{if(!value)return;const from=text.length;text+=value;if(Object.keys(style).length)parts.push({start:from,end:text.length,...style});};
+  const walk=(node,style)=>{
+   if(node.nodeType===Node.TEXT_NODE){append(node.textContent||'',style);return;}
+   if(node.nodeType!==Node.ELEMENT_NODE)return;
+   if(node.tagName==='BR'){append('\n',style);return;}
+   const s={...style},tag=node.tagName.toLowerCase(),css=node.style||{};
+   if(tag==='b'||tag==='strong'||/^(bold|[6-9]00)$/.test(css.fontWeight||''))s.bold=true;
+   if(tag==='i'||tag==='em'||css.fontStyle==='italic')s.italic=true;
+   if(tag==='u'||(css.textDecorationLine||'').includes('underline'))s.underline=true;
+   if(tag==='s'||tag==='strike'||(css.textDecorationLine||'').includes('line-through'))s.strike=true;
+   if(css.fontSize){const size=textSize(parseInt(css.fontSize,10),null);if(size)s.size=size;}
+   const block=tag==='div'||tag==='p';
+   if(block&&text&&!text.endsWith('\n'))append('\n',style);
+   for(const child of node.childNodes)walk(child,s);
+  };
+  for(const child of rich.childNodes)walk(child,{});
+  return {text,marks:normalizeMarks(parts,text.length)};
+ }
+ function textRibbonState(){
+  if(!editing)return;
+  const range=editing.rich?(richOffsets()||richSelection):{start:textarea.selectionStart,end:textarea.selectionEnd};
+  if(!range)return;
+  const marks=editing.rich?readRich().marks:editing.marks||[];
+  const active=marks.find(m=>m.start<=range.start&&m.end>=Math.max(range.start+1,range.end));
+  for(const button of ribbon.querySelectorAll('[data-word-format]'))button.setAttribute('aria-pressed',String(!!active?.[button.dataset.wordFormat]));
+  $('#paper-word-size').value=active?.size||editing.object.size||fontSize;
+ }
+ function fitRichBox(){
+  if(!editing?.rich)return;
+  const {text,marks}=readRich(),o=editing.object,available=Math.max(1,PAGE_W-o.x);
+  textMeasure.style.fontSize=o.size+'px';textMeasure.style.fontWeight=o.bold?'700':'400';
+  textMeasure.style.width='max-content';textMeasure.style.maxWidth='none';textMeasure.style.whiteSpace='pre';
+  textMeasure.innerHTML=formattedTextHTML({text,marks},esc,false,false);
+  const width=Math.min(available,Math.max(32,textMeasure.offsetWidth+7));
+  textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
+  textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
+  editing.paperWidth=width;
+  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
+  rich.style.width=Math.min(available,Math.max(250,width))+'px';
+  if(!editing.mobile)rich.style.minHeight=Math.max(o.size*1.5,editing.paperHeight)+'px';
+ }
+ function activateRich(){
+  if(!editing)return;
+  if(editing.rich)return;
+  const selection={start:textarea.selectionStart,end:textarea.selectionEnd};
+  editing.rich=true;editing.lastText=textarea.value;
+  const original={text:textarea.value,marks:editing.marks||[]};
+  // Normalize old whole-object bold into range styling so individual words can be toggled.
+  if(editing.object.bold){original.marks=applyTextFormat(original.marks,original.text,0,original.text.length,'bold',true);editing.object.bold=false;}
+  editing.marks=original.marks;
+  rich.innerHTML=formattedTextHTML(original,esc,false,false);
+  rich.style.left=editing.mobile?'0':editing.object.x+'px';
+  rich.style.top=editing.mobile?'0':editing.object.y+'px';
+  rich.style.fontSize=editing.object.size+'px';rich.style.fontWeight='400';rich.style.color=editing.object.color;
+  rich.hidden=false;textarea.hidden=true;
+  if(editing.mobile){$('#paper-mobile-editor').append(rich);}
+  fitRichBox();rich.focus();selectRichOffsets(selection.start,selection.end);textRibbonState();
+ }
+ function applyWordFormat(kind,value){
+  if(!editing)return;
+  if(!editing.rich)activateRich();
+  const before=readRich(),range=richOffsets()||richSelection||{start:0,end:before.text.length};
+  const start=range.start===range.end?0:range.start,end=range.start===range.end?before.text.length:range.end;
+  if(start===end)return;
+  const marks=kind==='size'?applyTextFormat(before.marks,before.text,start,end,'size',textSize(value,editing.object.size)):
+   toggleTextFormat(before.marks,before.text,start,end,kind);
+  rich.innerHTML=formattedTextHTML({text:before.text,marks},esc,false,false);
+  rich.focus();selectRichOffsets(range.start,range.end);editing.marks=marks;
+  fitRichBox();textRibbonState();
+  clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),450);
+ }
+
  function fitTextBox(){
   if(!editing)return;
   const o=editing.object;
