@@ -186,11 +186,12 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  const measureClip=document.createElement('div');
  Object.assign(measureClip.style,{position:'absolute',width:'0',height:'0',overflow:'hidden'});
  measureClip.append(textMeasure);sheet.append(measureClip);
- const ribbon=$('#paper-text-ribbon'),rich=document.createElement('div');
+ const ribbon=$('#paper-text-ribbon'),wordMenu=$('#paper-word-menu'),rich=document.createElement('div');
  rich.id='paper-rich-editor';rich.contentEditable='true';rich.setAttribute('role','textbox');
  rich.setAttribute('aria-label','แก้ข้อความพร้อมตัวหนา ตัวเอียง ขีดเส้นใต้ และขนาดเฉพาะคำ');
  rich.spellcheck=false;rich.hidden=true;sheet.append(rich);
- let richSelection=null;
+ let richSelection=null,wordMenuSelection=null;
+ function closeWordMenu(){wordMenu.hidden=true;wordMenuSelection=null;}
  function richOffsets(){
   const sel=window.getSelection();
   if(!sel?.rangeCount||!rich.contains(sel.anchorNode)||!rich.contains(sel.focusNode))return null;
@@ -250,6 +251,45 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   const mobile=window.matchMedia('(max-width:720px)').matches;
   ribbon.hidden=tool!=='text'&&!editing||mobile&&!editing;
   textRibbonState();
+ }
+ // Word-style mini toolbar follows a real selection without changing the stored
+ // text or its per-word format. This is shared by mouse right-click and touch.
+ function currentWordSelection(){
+  if(!editing)return null;
+  const range=editing.rich?(richOffsets()||richSelection):{start:textarea.selectionStart,end:textarea.selectionEnd};
+  if(!range||range.end<=range.start)return null;
+  const text=editing.rich?readRich().text:textarea.value;
+  if(range.end>text.length)return null;
+  return {start:range.start,end:range.end,text};
+ }
+ function restoreMenuSelection(){
+  if(!editing||!wordMenuSelection)return false;
+  const {start,end}=wordMenuSelection;
+  if(editing.rich){rich.focus();selectRichOffsets(start,end);}
+  else{textarea.focus();textarea.setSelectionRange(start,end);}
+  return true;
+ }
+ function showWordMenu(event){
+  const selection=currentWordSelection();
+  if(!selection){closeWordMenu();return false;}
+  wordMenuSelection={start:selection.start,end:selection.end};
+  const marks=editing.rich?readRich().marks:editing.marks||[];
+  const active=marks.find(m=>m.start<=selection.start&&m.end>=selection.end);
+  const ink=textColor(active?.color||editing.object.color,'#172033');
+  for(const b of wordMenu.querySelectorAll('[data-word-menu-format]'))
+   b.setAttribute('aria-pressed',String(!!active?.[b.dataset.wordMenuFormat]));
+  for(const b of wordMenu.querySelectorAll('[data-word-menu-color]'))
+   b.setAttribute('aria-pressed',String(b.dataset.wordMenuColor.toLowerCase()===ink));
+  $('#paper-word-menu-custom').value=ink;
+  $('#paper-word-menu-size').value=String(active?.size||editing.object.size);
+  wordMenu.hidden=false;
+  const el=editing.rich?rich:textarea,rect=el.getBoundingClientRect();
+  const box=wordMenu.getBoundingClientRect();
+  const x=event?.clientX>0?event.clientX:rect.left+Math.min(70,rect.width/2);
+  const y=event?.clientY>0?event.clientY:rect.top+Math.min(36,rect.height/2);
+  wordMenu.style.left=Math.max(8,Math.min(x,window.innerWidth-box.width-8))+'px';
+  wordMenu.style.top=Math.max(8,Math.min(y+12,window.innerHeight-box.height-8))+'px';
+  return true;
  }
  function fitRichBox(){
   if(!editing?.rich)return;
@@ -361,7 +401,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   wordSelection=null;
  }
  function startText(o){
-  finishText();wordSelection=null;richSelection=null;
+  closeWordMenu();finishText();wordSelection=null;richSelection=null;
   editing={lastText:o.text,links:o.links||[],marks:o.marks||[],rich:false,id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};
   selected=new Set([o.id]);textarea.value=o.text;
   editing.mobile=window.matchMedia('(max-width:720px)').matches;
@@ -382,6 +422,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  }
  let textTimer;
  function finishText(keepOpen=false){
+  if(!keepOpen)closeWordMenu();
   clearTimeout(textTimer);
   if(!editing)return;
   const edit=editing;
@@ -416,7 +457,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);fitTextBox();
  });
  bind(textarea,'blur',e=>{
-  if(!closed&&!editing?.rich&&!e.relatedTarget?.closest?.('.paper-text-ribbon')){rememberWord();finishText();}
+  if(!closed&&!editing?.rich&&!e.relatedTarget?.closest?.('.paper-text-ribbon,.paper-word-menu')){rememberWord();finishText();}
  });
  bind(rich,'input',()=>{
   if(!editing?.rich)return;
@@ -424,9 +465,43 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   richSelection=richOffsets();fitRichBox();textRibbonState();
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);
  });
- bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
+  // Mouse selection opens the floating Word mini toolbar; right-click opens
+ // the same menu. On iPad a long-press selection can be completed by touchend.
+ for(const editor of [textarea,rich]){
+  bind(editor,'contextmenu',e=>{if(showWordMenu(e))e.preventDefault();});
+  bind(editor,'mouseup',e=>{if(e.button===0)showWordMenu(e);});
+  bind(editor,'touchend',()=>{showWordMenu(null);});
+ }
+ bind(wordMenu,'pointerdown',e=>{if(e.target.closest('button'))e.preventDefault();});
+ bind(wordMenu,'click',async e=>{
+  e.stopPropagation();
+  const button=e.target.closest('button');
+  if(!button)return;
+  const range=wordMenuSelection;
+  if(button.hasAttribute('data-word-menu-close')){closeWordMenu();return;}
+  if(!range||!restoreMenuSelection()){closeWordMenu();return;}
+  try{
+   if(button.dataset.wordMenuFormat){applyWordFormat(button.dataset.wordMenuFormat);return;}
+   if(button.dataset.wordMenuColor){applyWordFormat('color',button.dataset.wordMenuColor);return;}
+   if(button.hasAttribute('data-word-menu-copy')){
+    const value=editing.rich?readRich().text:textarea.value;
+    const copied=value.slice(range.start,range.end);
+    if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(copied);
+    else{const source=editing.rich?rich:textarea;source.focus();document.execCommand('copy');}
+    closeWordMenu();say('คัดลอกข้อความที่เลือกแล้ว');return;
+   }
+   if(button.hasAttribute('data-word-menu-link')){closeWordMenu();await linkWord();return;}
+  }catch(err){say(err.message,true);}
+ });
+ bind($('#paper-word-menu-size'),'change',e=>{
+  if(restoreMenuSelection())applyWordFormat('size',textSize(e.target.value,editing.object.size));
+ });
+ bind($('#paper-word-menu-custom'),'input',e=>{
+  if(restoreMenuSelection())applyWordFormat('color',e.target.value);
+ });
+bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  bind(rich,'pointerup',()=>{richSelection=richOffsets();textRibbonState();});
- bind(rich,'blur',e=>{if(!closed&&!e.relatedTarget?.closest?.('.paper-text-ribbon')){rememberWord();finishText();}});
+ bind(rich,'blur',e=>{if(!closed&&!e.relatedTarget?.closest?.('.paper-text-ribbon,.paper-word-menu')){rememberWord();finishText();}});
  bind(rich,'paste',e=>{e.preventDefault();document.execCommand('insertText',false,e.clipboardData?.getData('text/plain')||'');});
  bind(rich,'beforeinput',e=>{if(e.inputType==='insertParagraph'){e.preventDefault();document.execCommand('insertText',false,'\n');}});
  const textKeydown=e=>{
@@ -745,8 +820,8 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   });
   bind($('#paper-width'),'input',e=>updatePenWidth(e.target.value));
  bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();closeExtraTools();});
- bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
- bind(root,'keydown',e=>{if(e.key==='Escape'){closePenSizePicker();closeExtraTools();}});
+ bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
+ bind(root,'keydown',e=>{if(e.key==='Escape'){closeWordMenu();closePenSizePicker();closeExtraTools();}});
   bind($('#paper-finger'),'change',e=>{finger=e.target.checked;closeExtraTools();});
  bind(palmToggle,'change',e=>{setPalmGuard(e.target.checked);closeExtraTools();});
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
