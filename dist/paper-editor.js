@@ -158,6 +158,16 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(document.activeElement!==editor)return;
   editor.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
  }
+ function syncMobileKeyboard(){
+  const vv=window.visualViewport;
+  if(!vv||!editing?.mobile)return;
+  // On iOS the keyboard can shrink the visual viewport without shrinking
+  // the fixed notebook. Match the visible area so the caret stays uncovered.
+  const keyboardOpen=vv.height<window.innerHeight-100;
+  root.style.height=keyboardOpen?vv.height+'px':'';
+  root.style.top=keyboardOpen?vv.offsetTop+'px':'';
+  requestAnimationFrame(keepInlineCaretVisible);
+ }
  function point(e){const r=svg.getBoundingClientRect();return {x:Math.max(0,Math.min(PAGE_W,(e.clientX-r.left)/r.width*PAGE_W)),y:Math.max(0,Math.min(PAGE_H,(e.clientY-r.top)/r.height*PAGE_H))};}
  function syncPenWidthControls(){
   const highlight=tool==='highlight',value=highlight?highlighterSize:width;
@@ -474,7 +484,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   fitTextBox();draw();textarea.focus({preventScroll:true});textarea.setSelectionRange(textarea.value.length,textarea.value.length);
   if(o.marks?.length)activateRich();
   textRibbonState();
-  if(editing.mobile)requestAnimationFrame(keepInlineCaretVisible);
+  if(editing.mobile){syncMobileKeyboard();requestAnimationFrame(keepInlineCaretVisible);}
   else if(!editing.rich)textarea.scrollIntoView({block:'nearest',inline:'nearest'});
  }
  let textTimer;
@@ -493,6 +503,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
    editing=null;rich.hidden=true;textarea.hidden=true;richSelection=null;
    if(edit.mobile){
     root.classList.remove('paper-is-editing');
+    root.style.height='';root.style.top='';
     const previous=edit.previousView;
     if(previous){
      zoom=previous.zoom;sizing();
@@ -761,7 +772,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   }
  });
  bind(svg,'pointerdown',pointerDown);bind(svg,'pointermove',pointerMove);bind(svg,'pointerup',pointerUp);bind(svg,'pointercancel',pointerUp);
- if(window.visualViewport)bind(window.visualViewport,'resize',()=>{if(editing?.mobile)requestAnimationFrame(keepInlineCaretVisible);});
+ if(window.visualViewport){bind(window.visualViewport,'resize',syncMobileKeyboard);bind(window.visualViewport,'scroll',syncMobileKeyboard);}
  bind(svg,'lostpointercapture',e=>{if(pointers.delete(e.pointerId)){cancelSmartTimer();gesture=null;scheduleDraw();}});
  bind(svg,'dblclick',e=>{
    if(!['select','text'].includes(tool)||editing)return;
