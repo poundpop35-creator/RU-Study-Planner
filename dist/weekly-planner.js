@@ -13,8 +13,14 @@ const reference={
 };
 const colors=['#dbeafe','#d1fae5','#fef3c7','#fce7f3','#ede9fe','#cffafe','#ffedd5'];
 const minutes=s=>Number(s.slice(0,2))*60+Number(s.slice(3));
-// Desktop timeline cards must fully fit three lines plus a tap target; mobile stacks them naturally.
+// Timetable keeps its hourly columns on every screen; phones pan horizontally.
 export const REPLAY_CARD_HEIGHT=112,REPLAY_CARD_STEP=122;
+const TIMELINE_START=11*60,TIMELINE_DURATION=14*60; // 11:00 to 01:00 next day, to fit late replay sessions
+export const timelinePosition=time=>Math.max(0,(minutes(time)-TIMELINE_START)/TIMELINE_DURATION*100);
+export const replayPosition=time=>{
+ const left=Math.min(96,Math.max(0,timelinePosition(time)));
+ return {left,width:Math.min(24.6,Math.max(3.5,100-left-.5))};
+};
 function replayBoard(state={},focus=today(),canEdit=true){
  const weekDay=new Date(focus+'T12:00:00Z').getUTCDay(),start=addDays(focus,-((weekDay+6)%7)),end=addDays(start,6);
  const rows=personalReplayEvents(state.replay||{},{start,end});
@@ -65,12 +71,12 @@ function unifiedWeekly(mode,state={},focus=today(),canEdit=true){
    let lane=lanes.findIndex(t=>t<=begin);
    if(lane===-1)lane=lanes.length;
    lanes[lane]=finish;
-   return `<a class="unified-lecture" style="--course-bg:${schoolColor(x.course)};left:${(begin-660)/720*100}%;width:${(finish-begin)/720*100}%;top:${lane*74+3}px" href="#course/${e(x.course)}"><b>${e(x.course)}</b><small>${e(x.startTime)}–${e(x.endTime)}</small><small>${e(x.room)}${x.clash?' · ชน':''}</small></a>`;
+   return `<a class="unified-lecture" style="--course-bg:${schoolColor(x.course)};left:${timelinePosition(x.startTime)}%;width:${(finish-begin)/TIMELINE_DURATION*100}%;top:${lane*74+3}px" href="#course/${e(x.course)}"><b>${e(x.course)}</b><small>${e(x.startTime)}–${e(x.endTime)}</small><small>${e(x.room)}${x.clash?' · ชน':''}</small></a>`;
   }).join('');
-  const replayCards=replays.map((x,i)=>`<div class="unified-replay ${x.done?'is-done':''}" style="--course-bg:${schoolColor(x.course)};top:${i*REPLAY_CARD_STEP+3}px;left:${Math.max(0,Math.min(75,(minutes(x.startTime)-660)/720*100))}%;width:24.6%" >
+  const replayCards=replays.map((x,i)=>{const position=replayPosition(x.startTime);return `<div class="unified-replay ${x.done?'is-done':''}" style="--course-bg:${schoolColor(x.course)};top:${i*REPLAY_CARD_STEP+3}px;left:${position.left}%;width:${position.width}%" >
    <b>▶ ${e(x.course)}</b><small>${e(x.startTime)} · ย้อนหลัง</small>
    <button class="unified-done" type="button" data-action="cal-replay-done" data-key="${e(x.key)}" aria-label="${e(x.course)} ${x.done?'ดูแล้ว กดยกเลิก':'ยังไม่ดู กดเพื่อทำเครื่องหมายดูแล้ว'}" aria-pressed="${x.done}"${canEdit?'':' disabled'}>${x.done?'✓ ดูแล้ว':'○ ยังไม่ดู'}</button>
-  </div>`).join('');
+  </div>`}).join('');
   const height=Math.max(86,lanes.length*74,replays.length*REPLAY_CARD_STEP);
   return `<div class="unified-weekday ${day===today()?'is-today':''}">
    <div class="unified-weekday-name"><b>${['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'][weekday]}</b><small>${Number(day.slice(8))}/${Number(day.slice(5,7))}</small></div>
@@ -89,8 +95,9 @@ function unifiedWeekly(mode,state={},focus=today(),canEdit=true){
    ${start>='2027-03-01'?'':`<button class="button secondary small" data-action="cal-replay-week" data-delta="7">ถัดไป →</button>`}<button class="button secondary small" data-action="cal-replay-week" data-delta="0">สัปดาห์นี้</button>
   </div>
   <p class="unified-legend"><span>● คาบบรรยายจริง</span><span>▶ คลิปย้อนหลังประมาณ 2 วัน</span><b>ดูแล้ว ${complete}/${recorded.length} คลิป</b></p>
-  <div class="unified-scroll"><div class="unified-grid">
-   <div class="unified-axis"><b>วัน</b><div>${[11,13,15,17,19,21,23].map(h=>`<span style="left:${(h-11)/12*100}%">${h}:00</span>`).join('')}</div></div>
+  <div class="unified-time-nav" aria-label="เลื่อนตารางตามช่วงเวลา"><button type="button" class="button secondary small" data-action="cal-scroll-time" data-target="day">◀ ช่วงกลางวัน</button><span>ตารางแนวนอน · เลื่อนซ้าย–ขวาเพื่อดูเวลา</span><button type="button" class="button secondary small" data-action="cal-scroll-time" data-target="night">ช่วงค่ำ 20:00 ▶</button></div>
+  <div class="unified-scroll" role="region" tabindex="0" aria-label="ตารางรายสัปดาห์แนวนอน เลื่อนเพื่อดูเวลา 11 ถึง 01 นาฬิกา"><div class="unified-grid">
+   <div class="unified-axis"><b>วัน</b><div>${[11,13,15,17,19,21,23,25].map(h=>`<span style="left:${(h-11)/14*100}%">${h===25?'01:00 +1':h+':00'}</span>`).join('')}</div></div>
    ${grid}
   </div></div>
   <details class="unified-edit-panel"><summary>ปรับวันและเวลาที่จะดูคลิปย้อนหลัง</summary><p>การจัดเวลา 20.00 น. เป็นค่าเริ่มต้น ไม่ใช่เวลาที่คลิปอัปโหลดจริง วันศุกร์มีหลายวิชา สามารถเลื่อนวันหรือเวลาเองได้</p>${edits||'<p>ไม่มีคลิปในสัปดาห์นี้</p>'}</details>
