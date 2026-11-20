@@ -275,3 +275,62 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-shape-selection select{min-width:0;max-width:100%;flex:1}
  .paper-app .paper-selection-tools:has(.paper-shape-selection:not([hidden])){left:5px;right:5px;transform:none;max-width:calc(100% - 10px);min-width:0}
 }
+
+
+/* Contextual Word-like formatting appears only while an actual text box is edited. */
+.paper-app .paper-text-ribbon{
+ display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;
+ padding:7px 13px;background:#fff;border-bottom:1px solid #d8e1f1;
+ box-shadow:0 3px 8px #182a4c10;flex:0 0 auto;z-index:7;
+ color:#263b62;font-size:12px;
+}
+.paper-app .paper-text-ribbon[hidden]{display:none!important}
+.paper-text-ribbon .paper-ribbon-title{font-size:11px;font-weight:750;white-space:nowrap;color:#456088}
+.paper-app .paper-text-ribbon button{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:34px;height:34px;min-width:34px;padding:4px 8px;
+ border:1px solid #d7e1ee;background:#f7f9ff;border-radius:8px;
+ color:#2c467a;font-size:14px;flex:0 0 auto;
+}
+.paper-app .paper-text-ribbon button[aria-pressed="true"]{background:#dce8ff;border-color:#3155d9;color:#183e9e}
+.paper-text-ribbon .paper-ribbon-size{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px}
+.paper-app .paper-ribbon-size input,.paper-app .paper-selection-tools input,.paper-app .paper-default-text-size input{
+ appearance:textfield;-moz-appearance:textfield;
+ width:59px;min-height:34px;height:34px;
+ padding:4px 5px;border:1px solid #bfcee4;border-radius:8px;
+ background:#fff;color:#20365e;text-align:center;font-size:14px;font-weight:600;
+}
+.paper-ribbon-size input::-webkit-inner-spin-button{appearance:none}
+.paper-app .paper-text-ribbon .paper-ribbon-link{font-size:12px;background:#eaf1ff;color:#2349a7;border-color:#b4c8f3;white-space:nowrap}
+.paper-app .paper-text-ribbon .paper-ribbon-done{background:#3155d9;color:#fff;border-color:#3155d9;white-space:nowrap}
+.paper-text-ribbon .paper-ribbon-help{font-size:10px;color:#64748b}
+.paper-default-text-size{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600}
+.paper-app:not([data-paper-tool="text"]) .paper-default-text-size{display:none}
+.paper-selection-tools label:has(#paper-font-size){display:inline-flex;align-items:center;gap:5px;font-size:11px}
+#paper-rich-editor{
+ position:absolute;z-index:2;box-sizing:border-box;
+ min-width:0;max-width:900px;height:auto;
+ border-radius:4px;outline:2px solid #7289e9;
+ background:#fffefc;font-family:'Noto Sans Thai',sans-serif;
+ white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;
+ padding:0;overflow-x:hidden;overflow-y:auto;
+ caret-color:#213b9a;text-align:left;
+}
+.paper-app #paper-rich-editor[hidden]{display:none!important}
+#paper-rich-editor span{line-height:inherit}
+@media(max-width:720px){
+ .paper-app .paper-mobile-editor:not([hidden]){max-height:62dvh}
+ .paper-mobile-editor .paper-text-ribbon{
+  display:flex;position:sticky;top:0;z-index:3;max-height:unset;
+  padding:8px 4px;background:#fff;border:0;box-shadow:none;
+ }
+ .paper-mobile-editor .paper-ribbon-title,.paper-mobile-editor .paper-ribbon-help{display:none}
+ .paper-mobile-editor .paper-ribbon-size{flex:1 0 auto}
+ .paper-mobile-editor #paper-rich-editor{
+  position:static!important;display:block;min-height:130px;max-height:30dvh;
+  height:auto!important;width:100%!important;max-width:100%;
+  padding:12px;border:1px solid #9eafcc;border-radius:9px;
+  outline:2px solid #3155d91f;font-size:17px!important;
+  overflow:auto;-webkit-text-size-adjust:100%;
+ }
+}
