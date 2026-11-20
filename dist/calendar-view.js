@@ -1,7 +1,7 @@
-import {weeklyPlanner,timetableColors} from './weekly-planner.js?v=horizontal-timeline-20261120';
+import {weeklyPlanner,timetableColors} from './weekly-planner.js?v=balanced-friday-replays-20261120';
 import {calendarSubscriptionURL} from './calendar-feed.js?v=20261103a';
 import {calendar,courses,schedules,sources} from './data.js?v=20261027c';
-import {escapeHTML as e,thaiDate,today,addDays} from './core.js?v=20261027c';
+import {escapeHTML as e,thaiDate,today,addDays} from './core.js?v=balanced-friday-replays-20261120';
 import {calendarEvents,personalReplayEvents,personalSkimEvents,defaultMonth,activityMonth,regularLecture,firstLecture,lectureClashes,monthBounds,shiftMonth,weekdays,scheduleICS} from './calendar-core.js?v=balanced-replay-20261120';
 import {lectureInstructors} from './lecture-instructors.js?v=20261106a';
 let board=today()<'2026-11-23'?'first':'regular';
