@@ -8,7 +8,7 @@ The notebook opens in a full-screen paper workspace. Text boxes, pressure-aware 
 - `paper-render.js`: escaped SVG/text rendering and ruled/grid/dot templates. No saved HTML is trusted.
 - `paper-editor.js`: pointer input, text editing, selection/lasso, moves and resize, gestures, image hydration and lifecycle.
 - `paper-view.js`, `paper.css`: responsive workspace.
-- `paper-legacy.js`: read-only Quill original, with original rich formatting and image references.
+- `paper-legacy.js`: read-only renderer for original Delta notes, with original rich formatting and image references.
 - `notebook-core.js`: preserves and validates optional `note.paper`; search/export/import include paper text and images.
 - `study-space.js`: authoritative shared Supabase workspace, revision compare-and-swap, autosave/explicit `flush`, local recovery cache. Existing migrations/receipts remain intact.
 

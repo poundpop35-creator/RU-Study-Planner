@@ -75,7 +75,7 @@ node scripts/build-deep-index.mjs <cache-version> POL1101,…   # ระบุ�
 
 ## เริ่มพัฒนา
 
-Frontend เป็น static app ใน `dist/` ใช้ hash routing ใช้ Quill และ Supabase JS แบบตรึงรุ่นและเก็บ browser assets ใน repository
+Frontend เป็น static app ใน `dist/` ใช้ hash routing ใช้ Supabase JS แบบตรึงรุ่นและเก็บ browser assets ใน repository
 
 ```sh
 npm run check
