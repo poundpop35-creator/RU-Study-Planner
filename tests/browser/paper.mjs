@@ -45,10 +45,14 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.ok(toolbarMetrics.height<=90,'notebook toolbar should remain a compact single row: '+JSON.stringify(toolbarMetrics));
    if(mobile)assert.ok(await page.locator('#paper-quickbar').isHidden(),'phone keeps compact toolbar and advanced options');
    else{
-    assert.ok(await page.locator('#paper-quickbar').isVisible(),'desktop and tablet show an always-visible second tool row');
-    assert.ok(await page.locator('#paper-quick-text-size').isVisible(),'default text size is directly editable');
+    assert.ok(await page.locator('#paper-text-ribbon').isVisible(),'text mode displays Word formatting ribbon');
+    assert.ok(await page.locator('#paper-quickbar').isHidden(),'text mode hides drawing-specific quick controls');
+    assert.ok(await page.locator('#paper-word-size').isVisible(),'Word ribbon offers exact text size');
+    await click('pen');
+    assert.ok(await page.locator('#paper-quickbar').isVisible(),'pen mode shows desktop and tablet quick drawing controls');
     await page.locator('[data-quick-color="#8756c6"]').click();
-    assert.equal(await page.locator('[data-paper-color="#8756c6"]').getAttribute('aria-pressed'),'true','quick swatch changes the active pen/text color');
+    assert.equal(await page.locator('[data-paper-color="#8756c6"]').getAttribute('aria-pressed'),'true','quick swatch changes the active pen color');
+    await click('text');
    }
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
    if(mobile)assert.ok(await page.locator('#paper-text-ribbon').isHidden(),'Word toolbar is inside the editor on narrow phones');
