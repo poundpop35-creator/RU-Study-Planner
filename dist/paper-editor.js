@@ -440,6 +440,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  bind(root,'keydown',e=>{if(e.key==='Escape'){closePenSizePicker();closeExtraTools();}});
   bind($('#paper-finger'),'change',e=>{finger=e.target.checked;});
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
+ bind($('#paper-shape'),'change',()=>closeExtraTools());
  bind($('#paper-smart-shape'),'change',e=>{smartEnabled=e.target.checked;if(!smartEnabled)cancelSmartTimer();});
  bind($('#paper-line-style'),'change',e=>{
   lineStyle=e.target.value;
