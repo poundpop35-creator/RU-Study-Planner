@@ -1,5 +1,5 @@
 import {esc} from './paper-render.js?v=word-format-20261120';
-import {NOTE_SOURCES,noteSource} from './notebook-core.js?v=geometry-20261119';
+import {NOTE_SOURCES,noteSource} from './notebook-core.js?v=word-canva-classroom-20261120';
 import {shapes,lineStyles} from './paper-shapes.js?v=notebook-shape-tools-20261120';
 import {PEN_WIDTH_PRESETS} from './paper-core.js?v=word-format-20261120';
 import {shapeIcon} from './paper-shape-icons.js?v=shape-gallery-20261120';
