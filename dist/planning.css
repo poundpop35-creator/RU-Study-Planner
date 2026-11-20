@@ -278,3 +278,26 @@ tr.reg-hit>td{background:#fef9c3!important}tr.reg-hit>td:first-child{box-shadow:
  .hub-tabs a{flex:1 1 auto}
  .hub-tabs:has(>a:nth-child(4)) a{flex-basis:calc(50% - 4px)}
 }
+
+
+/* Two study rhythms: lighter weekday skimming and focused weekend replay. */
+.unified-skim{
+ border:2px dashed #2770b5;
+ background:color-mix(in srgb,var(--course-bg) 58%,white);
+}
+.unified-deep{border:2px solid #8054b2}
+.unified-skim.is-done,.unified-deep.is-done{border-color:#15803d;border-style:solid}
+.replay-week-plan{
+ margin:9px 0 11px;padding:10px 12px;border-radius:9px;
+ background:#f7f9ff;color:#334d70;border:1px solid #dbe5f8;
+ font-size:.85rem;line-height:1.6;
+}
+.calendar-chip.skim{background:var(--course-bg,#eef7ff);border:1px dashed #3e82c8;border-left:3px solid #2676b9;color:#1d436c}
+.calendar-chip.skim.is-done{border-color:#15803d;color:#166534}
+.calendar-event.skim-event{background:var(--course-bg,#f2f8ff);border-left-color:#2770b5}
+.unified-replay.unified-skim>small,.unified-replay.unified-deep>small{font-size:.76rem}
+.unified-skim .unified-done{border-color:#76a2db;color:#23529a}
+@media(max-width:600px){
+ .replay-week-plan{font-size:.77rem;padding:8px 10px}
+ .unified-replay.unified-skim>small,.unified-replay.unified-deep>small{font-size:.76rem}
+}
