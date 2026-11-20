@@ -23,6 +23,28 @@ export function makeShape(id,kind,start,end,color,width,dash='solid'){
  return {id,type:'shape',kind,color,width,x,y,w,h,
   reverseX:end.x<start.x,reverseY:end.y<start.y,...(dash==='solid'?{}:{dash})};
 }
+// Each handle moves just its selected edge(s), leaving the opposite edge anchored.
+export function resizeShape(shape,edge,dx,dy){
+ if(!/^(n|s|e|w|nw|ne|sw|se)$/.test(edge))return {...shape};
+ const out={...shape},min=12;
+ if(edge.includes('e'))out.w=Math.max(min,Math.min(2700,shape.w+dx));
+ if(edge.includes('s'))out.h=Math.max(min,Math.min(3819,shape.h+dy));
+ if(edge.includes('w')){
+  const right=shape.x+shape.w;
+  out.w=Math.max(min,Math.min(2700,right+900,shape.w-dx));
+  out.x=right-out.w;
+ }
+ if(edge.includes('n')){
+  const bottom=shape.y+shape.h;
+  out.h=Math.max(min,Math.min(3819,bottom+1273,shape.h-dy));
+  out.y=bottom-out.h;
+ }
+ if(Math.abs(out.w-out.h)>0.1){
+  if(out.kind==='square')out.kind='rect';
+  if(out.kind==='circle')out.kind='ellipse';
+ }
+ return out;
+}
 function arrowHead(x,y,dx,dy,width,sign=1){
  const length=Math.hypot(dx,dy)||1,head=Math.min(length*.45,Math.max(14,width*4));
  const ux=sign*dx/length,uy=sign*dy/length;
