@@ -10,6 +10,8 @@ import {openNoteFile} from './file-viewer.js';
 import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape} from './paper-shapes.js?v=notebook-shape-tools-20261120';
 import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=geometry-20261119';
+import {mountTableDialog} from './paper-table-ui.js?v=20261120-table';
+import {tableWithCells,tableGrid} from './paper-table.js?v=20261120-table';
 let active=null;
 export function refreshPaper(space,id){return active?.id===id?active.refresh(space):false;}
 export function mountPaper(space,id,{onLegacy=()=>{}}={}){
@@ -88,6 +90,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(chosen.length>1)for(const o of chosen)content+=`<rect x="${o.x-2}" y="${o.y-2}" width="${o.w+4}" height="${o.h+4}" fill="none" stroke="#7590fc" stroke-width="1" pointer-events="none"/>`;
   const singleImage=selected.size===1&&visible.find(o=>selected.has(o.id)&&o.type==="image");
    const singleShape=selected.size===1&&visible.find(o=>selected.has(o.id)&&o.type==="shape");
+   const singleTable=selected.size===1&&visible.find(o=>selected.has(o.id)&&o.type==='table');
   if(box&&!editing)content+=`<rect x="${box.x-6}" y="${box.y-6}" width="${box.w+12}" height="${box.h+12}" fill="none" stroke="#3155d9" stroke-width="2" stroke-dasharray="7 5"/>${singleImage||singleShape?imageHandles(box,scale):`<rect data-resize="true" x="${box.x+box.w-9}" y="${box.y+box.h-9}" width="18" height="18" rx="4" fill="#3155d9"/>`}`;
   content+=rulerSVG(ruler);
   if(gesture?.kind==='lasso')content+=`<path d="${gesture.points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ')}" fill="#3155d910" stroke="#3155d9" stroke-width="2" stroke-dasharray="6 4"/>`;
@@ -118,6 +121,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
    $('#paper-quick-text-size').value=fontSize;
   $('[data-paper="undo"]').disabled=!h().canUndo; $('[data-paper="redo"]').disabled=!h().canRedo;
   const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('#paper-selected-count').textContent=selected.size;
+   $('#paper-table-selection').hidden=!singleTable;
    const shapePanel=$('#paper-shape-selection');shapePanel.hidden=!singleShape;
    if(singleShape){$('#paper-selected-shape').value=singleShape.kind;$('#paper-selected-line-style').value=singleShape.dash||singleShape.lineStyle||'solid';}
   const linkButton=$('[data-paper="image-link"]'),openLink=$('#paper-open-link');
@@ -572,6 +576,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    p.y<=o.y+o.h+Math.min(12,o.size*.5));
   return near.sort((a,b)=>Math.abs(p.x-(a.x+a.w))-Math.abs(p.x-(b.x+b.w)))[0]||null;
  }
+ const tableUI=mountTableDialog(root,{page,change,writable,finishText,closeExtraTools,setShapesOpen,viewport,
+  getScale:()=>scale,onSaved:tableId=>{setTool('select');selected=new Set([tableId]);draw();},say});
  function pointerDown(e){
   // Resting hands are often interpreted as a two-finger pinch by the browser.
   // Ignore touch contact on the page while protected or immediately after pen use.
@@ -615,6 +621,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    }
   }
   if(tool==='text'){
+   const table=[...page().objects].reverse().find(o=>o.type==='table'&&contains(p,o));
+   if(table){selected=new Set([table.id]);tableUI.open(table);draw();return;}
    const target=findTextToContinue(p);
    startText(target||{id:uid(),type:'text',x:Math.min(p.x,PAGE_W-32),y:Math.min(p.y,PAGE_H-Math.ceil(fontSize*1.5)),w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color,bold});
    if(target)say('กำลังเขียนต่อในกล่องเดิม · เขียนจากเคอร์เซอร์ได้เลย');
@@ -724,8 +732,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  bind(svg,'lostpointercapture',e=>{if(pointers.delete(e.pointerId)){cancelSmartTimer();gesture=null;scheduleDraw();}});
  bind(svg,'dblclick',e=>{
    if(!['select','text'].includes(tool)||editing)return;
-   const o=[...page().objects].reverse().find(o=>o.type==='text'&&contains(point(e),o));
-   if(o){e.preventDefault();startText(o);}
+   const o=[...page().objects].reverse().find(o=>['text','table'].includes(o.type)&&contains(point(e),o));
+   if(o){e.preventDefault();if(o.type==='table')tableUI.open(o);else startText(o);}
   });
  bind(viewport,'wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();const r=viewport.getBoundingClientRect();zoomAt(zoom*Math.exp(-e.deltaY*.005),e.clientX-r.left,e.clientY-r.top);}},{passive:false});
  async function insertImages(files){
@@ -811,6 +819,17 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     say(multiSelect?'แตะเพื่อเพิ่มหรือนำออกจากกลุ่ม · ลากชิ้นที่เลือกเพื่อย้ายพร้อมกัน':'แตะเพื่อเลือก · Shift + คลิกเพื่อเลือกเพิ่ม');return;
    }
    if(['select','pen','highlight','eraser','text','shape','hand','line','arrow','straighten'].includes(action)){setTool(action);if(action==='shape')setShapesOpen(true);return;}
+   if(action==='table'){tableUI.open();return;}
+   if(action==='table-edit'){const item=page().objects.find(o=>selected.size===1&&selected.has(o.id)&&o.type==='table');if(item)tableUI.open(item);return;}
+   if(['table-add-row','table-remove-row','table-add-col','table-remove-col'].includes(action)){
+    const item=page().objects.find(o=>selected.size===1&&selected.has(o.id)&&o.type==='table');if(!item)return;
+    const r=item.cells.length,c=item.cells[0].length;
+    const rows=r+(action==='table-add-row'?1:action==='table-remove-row'?-1:0);
+    const cols=c+(action==='table-add-col'?1:action==='table-remove-col'?-1:0);
+    if(change(p=>{const i=p.objects.findIndex(o=>o.id===item.id);p.objects[i]=tableWithCells(p.objects[i],tableGrid(item.cells,rows,cols));}))
+     say('ปรับตารางแล้ว · กดแก้ตารางเพื่อพิมพ์ในช่อง');
+    return;
+   }
    if(action==='files'){fileList();$('#paper-files').showModal();return;}
    if(action==='course-materials'){
     const course=currentNote()?.course;
@@ -923,7 +942,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  });
  for(const [selector,key] of [['#paper-title','title'],['#paper-course','course'],['#paper-source','source'],['#paper-tags','tags'],['#paper-question','question'],['#paper-answer','answer']])bind($(selector),'change',e=>{try{writable();const book=copy(space.notebook()),n=book.notes.find(n=>n.id===id);n[key]=key==='course'?e.target.value.trim().toUpperCase():e.target.value;if(key==='course'&&n[key]&&!/^POL\d{4}$/.test(n[key]))throw Error('กรอกรหัสวิชา เช่น POL1101');n.updatedAt=new Date().toISOString();space.saveNotebook(book);if(key==='course')refreshCourseButton();}catch(err){say(err.message,true);}});
  bind(document,'keydown',e=>{if(!root.isConnected||/INPUT|TEXTAREA/.test(e.target.tagName)||e.target.isContentEditable)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();$(`[data-paper="${e.shiftKey?'redo':'undo'}"]`).click();}if((e.key==='Delete'||e.key==='Backspace')&&selected.size){e.preventDefault();$('[data-paper="delete-object"]').click();}});
- bind(window,'beforeunload',e=>{if(unsaved||editing||gesture?.kind==='stroke'||loadingImages){e.preventDefault();e.returnValue='';}});
+ bind(window,'beforeunload',e=>{if(unsaved||editing||tableUI.editing||gesture?.kind==='stroke'||loadingImages){e.preventDefault();e.returnValue='';}});
  const ro=new ResizeObserver(()=>sizing());ro.observe(viewport);
  function refreshCourseButton(){
   const button=$('[data-paper="course-materials"]');
@@ -942,5 +961,5 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  const backup=document.createElement('button');backup.dataset.paper='draft';backup.className='paper-draft-button';backup.textContent='สำรองงานค้าง';$('.paper-bottom').append(backup);const discard=backup.cloneNode();discard.dataset.paper='discard-draft';discard.textContent='ละทิ้งงานค้าง';$('.paper-bottom').append(discard);
  try{const raw=localStorage.getItem(draftKey);if(raw){const draft=JSON.parse(raw);unsaved=validatePaper(draft.paper);draftBase=validatePaper(draft.base);root.classList.add('paper-has-draft');say('มีงานค้างจากครั้งก่อน กดสำรองงานค้างเพื่อเก็บฉบับกู้คืน',true);}}catch{}
  document.body.classList.add('paper-mode');active={id,refresh};syncPenWidthControls();setPagesOpen(root.classList.contains('pages-open'));sizing();draw();showTextRibbon();thumbs();if(conversionWarning)say(conversionWarning,true);
- return ()=>{finishText();closed=true;cancelAnimationFrame(raf);events.forEach(fn=>fn());ro.disconnect();for(const url of images.values())URL.revokeObjectURL(url);document.body.classList.remove('paper-mode');if(active?.id===id)active=null;};
+ return ()=>{finishText();tableUI.close();closed=true;cancelAnimationFrame(raf);events.forEach(fn=>fn());ro.disconnect();for(const url of images.values())URL.revokeObjectURL(url);document.body.classList.remove('paper-mode');if(active?.id===id)active=null;};
 }
