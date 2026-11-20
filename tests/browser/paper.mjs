@@ -247,6 +247,16 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('.classroom-grid').waitFor();
    assert.ok(await page.locator('.classroom-note-link[href="#note/'+courseNoteId+'"]').isVisible(),'classroom links to the existing note without creating another');
    assert.ok(await page.locator('.classroom-course').filter({hasText:'POL2104'}).getByText('POL2104-syllabus.pdf').isVisible(),'classroom shows the same primary PDF');
+   const courseCard=page.locator('.classroom-course').filter({hasText:'POL2104'});
+   await courseCard.locator('[data-action="nb-new"]').click();
+   await page.locator('#paper-svg').waitFor();
+   const sharedFiles=page.getByRole('button',{name:'ไฟล์หลักวิชา POL2104 · 1 รายการ',exact:true});
+   assert.ok(await sharedFiles.isVisible(),'a new note exposes its course files immediately');
+   await sharedFiles.click();await courseDialog.locator('[data-course-preview]').click();
+   const preview=page.locator('.paper-file-view');
+   await preview.locator('iframe').waitFor();assert.equal(await preview.locator('h2').innerText(),'POL2104-syllabus.pdf');
+   await preview.locator('[data-close]').click();await courseDialog.locator('[data-course-close]').click();
+   await page.evaluate(()=>{location.hash='#classroom';});
    await page.locator('.classroom-note-link[href="#note/'+courseNoteId+'"]').click();
    await page.locator('#paper-svg').waitFor();
 
