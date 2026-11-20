@@ -90,9 +90,17 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await typingBox.fill('จด');assert.deepEqual(await size(),small);
    await page.locator('#paper-text-input').fill('ความเข้าใจของฉัน');await click('save');
    if(mobile)assert.ok(await page.locator('#paper-mobile-editor').isHidden(),'mobile edit closes after saving');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
-  const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
+  const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');
+   assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
+   assert.equal(text.size,16,'new text defaults to 16px');
+   await click('select');
+   const editAt=await point(text.x+10,text.y+8);
+   await page.locator('#paper-svg').dispatchEvent('dblclick',{bubbles:true,clientX:editAt.x,clientY:editAt.y});
+   assert.ok(await page.locator('#paper-text-input').isVisible(),'double-click opens text for editing immediately');
+   await click('save');
+   await click('text');
   // Real mouse/pen-style pointer flow; touch mode additionally checks pan-vs-ink behavior.
-  await click('shape');await page.locator(mobile?'#paper-shape':'#paper-quick-shape').selectOption('arrow');
+  await click('arrow');assert.equal(await page.locator('#paper-shape').inputValue(),'arrow');
   const startShape=await point(160,360),endShape=await point(70,300);
   if(mobile){
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
@@ -229,8 +237,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    // Geometry is folded, but shape and ruler controls remain functional.
    assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),false);
    await click('shape');
-   assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),mobile,'geometry menu opens only for compact screens');
-   await page.locator(mobile?'#paper-shape':'#paper-quick-shape').selectOption('hexagon');
+   assert.ok(await page.locator('#paper-shapes-popup').isVisible());
+   await page.locator('[data-shape-pick="hexagon"]').click();
+   assert.ok(await page.locator('#paper-shapes-popup').isHidden());
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'shape selection must uncover the paper');
    if(mobile)await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
    await page.locator(mobile?'#paper-line-style':'#paper-quick-line-style').selectOption('dotted');
