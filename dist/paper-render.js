@@ -1,4 +1,4 @@
-import {PAGE_W,PAGE_H} from './paper-core.js?v=geometry-20261119';
+import {PAGE_W,PAGE_H} from './paper-core.js?v=word-format-20261120';
 import {formattedTextHTML} from './paper-rich-text.js?v=word-format-20261120';
 import {shapeSVG} from './paper-shapes.js?v=notebook-shape-tools-20261120';
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
