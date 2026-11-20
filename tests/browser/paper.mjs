@@ -254,7 +254,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   if(mobile)await page.touchscreen.tap(following.x,following.y);
   else await page.mouse.click(following.x,following.y);
   assert.equal(await follow.inputValue(),'รัฐ','tapping after the word must resume its textbox');
-  assert.equal(await follow.evaluate(el=>el.selectionStart),1,'cursor should be at the end ready for Scribble');
+  assert.equal(await follow.evaluate(el=>el.selectionStart),await follow.inputValue().then(v=>v.length),'cursor should be at the end ready for Scribble');
   await follow.fill('รัฐศาสตร์');await click('save');
   const continued=activeNote().paper.pages[0].objects.find(o=>o.id===originalText.id);
   assert.equal(continued.text,'รัฐศาสตร์','new handwriting text should be stored on same object');
