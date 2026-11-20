@@ -35,7 +35,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  // iPad defaults to stylus-only contact on the page; the user can change this per device.
  const isIPad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
  const palmKey='ru-paper-palm-guard.v1';
- let palmGuard=isIPad,lastStylusAt=0;
+ let palmGuard=isIPad;
  try{const saved=localStorage.getItem(palmKey);if(saved!==null)palmGuard=saved==='true';}catch{}
  try{width=penWidth(localStorage.getItem(widthKey));}catch{/* unavailable device preference: keep 5 */}
  const $=s=>root.querySelector(s),svg=$('#paper-svg'),sheet=$('#paper-sheet'),wrap=$('#paper-wrap'),viewport=$('#paper-viewport'),textarea=$('#paper-text-input');
@@ -195,7 +195,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   clearTimeout(textTimer);
   if(!editing)return;const edit=editing,w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
   if(!keepOpen){editing=null;textarea.hidden=true;if(edit.mobile){root.classList.remove('paper-is-editing');$('#paper-mobile-editor').hidden=true;sheet.append(textarea);}}
-  const o={...edit.object,text:textarea.value,w:edit.mobile?edit.paperWidth:w,h:edit.mobile?edit.paperHeight:h};if(edit.links.length)o.links=edit.links;else delete o.links;
+  const o={...edit.object,text:textarea.value,w:edit.paperWidth??w,h:edit.mobile?edit.paperHeight:h};if(edit.links.length)o.links=edit.links;else delete o.links;
   if(edit.fresh&&!o.text.trim()){selected.clear();draw();return;}
   if(!edit.fresh&&o.text===edit.object.text&&o.w===edit.object.w&&o.h===edit.object.h){if(!keepOpen)draw();return;}
   if(change(p=>{const i=p.objects.findIndex(v=>v.id===o.id);if(i>=0)p.objects[i]=o;else p.objects.push(o);})&&keepOpen){edit.object=o;edit.fresh=false;}
@@ -216,11 +216,9 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   return near.sort((a,b)=>Math.abs(p.x-(a.x+a.w))-Math.abs(p.x-(b.x+b.w)))[0]||null;
  }
  function pointerDown(e){
-  if(e.pointerType==='pen')lastStylusAt=Date.now();
   // Resting hands are often interpreted as a two-finger pinch by the browser.
   // Ignore touch contact on the page while protected or immediately after pen use.
-  if(e.pointerType==='touch'&&(palmGuard||[...pointers.values()].some(p=>p.pointerType==='pen')||
-    Date.now()-lastStylusAt<900)){if(e.cancelable)e.preventDefault();return;}
+  if(e.pointerType==='touch'&&(palmGuard||[...pointers.values()].some(p=>p.pointerType==='pen'))){if(e.cancelable)e.preventDefault();return;}
   if(e.target.closest('[data-word-link],[data-word-file]')&&['text','select'].includes(tool)&&!multiSelect&&!e.shiftKey)return;
   wordSelection=null;
   if(e.pointerType==='mouse'&&e.button!==0)return;
@@ -283,7 +281,6 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   scheduleDraw();
  }
  function pointerMove(e){
-  if(e.pointerType==='pen')lastStylusAt=Date.now();
   if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,pointerType:e.pointerType});if(!gesture)return;e.preventDefault();
   if(gesture.multiTap&&!gesture.moved){
    if(Math.hypot(e.clientX-gesture.px,e.clientY-gesture.py)<4)return;
@@ -323,7 +320,6 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   scheduleDraw();
  }
  function pointerUp(e){
-  if(e.pointerType==='pen')lastStylusAt=Date.now();
   if(!pointers.has(e.pointerId))return;const g=gesture;
   cancelSmartTimer();
   if(g?.kind==='stroke'&&e.type==='pointerup'){const p=point(e),to=g.rulerEdge?rulerProject(p,ruler,g.rulerEdge):p;g.points.push([to.x,to.y,e.pointerType==='pen'&&e.pressure>0?e.pressure:.5]);}
