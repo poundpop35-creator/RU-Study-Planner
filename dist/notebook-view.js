@@ -1,5 +1,5 @@
-import {paperPage} from './paper-view.js?v=geometry-20261119';
-import {mountPaper,refreshPaper} from './paper-editor.js?v=geometry-20261119';
+import {paperPage} from './paper-view.js?v=compact-toolbar-20261120';
+import {mountPaper,refreshPaper} from './paper-editor.js?v=compact-toolbar-20261120';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
