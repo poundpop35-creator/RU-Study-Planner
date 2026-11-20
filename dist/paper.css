@@ -420,3 +420,54 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-mobile-editor .paper-word-swatch{width:25px;height:25px;flex-basis:25px}
 }
 @media print{.paper-app .paper-quickbar,.paper-app .paper-text-ribbon{display:none!important}}
+
+
+/* Contextual mini-toolbar: right-click or text selection, as in Word.
+   Positioned in viewport coordinates, never laid out on the notebook page. */
+.paper-app .paper-word-menu{
+ position:fixed;z-index:1005;
+ width:min(360px,calc(100vw - 18px));max-width:calc(100vw - 18px);
+ max-height:min(340px,75dvh);overflow:auto;
+ padding:9px;border:1px solid #b6c8e9;border-radius:12px;
+ background:#fff;box-shadow:0 14px 38px #1a31583b;
+ color:#263b60;font:12px/1.4 'Noto Sans Thai',sans-serif;
+}
+.paper-app .paper-word-menu[hidden]{display:none!important}
+.paper-app .paper-word-menu-tools,
+.paper-app .paper-word-menu-swatches,
+.paper-app .paper-word-menu-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.paper-app .paper-word-menu-tools{padding-bottom:8px;border-bottom:1px solid #e4eaf4}
+.paper-app .paper-word-menu-tools button{
+ min-height:34px;min-width:36px;padding:4px 8px;
+ border:1px solid #d4dff0;background:#f4f7ff;color:#263e73;border-radius:7px;
+ font-size:15px;
+}
+.paper-app .paper-word-menu-tools button[aria-pressed="true"]{background:#dce9ff;border-color:#6286d9}
+.paper-app .paper-word-menu-tools label{display:flex;align-items:center;gap:5px;margin-left:auto}
+.paper-app .paper-word-menu-tools input[type="number"]{
+ width:57px;min-height:34px;border:1px solid #c4d3e8;border-radius:7px;
+ padding:4px;text-align:center;font-size:13px;background:#fff;color:#263b60;
+}
+.paper-app .paper-word-menu-swatches{padding:9px 0}
+.paper-app .paper-word-menu-swatches>span{flex:1 0 100%;font-size:11px;color:#4d6282}
+.paper-app .paper-word-menu-swatches button[data-word-color]{
+ display:inline-block;width:25px;height:25px;min-width:25px;min-height:25px;
+ padding:0;border:3px solid #fff;background:var(--word-ink);border-radius:6px;
+ box-shadow:0 0 0 1px #b1c3dd;
+}
+.paper-app .paper-word-menu-swatches button[aria-pressed="true"]{box-shadow:0 0 0 2px #3155d9}
+.paper-app .paper-word-menu-custom{display:flex;align-items:center;gap:4px;padding-left:5px;white-space:nowrap;font-size:11px}
+.paper-app .paper-word-menu-custom input[type="color"]{width:30px;height:27px;padding:0;border:0;background:transparent}
+.paper-app .paper-word-menu-actions{border-top:1px solid #e4eaf4;padding-top:7px;justify-content:space-between}
+.paper-app .paper-word-menu-actions button{
+ min-height:33px;padding:5px 10px;border:1px solid #cfdbef;
+ border-radius:7px;background:#edf3ff;color:#25488c;font-size:12px;
+}
+.paper-app .paper-word-menu-actions [data-context-close]{min-width:35px;padding:4px;background:#fff}
+.paper-app .paper-word-menu [disabled]{opacity:.4;cursor:not-allowed}
+.paper-app .paper-word-menu-hint{margin:6px 0 0;font-size:10px;color:#657996}
+@media (max-width:720px){
+ .paper-app .paper-word-menu{width:min(325px,calc(100vw - 14px));padding:7px}
+ .paper-app .paper-word-menu-tools input[type="number"]{width:53px}
+}
+@media print{.paper-app .paper-word-menu{display:none!important}}
