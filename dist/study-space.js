@@ -2,7 +2,7 @@ import {createSharedClient,legacyKeys,migrateLegacy} from './shared-space.js?v=r
 import {accountClient,lookupAccount,sessionKey} from './notebook-account.js';
 import {createPersonalClient,personalKey} from './personal-client.js?v=20261116-account';
 import {supabaseConfig as config} from './supabase-config.js?v=20261027c';
-import {freshState,validateState} from './core.js?v=replay-20261119';
+import {freshState,validateState} from './core.js?v=balanced-friday-replays-20261120';
 import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=word-canva-classroom-20261120';
 import {getImage,putImage,newImageId} from './image-store.js?v=20261027c';
 export const workspaceKey=id=>'ru-study-workspace.v1:'+id;
