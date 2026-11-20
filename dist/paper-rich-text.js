@@ -11,7 +11,7 @@ export function textColor(value,fallback=null){
  return '#'+channels.map(n=>n.toString(16).padStart(2,'0')).join('');
 }
 export const TEXT_SIZE_MIN=10,TEXT_SIZE_MAX=96;
-export function textSize(value,fallback=24){
+export function textSize(value,fallback=16){
  const n=Number(value);
  return Number.isInteger(n)&&n>=TEXT_SIZE_MIN&&n<=TEXT_SIZE_MAX?n:fallback;
 }
@@ -59,7 +59,7 @@ export function applyTextFormat(marks,text,start,end,key,value){
   const old=existing.find(m=>m.start<=a&&m.end>=b);
   const style=old?formatOf(old):{};
   if(a>=start&&b<=end){
-   if(key==='size'){if(value===null)delete style.size;else style.size=textSize(value,24);}
+   if(key==='size'){if(value===null)delete style.size;else style.size=textSize(value,16);}
    else if(key==='color'){if(value===null)delete style.color;else{const c=textColor(value);if(!c)throw Error('สีตัวอักษรไม่ถูกต้อง');style.color=c;}}
    else if(value===true)style[key]=true;
    else delete style[key];

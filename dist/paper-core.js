@@ -39,7 +39,7 @@ export function validatePaper(value){
     if(o.lineStyle!==undefined){if(!Object.hasOwn(lineStyles,o.lineStyle))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.lineStyle=o.lineStyle;}
     if(o.dash!==undefined){if(!Object.hasOwn(lineStyles,o.dash))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.dash=o.dash;}
    }else if(o.type==='text'){
-    if(typeof o.text!=='string'||o.text.length>20000||!color(o.color)||!num(o.size,10,96))throw Error('ข้อความบนกระดาษไม่ถูกต้อง');Object.assign(out,{text:o.text,color:o.color,size:o.size,bold:o.bold===true});if(o.links?.length)out.links=validateLinks(o.links,o.text);if(o.marks?.length)out.marks=validateMarks(o.marks,o.text);
+    if(typeof o.text!=='string'||o.text.length>20000||!color(o.color)||!num(o.size,10,96))throw Error('ข้อความบนกระดาษไม่ถูกต้อง');Object.assign(out,{text:o.text,color:o.color,size:Math.round(o.size),bold:o.bold===true});if(o.links?.length)out.links=validateLinks(o.links,o.text);if(o.marks?.length)out.marks=validateMarks(o.marks,o.text);
    }else {if(typeof o.imageId!=='string'||!/^[a-f0-9-]{36}\.(png|jpg|webp|gif)$/.test(o.imageId))throw Error('รูปภาพไม่ถูกต้อง');out.imageId=o.imageId;if(o.stretch===true)out.stretch=true;if(o.link)out.link=imageLink(o.link);}
    return out;
   })};

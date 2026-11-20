@@ -98,3 +98,11 @@ test('shape kind and line style edits roundtrip without losing position and dime
  const changed=validatePaper(doc.notes[0].paper).pages[0].objects.at(-1);
  assert.deepEqual([changed.kind,changed.dash,changed.x,changed.y,changed.w,changed.h],['triangle','dashed',40,60,100,40]);
 });
+
+test('legacy fractional text size is displayed and persisted as the nearest whole pixel',()=>{
+ const p=emptyPage();
+ p.objects.push({id:'text-old',type:'text',x:24,y:20,w:220,h:55,text:'โน้ตเก่า',size:15.671493,color:'#172033',bold:false});
+ const clean=validatePaper({version:1,pages:[p]});
+ assert.equal(clean.pages[0].objects[0].size,16);
+ assert.equal(validatePaper(clean).pages[0].objects[0].size,16);
+});

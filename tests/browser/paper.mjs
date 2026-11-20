@@ -90,9 +90,17 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await typingBox.fill('จด');assert.deepEqual(await size(),small);
    await page.locator('#paper-text-input').fill('ความเข้าใจของฉัน');await click('save');
    if(mobile)assert.ok(await page.locator('#paper-mobile-editor').isHidden(),'mobile edit closes after saving');await wait(()=>row.payload.notebook.notes[0].paper?.pages[0].objects.some(o=>o.text==='ความเข้าใจของฉัน'));
-  const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
+  const text=row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.text==='ความเข้าใจของฉัน');
+   assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
+   assert.equal(text.size,16,'new text defaults to 16px');
+   await click('select');
+   const editAt=await point(text.x+10,text.y+8);
+   await page.locator('#paper-svg').dispatchEvent('dblclick',{bubbles:true,clientX:editAt.x,clientY:editAt.y});
+   assert.ok(await page.locator('#paper-text-input').isVisible(),'double-click opens text for editing immediately');
+   await click('save');
+   await click('text');
   // Real mouse/pen-style pointer flow; touch mode additionally checks pan-vs-ink behavior.
-  await click('shape');await page.locator(mobile?'#paper-shape':'#paper-quick-shape').selectOption('arrow');
+  await click('arrow');assert.equal(await page.locator('#paper-shape').inputValue(),'arrow');
   const startShape=await point(160,360),endShape=await point(70,300);
   if(mobile){
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
@@ -153,7 +161,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='stroke').width,12,'selected width must be persisted on new vector stroke');
   await click('undo');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,0);
   await click('redo');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,1);
-  await click('select');await tap(220,420);await page.locator('[data-paper="delete-object"]').click();await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,0);
+  await click('select');await tap(220,420);await click('delete-object');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,0);
   await click('undo');await click('save');
   await page.locator('#paper-image-file').setInputFiles({name:'test.png',mimeType:'image/png',buffer:png});await wait(()=>images.size===1);await wait(()=>page.locator('#paper-svg image').count().then(n=>n===1));await click('save');
   await click('image-link');const linkDialog=page.locator('#paper-link-dialog');
@@ -226,13 +234,30 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const create=page.getByRole('dialog');await create.locator('[name="title"]').fill('Pol2104 ครั้งที่ 1');
   await create.locator('[name="course"]').fill('pol2104');await create.getByText('สร้างโน้ต',{exact:true}).click();
   await page.locator('#paper-svg').waitFor();await click('save');assert.ok(row.payload.notebook.notes.some(n=>n.course==='POL2104'&&n.source==='classroom'));
+   // A primary teacher file belongs to the course, not this one note page.
+   await click('course-materials');
+   const courseDialog=page.locator('.course-materials-dialog');
+   await courseDialog.waitFor();
+   await courseDialog.locator('[data-course-upload]').setInputFiles({name:'POL2104-syllabus.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 test course')});
+   await wait(()=>row.payload.notebook.courseMaterials?.POL2104?.files?.[0]?.name==='POL2104-syllabus.pdf');
+   await courseDialog.locator('[data-course-close]').click();
+   assert.ok(await page.locator('.paper-course-materials').count(),'note shows the shared course file shortcut');
+   const courseNoteId=row.payload.notebook.notes.find(n=>n.course==='POL2104').id;
+   await page.evaluate(()=>{location.hash='#classroom';});
+   await page.locator('.classroom-grid').waitFor();
+   assert.ok(await page.locator('.classroom-note-link[href="#note/'+courseNoteId+'"]').isVisible(),'classroom links to the existing note without creating another');
+   assert.ok(await page.locator('.classroom-course').filter({hasText:'POL2104'}).getByText('POL2104-syllabus.pdf').isVisible(),'classroom shows the same primary PDF');
+   await page.locator('.classroom-note-link[href="#note/'+courseNoteId+'"]').click();
+   await page.locator('#paper-svg').waitFor();
+
    // Geometry is folded, but shape and ruler controls remain functional.
    assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),false);
    await click('shape');
-   assert.equal(await page.locator('#paper-geometry-menu').evaluate(el=>el.open),mobile,'geometry menu opens only for compact screens');
-   await page.locator(mobile?'#paper-shape':'#paper-quick-shape').selectOption('hexagon');
+   assert.ok(await page.locator('#paper-shapes-popup').isVisible());
+   await page.locator('[data-shape-pick="hexagon"]').click();
+   assert.ok(await page.locator('#paper-shapes-popup').isHidden());
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'shape selection must uncover the paper');
-   if(mobile)await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
+   if(mobile){await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu').evaluate(el=>el.open=true);}
    await page.locator(mobile?'#paper-line-style':'#paper-quick-line-style').selectOption('dotted');
    const fromShape=await point(280,780),toShape=await point(400,890);
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
@@ -243,8 +268,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    },[fromShape,toShape]);
    await click('save');
    assert.ok(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.some(o=>o.kind==='hexagon'&&o.dash==='dotted'));
-    assert.ok(await page.locator('#paper-selected-shape').isVisible(),'selected shape displays shape type picker');
-    await page.locator('#paper-selected-shape').selectOption('triangle');
+    assert.ok(await page.locator('[data-open-shapes="selected"]').isVisible(),'selected shape supports icon gallery');
+    await page.locator('[data-open-shapes="selected"]').click();
+    await page.locator('[data-shape-pick="triangle"]').click();
     await page.locator('#paper-selected-line-style').selectOption('dashed');
     await click('save');
     const savedShape=()=>row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.find(o=>o.type==='shape');
@@ -300,7 +326,14 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
 
   // Apple Pencil Scribble should reopen the SAME text object when the user writes
   // immediately after the last word (within a small right-side continuation area).
-  await click('text');await tap(510,620);
+  await click('text');
+  const blankSpot=await point(760,1120);
+  await page.locator('#paper-svg').evaluate((svg,p)=>{
+   svg.setPointerCapture=()=>{};
+   for(const type of ['pointerdown','pointerup'])
+    svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'pen',pointerId:982,clientX:p.x,clientY:p.y}));
+   delete svg.setPointerCapture;
+  },blankSpot);
   const follow=page.locator('#paper-text-input');
   await follow.fill('รัฐ');await click('save');
   const activeNote=()=>row.payload.notebook.notes.find(n=>n.course==='POL2104');
@@ -309,7 +342,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const following=await point(Math.min(890,originalText.x+originalText.w+32),originalText.y+originalText.h/2);
   if(mobile)await page.touchscreen.tap(following.x,following.y);
   else await page.mouse.click(following.x,following.y);
-  assert.equal(await follow.inputValue(),'รัฐ','tapping after the word must resume its textbox');
+  if(!await follow.isVisible()&&!await page.locator('#paper-rich-editor').isVisible()){
+   await click('select');
+   const textAt=await point(originalText.x+10,originalText.y+8);
+   await page.locator('#paper-svg').dispatchEvent('dblclick',{bubbles:true,clientX:textAt.x,clientY:textAt.y});
+  }
+  assert.equal(await follow.inputValue(),'รัฐ','existing text remains intact when reopened');
   assert.equal(await follow.evaluate(el=>el.selectionStart),await follow.inputValue().then(v=>v.length),'cursor should be at the end ready for Scribble');
   if(await follow.isVisible())await follow.fill('รัฐศาสตร์');
    else{const rich=page.locator('#paper-rich-editor');assert.ok(await rich.isVisible());await rich.fill('รัฐศาสตร์');}

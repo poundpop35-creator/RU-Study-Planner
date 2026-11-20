@@ -7,6 +7,7 @@ import {replaceLink,moveLinks} from './word-links.js';
 import {textSize,textColor,formattedTextHTML,normalizeMarks,toggleTextFormat,applyTextFormat,moveMarks} from './paper-rich-text.js?v=word-format-20261120';
 import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
+import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape} from './paper-shapes.js?v=notebook-shape-tools-20261120';
 import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=geometry-20261119';
 let active=null;
@@ -15,8 +16,9 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  const root=document.querySelector('.paper-app');if(!root)return ()=>{};
  let note=space.notebook().notes.find(n=>n.id===id);if(!note)return ()=>{};
  let conversionWarning='';let initial;try{initial=paperFor(note);}catch{initial={version:1,pages:[emptyPage()]};conversionWarning='ต้นฉบับยาวเกินหน้ากระดาษที่รองรับ ดูฉบับเต็มได้ในเมนู ดูต้นฉบับเดิม';}
- let model=initial,pageId=model.pages[0].id,tool='text',color='#172033',width=5,highlighterSize=12,fontSize=24,bold=false,finger=false,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
+ let model=initial,pageId=model.pages[0].id,tool='text',color='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=false,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
  let multiSelect=false,wordSelection=null,lineStyle='solid',smartEnabled=true,smartTimer=0;
+ let lastSelectionSignature='';
  let ruler={active:false,x:PAGE_W/2,y:PAGE_H/2,angle:0,length:440,height:44};
  function cancelSmartTimer(){clearTimeout(smartTimer);smartTimer=0;}
  function scheduleSmartHold(g){
@@ -32,7 +34,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  let cachedPage=null,cachedContent='',imageVersion=0,cachedImageVersion=-1;
  const scope=space.info().scope,images=new Map(),loading=new Set(),history=new Map(),events=[],pointers=new Map();
  const draftKey='ru-paper-draft:'+scope+':'+id;
- const widthKey='ru-paper-pen-width.v1:'+scope,highlightKey='ru-paper-highlight-width.v1:'+scope,pagesKey='ru-paper-pages-open.v1',textSizeKey='ru-paper-text-font-size.v1';
+ const widthKey='ru-paper-pen-width.v1:'+scope,highlightKey='ru-paper-highlight-width.v1:'+scope,pagesKey='ru-paper-pages-open.v1',textSizeKey='ru-paper-text-font-size.v2';
  // iPad defaults to stylus-only contact on the page; the user can change this per device.
  const isIPad=/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
  const palmKey='ru-paper-palm-guard.v1';
@@ -41,7 +43,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  try{width=penWidth(localStorage.getItem(widthKey));}catch{/* unavailable device preference: keep 5 */}
  try{highlighterSize=highlightWidth(localStorage.getItem(highlightKey));}catch{/* keep 12 */}
  try{if(localStorage.getItem(pagesKey)==='1')root.classList.add('pages-open');}catch{/* default collapsed */}
- try{fontSize=textSize(localStorage.getItem(textSizeKey),24);}catch{}
+ try{const stored=localStorage.getItem(textSizeKey);if(stored!==null)fontSize=textSize(stored,16);}catch{}
  const $=s=>root.querySelector(s),svg=$('#paper-svg'),sheet=$('#paper-sheet'),wrap=$('#paper-wrap'),viewport=$('#paper-viewport'),textarea=$('#paper-text-input');
  const bind=(el,type,fn,opts)=>{el.addEventListener(type,fn,opts);events.push(()=>el.removeEventListener(type,fn,opts));};
  const palmToggle=$('#paper-palm-guard');
@@ -74,6 +76,8 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  function change(fn){const next=copy(unsaved||model);fn(next.pages.find(p=>p.id===pageId),next);return persist(next);}
  function scheduleDraw(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw();});}
  function draw(){
+  const signature=[...selected].sort().join('|');
+  if(signature!==lastSelectionSignature){$('#paper-selection-more').open=false;lastSelectionSignature=signature;}
   const p=page();if(cachedPage!==p||cachedImageVersion!==imageVersion){cachedContent=pageSVG(p,images);cachedPage=p;cachedImageVersion=imageVersion;}let content=cachedContent;
   if(editing)content=pageSVG({...p,objects:p.objects.filter(o=>o.id!==editing.id)},images);
   if(gesture?.kind==='shape'&&gesture.object)content+=objectSVG(gesture.object);
@@ -96,12 +100,20 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   const rulerButton=$('[data-paper="ruler"]');
   rulerButton.setAttribute('aria-pressed',String(ruler.active));
   rulerButton.textContent=ruler.active?'📏 ปิดไม้บรรทัด':'📏 เปิดไม้บรรทัด';
-  root.querySelectorAll('[data-paper]').forEach(b=>{if(['pen','highlight','eraser','text','shape','select','hand'].includes(b.dataset.paper))b.setAttribute('aria-pressed',String(tool===b.dataset.paper));});
+  root.querySelectorAll('[data-paper]').forEach(b=>{
+   if(['pen','highlight','eraser','text','shape','select','hand','line','arrow','straighten'].includes(b.dataset.paper))
+    b.setAttribute('aria-pressed',String(['line','arrow'].includes(b.dataset.paper)
+     ?tool==='shape'&&$('#paper-shape').value===b.dataset.paper:tool===b.dataset.paper));
+  });
   root.querySelectorAll('[data-paper-color]').forEach(b=>b.setAttribute('aria-pressed',String(color===b.dataset.paperColor)));
    root.querySelectorAll('[data-quick-color]').forEach(b=>b.setAttribute('aria-pressed',String(color===b.dataset.quickColor)));
    $('[data-quick-action="ruler"]').setAttribute('aria-pressed',String(ruler.active));
    $('[data-quick-action="multi"]').setAttribute('aria-pressed',String(multiSelect));
    $('#paper-quick-shape').value=$('#paper-shape').value;
+   root.querySelectorAll('[data-quick-draw]').forEach(b=>b.setAttribute('aria-pressed',
+    String(b.dataset.quickDraw==='straighten'?tool==='straighten':tool==='shape'&&$('#paper-shape').value===b.dataset.quickDraw)));
+   root.querySelectorAll('[data-shape-pick]').forEach(b=>b.setAttribute('aria-pressed',
+    String(b.dataset.shapePick===$('#paper-shape').value)));
    $('#paper-quick-line-style').value=$('#paper-line-style').value;
    $('#paper-quick-text-size').value=fontSize;
   $('[data-paper="undo"]').disabled=!h().canUndo; $('[data-paper="redo"]').disabled=!h().canRedo;
@@ -114,7 +126,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(singleImage?.link)openLink.href=singleImage.link;else openLink.removeAttribute('href');
   $('[data-paper="crop"]').hidden=!singleImage;
   const texts=p.objects.filter(o=>selected.has(o.id)&&o.type==='text');$('[data-paper="edit-text"]').hidden=texts.length!==1;$('#paper-font-size').parentElement.hidden=!texts.length;$('[data-paper="bold"]').hidden=!texts.length;
-  $('#paper-font-size').value=texts[0]?.size||fontSize;
+  $('#paper-font-size').value=Math.round(texts[0]?.size||fontSize);
   $('#paper-default-text-size').value=fontSize;
   loadImages();
  }
@@ -180,7 +192,31 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(toggle)toggle.setAttribute('aria-expanded','false');
  }
  function closeExtraTools(){const menu=$('#paper-toolbar-more');if(menu)menu.open=false;}
- function setTool(next){cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;tool=next;if(next==='shape'&&window.matchMedia('(max-width:720px)').matches){$('#paper-toolbar-more').open=true;$('#paper-geometry-menu').open=true;}else closeExtraTools();if(next!=='select')multiSelect=false;if(!['select','text'].includes(tool))selected.clear();syncPenWidthControls();showTextRibbon();say(({shape:'เลือกรูปทรง แล้วลากบนหน้ากระดาษ',pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',select:'แตะเพื่อเลือก · ล้อมวัตถุเพื่อเลือกหลายชิ้น · ลากมุมเพื่อปรับขนาด',text:'แตะที่ข้อความเดิมหรือชิดท้ายคำเพื่อเขียนต่อ · แตะพื้นที่ว่างเพื่อสร้างใหม่',hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูมเมื่อปิดกันฝ่ามือ'})[tool]);draw();}
+ function setShapesOpen(open){
+  const panel=$('#paper-shapes-popup');panel.hidden=!open;
+  if(open){
+   const anchor=$('[data-paper="shape"]').getBoundingClientRect();
+   panel.style.left=Math.max(8,Math.min(anchor.left,window.innerWidth-360))+'px';
+   panel.style.top=Math.max(8,Math.min(anchor.bottom+6,window.innerHeight-250))+'px';
+  }
+ }
+ function setTool(next){
+  cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;
+  if(next==='line'||next==='arrow'){
+   $('#paper-shape').value=next;$('#paper-quick-shape').value=next;tool='shape';
+  }else tool=next;
+  closeExtraTools();setShapesOpen(false);
+  if(next!=='select')multiSelect=false;
+  if(!['select','text'].includes(tool))selected.clear();
+  syncPenWidthControls();showTextRibbon();
+  say(({shape:'เลือกชนิดรูปทรงจากไอคอน แล้วลากบนกระดาษ',
+   straighten:'ลากเส้นด้วยมือแล้วปล่อยให้จัดเป็นเส้นตรงทันที',
+   pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',
+   highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',
+   select:'คลิกเพื่อเลือก · ดับเบิลคลิกข้อความเพื่อแก้ทันที',
+   text:'คลิกข้อความเดิมเพื่อแก้ · คลิกพื้นที่ว่างเพื่อสร้างใหม่',
+   hand:'ลากเพื่อเลื่อน · สองนิ้วเพื่อซูมเมื่อปิดกันฝ่ามือ'})[tool]);draw();
+ }
  const textMeasure=document.createElement('span');
  Object.assign(textMeasure.style,{position:'absolute',visibility:'hidden',pointerEvents:'none',whiteSpace:'pre',width:'max-content',maxWidth:'none',left:'0',top:'0'});
  const measureClip=document.createElement('div');
@@ -585,7 +621,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   }
   if(tool==='eraser'){gesture={kind:'erase',before:copy(page().objects),preview:page().objects.filter(o=>o.type!=='stroke'||!strokeHit(o,p))};scheduleDraw();return;}
   const snapped=tool==='pen'?rulerSnap(p,ruler):null,initial=snapped||p;
-  gesture={kind:'stroke',tool,color:tool==='highlight'&&color==='#172033'?'#f4cd45':color,width:tool==='highlight'?highlighterSize:width,
+  gesture={kind:'stroke',tool:tool==='straighten'?'pen':tool,straighten:tool==='straighten',color:tool==='highlight'&&color==='#172033'?'#f4cd45':color,width:tool==='highlight'?highlighterSize:width,
    points:[[initial.x,initial.y,e.pointerType==='pen'&&e.pressure>0?e.pressure:.5]],
    rulerEdge:snapped?.edge||0,pointer:e.pointerId};
   scheduleDraw();
@@ -627,7 +663,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   else if(gesture.kind==='move')gesture.preview=gesture.before.map(o=>selected.has(o.id)?{...o,x:Math.max(-o.w/2,Math.min(PAGE_W-o.w/2,o.x+p.x-gesture.start.x)),y:Math.max(-o.h/2,Math.min(PAGE_H-o.h/2,o.y+p.y-gesture.start.y))}:o);
   else if(gesture.kind==='image-resize')gesture.preview=gesture.before.map(o=>o.id===gesture.image.id?resizeImage(o,gesture.edge,p.x-gesture.start.x,p.y-gesture.start.y):o);
    else if(gesture.kind==='shape-resize')gesture.preview=gesture.before.map(o=>o.id===gesture.shape.id?resizeShape(o,gesture.edge,p.x-gesture.start.x,p.y-gesture.start.y):o);
-  else if(gesture.kind==='resize'){const b=gesture.box,f=Math.max(.15,Math.min(4,Math.max((p.x-b.x)/Math.max(1,b.w),(p.y-b.y)/Math.max(1,b.h))));gesture.preview=gesture.before.map(o=>selected.has(o.id)?{...o,x:b.x+(o.x-b.x)*f,y:b.y+(o.y-b.y)*f,w:Math.max(1,o.w*f),h:Math.max(1,o.h*f),...(o.type==='text'?{size:Math.min(96,Math.max(10,o.size*f))}:{})}:o);}
+  else if(gesture.kind==='resize'){const b=gesture.box,f=Math.max(.15,Math.min(4,Math.max((p.x-b.x)/Math.max(1,b.w),(p.y-b.y)/Math.max(1,b.h))));gesture.preview=gesture.before.map(o=>selected.has(o.id)?{...o,x:b.x+(o.x-b.x)*f,y:b.y+(o.y-b.y)*f,w:Math.max(1,o.w*f),h:Math.max(1,o.h*f),...(o.type==='text'?{size:Math.round(Math.min(96,Math.max(10,o.size*f)))}:{})}:o);}
   scheduleDraw();
  }
  function pointerUp(e){
@@ -640,19 +676,24 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   if(g?.multiTap&&!g.moved&&g.alreadySelected&&e.type==='pointerup')selected.delete(g.multiTap);
   if(g?.kind==='stroke'&&e.type!=='pointercancel'){
    let result;
-   if(g.snap)result=g.snap;
+   if(g.straighten&&g.points.length>1){
+    const first=g.points[0],last=g.points.at(-1);
+    if(Math.hypot(last[0]-first[0],last[1]-first[1])>=2)
+     result=makeShape(uid(),'line',{x:first[0],y:first[1]},{x:last[0],y:last[1]},g.color,g.width,lineStyle);
+   }
+   else if(g.snap)result=g.snap;
    else if(g.rulerEdge&&g.points.length>1){
     const first=g.points[0],last=g.points.at(-1);
     result=makeShape(uid(),'line',{x:first[0],y:first[1]},{x:last[0],y:last[1]},g.color,g.width,lineStyle);
    }
    if(result)change(p=>p.objects.push(result));
-   else{const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width});change(p=>p.objects.push(stroke));}
+   else if(!g.straighten){const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width});change(p=>p.objects.push(stroke));}
   }
   else if(g?.kind==='shape'&&e.type==='pointerup'){
    const end=point(e);
    if(Math.hypot(end.x-g.start.x,end.y-g.start.y)>2){
     const shape=makeShape(g.id,g.shape,g.start,end,g.color,g.width,g.lineStyle);
-    if(change(p=>p.objects.push(shape))){tool='select';selected=new Set([shape.id]);$('#paper-geometry-menu').open=false;}
+    if(change(p=>p.objects.push(shape))){tool='select';selected=new Set([shape.id]);$('#paper-geometry-menu').open=false;setShapesOpen(false);showTextRibbon();}
    }
   }
   else if(g?.preview&&e.type!=='pointercancel')change(p=>{p.objects=g.preview;});
@@ -669,7 +710,11 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  });
  bind(svg,'pointerdown',pointerDown);bind(svg,'pointermove',pointerMove);bind(svg,'pointerup',pointerUp);bind(svg,'pointercancel',pointerUp);
  bind(svg,'lostpointercapture',e=>{if(pointers.delete(e.pointerId)){cancelSmartTimer();gesture=null;scheduleDraw();}});
- bind(svg,'dblclick',e=>{if(tool!=='select')return;const o=[...page().objects].reverse().find(o=>o.type==='text'&&contains(point(e),o));if(o)startText(o);});
+ bind(svg,'dblclick',e=>{
+   if(!['select','text'].includes(tool)||editing)return;
+   const o=[...page().objects].reverse().find(o=>o.type==='text'&&contains(point(e),o));
+   if(o){e.preventDefault();startText(o);}
+  });
  bind(viewport,'wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();const r=viewport.getBoundingClientRect();zoomAt(zoom*Math.exp(-e.deltaY*.005),e.clientX-r.left,e.clientY-r.top);}},{passive:false});
  async function insertImages(files){
   finishText();loadingImages++;try{for(const file of files){writable();say('กำลังส่งรูปขึ้น Supabase…');const imageId=await space.uploadImage(file);if(closed)return;const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();if(closed){URL.revokeObjectURL(url);return;}images.set(imageId,url);imageVersion++;const w=Math.min(620,img.naturalWidth),height=Math.min(900,w*img.naturalHeight/img.naturalWidth),actualW=height*img.naturalWidth/img.naturalHeight;
@@ -717,6 +762,19 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    }
    if(unsaved&&b.dataset.paper!=='save'&&b.dataset.paper!=='draft'&&b.dataset.paper!=='discard-draft'&&b.dataset.paper!=='pages')throw Error('มีงานค้าง กรุณาบันทึกหรือสำรองก่อนทำรายการต่อ');
    if(b.dataset.paperPage){finishText();pageId=b.dataset.paperPage;selected.clear();viewport.scrollTop=0;if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);draw();thumbs();return;}
+   if(b.hasAttribute('data-open-shapes')){setShapesOpen($('#paper-shapes-popup').hidden);return;}
+   if(b.hasAttribute('data-shapes-close')){setShapesOpen(false);return;}
+   if(b.dataset.shapePick){
+    const kind=b.dataset.shapePick;
+    const single=page().objects.find(o=>selected.size===1&&selected.has(o.id)&&o.type==='shape');
+    if(single&&tool==='select'){
+     change(p=>p.objects.forEach(o=>{
+      if(o.id===single.id){o.kind=kind;if(['square','circle'].includes(kind)){const side=Math.max(o.w,o.h);o.w=side;o.h=side;}}
+     }));
+    }else{$('#paper-shape').value=kind;$('#paper-quick-shape').value=kind;setTool('shape');}
+    setShapesOpen(false);draw();return;
+   }
+   if(b.dataset.quickDraw){setTool(b.dataset.quickDraw);return;}
    if(b.dataset.quickColor){$('[data-paper-color="'+b.dataset.quickColor+'"]').click();return;}
     if(b.dataset.quickAction){$('[data-paper="'+b.dataset.quickAction+'"]').click();return;}
     if(b.dataset.paperColor){color=b.dataset.paperColor;if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type!=='image'?{...o,color}:o);});draw();closeExtraTools();return;}
@@ -740,8 +798,21 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     multiSelect=!multiSelect;setTool('select');
     say(multiSelect?'แตะเพื่อเพิ่มหรือนำออกจากกลุ่ม · ลากชิ้นที่เลือกเพื่อย้ายพร้อมกัน':'แตะเพื่อเลือก · Shift + คลิกเพื่อเลือกเพิ่ม');return;
    }
-   if(['select','pen','highlight','eraser','text','shape','hand'].includes(action)){setTool(action);return;}
+   if(['select','pen','highlight','eraser','text','shape','hand','line','arrow','straighten'].includes(action)){setTool(action);if(action==='shape')setShapesOpen(true);return;}
    if(action==='files'){fileList();$('#paper-files').showModal();return;}
+   if(action==='course-materials'){
+    const course=currentNote()?.course;
+    if(!course)throw Error('เลือกวิชาในรายละเอียดโน้ตก่อน');
+    await openSharedCourseMaterials(space,course,()=>{
+     const count=courseMaterialCount(space.notebook(),course);
+     let details=$('.paper-course-materials');
+     if(count){
+      if(!details){details=document.createElement('details');details.className='paper-course-materials';$('.paper-context').after(details);}
+      details.innerHTML='<summary>📚 เอกสารหลัก '+course+' · '+count+' รายการ ▾</summary>'+courseMaterialList(space.notebook(),course);
+     }else details?.remove();
+    },say);
+    return;
+   }
    if(action==='image-link'){
     const target=page().objects.find(o=>selected.has(o.id)&&o.type==='image');
     if(!target)return;
@@ -777,7 +848,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    if(action==='add-page'){const next=copy(model),p=emptyPage();p.template=page().template;next.pages.push(p);if(persist(next)){if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);pageId=p.id;selected.clear();viewport.scrollTop=0;draw();thumbs();}}
    if(action==='duplicate-page'){const next=copy(model),p=copy(page());p.id=uid();p.objects.forEach(o=>o.id=uid());next.pages.splice(next.pages.findIndex(p=>p.id===pageId)+1,0,p);if(persist(next)){if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);pageId=p.id;selected.clear();draw();thumbs();}}
    if(action==='delete-page'){if(model.pages.length===1)throw Error('ต้องเหลืออย่างน้อยหนึ่งหน้า');const target=pageId;if(await confirmNoteDelete('หน้ากระดาษ '+(model.pages.findIndex(p=>p.id===target)+1))){const next=copy(model);next.pages=next.pages.filter(p=>p.id!==target);persist(next,false);selected.clear();draw();thumbs();}}
-   if(action==='delete-object'){change(p=>{p.objects=p.objects.filter(o=>!selected.has(o.id));});selected.clear();draw();}
+   if(action==='delete-object'){$('#paper-selection-more').open=false;change(p=>{p.objects=p.objects.filter(o=>!selected.has(o.id));});selected.clear();draw();}
    if(action==='duplicate'){const ids=[];change(p=>{const objects=p.objects.filter(o=>selected.has(o.id)).map(o=>({...copy(o),id:uid(),x:o.x+24,y:o.y+24}));ids.push(...objects.map(o=>o.id));p.objects.push(...objects);});selected=new Set(ids);draw();}
    if(action==='edit-text'){const o=page().objects.find(o=>selected.has(o.id)&&o.type==='text');if(o)startText(o);}
    if(action==='bold'){bold=!bold;change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text')o.bold=bold;}));}
@@ -820,8 +891,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   });
   bind($('#paper-width'),'input',e=>updatePenWidth(e.target.value));
  bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();closeExtraTools();});
- bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
- bind(root,'keydown',e=>{if(e.key==='Escape'){closeWordMenu();closePenSizePicker();closeExtraTools();}});
+ bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-selection-more'))$('#paper-selection-more').open=false;if(!e.target.closest('.paper-shapes-popup,[data-open-shapes],[data-paper="shape"]'))setShapesOpen(false);if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
+ bind(root,'keydown',e=>{if(e.key==='Escape'){setShapesOpen(false);closeWordMenu();closePenSizePicker();closeExtraTools();}});
   bind($('#paper-finger'),'change',e=>{finger=e.target.checked;closeExtraTools();});
  bind(palmToggle,'change',e=>{setPalmGuard(e.target.checked);closeExtraTools();});
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
