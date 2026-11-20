@@ -20,6 +20,9 @@ export function classroomPage(space){
    ${courseMaterialList(book,c.id)}
    <div class="classroom-course-actions">
     ${notes.length?`<button class="button secondary" data-action="nb-filter-course" data-course="${c.id}">ดูโน้ตทั้งหมด</button>`:''}
+    <label class="button secondary classroom-course-upload" title="แนบ PDF, Word หรือ PowerPoint เป็นไฟล์หลักของวิชานี้">＋ แนบไฟล์เรียนหลัก
+     <input type="file" data-course-upload-direct="${c.id}" accept=".pdf,.doc,.docx,.ppt,.pptx" hidden aria-label="แนบไฟล์เรียนหลักวิชา ${c.id}">
+    </label>
     <button class="button secondary" data-action="nb-course-materials" data-course="${c.id}">📚 เอกสารหลักวิชา</button>
     <button class="button primary" data-action="nb-new" data-course="${c.id}" data-source="classroom">＋ จดครั้งใหม่</button>
    </div>
