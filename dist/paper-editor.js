@@ -438,7 +438,7 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();closeExtraTools();});
  bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
  bind(root,'keydown',e=>{if(e.key==='Escape'){closePenSizePicker();closeExtraTools();}});
-  bind($('#paper-finger'),'change',e=>{finger=e.target.checked;});
+  bind($('#paper-finger'),'change',e=>{finger=e.target.checked;closeExtraTools();});
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
  bind($('#paper-shape'),'change',()=>closeExtraTools());
  bind($('#paper-smart-shape'),'change',e=>{smartEnabled=e.target.checked;if(!smartEnabled)cancelSmartTimer();});
