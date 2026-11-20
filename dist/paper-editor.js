@@ -299,8 +299,11 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  }
  function rememberWord(){
   if(!editing)return;
-  const start=textarea.selectionStart,end=textarea.selectionEnd;
-  wordSelection=end>start?{pageId,id:editing.id,start,end,text:textarea.value}:null;
+  const range=editing.rich?(richOffsets()||richSelection):{start:textarea.selectionStart,end:textarea.selectionEnd};
+  const content=editing.rich?readRich().text:textarea.value;
+  if(range&&range.end>range.start)wordSelection={pageId,id:editing.id,start:range.start,end:range.end,text:content};
+  else wordSelection=null;
+  textRibbonState();
  }
  async function linkWord(){
   if(editing)rememberWord();
@@ -319,29 +322,80 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   wordSelection=null;
  }
  function startText(o){
-  finishText();wordSelection=null;editing={lastText:o.text,links:o.links||[],id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};selected=new Set([o.id]);textarea.value=o.text;
+  finishText();wordSelection=null;richSelection=null;
+  editing={lastText:o.text,links:o.links||[],marks:o.marks||[],rich:false,id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};
+  selected=new Set([o.id]);textarea.value=o.text;
   editing.mobile=window.matchMedia('(max-width:720px)').matches;
-  if(editing.mobile){root.classList.add('paper-is-editing');$('#paper-mobile-editor').hidden=false;$('#paper-mobile-editor').append(textarea);}
+  ribbon.hidden=false;
+  if(editing.mobile){
+   root.classList.add('paper-is-editing');
+   $('#paper-mobile-editor').hidden=false;
+   $('#paper-mobile-editor').append(ribbon,textarea);
+  }else root.querySelector('.paper-toolbar').after(ribbon);
+  $('#paper-word-size').value=o.size;
   Object.assign(textarea.style,{left:editing.mobile?'0':o.x+'px',top:editing.mobile?'0':o.y+'px',fontSize:editing.mobile?'17px':o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;
   const style=getComputedStyle(textarea);
   Object.assign(textMeasure.style,{fontFamily:style.fontFamily,fontSize:editing.mobile?o.size+'px':style.fontSize,fontWeight:style.fontWeight,letterSpacing:style.letterSpacing});
-  fitTextBox();draw();textarea.focus();textarea.setSelectionRange(textarea.value.length,textarea.value.length);if(!editing.mobile)textarea.scrollIntoView({block:'nearest',inline:'nearest'});
+  fitTextBox();draw();textarea.focus();textarea.setSelectionRange(textarea.value.length,textarea.value.length);
+  if(o.marks?.length)activateRich();
+  textRibbonState();
+  if(!editing.mobile&&!editing.rich)textarea.scrollIntoView({block:'nearest',inline:'nearest'});
  }
  let textTimer;
  function finishText(keepOpen=false){
   clearTimeout(textTimer);
-  if(!editing)return;const edit=editing,w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
-  if(!keepOpen){editing=null;textarea.hidden=true;if(edit.mobile){root.classList.remove('paper-is-editing');$('#paper-mobile-editor').hidden=true;sheet.append(textarea);}}
-  const o={...edit.object,text:textarea.value,w:edit.paperWidth??w,h:edit.mobile?edit.paperHeight:h};if(edit.links.length)o.links=edit.links;else delete o.links;
+  if(!editing)return;
+  const edit=editing;
+  if(edit.rich)fitRichBox();
+  const content=edit.rich?readRich():{text:textarea.value,marks:edit.marks||[]};
+  const w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
+  const o={...edit.object,text:content.text,w:edit.paperWidth??w,h:edit.rich||edit.mobile?edit.paperHeight:h};
+  if(edit.links.length)o.links=edit.links;else delete o.links;
+  if(content.marks.length)o.marks=content.marks;else delete o.marks;
+  if(!keepOpen){
+   editing=null;ribbon.hidden=true;rich.hidden=true;textarea.hidden=true;richSelection=null;
+   if(edit.mobile){root.classList.remove('paper-is-editing');$('#paper-mobile-editor').hidden=true;sheet.append(textarea,rich);}
+  }
   if(edit.fresh&&!o.text.trim()){selected.clear();draw();return;}
-  if(!edit.fresh&&o.text===edit.object.text&&o.w===edit.object.w&&o.h===edit.object.h){if(!keepOpen)draw();return;}
+  const unchanged=!edit.fresh&&o.text===edit.object.text&&o.w===edit.object.w&&o.h===edit.object.h&&o.bold===edit.object.bold&&JSON.stringify(o.marks||[])===JSON.stringify(edit.object.marks||[])&&JSON.stringify(o.links||[])===JSON.stringify(edit.object.links||[]);
+  if(unchanged){if(!keepOpen)draw();return;}
   if(change(p=>{const i=p.objects.findIndex(v=>v.id===o.id);if(i>=0)p.objects[i]=o;else p.objects.push(o);})&&keepOpen){edit.object=o;edit.fresh=false;}
  }
  bind(textarea,'select',rememberWord);
  for(const linkButton of root.querySelectorAll('[data-paper="word-link"]'))bind(linkButton,'pointerdown',e=>{if(editing){rememberWord();e.preventDefault();}});
- bind(textarea,'input',()=>{if(editing){editing.links=moveLinks(editing.links,editing.lastText,textarea.value);editing.lastText=textarea.value;}clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);fitTextBox();});
- bind(textarea,'blur',()=>{if(!closed){rememberWord();finishText();}});
- bind(textarea,'keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();linkWord().catch(err=>say(err.message,true));return;}if(e.key==='Escape'){e.preventDefault();finishText();}});
+ bind(ribbon,'pointerdown',e=>{if(e.target.closest('button')){if(editing)rememberWord();e.preventDefault();}});
+ bind(textarea,'input',()=>{
+  if(editing&&!editing.rich){
+   editing.links=moveLinks(editing.links,editing.lastText,textarea.value);
+   editing.marks=moveMarks(editing.marks,editing.lastText,textarea.value);
+   editing.lastText=textarea.value;
+  }
+  clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);fitTextBox();
+ });
+ bind(textarea,'blur',e=>{
+  if(!closed&&!editing?.rich&&!e.relatedTarget?.closest?.('.paper-text-ribbon')){rememberWord();finishText();}
+ });
+ bind(rich,'input',()=>{
+  if(!editing?.rich)return;
+  const current=readRich();editing.links=moveLinks(editing.links,editing.lastText,current.text);editing.lastText=current.text;
+  richSelection=richOffsets();fitRichBox();textRibbonState();
+  clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);
+ });
+ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
+ bind(rich,'pointerup',()=>{richSelection=richOffsets();textRibbonState();});
+ bind(rich,'blur',e=>{if(!closed&&!e.relatedTarget?.closest?.('.paper-text-ribbon')){rememberWord();finishText();}});
+ bind(rich,'paste',e=>{e.preventDefault();document.execCommand('insertText',false,e.clipboardData?.getData('text/plain')||'');});
+ bind(rich,'beforeinput',e=>{if(e.inputType==='insertParagraph'){e.preventDefault();document.execCommand('insertText',false,'\n');}});
+ const textKeydown=e=>{
+  if(e.ctrlKey||e.metaKey){
+   const shortcut={b:'bold',i:'italic',u:'underline'}[e.key.toLowerCase()];
+   if(shortcut){e.preventDefault();applyWordFormat(shortcut);return;}
+   if(e.key.toLowerCase()==='k'){e.preventDefault();linkWord().catch(err=>say(err.message,true));return;}
+  }
+  if(e.key==='Escape'){e.preventDefault();finishText();}
+ };
+ bind(textarea,'keydown',textKeydown);
+ bind(rich,'keydown',textKeydown);
  // Follow-up Scribble strokes placed slightly after the last word should
  // reopen that very same text object rather than create a separate textbox.
  function findTextToContinue(p){
