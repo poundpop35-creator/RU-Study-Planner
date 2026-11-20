@@ -1,4 +1,4 @@
-import {PAGE_W,PAGE_H} from './paper-core.js?v=word-format-20261120';
+import {PAGE_W,PAGE_H} from './paper-core.js?v=20261120-table';
 import {formattedTextHTML} from './paper-rich-text.js?v=word-format-20261120';
 import {shapeSVG} from './paper-shapes.js?v=notebook-shape-tools-20261120';
 import {tableSVG} from './paper-table.js?v=20261120-table';
