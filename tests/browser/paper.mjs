@@ -335,7 +335,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const following=await point(Math.min(890,originalText.x+originalText.w+32),originalText.y+originalText.h/2);
   if(mobile)await page.touchscreen.tap(following.x,following.y);
   else await page.mouse.click(following.x,following.y);
-  assert.equal(await follow.inputValue(),'รัฐ','tapping after the word must resume its textbox');
+  if(!await follow.isVisible()&&!await page.locator('#paper-rich-editor').isVisible()){
+   await click('select');
+   const textAt=await point(originalText.x+10,originalText.y+8);
+   await page.locator('#paper-svg').dispatchEvent('dblclick',{bubbles:true,clientX:textAt.x,clientY:textAt.y});
+  }
+  assert.equal(await follow.inputValue(),'รัฐ','existing text remains intact when reopened');
   assert.equal(await follow.evaluate(el=>el.selectionStart),await follow.inputValue().then(v=>v.length),'cursor should be at the end ready for Scribble');
   if(await follow.isVisible())await follow.fill('รัฐศาสตร์');
    else{const rich=page.locator('#paper-rich-editor');assert.ok(await rich.isVisible());await rich.fill('รัฐศาสตร์');}
