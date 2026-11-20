@@ -469,6 +469,34 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await page.locator('#paper-svg span[style*="font-weight:700"]').count(),'individual word style must survive reload');
    assert.ok(await page.locator('#paper-svg span[style*="color:#dc4343"]').count(),'per-word color survives reload');
    await page.screenshot({path:'test-results/notebook-word-format-'+name+'.png'});
+   // Table creation, resizing, editable cells and persistence on each screen size.
+   await click('table');
+   const tableDialog=page.locator('#paper-table-dialog');
+   await tableDialog.waitFor({state:'visible'});
+   await tableDialog.locator('#paper-table-rows').fill('4');
+   await tableDialog.locator('#paper-table-rows').press('Tab');
+   await tableDialog.locator('#paper-table-cols').fill('3');
+   await tableDialog.locator('#paper-table-cols').press('Tab');
+   await tableDialog.locator('textarea[data-table-row="0"][data-table-col="0"]').fill('นักปรัชญา');
+   await tableDialog.locator('textarea[data-table-row="1"][data-table-col="0"]').fill('เพลโต');
+   await tableDialog.locator('[data-table-command="save"]').click();
+   await click('save');
+   const savedTable=()=>row.payload.notebook.notes.find(n=>n.title==='Word style link test').paper.pages[0].objects.find(o=>o.type==='table');
+   await wait(()=>savedTable()?.cells[1]?.[0]==='เพลโต');
+   assert.deepEqual([savedTable().cells.length,savedTable().cells[0].length],[4,3]);
+   assert.ok(await page.locator('#paper-svg foreignObject[data-object]').count(),'table appears on paper, not only in dialog');
+   await click('table-add-row');await click('table-add-col');await click('save');
+   assert.deepEqual([savedTable().cells.length,savedTable().cells[0].length],[5,4]);
+   await click('table-edit');
+   await tableDialog.waitFor({state:'visible'});
+   await tableDialog.locator('textarea[data-table-row="2"][data-table-col="1"]').fill('ความยุติธรรม');
+   await tableDialog.locator('[data-table-command="save"]').click();
+   await click('save');
+   assert.equal(savedTable().cells[2][1],'ความยุติธรรม');
+   await page.reload();await page.locator('#paper-svg').waitFor();
+   assert.equal(await page.locator('#paper-svg table').count(),1,'table persists after reload');
+   assert.ok((await page.locator('#paper-svg table').innerText()).includes('ความยุติธรรม'));
+   await page.screenshot({path:'test-results/notebook-tables-'+name+'.png'});
    
   await page.evaluate(()=>{location.hash='#home';});
   await page.locator('.hero').waitFor();
