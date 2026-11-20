@@ -139,5 +139,18 @@ test('three Friday catch-up clips each get a full-height card with room for thei
  const moved=freshState();moved.replay['POL2104@2026-11-18']={time:'22:00'};
  const late=weeklyPlanner('inline',moved,'2026-11-19',true);
  assert.ok(late.includes('22:00 · ย้อนหลัง'));
- assert.ok(late.includes('width:24.6%'),'late cards retain a full readable width');
+ assert.ok(late.includes('left:78.57142857142857%'),'a 22:00 replay belongs under 22:00, not the 20:00 column');
+ assert.ok(late.includes('width:20.92857142857143%'),'the late replay keeps a readable box before the next-day boundary');
+});
+
+test('wide clock-based timetable keeps fixed hour columns and explicit jump to evening',async()=>{
+ const html=weeklyPlanner('inline',freshState(),'2026-11-19',true);
+ assert.match(html,/class="unified-axis"/);
+ for(const h of ['11:00','13:00','15:00','17:00','19:00','21:00','23:00','01:00 +1'])
+  assert.ok(html.includes('>'+h+'</span>'),'missing hourly column '+h);
+ assert.ok(html.includes('data-action="cal-scroll-time" data-target="night"'));
+ assert.ok(html.includes('data-action="cal-scroll-time" data-target="day"'));
+ assert.ok(html.includes('aria-label="ตารางรายสัปดาห์แนวนอน'));
+ assert.ok(html.includes('left:64.28571428571429%'),'20:00 placed at the evening clock column');
+ assert.equal((html.match(/class="unified-weekday /g)||[]).length,7);
 });
