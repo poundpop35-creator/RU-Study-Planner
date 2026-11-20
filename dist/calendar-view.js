@@ -1,4 +1,4 @@
-import {weeklyPlanner,timetableColors} from './weekly-planner.js?v=replay-card-mobile-20261120';
+import {weeklyPlanner,timetableColors} from './weekly-planner.js?v=horizontal-timeline-20261120';
 import {calendarSubscriptionURL} from './calendar-feed.js?v=20261103a';
 import {calendar,courses,schedules,sources} from './data.js?v=20261027c';
 import {escapeHTML as e,thaiDate,today,addDays} from './core.js?v=20261027c';
