@@ -717,10 +717,10 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   bind($('#paper-finger'),'change',e=>{finger=e.target.checked;closeExtraTools();});
  bind(palmToggle,'change',e=>{setPalmGuard(e.target.checked);closeExtraTools();});
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
- bind($('#paper-shape'),'change',()=>closeExtraTools());
+ bind($('#paper-shape'),'change',()=>{$('#paper-quick-shape').value=$('#paper-shape').value;closeExtraTools();});
  bind($('#paper-smart-shape'),'change',e=>{smartEnabled=e.target.checked;if(!smartEnabled)cancelSmartTimer();});
  bind($('#paper-line-style'),'change',e=>{
-  lineStyle=e.target.value;
+  lineStyle=e.target.value;$('#paper-quick-line-style').value=lineStyle;
   if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type==='shape'?{...o,dash:lineStyle}:o);});
   closeExtraTools();
  });
