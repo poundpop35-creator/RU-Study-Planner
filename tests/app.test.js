@@ -161,6 +161,11 @@ test('five places on the phone bar, each page lights its place, and the menu rea
  for(const route of ['courses','classroom','practice','review']){navigate('#'+route);assert.ok(html().includes('class="hub-tabs"'),route);assert.ok(html().includes(`href="#${route}" aria-current="page"`),route);}
  for(const route of ['plan','calendar','registration']){navigate('#'+route);assert.equal((html().match(/class="hub-tabs"/g)||[]).length,1,route);assert.ok(html().includes(`href="#${route}" aria-current="page"`),route);}
 });
+test('pre-class course page gives direct access to that course’s shared files',()=>{
+ navigate('#course/POL2301');
+ assert.ok(html().includes('data-action="nb-course-materials" data-course="POL2301"'));
+ assert.ok(html().includes('ไฟล์หลักวิชา POL2301'));
+});
 test('the sidebar has one entry per section and every grouped page links to its siblings',()=>{
  const groups=[['courses','practice','review','exams'],['notes','classroom'],['plan','calendar','registration'],['documents','resources','about'],['account','settings']];
  for(const pages of groups)for(const page of pages){

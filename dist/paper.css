@@ -546,3 +546,6 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 }
 
 .paper-legacy-content{white-space:pre-wrap;overflow-wrap:anywhere}.paper-legacy-content img{max-width:100%;height:auto}.paper-legacy-content p{margin:0}
+
+.paper-course-materials button{min-height:40px;padding:5px 12px;border:1px solid #adc0e4;border-radius:8px;background:white;color:#203d78;font:inherit;font-weight:700;cursor:pointer}
+@media print{.paper-app .paper-course-materials{display:none}}

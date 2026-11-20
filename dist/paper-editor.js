@@ -7,7 +7,7 @@ import {replaceLink,moveLinks} from './word-links.js';
 import {textSize,textColor,formattedTextHTML,normalizeMarks,toggleTextFormat,applyTextFormat,moveMarks} from './paper-rich-text.js?v=word-format-20261120';
 import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
-import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=shared-course-20261120';
+import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape} from './paper-shapes.js?v=notebook-shape-tools-20261120';
 import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=geometry-20261119';
 let active=null;
@@ -814,15 +814,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    if(action==='files'){fileList();$('#paper-files').showModal();return;}
    if(action==='course-materials'){
     const course=currentNote()?.course;
-    if(!course)throw Error('เลือกวิชาในรายละเอียดโน้ตก่อน');
-    await openSharedCourseMaterials(space,course,()=>{
-     const count=courseMaterialCount(space.notebook(),course);
-     let details=$('.paper-course-materials');
-     if(count){
-      if(!details){details=document.createElement('details');details.className='paper-course-materials';$('.paper-context').after(details);}
-      details.innerHTML='<summary>📚 เอกสารหลัก '+course+' · '+count+' รายการ ▾</summary>'+courseMaterialList(space.notebook(),course);
-     }else details?.remove();
-    },say);
+    if(!course){$('#paper-info').hidden=false;$('#paper-course').focus();say('ใส่รหัสวิชา เช่น POL1101 แล้วเปิดไฟล์หลักของวิชานี้');return;}
+    await openSharedCourseMaterials(space,course,refreshCourseButton,say);
     return;
    }
    if(action==='image-link'){
@@ -928,13 +921,18 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   fontSize=textSize(e.target.value,fontSize);e.target.value=String(fontSize);
   try{localStorage.setItem(textSizeKey,String(fontSize));}catch{}
  });
- for(const [selector,key] of [['#paper-title','title'],['#paper-course','course'],['#paper-source','source'],['#paper-tags','tags'],['#paper-question','question'],['#paper-answer','answer']])bind($(selector),'change',e=>{try{writable();const book=copy(space.notebook()),n=book.notes.find(n=>n.id===id);n[key]=key==='course'?e.target.value.trim().toUpperCase():e.target.value;if(key==='course'&&n[key]&&!/^POL\d{4}$/.test(n[key]))throw Error('กรอกรหัสวิชา เช่น POL1101');n.updatedAt=new Date().toISOString();space.saveNotebook(book);}catch(err){say(err.message,true);}});
+ for(const [selector,key] of [['#paper-title','title'],['#paper-course','course'],['#paper-source','source'],['#paper-tags','tags'],['#paper-question','question'],['#paper-answer','answer']])bind($(selector),'change',e=>{try{writable();const book=copy(space.notebook()),n=book.notes.find(n=>n.id===id);n[key]=key==='course'?e.target.value.trim().toUpperCase():e.target.value;if(key==='course'&&n[key]&&!/^POL\d{4}$/.test(n[key]))throw Error('กรอกรหัสวิชา เช่น POL1101');n.updatedAt=new Date().toISOString();space.saveNotebook(book);if(key==='course')refreshCourseButton();}catch(err){say(err.message,true);}});
  bind(document,'keydown',e=>{if(!root.isConnected||/INPUT|TEXTAREA/.test(e.target.tagName)||e.target.isContentEditable)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();$(`[data-paper="${e.shiftKey?'redo':'undo'}"]`).click();}if((e.key==='Delete'||e.key==='Backspace')&&selected.size){e.preventDefault();$('[data-paper="delete-object"]').click();}});
  bind(window,'beforeunload',e=>{if(unsaved||editing||gesture?.kind==='stroke'||loadingImages){e.preventDefault();e.returnValue='';}});
  const ro=new ResizeObserver(()=>sizing());ro.observe(viewport);
+ function refreshCourseButton(){
+  const button=$('[data-paper="course-materials"]');
+  if(button)button.textContent=courseMaterialLabel(space.notebook(),currentNote()?.course);
+ }
  function refresh(nextSpace){
   if(closed||nextSpace.info().scope!==scope||!nextSpace.info().canEdit)return false;
   const live=currentNote();if(!live)return false;
+  refreshCourseButton();
   if($('#paper-files').open)fileList();
   if(gesture||editing||unsaved){pendingRemote=true;return true;}
   pendingRemote=false;const serialized=JSON.stringify(live.paper||null);

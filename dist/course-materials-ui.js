@@ -8,6 +8,12 @@ export function courseMaterialCount(book,course){
  return items.files.length+items.links.length;
 }
 
+export function courseMaterialLabel(book,course){
+ if(!course)return 'เลือกวิชาเพื่อใช้ไฟล์หลัก';
+ const count=courseMaterialCount(book,course);
+ return 'ไฟล์หลักวิชา '+course+' · '+(count?count+' รายการ':'เพิ่มไฟล์');
+}
+
 export function courseMaterialList(book,course){
  const {files,links}=materialFor(book,course);
  return '<div class="course-material-links">'+
@@ -20,16 +26,16 @@ export async function openSharedCourseMaterials(space,course,onUpdate=()=>{},toa
  if(!isCourseCode(course))throw Error('เลือกวิชาก่อนแนบเอกสารประจำวิชา');
  const modal=document.createElement('dialog');modal.className='paper-sheet-dialog course-materials-dialog';
  modal.innerHTML='<header><div><h2>📚 เอกสารหลัก · '+escape(course)+'</h2><p>ใช้ร่วมกันได้จากทุกโน้ตของวิชานี้ ไม่ต้องแนบซ้ำ</p></div><button type="button" data-course-close aria-label="ปิด">✕</button></header>'+
-  '<div class="course-material-body"><label class="course-material-upload">＋ แนบ PDF / Word / PowerPoint<input type="file" data-course-upload accept=".pdf,.doc,.docx,.ppt,.pptx" hidden></label>'+
+  '<div class="course-material-body"><div data-course-materials></div><label class="course-material-upload">＋ แนบ PDF / Word / PowerPoint<input type="file" data-course-upload accept=".pdf,.doc,.docx,.ppt,.pptx" hidden></label>'+
   '<p class="course-material-note">ไฟล์ละไม่เกิน 2 MB และยอดข้อมูลรวมต้องไม่เกินพื้นที่ที่ระบบรองรับ · หากไฟล์ขนาดใหญ่ให้ใช้ลิงก์เอกสารแทน</p>'+
   '<form data-course-link-form><label>ชื่อลิงก์<input name="title" maxlength="160" placeholder="เช่น สไลด์อาจารย์ ครั้งที่ 1" required></label><label>ลิงก์ไฟล์บนเว็บ<input name="url" type="url" placeholder="https://..." required></label><button type="submit">＋ เพิ่มลิงก์</button></form>'+
-  '<p class="course-material-status" role="status"></p><div data-course-materials></div></div>';
+  '<p class="course-material-status" role="status"></p></div>';
  const status=modal.querySelector('.course-material-status');
  let working=false;
  function refresh(){
   const data=materialFor(space.notebook(),course);
   modal.querySelector('[data-course-materials]').innerHTML='<h3>เอกสารที่ใช้ร่วมกัน ('+(data.files.length+data.links.length)+')</h3>'+
-   (!data.files.length&&!data.links.length?'<p class="muted">ยังไม่มีเอกสารประจำวิชา อัปโหลดไฟล์หรือเพิ่มลิงก์ด้านบนได้เลย</p>':'')+
+   (!data.files.length&&!data.links.length?'<p class="muted">ยังไม่มีเอกสารประจำวิชา แนบไฟล์หรือเพิ่มลิงก์ด้านล่างได้เลย</p>':'')+
    data.files.map(f=>'<div class="course-material-row"><span>📄 '+escape(f.name)+'</span><div><button type="button" data-course-preview="'+f.id+'">เปิดดู</button><button type="button" data-course-download="'+f.id+'">ดาวน์โหลด</button><button type="button" data-course-remove-file="'+f.id+'" aria-label="ลบไฟล์ '+escape(f.name)+'">ลบ</button></div></div>').join('')+
    data.links.map(l=>'<div class="course-material-row"><span>🔗 '+escape(l.name)+'</span><div><a href="'+escape(l.url)+'" target="_blank" rel="noopener noreferrer">เปิดลิงก์</a><button type="button" data-course-remove-link="'+l.id+'" aria-label="ลบลิงก์ '+escape(l.name)+'">ลบ</button></div></div>').join('');
  }
