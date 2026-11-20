@@ -42,11 +42,11 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.ok((await toolbar.boundingBox()).height<=90,'notebook toolbar should remain a compact single row');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
   assert.ok(await page.locator('.paper-tool-options').isHidden(),'extra options must not occupy canvas when closed');
-  await page.locator('#paper-toolbar-more summary').click();
+  await page.locator('#paper-toolbar-more > summary').click();
   assert.ok(await page.locator('.paper-tool-options').isVisible(),'advanced tools open on demand');
   await page.locator('[data-paper-color="#3155d9"]').click();
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'choosing color should fold menu');
-  await page.locator('#paper-toolbar-more summary').click();
+  await page.locator('#paper-toolbar-more > summary').click();
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'Escape closes settings');
   await page.screenshot({path:'test-results/notebook-compact-'+name+'.png'});
@@ -90,7 +90,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.ok(await page.locator('#paper-toolbar-more').evaluate(el=>!el.open),'extra tools should start folded');
   assert.ok(await page.locator('#paper-width').isHidden(),'pen size cannot obstruct the page while menu is folded');
   await click('pen');
-  await page.locator('#paper-toolbar-more summary').click();
+  await page.locator('#paper-toolbar-more > summary').click();
   assert.ok(await page.locator('#paper-width').isVisible(),'size controls should be available inside the overlay');
   const dots=page.locator('[data-paper-width]');assert.equal(await dots.count(),6);
   await page.locator('[data-paper-width="2"]').click();
@@ -98,7 +98,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.equal(await page.locator('[data-paper-width="2"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'2px');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'preset selection should fold extras');
-  await page.locator('#paper-toolbar-more summary').click();
+  await page.locator('#paper-toolbar-more > summary').click();
   await page.locator('#paper-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));});
   assert.equal(await page.locator('#paper-width-value').innerText(),'12');
   assert.equal(await page.locator('[data-paper-width="12"]').getAttribute('aria-pressed'),'true');
