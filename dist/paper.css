@@ -579,3 +579,28 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-table-cell{min-width:145px;padding:6px!important}
  .paper-table-selection{max-width:100%;overflow-x:auto}
 }
+
+/* Inline editing on iPhone: keep the real editable object on the sheet.
+   The old fixed mobile dialog is intentionally never shown. */
+@media(max-width:720px){
+ .paper-app.paper-is-editing>.paper-text-ribbon:not([hidden]){
+  display:flex!important;position:relative;flex:0 0 auto;
+  width:100%;min-height:46px;max-height:58px;flex-wrap:nowrap;
+  overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+  gap:6px;padding:5px 8px;scrollbar-width:thin;z-index:8;
+ }
+ .paper-app.paper-is-editing .paper-ribbon-title,
+ .paper-app.paper-is-editing .paper-ribbon-help{display:none!important}
+ .paper-app.paper-is-editing .paper-ribbon-size,
+ .paper-app.paper-is-editing .paper-ribbon-format,
+ .paper-app.paper-is-editing .paper-ribbon-colors{flex:0 0 auto;white-space:nowrap}
+ .paper-app.paper-is-editing .paper-ribbon-colors{flex-wrap:nowrap}
+ .paper-app.paper-is-editing #paper-text-input{
+  -webkit-text-size-adjust:100%;caret-color:#2347ba;
+  background:#fffefce8;outline:2px solid #4364c5;
+  box-shadow:0 0 0 4px #3155d914;touch-action:manipulation;
+ }
+ .paper-app.paper-is-editing #paper-rich-editor{
+  -webkit-text-size-adjust:100%;caret-color:#2347ba;touch-action:manipulation;
+ }
+}
