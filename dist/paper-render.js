@@ -1,6 +1,6 @@
 import {PAGE_W,PAGE_H} from './paper-core.js?v=geometry-20261119';
 import {linkedTextHTML} from './word-links.js';
-import {shapeSVG} from './paper-shapes.js?v=geometry-20261119';
+import {shapeSVG} from './paper-shapes.js?v=notebook-shape-tools-20261120';
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const round=n=>Math.round(n*100)/100;
 export function objectSVG(o,images=new Map(),interactive=true){

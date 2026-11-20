@@ -45,6 +45,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.ok(toolbarMetrics.height<=90,'notebook toolbar should remain a compact single row: '+JSON.stringify(toolbarMetrics));
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
   assert.ok(await page.locator('.paper-tool-options').isHidden(),'extra options must not occupy canvas when closed');
+   assert.ok(await page.locator('.paper-pages').isHidden(),'page thumbnails start collapsed to maximize writing space');
+   await click('pages');
+   assert.ok(await page.locator('.paper-pages').isVisible(),'page thumbnails can be expanded');
+   assert.equal(await page.locator('[data-paper="pages"]').getAttribute('aria-expanded'),'true');
+   await click('pages');
+   assert.ok(await page.locator('.paper-pages').isHidden(),'page thumbnails can be folded again');
   await page.locator('#paper-toolbar-more > summary').click();
   assert.ok(await page.locator('.paper-tool-options').isVisible(),'advanced tools open on demand');
   await page.locator('[data-paper-color="#3155d9"]').click();
@@ -107,6 +113,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.equal(await page.locator('[data-paper-width="12"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'12px');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'slider change should fold extras');
+   await click('highlight');
+   await page.locator('#paper-toolbar-more > summary').click();
+   assert.equal(await page.locator('#paper-width').getAttribute('max'),'40','highlighter has independent 1–40 width range');
+   await page.locator('[data-paper-width="28"]').click();
+   assert.equal(await page.locator('#paper-width-value').textContent(),'28');
+   await click('pen');
+   await page.locator('#paper-toolbar-more > summary').click();
+   assert.equal(await page.locator('#paper-width-value').textContent(),'12','pen remembers its own width after switching from highlighter');
+   await page.keyboard.press('Escape');
    const from=await point(100,400),to=await point(350,450);
   if(mobile){
    await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
@@ -209,6 +224,28 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    },[fromShape,toShape]);
    await click('save');
    assert.ok(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.some(o=>o.kind==='hexagon'&&o.dash==='dotted'));
+    assert.ok(await page.locator('#paper-selected-shape').isVisible(),'selected shape displays shape type picker');
+    await page.locator('#paper-selected-shape').selectOption('triangle');
+    await page.locator('#paper-selected-line-style').selectOption('dashed');
+    await click('save');
+    const savedShape=()=>row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.find(o=>o.type==='shape');
+    assert.equal(savedShape().kind,'triangle','selected shape can be converted without redrawing');
+    assert.equal(savedShape().dash,'dashed','selected shape line can be changed after drawing');
+    const oldShapeWidth=savedShape().w,oldShapeHeight=savedShape().h;
+    assert.equal(await page.locator('#paper-svg [data-edge]').count(),8,'selected shape has eight resize handles');
+    await page.locator('#paper-svg').evaluate(svg=>{
+     const grip=svg.querySelector('[data-edge="e"] circle');
+     const box=grip.getBoundingClientRect(),x=box.x+box.width/2,y=box.y+box.height/2;
+     svg.setPointerCapture=()=>{};
+     const dispatch=(target,type,cx,cy)=>target.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'pen',pointerId:117,clientX:cx,clientY:cy}));
+     dispatch(grip,'pointerdown',x,y);
+     dispatch(svg,'pointermove',x+40,y);
+     dispatch(svg,'pointerup',x+40,y);
+     delete svg.setPointerCapture;
+    });
+    await click('save');
+    assert.ok(savedShape().w>oldShapeWidth,'east resize handle grows only the right side');
+    assert.equal(savedShape().h,oldShapeHeight,'horizontal resize must not stretch height');
    await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu summary').click();
    await click('ruler');
    assert.equal(await page.locator('[data-paper="ruler"]').getAttribute('aria-pressed'),'true');

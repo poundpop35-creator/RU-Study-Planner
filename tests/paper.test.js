@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validatePaper,paperFor,emptyPage,strokeObject,pageHistory,mergePaper,copy,strokeHit,penWidth,PEN_WIDTH_PRESETS} from '../dist/paper-core.js';
+import {validatePaper,paperFor,emptyPage,strokeObject,pageHistory,mergePaper,copy,strokeHit,penWidth,PEN_WIDTH_PRESETS,highlightWidth,HIGHLIGHT_WIDTH_PRESETS} from '../dist/paper-core.js';
+import {makeShape,resizeShape} from '../dist/paper-shapes.js';
 import {newNote,validateNotebook,referencedImages,findNotes} from '../dist/notebook-core.js';
 import {createStudySpace,assertCapacity} from '../dist/study-space.js';
 import {freshState} from '../dist/core.js';
@@ -58,4 +59,42 @@ test('pen width presets and custom slider bounds match the existing stroke schem
   assert.equal(penWidth(bad),5);
  }
  assert.equal(penWidth('bad',8),8);
+});
+
+test('highlighter width has independent presets and stays within the vector schema',()=>{
+ assert.deepEqual(HIGHLIGHT_WIDTH_PRESETS,[4,8,12,20,28,40]);
+ for(const size of [1,4,8,12,20,28,40]){
+  assert.equal(highlightWidth(String(size)),size);
+  const doc=book();
+  doc.notes[0].paper.pages[0].objects.push(strokeObject([[10,20,.5],[20,40,.5]],{tool:'highlight',color:'#f4cd45',width:size}));
+  assert.equal(validatePaper(doc.notes[0].paper).pages[0].objects.at(-1).width,size);
+ }
+ for(const invalid of [-1,0,41,'4.5','invalid'])assert.equal(highlightWidth(invalid),12);
+});
+test('shape handles resize individual edges and corners without moving opposite edges',()=>{
+ const shape=makeShape('shape1','rect',{x:100,y:200},{x:300,y:320},'#172033',5);
+ const expected={
+  e:{x:100,y:200,w:250,h:120},w:{x:60,y:200,w:240,h:120},
+  n:{x:100,y:170,w:200,h:150},s:{x:100,y:200,w:200,h:170},
+  nw:{x:60,y:170,w:240,h:150},se:{x:100,y:200,w:250,h:170}
+ };
+ for(const [edge,pos] of Object.entries(expected)){
+  const resized=resizeShape(shape,edge,edge.includes('w')?-40:50,edge.includes('n')?-30:50);
+  for(const [key,value] of Object.entries(pos))assert.equal(resized[key],value,edge+' '+key);
+  const doc=book();doc.notes[0].paper.pages[0].objects.push(resized);
+  assert.equal(validatePaper(doc.notes[0].paper).pages[0].objects.at(-1).type,'shape');
+ }
+ assert.equal(resizeShape(shape,'e',-10000).w,12);
+ assert.equal(resizeShape(shape,'w',10000).x,shape.x+shape.w-12);
+ const circle=makeShape('shape2','circle',{x:10,y:10},{x:110,y:110},'#172033',5);
+ assert.equal(resizeShape(circle,'e',30,0).kind,'ellipse');
+ const square=makeShape('shape3','square',{x:10,y:10},{x:110,y:110},'#172033',5);
+ assert.equal(resizeShape(square,'s',0,30).kind,'rect');
+});
+test('shape kind and line style edits roundtrip without losing position and dimensions',()=>{
+ const s=makeShape('test-shape','rect',{x:40,y:60},{x:140,y:100},'#3155d9',3);
+ s.kind='triangle';s.dash='dashed';
+ const doc=book();doc.notes[0].paper.pages[0].objects.push(s);
+ const changed=validatePaper(doc.notes[0].paper).pages[0].objects.at(-1);
+ assert.deepEqual([changed.kind,changed.dash,changed.x,changed.y,changed.w,changed.h],['triangle','dashed',40,60,100,40]);
 });

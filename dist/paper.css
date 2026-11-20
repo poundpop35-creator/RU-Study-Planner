@@ -260,3 +260,18 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 .paper-palm-guard input{width:18px;height:18px;accent-color:#3155d9;flex-shrink:0}
 .paper-app.paper-palm-guard-on .paper-viewport{touch-action:pan-x pan-y}
 .paper-app.paper-palm-guard-on #paper-svg{touch-action:none}
+
+/* Collapsible notebook page previews (default hidden at all viewport widths). */
+.paper-app:not(.pages-open) .paper-pages{display:none}
+.paper-app .paper-pages-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:38px;min-width:67px;white-space:nowrap;border:1px solid #cbd6ed;background:#f4f7ff;border-radius:9px;color:#2d4e99;font-size:12px;font-weight:700}
+.paper-app .paper-pages-toggle[aria-expanded="true"]{background:#dce7ff;border-color:#8ba9ef}
+.paper-app .paper-shape-selection{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.paper-app .paper-shape-selection label{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:650;color:#334765;white-space:nowrap}
+.paper-app .paper-shape-selection select{min-width:92px;max-width:180px;min-height:36px;font-size:12px}
+@media(max-width:720px){
+ .paper-app .paper-pages-toggle{display:inline-flex;min-width:48px;padding:4px 6px!important;font-size:10px}
+ .paper-app .paper-shape-selection{width:100%;justify-content:center}
+ .paper-app .paper-shape-selection label{flex:1;min-width:0}
+ .paper-app .paper-shape-selection select{min-width:0;max-width:100%;flex:1}
+ .paper-app .paper-selection-tools:has(.paper-shape-selection:not([hidden])){left:5px;right:5px;transform:none;max-width:calc(100% - 10px);min-width:0}
+}
