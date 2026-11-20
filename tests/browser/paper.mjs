@@ -108,7 +108,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'12px');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'slider change should fold extras');
    const from=await point(100,400),to=await point(350,450);
-  if(mobile){await page.locator('#paper-finger').check();await tap(220,420);}
+  if(mobile){
+   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
+   await page.locator('#paper-finger').check();
+   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'finger-draw choice should uncover the paper');
+   await tap(220,420);
+  }
   else{await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(to.x,to.y,{steps:15});await page.mouse.up();}
   await click('save');await wait(()=>row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.type==='stroke'));
    assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='stroke').width,12,'selected width must be persisted on new vector stroke');
