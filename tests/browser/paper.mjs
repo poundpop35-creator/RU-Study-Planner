@@ -130,6 +130,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.ok(await page.locator('#paper-quick-width').isVisible(),'pen width slider stays visible when pen is active');
     await page.locator('#paper-quick-width').evaluate(el=>{el.value='7';el.dispatchEvent(new Event('input',{bubbles:true}));});
     assert.equal(await page.locator('#paper-width-value').textContent(),'7','visible slider syncs with advanced picker');
+    await page.locator('#paper-quick-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));});
    }
    await page.locator('#paper-toolbar-more > summary').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'12','pen remembers its own width after switching from highlighter');
