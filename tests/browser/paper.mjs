@@ -161,7 +161,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.type==='stroke').width,12,'selected width must be persisted on new vector stroke');
   await click('undo');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,0);
   await click('redo');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,1);
-  await click('select');await tap(220,420);await page.locator('[data-paper="delete-object"]').click();await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,0);
+  await click('select');await tap(220,420);await click('delete-object');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.type==='stroke').length,0);
   await click('undo');await click('save');
   await page.locator('#paper-image-file').setInputFiles({name:'test.png',mimeType:'image/png',buffer:png});await wait(()=>images.size===1);await wait(()=>page.locator('#paper-svg image').count().then(n=>n===1));await click('save');
   await click('image-link');const linkDialog=page.locator('#paper-link-dialog');
