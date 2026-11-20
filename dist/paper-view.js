@@ -1,4 +1,4 @@
-import {esc} from './paper-render.js?v=geometry-20261119';
+import {esc} from './paper-render.js?v=notebook-shape-tools-20261120';
 import {NOTE_SOURCES,noteSource} from './notebook-core.js?v=geometry-20261119';
 import {shapes,lineStyles} from './paper-shapes.js?v=notebook-shape-tools-20261120';
 import {PEN_WIDTH_PRESETS} from './paper-core.js?v=notebook-shape-tools-20261120';
