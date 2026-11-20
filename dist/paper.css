@@ -471,3 +471,47 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-word-menu-tools input[type="number"]{width:53px}
 }
 @media print{.paper-app .paper-word-menu{display:none!important}}
+
+
+/* Word mini toolbar: right-click and touch selection keep formatting next to
+   the selection instead of requiring users to search in the top ribbon. */
+.paper-app .paper-word-menu{
+ position:fixed;z-index:1000;
+ display:flex;flex-direction:column;gap:8px;
+ width:min(350px,calc(100vw - 16px));max-height:min(65dvh,310px);
+ overflow-x:hidden;overflow-y:auto;box-sizing:border-box;padding:10px;
+ border-radius:13px;border:1px solid #b7c8e4;background:#fff;
+ box-shadow:0 14px 42px #15294e36;color:#23395d;font-size:12px;
+}
+.paper-app .paper-word-menu[hidden]{display:none!important}
+.paper-app .paper-word-menu-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.paper-app .paper-word-menu-heading strong{font-size:12px}
+.paper-app .paper-word-menu-heading button{min-width:30px;min-height:30px;padding:2px 5px;font-size:20px}
+.paper-app .paper-word-menu-tools,.paper-app .paper-word-menu-colors,.paper-app .paper-word-menu-actions{
+ display:flex;align-items:center;gap:6px;flex-wrap:wrap
+}
+.paper-app .paper-word-menu button:not([data-word-menu-color]){
+ border-radius:7px;border:1px solid #d1dbec;background:#f8faff;
+ min-height:32px;padding:5px 9px;color:#304572
+}
+.paper-app .paper-word-menu button[aria-pressed="true"]{border-color:#5377cc;background:#deebff;color:#2346a9}
+.paper-app .paper-word-menu label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.paper-app .paper-word-menu input[type="number"]{
+ width:55px;height:32px;padding:4px;border:1px solid #becfea;
+ border-radius:7px;text-align:center;background:white
+}
+.paper-app .paper-word-menu [data-word-menu-color]{
+ width:24px;height:24px;min-width:24px;min-height:24px;
+ border:3px solid white;border-radius:50%;padding:0;
+ background:var(--word-ink);box-shadow:0 0 0 1px #a3b5d3
+}
+.paper-app .paper-word-menu [data-word-menu-color][aria-pressed="true"]{box-shadow:0 0 0 2px #3155d9}
+.paper-app .paper-word-menu input[type="color"]{
+ width:30px;height:30px;border:0;padding:0;background:transparent
+}
+.paper-app .paper-word-menu [data-word-menu-link]{background:#e7efff!important;color:#244eae!important}
+@media(max-width:720px){
+ .paper-app .paper-word-menu{max-height:min(52dvh,280px);padding:9px;gap:6px}
+ .paper-app .paper-word-menu-actions{justify-content:space-between}
+}
+@media print{.paper-app .paper-word-menu{display:none!important}}
