@@ -1019,3 +1019,7 @@ html[data-view=debt] .top-stats{display:none}
 .course-material-row button,.course-material-row a{font-size:11px;padding:6px 7px;border-radius:7px;border:1px solid #cbd6e8}
 .course-material-status{color:#4e6190;font-size:12px}
 @media(max-width:720px){.classroom-course-actions .button{flex:1 1 auto}.course-material-row{align-items:stretch}}
+
+/* Classroom course materials: direct upload without opening a modal. */
+.classroom-course-actions .classroom-course-upload{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:normal;text-align:center}
+.classroom-course-upload input[hidden]{display:none!important}
