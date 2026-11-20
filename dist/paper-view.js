@@ -34,6 +34,25 @@ export function paperPage(space,n){return `<section class="paper-app" aria-label
   <button type="button" data-paper="finish-text" class="paper-ribbon-done">✓ เสร็จสิ้น</button>
   <small class="paper-ribbon-help">ลากเลือกเฉพาะคำ แล้วกด B, I, U, สี หรือ ลิงก์</small>
  </div>
+ <div id="paper-word-menu" class="paper-word-menu" role="toolbar" aria-label="เมนูคลิกขวาจัดรูปแบบข้อความ" hidden>
+   <div class="paper-word-menu-heading"><strong>จัดรูปแบบข้อความที่เลือก</strong><button type="button" data-word-menu-close aria-label="ปิดเมนู">×</button></div>
+   <div class="paper-word-menu-tools" role="group" aria-label="ตัวหนา ตัวเอียง ขีดเส้นใต้">
+    <button type="button" data-word-menu-format="bold" title="ตัวหนา"><b>B</b></button>
+    <button type="button" data-word-menu-format="italic" title="ตัวเอียง"><i>I</i></button>
+    <button type="button" data-word-menu-format="underline" title="ขีดเส้นใต้"><u>U</u></button>
+    <button type="button" data-word-menu-format="strike" title="ขีดฆ่า"><s>S</s></button>
+    <label>ขนาด <input id="paper-word-menu-size" type="number" min="10" max="96" step="1" inputmode="numeric" aria-label="ขนาดข้อความที่เลือก"></label>
+   </div>
+   <div class="paper-word-menu-colors" role="group" aria-label="สีตัวอักษร">
+    <span>สี</span>
+    ${colors.map(c=>`<button type="button" data-word-menu-color="${c}" style="--word-ink:${c}" aria-label="สี ${c}"></button>`).join('')}
+    <label>สีอื่น <input id="paper-word-menu-custom" type="color" value="#172033" aria-label="เลือกสีเพิ่มเติม"></label>
+   </div>
+   <div class="paper-word-menu-actions">
+    <button type="button" data-word-menu-copy>คัดลอก</button>
+    <button type="button" data-word-menu-link>🔗 ลิงก์ / ไฟล์เฉพาะคำ</button>
+   </div>
+ </div>
  <div class="paper-workspace"><aside class="paper-pages" id="paper-pages-sidebar" aria-label="รายการหน้ากระดาษ"><div class="paper-pages-heading"><b>หน้ากระดาษ</b><button data-paper="add-page" aria-label="เพิ่มหน้า">＋</button></div><div id="paper-page-list"></div><button data-paper="add-page" class="paper-add-page">＋ เพิ่มหน้า</button></aside><div class="paper-center"><div class="paper-context"><label>กระดาษ <select id="paper-template"><option value="plain">ว่าง</option><option value="ruled">เส้นบรรทัด</option><option value="grid">ตาราง</option><option value="dots">จุด</option></select></label><div class="paper-context-actions"><button data-paper="duplicate-page" title="ทำสำเนาหน้า">ทำสำเนา</button><button data-paper="delete-page">ลบหน้า</button><button data-paper="files" title="แนบ PDF, Word หรือ PowerPoint">แนบไฟล์</button><button data-paper="info">รายละเอียด</button></div></div><div id="paper-viewport" class="paper-viewport"><div id="paper-wrap" class="paper-wrap"><div id="paper-sheet" class="paper-sheet"><svg id="paper-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1273" role="img" aria-label="หน้ากระดาษสำหรับเขียน พิมพ์ และวางรูป"></svg><textarea id="paper-text-input" hidden aria-label="แก้ข้อความบนกระดาษ และใช้ Apple Pencil เขียนต่อในช่องเดิม" spellcheck="false"></textarea></div></div></div><div class="paper-bottom"><span id="paper-page-label">กำลังเปิดสมุด…</span><span id="paper-hint" role="status">แตะบนกระดาษเพื่อพิมพ์ · แตะรูปเพื่อย้ายหรือปรับขนาด</span><div><button data-paper="zoom-out" aria-label="ย่อกระดาษ">−</button><button data-paper="fit" id="paper-zoom">พอดีหน้า</button><button data-paper="zoom-in" aria-label="ขยายกระดาษ">＋</button></div></div></div></div>
  <div id="paper-mobile-editor" class="paper-mobile-editor" hidden><div class="paper-mobile-editor-top"><strong>✎ แก้ไขข้อความ</strong><div class="paper-mobile-editor-actions"></div></div><p>แก้ไขในช่องนี้เพื่อให้อ่านชัดขณะพิมพ์</p></div>
   <div id="paper-selection-tools" class="paper-selection-tools" hidden><span>เลือกแล้ว <b id="paper-selected-count"></b></span><div class="paper-shape-selection" id="paper-shape-selection" hidden><label>รูปทรง <select id="paper-selected-shape" aria-label="เปลี่ยนรูปทรงที่เลือก">${Object.entries(shapes).map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select></label><label>เส้น <select id="paper-selected-line-style" aria-label="เปลี่ยนรูปแบบเส้นของรูปทรงที่เลือก">${Object.entries(lineStyles).map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select></label></div><button data-paper="edit-text">แก้ข้อความ</button><label>ขนาดทั้งกล่อง <input id="paper-font-size" type="number" min="10" max="96" step="1" value="24" aria-label="ขนาดตัวอักษรทั้งกล่อง"></label><button data-paper="bold">ตัวหนา</button><button data-paper="image-link" hidden>ใส่ลิงก์</button><a id="paper-open-link" hidden target="_blank" rel="noopener noreferrer">เปิดลิงก์ ↗</a><button data-paper="crop" hidden>ครอปรูป</button><button data-paper="duplicate">ทำสำเนา</button><button data-paper="delete-object" class="paper-danger">ลบที่เลือก</button></div>
