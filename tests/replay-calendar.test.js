@@ -100,9 +100,9 @@ test('saved deep-watch date and time remain adjustable, but cannot move before e
  assert.equal(row.endTime,'17:55');
  assert.equal(row.done,true);
  const moved=personalReplayEvents({[key]:{date:'2026-11-22',time:'18:00'}},
-  {start:'2026-11-22',end:'2026-11-22'});
- assert.equal(moved[0].date,'2026-11-22');
- assert.equal(moved[0].startTime,'18:00');
+  {start:'2026-11-22',end:'2026-11-22'}).find(x=>x.key===key);
+ assert.equal(moved.date,'2026-11-22');
+ assert.equal(moved.startTime,'18:00');
 });
 
 test('ICS exports use actual planned session durations, separate recurring types and no fake university events',()=>{
