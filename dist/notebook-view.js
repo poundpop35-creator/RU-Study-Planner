@@ -1,5 +1,5 @@
 import {paperPage} from './paper-view.js?v=editable-note-tables-20261120';
-import {mountPaper,refreshPaper} from './paper-editor.js?v=editable-note-tables-20261120';
+import {mountPaper,refreshPaper} from './paper-editor.js?v=inline-mobile-text-20261120';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
@@ -8,7 +8,7 @@ import {lessons} from './lessons.js?v=20261027c';
 import {escapeHTML as e} from './core.js?v=20261027c';
 import {newNote,findNotes,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} from './notebook-core.js?v=editable-note-tables-20261120';
 import {materialFor,isCourseCode} from './course-materials.js?v=shared-course-20261120';
-import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=shared-course-20261120';
+import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=inline-course-upload-20261120';
 import {openNoteFile} from './file-viewer.js';
 let query='',course='',source='',archived=false,reviewing=false,reviewIndex=0,revealed=false,unmount=()=>{};
 const stamps=x=>new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short'}).format(new Date(x));

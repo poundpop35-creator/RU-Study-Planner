@@ -22,6 +22,23 @@ export function courseMaterialList(book,course){
   '</div>';
 }
 
+// One-tap upload from the classroom card uses the same per-course collection
+// as the materials dialog. Never put these files on an individual note.
+export async function uploadSharedCourseFile(space,course,file,onUpdate=()=>{},toast=()=>{}){
+ if(!isCourseCode(course))throw Error('เลือกรายวิชาที่ถูกต้องก่อนแนบไฟล์หลัก');
+ if(!space.info().canEdit)throw Error('ยังไม่สามารถบันทึกได้ โปรดตรวจการเชื่อมต่อพื้นที่ส่วนตัว');
+ const attachment=await readAttachment(file);
+ const book=structuredClone(space.notebook()),items=materialFor(book,course);
+ if(items.files.length>=12)throw Error('แนบเอกสารหลักได้ไม่เกิน 12 ไฟล์ต่อวิชา');
+ book.courseMaterials={...(book.courseMaterials||{}),[course]:{...items,files:[...items.files,attachment]}};
+ book.version=6;
+ space.saveNotebook(book);
+ onUpdate();
+ await space.flush();
+ toast('แนบไฟล์หลักวิชา '+course+' แล้ว');
+ return attachment;
+}
+
 export async function openSharedCourseMaterials(space,course,onUpdate=()=>{},toast=()=>{}){
  if(!isCourseCode(course))throw Error('เลือกวิชาก่อนแนบเอกสารประจำวิชา');
  const modal=document.createElement('dialog');modal.className='paper-sheet-dialog course-materials-dialog';
