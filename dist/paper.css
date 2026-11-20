@@ -334,3 +334,53 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
   overflow:auto;-webkit-text-size-adjust:100%;
  }
 }
+
+
+/* Desktop/tablet: keep the frequently used notebook options visible instead of
+   burying color, pen width and shape settings behind the advanced menu. */
+.paper-app .paper-quickbar{
+ display:flex;align-items:center;gap:12px;
+ flex:0 0 auto;min-height:47px;padding:5px 12px;
+ overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;
+ border-bottom:1px solid #d8e2ef;background:#f9fbff;
+ color:#304469;font-size:12px;white-space:nowrap;
+}
+.paper-app .paper-quickbar .paper-quickbar-title{
+ font-size:11px;font-weight:750;letter-spacing:.15px;color:#526a8e;
+}
+.paper-app .paper-quick-colors{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.paper-app .paper-quick-colors button{
+ display:inline-block;min-width:0;min-height:0;width:24px;height:24px;
+ padding:0;border-radius:50%;background:var(--ink);
+ border:3px solid #fff;box-shadow:0 0 0 1px #b4c3dd;
+ flex:0 0 auto;
+}
+.paper-app .paper-quick-colors button[aria-pressed="true"]{
+ box-shadow:0 0 0 2px #3155d9,0 0 0 4px #d5e0ff;
+}
+.paper-app .paper-quickbar label{display:inline-flex;align-items:center;gap:7px;flex:0 0 auto}
+.paper-app .paper-quickbar input[type="range"]{width:112px;accent-color:#3155d9;cursor:pointer}
+.paper-app .paper-quickbar output{min-width:23px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;color:#214aad}
+.paper-app .paper-quickbar select{
+ max-width:155px;min-width:100px;height:33px;min-height:33px;
+ padding:3px 6px;border:1px solid #c8d5e9;border-radius:7px;
+ background:#fff;font-size:12px;color:#273c62;
+}
+.paper-app .paper-quickbar input[type="number"]{
+ width:58px;height:33px;padding:3px 5px;border:1px solid #c8d5e9;
+ border-radius:7px;background:#fff;font-size:12px;text-align:center;
+}
+.paper-app .paper-quickbar .paper-quick-action{
+ min-height:34px;padding:5px 9px;border:1px solid #cbd8ec;
+ background:#fff;color:#2b487a;font-size:12px;white-space:nowrap;
+}
+.paper-app .paper-quickbar .paper-quick-action[aria-pressed="true"]{
+ background:#deebff;border-color:#6c8cdb;color:#2145a7;
+}
+.paper-app:not([data-paper-tool="pen"]):not([data-paper-tool="highlight"]):not([data-paper-tool="shape"]) #paper-quick-linewidth{display:none}
+.paper-app:not([data-paper-tool="shape"]) #paper-quick-shape-wrap,
+.paper-app:not([data-paper-tool="shape"]) #paper-quick-line-wrap{display:none}
+.paper-app:not([data-paper-tool="text"]) #paper-quick-text-wrap{display:none}
+@media(max-width:720px){
+ .paper-app .paper-quickbar{display:none!important}
+}
