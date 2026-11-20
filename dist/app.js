@@ -262,8 +262,8 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
    const scroller=document.querySelector('.unified-scroll');
    const track=scroller?.querySelector?.('.unified-weekday-track');
    if(scroller&&track&&['day','night'].includes(b.dataset.target)){
-    const hour=b.dataset.target==='night'?20:11;
-    const left=Math.max(0,60+8+(hour-11)/14*track.clientWidth-78);
+    const hour=b.dataset.target==='night'?20:9;
+    const left=Math.max(0,60+8+(hour-9)/16*track.clientWidth-78);
     scroller.scrollTo?.({left,behavior:'smooth'});
    }
    return;
