@@ -1,4 +1,4 @@
-try { await import('./app.js?v=visible-tools-20261120'); }
+try { await import('./app.js?v=word-context-20261120'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
