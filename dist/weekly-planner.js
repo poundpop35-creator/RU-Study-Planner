@@ -1,6 +1,6 @@
 import {schedules,courses,calendar} from './data.js?v=20261027c';
 import {regularLecture,firstLecture,weekdays,personalReplayEvents,personalSkimEvents,calendarEvents} from './calendar-core.js?v=balanced-replay-20261120';
-import {escapeHTML as e,thaiDate,today,addDays} from './core.js?v=replay-20261119';
+import {escapeHTML as e,thaiDate,today,addDays} from './core.js?v=balanced-friday-replays-20261120';
 // Public catalogue entries observed in RU-Study Planner, term 2/2569, 15 Nov 2026.
 const reference={
  POL1101:[1,'11:10','13:40','KTB 401','2027-03-12','B'],
