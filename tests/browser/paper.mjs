@@ -249,7 +249,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
      overflow:card.scrollHeight-card.clientHeight};
    }),track:{left:track.getBoundingClientRect().left,right:track.getBoundingClientRect().right,
     bottom:track.getBoundingClientRect().bottom}};
-  })));
+  }));
   for(const day of layout)for(let i=0;i<day.cards.length;i++){
    const card=day.cards[i];
    assert.ok(card.btnTop>=card.top-1&&card.btnBottom<=card.bottom+1,
