@@ -50,7 +50,7 @@ export function validateState(input){
  }
  // Separate status for weekday quick reviews; never marks the weekend deep-watch as finished.
  if(plain(input.skimDone))for(const [key,value] of Object.entries(input.skimDone).slice(0,500)){
-  const match=/^(POL\\d{4})@(\\d{4}-\\d{2}-\\d{2})$/.exec(key);
+  const match=/^(POL\d{4})@(\d{4}-\d{2}-\d{2})$/.exec(key);
   if(match&&enrolled.has(match[1])&&validHourDay(match[2])&&match[2]>=calendar.lectureStart&&match[2]<=calendar.lectureEnd&&value===true)
    s.skimDone[key]=true;
  }
