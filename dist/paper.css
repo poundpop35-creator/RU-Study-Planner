@@ -236,3 +236,21 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-toolbar-more>.paper-tool-options{right:-50px}
  .paper-toolbar-more .paper-pen-sizes .paper-size-preset{min-width:34px}
 }
+
+
+/* The app's generic details/summary rules add extra vertical padding.
+   Fix the closed settings control to a true 40px toolbar button. */
+.paper-app .paper-toolbar-more{
+ display:block!important;height:40px!important;min-height:40px!important;
+ max-height:40px!important;padding:0!important;margin:0!important;
+ border:0!important;overflow:visible!important
+}
+.paper-app .paper-toolbar-more>summary{
+ display:flex!important;align-items:center;justify-content:center;
+ height:40px!important;min-height:40px!important;max-height:40px!important;
+ line-height:1.1!important;padding:0 10px!important;margin:0!important
+}
+@media(max-width:720px){
+ .paper-app .paper-toolbar-more{height:38px!important;min-height:38px!important;max-height:38px!important}
+ .paper-app .paper-toolbar-more>summary{height:38px!important;min-height:38px!important;max-height:38px!important;padding:0 8px!important}
+}
