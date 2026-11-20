@@ -125,3 +125,19 @@ test('unified inline weekly view includes live and saved replay sessions without
  assert.ok(html.includes('✓ ดูแล้ว'));
  assert.ok(!html.includes('class="panel"'),'weekly widget must be embedded inside one calendar panel');
 });
+
+test('three Friday catch-up clips each get a full-height card with room for their buttons',()=>{
+ const html=weeklyPlanner('inline',freshState(),'2026-11-19',true);
+ const friday=html.match(/<div class="unified-weekday ">(?:(?!<div class="unified-weekday ").)*?<\/div><\/div>/gs)||[];
+ assert.ok(html.includes('height:366px'),'Friday row requires three 122px replay slots');
+ for(const code of ['POL2301','POL2104','POL2106']){
+  assert.ok(html.includes('▶ '+code),'missing replay for '+code);
+  assert.ok(html.includes('aria-label="'+code+' ยังไม่ดู กดเพื่อทำเครื่องหมายดูแล้ว"'));
+ }
+ assert.ok(html.includes('top:247px'),'third card should begin below the second');
+ assert.ok(!html.includes('width:8%'),'replay moved to late hours must remain readable');
+ const moved=freshState();moved.replay['POL2104@2026-11-18']={time:'22:00'};
+ const late=weeklyPlanner('inline',moved,'2026-11-19',true);
+ assert.ok(late.includes('22:00 · ย้อนหลัง'));
+ assert.ok(late.includes('width:24.6%'),'late cards retain a full readable width');
+});

@@ -225,6 +225,46 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.match(await reader.locator('.file-content').innerText(),/บทเรียน docx/);await reader.locator('[data-close]').click();
   await page.evaluate(async data=>{const {openNoteFile}=await import('/file-viewer.js');await openNoteFile({name:'lesson.pptx',data});},'UEsDBBQAAAAIAIV4cl1c32V0SgAAAFAAAAAVAAAAcHB0L3NsaWRlcy9zbGlkZTEueG1ssynKzy9RqMjNySu2SrRVKi3KsypJLS5RsrNJtCoAESV2D3bMerBj+oOdDQ92LH6wY+uDHYse7JipUFBQUmGjD5IHkUCl+iCT7ABQSwECFAMUAAAACACFeHJdXN9ldEoAAABQAAAAFQAAAAAAAAAAAAAAgAEAAAAAcHB0L3NsaWRlcy9zbGlkZTEueG1sUEsFBgAAAAABAAEAQwAAAH0AAAAAAA==');
   assert.match(await reader.locator('.file-content').innerText(),/บทเรียน pptx/);await reader.locator('[data-close]').click();
+
+  // The single weekly planner must fit replay cards, including watch buttons, at iPhone widths.
+  // Render a fixed sample week so this regression check remains independent of the current date.
+  await page.evaluate(async()=>{
+   const {weeklyPlanner}=await import('/weekly-planner.js?v=replay-card-mobile-20261120');
+   const {freshState}=await import('/core.js?v=replay-20261119');
+   const fixture=document.createElement('section');
+   fixture.id='replay-layout-fixture';
+   fixture.style.cssText='max-width:790px;margin:0 auto;padding:10px;background:#fff';
+   fixture.innerHTML=weeklyPlanner('inline',freshState(),'2026-11-19',true);
+   document.body.replaceChildren(fixture);
+  });
+  const schedule=page.locator('#replay-layout-fixture');
+  assert.equal(await schedule.locator('.unified-replay').count(),7);
+  const layout=await schedule.locator('.unified-weekday').evaluateAll(rows=>rows.map(row=>{
+   const cards=Array.from(row.querySelectorAll('.unified-replay'));
+   const track=row.querySelector('.unified-weekday-track');
+   return {cards:cards.map(card=>{
+    const body=card.getBoundingClientRect(),button=card.querySelector('button').getBoundingClientRect();
+    return {top:body.top,bottom:body.bottom,left:body.left,right:body.right,
+     btnTop:button.top,btnBottom:button.bottom,btnLeft:button.left,btnRight:button.right,
+     overflow:card.scrollHeight-card.clientHeight};
+   }),track:{left:track.getBoundingClientRect().left,right:track.getBoundingClientRect().right,
+    bottom:track.getBoundingClientRect().bottom}};
+  }));
+  for(const day of layout)for(let i=0;i<day.cards.length;i++){
+   const card=day.cards[i];
+   assert.ok(card.btnTop>=card.top-1&&card.btnBottom<=card.bottom+1,
+    'replay watch button must fit entirely inside the card');
+   assert.ok(card.btnLeft>=card.left-1&&card.btnRight<=card.right+1,
+    'replay watch button must fit width');
+   assert.ok(card.bottom<=day.track.bottom+1,'the day row must contain every replay');
+   assert.ok(card.overflow<=2,'replay text must not be clipped');
+   if(i)assert.ok(day.cards[i-1].bottom<=card.top+1,'same-day replay cards must not overlap');
+  }
+  if(mobile){
+   assert.ok(await schedule.locator('.unified-grid').evaluate(el=>el.scrollWidth<=el.clientWidth+2),
+    'mobile weekly schedule should not require sideways panning');
+  }
+  await page.screenshot({path:'test-results/replay-calendar-'+name+'.png',fullPage:true});
   assert.deepEqual(errors,[]);console.log(name+': editor, text, vector ink, undo/redo, selection, images, pages, confirmation, offline save, cross-device sync, no remount, legacy original PASS');
  }catch(err){console.error(name,err);let shot=0;for(const c of browser.contexts())for(const p of c.pages())await p.screenshot({path:'test-results/failure-'+name+'-'+shot+++'.png'}).catch(()=>{});process.exitCode=1;}
  finally{await browser.close();}
