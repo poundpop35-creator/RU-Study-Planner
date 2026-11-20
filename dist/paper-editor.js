@@ -591,6 +591,11 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
  bind(root,'click',async e=>{
   const b=e.target.closest('button');if(!b||!root.contains(b))return;
   try{
+   if(b.dataset.wordFormat){applyWordFormat(b.dataset.wordFormat);return;}
+   if(b.dataset.wordStep){
+    const size=textSize(Number($('#paper-word-size').value)+Number(b.dataset.wordStep),editing?.object?.size||fontSize);
+    $('#paper-word-size').value=size;applyWordFormat('size',size);return;
+   }
    if(unsaved&&b.dataset.paper!=='save'&&b.dataset.paper!=='draft'&&b.dataset.paper!=='discard-draft'&&b.dataset.paper!=='pages')throw Error('มีงานค้าง กรุณาบันทึกหรือสำรองก่อนทำรายการต่อ');
    if(b.dataset.paperPage){finishText();pageId=b.dataset.paperPage;selected.clear();viewport.scrollTop=0;if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);draw();thumbs();return;}
    if(b.dataset.paperColor){color=b.dataset.paperColor;if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type!=='image'?{...o,color}:o);});draw();closeExtraTools();return;}
@@ -690,7 +695,18 @@ export function mountPaper(space,id,{onLegacy=()=>{}}={}){
   if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type==='shape'?{...o,dash:lineStyle}:o);});
   closeExtraTools();
  });
- bind($('#paper-font-size'),'change',e=>{fontSize=Number(e.target.value);change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text')o.size=fontSize;}));});
+ bind($('#paper-font-size'),'change',e=>{
+  const size=textSize(e.target.value,fontSize);e.target.value=String(size);fontSize=size;
+  change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text'){o.size=size;o.h=Math.max(o.h,Math.ceil(size*1.5));}}));
+ });
+ bind($('#paper-word-size'),'change',e=>{
+  const size=textSize(e.target.value,editing?.object?.size||fontSize);e.target.value=String(size);
+  if(editing)applyWordFormat('size',size);
+ });
+ bind($('#paper-default-text-size'),'change',e=>{
+  fontSize=textSize(e.target.value,fontSize);e.target.value=String(fontSize);
+  try{localStorage.setItem(textSizeKey,String(fontSize));}catch{}
+ });
  for(const [selector,key] of [['#paper-title','title'],['#paper-course','course'],['#paper-source','source'],['#paper-tags','tags'],['#paper-question','question'],['#paper-answer','answer']])bind($(selector),'change',e=>{try{writable();const book=copy(space.notebook()),n=book.notes.find(n=>n.id===id);n[key]=key==='course'?e.target.value.trim().toUpperCase():e.target.value;if(key==='course'&&n[key]&&!/^POL\d{4}$/.test(n[key]))throw Error('กรอกรหัสวิชา เช่น POL1101');n.updatedAt=new Date().toISOString();space.saveNotebook(book);}catch(err){say(err.message,true);}});
  bind(document,'keydown',e=>{if(!root.isConnected||/INPUT|TEXTAREA/.test(e.target.tagName)||e.target.isContentEditable)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();$(`[data-paper="${e.shiftKey?'redo':'undo'}"]`).click();}if((e.key==='Delete'||e.key==='Backspace')&&selected.size){e.preventDefault();$('[data-paper="delete-object"]').click();}});
  bind(window,'beforeunload',e=>{if(unsaved||editing||gesture?.kind==='stroke'||loadingImages){e.preventDefault();e.returnValue='';}});
