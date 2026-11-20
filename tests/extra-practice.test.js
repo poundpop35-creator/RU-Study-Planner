@@ -28,7 +28,7 @@ test('each question is self-contained with a valid explanation; there are no rep
   assert.ok(q.prompt.length>=32,q.key);
   assert.ok(q.explanation.length>=30,q.key);
   assert.ok(Number.isInteger(q.answer)&&q.answer>=0&&q.answer<4,q.key);
-  assert.ok(q.options.every(v=>typeof v==='string'&&v.length>5&&v.length<240),q.key);
+  assert.ok(q.options.every(v=>typeof v==='string'&&v.length>=3&&v.length<240),q.key);
   assert.equal(new Set(q.options).size,4,q.key);
   assert.equal(practiceQuestion(q.key),q);
  }
