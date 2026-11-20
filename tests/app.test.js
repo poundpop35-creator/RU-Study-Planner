@@ -282,6 +282,23 @@ test('recorded lecture timetable saves watched state and custom timing in existi
  click('cal-board',{board:'regular'});
 });
 
+test('Friday POL2106 light listening saves independently of weekend serious watching',()=>{
+ navigate('#calendar');click('cal-view',{view:'week'});
+ const key='POL2106@2026-11-18';
+ assert.ok(html().includes('cal-skim-done'));
+ click('cal-skim-done',{key});
+ assert.equal(saved().skimDone[key],true);
+ assert.equal(saved().replay[key]?.done,undefined);
+ click('cal-replay-done',{key});
+ assert.equal(saved().replay[key].done,true);
+ assert.equal(saved().skimDone[key],true,'full viewing does not erase light review');
+ click('cal-skim-done',{key});
+ assert.equal(saved().skimDone[key],undefined,'turning off the light status leaves full watching untouched');
+ assert.equal(saved().replay[key].done,true);
+ click('cal-replay-done',{key});
+ assert.equal(saved().replay[key],undefined);
+});
+
 test('default monthly calendar shows lectures and replay together; checking a replay changes the month marker',()=>{
  navigate('#calendar');click('cal-filter',{type:'all'});click('cal-view',{view:'month'});click('cal-jump',{month:'2026-11',type:'all'});
  const initial=html();assert.ok(initial.includes('calendar-chip lecture'));assert.ok(initial.includes('calendar-chip replay'));
