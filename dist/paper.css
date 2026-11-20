@@ -254,3 +254,9 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-toolbar-more{height:38px!important;min-height:38px!important;max-height:38px!important}
  .paper-app .paper-toolbar-more>summary{height:38px!important;min-height:38px!important;max-height:38px!important;padding:0 8px!important}
 }
+
+/* Pencil palm guard is kept inside the folded settings menu. */
+.paper-palm-guard{display:inline-flex;align-items:center;gap:7px;flex:1 1 200px;min-height:38px;padding:6px 9px;border:1px solid #cddaf2;background:#f1f6ff;border-radius:10px;color:#28487d;font-weight:650;font-size:12px}
+.paper-palm-guard input{width:18px;height:18px;accent-color:#3155d9;flex-shrink:0}
+.paper-app.paper-palm-guard-on .paper-viewport{touch-action:pan-x pan-y}
+.paper-app.paper-palm-guard-on #paper-svg{touch-action:none}

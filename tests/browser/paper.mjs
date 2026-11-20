@@ -65,7 +65,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.ok(small.w>=200&&small.h>=120,'mobile editable text is legible');
     assert.ok(Number.parseFloat(await typingBox.evaluate(el=>getComputedStyle(el).fontSize))>=16);
     assert.ok(await typingBox.evaluate(el=>el.parentElement.id==='paper-mobile-editor'));
-   }else assert.ok(small.w<90&&small.h<60);
+   }else assert.ok(small.w>=250&&small.h<60,'leave room to handwrite after existing words');
    await typingBox.fill('ข้อความสำหรับทดสอบการตัดบรรทัด '.repeat(18));const long=await size();
    if(mobile)assert.ok(long.w>=200&&long.h>=120);else assert.ok(long.w>small.w&&long.w<=801&&long.h>small.h);
    await typingBox.fill('จด');assert.deepEqual(await size(),small);
@@ -241,6 +241,56 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.match(await reader.locator('.file-content').innerText(),/บทเรียน docx/);await reader.locator('[data-close]').click();
   await page.evaluate(async data=>{const {openNoteFile}=await import('/file-viewer.js');await openNoteFile({name:'lesson.pptx',data});},'UEsDBBQAAAAIAIV4cl1c32V0SgAAAFAAAAAVAAAAcHB0L3NsaWRlcy9zbGlkZTEueG1ssynKzy9RqMjNySu2SrRVKi3KsypJLS5RsrNJtCoAESV2D3bMerBj+oOdDQ92LH6wY+uDHYse7JipUFBQUmGjD5IHkUCl+iCT7ABQSwECFAMUAAAACACFeHJdXN9ldEoAAABQAAAAFQAAAAAAAAAAAAAAgAEAAAAAcHB0L3NsaWRlcy9zbGlkZTEueG1sUEsFBgAAAAABAAEAQwAAAH0AAAAAAA==');
   assert.match(await reader.locator('.file-content').innerText(),/บทเรียน pptx/);await reader.locator('[data-close]').click();
+
+  // Apple Pencil Scribble should reopen the SAME text object when the user writes
+  // immediately after the last word (within a small right-side continuation area).
+  await click('text');await tap(510,620);
+  const follow=page.locator('#paper-text-input');
+  await follow.fill('รัฐ');await click('save');
+  const activeNote=()=>row.payload.notebook.notes.find(n=>n.course==='POL2104');
+  const originalText=activeNote().paper.pages[0].objects.find(o=>o.type==='text'&&o.text==='รัฐ');
+  assert.ok(originalText,'create a short test word in an otherwise empty region');
+  const following=await point(Math.min(890,originalText.x+originalText.w+32),originalText.y+originalText.h/2);
+  if(mobile)await page.touchscreen.tap(following.x,following.y);
+  else await page.mouse.click(following.x,following.y);
+  assert.equal(await follow.inputValue(),'รัฐ','tapping after the word must resume its textbox');
+  assert.equal(await follow.evaluate(el=>el.selectionStart),await follow.inputValue().then(v=>v.length),'cursor should be at the end ready for Scribble');
+  await follow.fill('รัฐศาสตร์');await click('save');
+  const continued=activeNote().paper.pages[0].objects.find(o=>o.id===originalText.id);
+  assert.equal(continued.text,'รัฐศาสตร์','new handwriting text should be stored on same object');
+  assert.equal(activeNote().paper.pages[0].objects.filter(o=>o.text==='รัฐศาสตร์').length,1);
+
+  // Touch contacts on the writing surface must not trigger zoom or new text
+  // while palm protection is enabled. Pen input must still work.
+  await page.locator('#paper-toolbar-more > summary').click();
+  await page.locator('#paper-palm-guard').check();
+  assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
+  const beforeZoom=await page.locator('#paper-zoom').innerText();
+  const objectCount=activeNote().paper.pages[0].objects.length;
+  const contact=await point(620,690);
+  await page.locator('#paper-svg').evaluate((svg,p)=>{
+   svg.setPointerCapture=()=>{};
+   const send=(type,id,dx=0)=>svg.dispatchEvent(new PointerEvent(type,{
+    bubbles:true,cancelable:true,pointerType:'touch',pointerId:id,
+    clientX:p.x+dx,clientY:p.y}));
+   send('pointerdown',810,-14);send('pointerdown',811,14);
+   send('pointermove',810,-74);send('pointermove',811,74);
+   send('pointerup',810,-74);send('pointerup',811,74);
+   delete svg.setPointerCapture;
+  },contact);
+  assert.equal(await page.locator('#paper-zoom').innerText(),beforeZoom,'palm touches should never pinch-zoom');
+  assert.equal(activeNote().paper.pages[0].objects.length,objectCount,'palm touches should not create extra text');
+  await click('pen');
+  const inkFrom=await point(560,910),inkTo=await point(635,950);
+  await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
+   svg.setPointerCapture=()=>{};
+   for(const [type,p] of [['pointerdown',a],['pointermove',b],['pointerup',b]]){
+    svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'pen',pointerId:815,clientX:p.x,clientY:p.y,pressure:.6}));
+   }
+   delete svg.setPointerCapture;
+  },[inkFrom,inkTo]);
+  await click('save');
+  assert.ok(activeNote().paper.pages[0].objects.some(o=>o.type==='stroke'),'Apple Pencil input should work with palm guard enabled');
 
   // The single weekly planner must fit replay cards, including watch buttons, at iPhone widths.
   // Render a fixed sample week so this regression check remains independent of the current date.
