@@ -32,14 +32,10 @@ export function firstLecture(schedule){
 // Faculty notice dated 3 Nov 2569: keep the first meeting in MR30.
 export function regularLecture(s){return s.id==='POL2200-269-lecture'?{...s,weekday:4,room:'VPB 501'}:s;}
 export function calendarEvents({start=calendar.lectureStart,end=calendar.examEnd,type='all',course=''}={}){
- // Personal replay plan: derived from real lecture dates; two-day lag is an estimate, not verified uploads.
- if(type==='replay'){
-  return calendarEvents({start:addDays(start,-2),end:addDays(end,-2),type:'lecture',course})
-   .filter(x=>x.type==='lecture').map(x=>({
-    ...x,id:'replay-'+x.course+'-'+x.date,key:x.course+'@'+x.date,type:'replay',date:addDays(x.date,2),
-    sourceDate:x.date,sourceTime:x.time,startTime:'20:00',endTime:'21:00',time:'20:00',clash:false
-   })).sort((a,b)=>a.date.localeCompare(b.date)||a.sourceTime.localeCompare(b.sourceTime)||a.course.localeCompare(b.course));
- }
+ // User's own deep-watch queue: weekends only, starting with POL2106.
+ // A replay is eligible no earlier than two calendar days after the live lecture.
+ if(type==='replay')return defaultWeekendReplays().filter(x=>x.date>=start&&x.date<=end&&(!course||x.course===course));
+ if(type==='skim')return personalSkimEvents({},{start,end,course});
  const rows=[],clashes=lectureClashes();
  const selected=courses.filter(c=>c.enrolled&&(!course||c.id===course));
  if(type!=='exam')for(let d=start<calendar.lectureStart?calendar.lectureStart:start;d<=end&&d<=calendar.lectureEnd;d=addDays(d,1)){
@@ -58,13 +54,86 @@ export function calendarEvents({start=calendar.lectureStart,end=calendar.examEnd
  if(type!=='lecture')for(const c of selected.filter(c=>c.exam&&c.exam>=start&&c.exam<=end))rows.push({id:'exam-'+c.id,type:'exam',date:c.exam,course:c.id,title:c.title,slot:c.slot,time:'คาบ '+c.slot,source:'mr30'});
  return rows.sort((a,b)=>a.date.localeCompare(b.date)||(a.startTime||'').localeCompare(b.startTime||'')||a.course.localeCompare(b.course));
 }
+// Weekend deep sessions occupy roughly five hours on each day, with breaks.
+// Saturday: four 75-minute clips; Sunday: three 100-minute clips.
+// Actual video length is not known; these are adjustable study-time budgets.
+export const WEEKEND_PRIORITY=['POL2106','POL2104','POL1101','POL2303','POL2301','POL2107','POL2200'];
+const DEEP_SATURDAY=['09:00','10:30','13:00','14:30'];
+const DEEP_SUNDAY=['09:00','11:00','14:00','16:00','18:00'];
+const utcWeekday=d=>new Date(d+'T12:00:00Z').getUTCDay();
+const mondayOf=d=>addDays(d,-((utcWeekday(d)+6)%7));
+const rankCourse=code=>{const i=WEEKEND_PRIORITY.indexOf(code);return i<0?99:i;};
+const replayKey=x=>x.course+'@'+x.date;
+const clockPlus=(time,minutes)=>{
+ const d=new Date(Date.UTC(2026,0,1,Number(time.slice(0,2)),Number(time.slice(3))+minutes));
+ return d.toISOString().slice(11,16);
+};
+export function defaultWeekendReplays(){
+ const lectures=calendarEvents({type:'lecture',start:calendar.lectureStart,end:calendar.lectureEnd}).filter(x=>x.type==='lecture');
+ const weeks=new Map();
+ for(const lecture of lectures){
+  const monday=mondayOf(lecture.date);
+  if(!weeks.has(monday))weeks.set(monday,[]);
+  weeks.get(monday).push(lecture);
+ }
+ const events=[];
+ for(const [monday,entries] of weeks){
+  const sat=addDays(monday,5),sun=addDays(monday,6);
+  const sorted=entries.slice().sort((a,b)=>rankCourse(a.course)-rankCourse(b.course)||a.date.localeCompare(b.date));
+  const allowedSat=sorted.filter(x=>addDays(x.date,2)<=sat);
+  const satCount=Math.min(DEEP_SATURDAY.length,Math.ceil(sorted.length/2),allowedSat.length);
+  const satSet=new Set(allowedSat.slice(0,satCount).map(replayKey));
+  const saturday=sorted.filter(x=>satSet.has(replayKey(x)));
+  const sunday=sorted.filter(x=>!satSet.has(replayKey(x)));
+  for(const [day,group,slots,durationMinutes] of [[sat,saturday,DEEP_SATURDAY,75],[sun,sunday,DEEP_SUNDAY,100]]){
+   group.forEach((lecture,i)=>{
+    const startTime=slots[i]||clockPlus('09:00',i*120);
+    events.push({...lecture,id:'replay-'+lecture.course+'-'+lecture.date,key:replayKey(lecture),
+     type:'replay',mode:'deep',date:day,sourceDate:lecture.date,sourceTime:lecture.time,
+     availableOn:addDays(lecture.date,2),startTime,endTime:clockPlus(startTime,durationMinutes),
+     durationMinutes,time:startTime,clash:false});
+   });
+  }
+ }
+ return events.sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime)||a.course.localeCompare(b.course));
+}
+// A quick-listening queue runs at 20:00 on weekdays, never on weekends.
+// Fridays after the first lecture are free of live classes, so 3 x 30-minute
+// reviews fit between 20:00 and 21:40. Mon–Thu have one 40-minute review.
+// Rotate through eligible recordings, and do not mark deep watching complete.
+export function personalSkimEvents(skimDone={}, {start=calendar.lectureStart,end=addDays(calendar.examEnd,7),course=''}={}){
+ const lectures=calendarEvents({type:'lecture',start:calendar.lectureStart,end:calendar.lectureEnd})
+  .filter(x=>x.type==='lecture');
+ const selected=new Set(),out=[];
+ for(let day=calendar.lectureStart;day<=addDays(calendar.lectureEnd,7);day=addDays(day,1)){
+  const weekday=utcWeekday(day);
+  if(weekday===0||weekday===6)continue;
+  const slots=weekday===5?['20:00','20:35','21:10']:['20:00'];
+  const durationMinutes=weekday===5?30:40;
+  for(const time of slots){
+   const eligible=lectures.filter(x=>!selected.has(replayKey(x))&&addDays(x.date,2)<=day)
+    .sort((a,b)=>b.date.localeCompare(a.date)||rankCourse(a.course)-rankCourse(b.course));
+   const lesson=eligible[0];if(!lesson)break;
+   const key=replayKey(lesson);selected.add(key);
+   out.push({...lesson,id:'skim-'+lesson.course+'-'+lesson.date,key,
+    type:'skim',mode:'light',sourceDate:lesson.date,sourceTime:lesson.time,
+    availableOn:addDays(lesson.date,2),date:day,startTime:time,
+    endTime:clockPlus(time,durationMinutes),time,durationMinutes,clash:false,done:skimDone?.[key]===true});
+  }
+ }
+ return out.filter(x=>x.date>=start&&x.date<=end&&(!course||x.course===course))
+  .sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime));
+}
+
 // Apply saved per-lecture decisions while keeping the campus timetable immutable.
 export function personalReplayEvents(replay={}, {start=calendar.lectureStart,end=addDays(calendar.examEnd,60),course=''}={}){
- const base=calendarEvents({type:'replay',start:addDays(calendar.lectureStart,2),end:addDays(calendar.lectureEnd,2),course});
+ const base=defaultWeekendReplays().filter(x=>!course||x.course===course);
  const events=base.map(event=>{
   const saved=replay?.[event.key]||{};
-  return {...event,date:saved.date||event.date,startTime:saved.time||'20:00',
-   endTime:null,time:saved.time||'20:00',done:saved.done===true,custom:!!(saved.date||saved.time)};
+  const date=saved.date&&saved.date>=event.availableOn?saved.date:event.date;
+  const startTime=saved.time||event.startTime;
+  return {...event,date,startTime,endTime:clockPlus(startTime,event.durationMinutes),
+   time:startTime,done:saved.done===true,custom:!!(saved.date||saved.time)};
  }).filter(event=>event.date>=start&&event.date<=end)
  .sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime)||a.sourceTime.localeCompare(b.sourceTime)||a.course.localeCompare(b.course));
  const overlaps=new Map();
@@ -74,20 +143,26 @@ export function personalReplayEvents(replay={}, {start=calendar.lectureStart,end
 const icsEscape=v=>String(v).replaceAll('\\','\\\\').replace(/\r?\n/g,'\\n').replaceAll(',','\\,').replaceAll(';','\\;');
 export function foldICS(line){let result='',row='',bytes=0;const encoder=new TextEncoder();for(const ch of line){const n=encoder.encode(ch).length;if(bytes+n>75){result+=row+'\r\n';row=' ';bytes=1;}row+=ch;bytes+=n;}return result+row;}
 const utc=(day,time)=>new Date(`${day}T${time}:00+07:00`).toISOString().replace(/[-:]/g,'').replace('.000','');
-export function scheduleICS({type='all',course='',replay={},includeReplay=false}={}){
+export function scheduleICS({type='all',course='',replay={},skimDone={},includeReplay=false}={}){
  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RU Study Planner//Class and Exam Calendar//TH','CALSCALE:GREGORIAN','X-WR-CALNAME:'+icsEscape('RU Study Planner · 2/2569')];
- for(const event of (type==='replay'?personalReplayEvents(replay,{course}):includeReplay&&type==='all'?
-  [...calendarEvents({type,course}).filter(x=>x.type!=='notice'),...personalReplayEvents(replay,{course})].sort((a,b)=>a.date.localeCompare(b.date)||(a.startTime||'').localeCompare(b.startTime||''))
+ for(const event of (type==='replay'?personalReplayEvents(replay,{course}):
+  type==='skim'?personalSkimEvents(skimDone,{course}):
+  includeReplay&&type==='all'?
+  [...calendarEvents({type,course}).filter(x=>x.type!=='notice'),...personalReplayEvents(replay,{course}),...personalSkimEvents(skimDone,{course})]
+   .sort((a,b)=>a.date.localeCompare(b.date)||(a.startTime||'').localeCompare(b.startTime||''))
   :calendarEvents({type,course}).filter(x=>x.type!=='notice'))){
-  if(event.type==='replay'){
-   // One-hour calendar reminder to begin watching, NOT the clip duration.
-   lines.push('BEGIN:VEVENT',`UID:${event.id}@ru-study-planner`,'DTSTAMP:20261119T000000Z',
-    'DTSTART:'+utc(event.date,event.startTime),'DTEND:'+utc(addDays(event.date,Number(event.startTime.slice(0,2))===23?1:0),new Date(Date.UTC(2026,0,1,Number(event.startTime.slice(0,2)),Number(event.startTime.slice(3))+60)).toISOString().slice(11,16)),'STATUS:TENTATIVE',
-    'SUMMARY:'+icsEscape('เริ่มดูคลิปย้อนหลัง '+event.course),
-    'DESCRIPTION:'+icsEscape(event.title+'\nคาบจริง '+event.sourceDate+' '+event.sourceTime+
-     '\nคาดว่าคลิปเข้าระบบประมาณ 2 วันหลังเรียน (ไม่รับประกันว่าอัปโหลดแล้ว)'+
-     '\nแจ้งเตือนเริ่มดู 1 ชั่วโมง ไม่ใช่ความยาวคลิปทั้งหมด'+
-     '\nเปิด RU Course on Demand: https://ondemand.ru.ac.th/'),
+  if(event.type==='replay'||event.type==='skim'){
+   const begin=new Date(event.date+'T'+event.startTime+':00+07:00');
+   const finish=new Date(begin.getTime()+event.durationMinutes*60000);
+   const stamp=date=>date.toISOString().replace(/[-:]/g,'').replace('.000','');
+   const deep=event.type==='replay';
+   lines.push('BEGIN:VEVENT',`UID:${event.id}@ru-study-planner`,'DTSTAMP:20261120T000000Z',
+    'DTSTART:'+stamp(begin),'DTEND:'+stamp(finish),'STATUS:TENTATIVE',
+    'SUMMARY:'+icsEscape((deep?'ดูคลิปจริงจัง ':'ทวนเบา ๆ ')+event.course),
+    'DESCRIPTION:'+icsEscape(event.title+'\\nคาบจริง '+event.sourceDate+' '+event.sourceTime+
+     '\\nแผนส่วนตัวประมาณ '+event.durationMinutes+' นาที · คลิปอาจเผยแพร่ประมาณ 2 วันหลังคาบจริง (ไม่ยืนยันว่ามีคลิปแล้ว)'+
+     '\\nทวนเบา ๆ กับดูจริงจังมีสถานะแยกกัน'+
+     '\\nเปิด RU Course on Demand: https://ondemand.ru.ac.th'),
     'END:VEVENT');
    continue;
   }
