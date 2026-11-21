@@ -38,7 +38,24 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await button.click();if(key==='save')await wait(()=>button.isEnabled());
   };
   if(process.env.PAPER_TEST==='tables'){
-   const primary=page.locator('.paper-toolbar');
+   const dragOnPaper=async(x,y,x2,y2)=>page.locator('#paper-svg').evaluate((svg,coords)=>{
+    const r=svg.getBoundingClientRect();svg.setPointerCapture=()=>{};
+    try{for(const [i,type] of ['pointerdown','pointermove','pointerup'].entries())svg.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerType:'pen',pointerId:90,clientX:r.left+coords[i?2:0]*r.width/900,clientY:r.top+coords[i?3:1]*r.height/1273}));}finally{delete svg.setPointerCapture;}
+   },[x,y,x2,y2]);
+   await click('shape');await page.locator('[data-shape-pick="blockArrow"]').click();
+   await dragOnPaper(60,40,280,100);
+   const arrow=page.locator('#paper-svg [data-shape="blockArrow"]');await arrow.waitFor();
+   await page.locator('#paper-shape-fill').fill('#318c68');await click('layer-back');await click('save');
+   assert.equal(await arrow.getAttribute('fill'),'#318c68');
+   assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects[0].kind,'blockArrow');
+   await page.reload();await arrow.waitFor();assert.equal(await arrow.getAttribute('fill'),'#318c68');
+   await click('line');await page.getByRole('button',{name:'เส้นแตกกิ่ง ↳'}).click();
+   await dragOnPaper(60,180,260,184);await dragOnPaper(140,182,144,260);
+   await click('save');
+   const branches=row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.kind==='line');
+   assert.equal(branches.length,2);assert.equal(branches[0].h,1);assert.equal(branches[1].w,1);
+   await page.screenshot({path:'test-results/arrow-branches-'+name+'.png'});
+   const primary=page.locator('.paper-app');
    assert.equal(await page.locator('[data-paper="table"]').count(),1);
    assert.equal(await primary.locator('#paper-template').count(),1);
    await click('ruler');await click('ruler-plus');
