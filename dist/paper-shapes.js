@@ -64,6 +64,40 @@ function linePaths(o){
  if(o.kind==='doubleArrow')paths.push(arrowHead(a.x,a.y,dx,dy,o.width,-1));
  return paths;
 }
+const joinable=new Set(['line','connector','arrow','doubleArrow','branch3']);
+export function isJoinable(o){return o?.type==='shape'&&joinable.has(o.kind);}
+
+function segments(o){
+ const paths=linePaths(o);
+ return o.kind==='branch3'?paths:[paths[0]];
+}
+export function snapLinePoint(point,objects,radius){
+ let best=radius,result=point;
+ for(const o of objects.filter(isJoinable)){
+  for(const path of segments(o)){
+   for(let i=1;i<path.length;i++){
+    const a=path[i-1],b=path[i],dx=b.x-a.x,dy=b.y-a.y;
+    const t=Math.max(0,Math.min(1,((point.x-a.x)*dx+(point.y-a.y)*dy)/(dx*dx+dy*dy||1)));
+    const nearest={x:a.x+t*dx,y:a.y+t*dy};
+    const target=hypot(a,point)<=radius/2?a:hypot(b,point)<=radius/2?b:nearest;
+    const d=hypot(target,point);
+    if(d<=best){best=d;result=target;}
+   }
+  }
+ }
+ return result;
+}
+export function snapMovedLine(o,others,radius){
+ if(!isJoinable(o))return o;
+ let best=Infinity,result=o;
+ for(const path of segments(o)){
+  for(const end of [path[0],path.at(-1)]){
+   const p=snapLinePoint(end,others,radius),d=hypot(p,end);
+   if(p!==end&&d<best){best=d;result={...o,x:o.x+p.x-end.x,y:o.y+p.y-end.y};}
+  }
+ }
+ return result;
+}
 function distance(p,a,b){
  const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy||1)));
  return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);

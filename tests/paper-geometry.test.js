@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeShape,shapeSVG,shapes,lineStyles} from '../dist/paper-shapes.js';
+import {makeShape,shapeSVG,shapes,lineStyles,snapLinePoint,snapMovedLine} from '../dist/paper-shapes.js';
 import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from '../dist/paper-geometry.js';
 import {emptyPage,validatePaper,pageHistory,copy} from '../dist/paper-core.js';
 
@@ -64,4 +64,17 @@ test('one horizontal drag produces a level three-branch diagram in either direct
   const shape=makeShape('branch','branch3',from,to,'#172033',2);
   assert.match(shapeSVG(shape),/M40 118 L40 109 L240 109 L240 118 M140 100 L140 118/);
  }
+});
+
+test('lines attach at an endpoint or along a segment when drawn or moved nearby',()=>{
+ const line=(id,x,y,endX,endY)=>makeShape(id,'line',{x,y},{x:endX,y:endY},'#172033',2);
+ const rail=line('rail',100,100,300,100);
+ assert.deepEqual(snapLinePoint({x:98,y:99},[rail],8),{x:100,y:100});
+ const middle=snapLinePoint({x:200,y:104},[rail],8);
+ assert.ok(Math.abs(middle.x-200)<1 && Math.abs(middle.y-100)<1);
+ const near=line('next',98,97,150,50);
+ const moved=snapMovedLine(near,[rail],8);
+ assert.equal(moved.x,100);assert.equal(moved.y+moved.h,100);
+ assert.equal(moved.w,near.w);assert.equal(moved.h,near.h);
+ const far={x:50,y:20};assert.equal(snapLinePoint(far,[rail],8),far);
 });

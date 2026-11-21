@@ -38,6 +38,22 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await button.click();if(key==='save')await wait(()=>button.isEnabled());
   };
   if(process.env.PAPER_TEST==='tables'){
+   const primary=page.locator('.paper-toolbar');
+   assert.equal(await page.locator('[data-paper="table"]').count(),1);
+   assert.equal(await primary.locator('#paper-template').count(),1);
+   await click('ruler');await click('ruler-plus');
+   assert.match(await page.locator('[data-ruler-overlay]').getAttribute('transform'),/rotate\(15\)/);
+   await click('ruler-zero');await click('ruler');
+   await click('text');
+   await page.locator('#paper-svg').evaluate(svg=>{
+    const r=svg.getBoundingClientRect();svg.setPointerCapture=()=>{};
+    for(const type of ['pointerdown','pointerup'])svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'pen',pointerId:92,clientX:r.left+r.width*.5,clientY:r.top+r.height*.35}));
+    delete svg.setPointerCapture;
+   });
+   await page.locator('#paper-text-input').fill('ระยะที่ 2');
+   await page.locator('[data-text-align="center"]').click();
+   await click('finish-text');await click('save');
+   assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.text==='ระยะที่ 2'&&o.align==='center'));
    // Table creation, resizing, editable cells and persistence on each screen size.
    await click('table');
    const grid=page.locator('.paper-inline-table');
@@ -97,17 +113,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    children:Array.from(el.children).map(c=>({class:c.className,height:c.getBoundingClientRect().height,display:getComputedStyle(c).display,position:getComputedStyle(c).position})),
    display:getComputedStyle(el).display,flexWrap:getComputedStyle(el).flexWrap}));
   assert.ok(toolbarMetrics.height<=90,'notebook toolbar should remain a compact single row: '+JSON.stringify(toolbarMetrics));
-   if(mobile)assert.ok(await page.locator('#paper-quickbar').isHidden(),'phone keeps compact toolbar and advanced options');
-   else{
-    assert.ok(await page.locator('#paper-text-ribbon').isHidden(),'idle text mode leaves room for the paper');
-    assert.ok(await page.locator('#paper-quickbar').isHidden(),'text mode hides drawing-specific quick controls');
-    assert.ok(await page.locator('#paper-word-size').isHidden(),'size is hidden until editing');
-    await click('pen');
-    assert.ok(await page.locator('#paper-quickbar').isVisible(),'pen mode shows desktop and tablet quick drawing controls');
-    await page.locator('[data-quick-color="#8756c6"]').click();
-    assert.equal(await page.locator('[data-paper-color="#8756c6"]').getAttribute('aria-pressed'),'true','quick swatch changes the active pen color');
-    await click('text');
-   }
+   assert.equal(await page.locator('[data-paper="table"]').count(),1);
+   assert.equal(await toolbar.locator('[data-paper="ruler"]').count(),1);
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
    if(mobile)assert.ok(await page.locator('#paper-text-ribbon').isHidden(),'Word toolbar is inside the editor on narrow phones');
    else assert.ok(await page.locator('#paper-text-ribbon').isHidden(),'text format opens only while editing');
@@ -157,7 +164,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('save');
    await click('text');
   // Real mouse/pen-style pointer flow; touch mode additionally checks pan-vs-ink behavior.
-  await click('arrow');assert.equal(await page.locator('#paper-shape').inputValue(),'arrow');
+  await click('shape');await page.locator('[data-shape-pick="arrow"]').click();assert.equal(await page.locator('#paper-shape').inputValue(),'arrow');
   const startShape=await point(160,360),endShape=await point(70,300);
   if(mobile){
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
@@ -197,12 +204,6 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('[data-paper-width="28"]').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'28');
    await click('pen');
-   if(!mobile){
-    assert.ok(await page.locator('#paper-quick-width').isVisible(),'pen width slider stays visible when pen is active');
-    await page.locator('#paper-quick-width').evaluate(el=>{el.value='7';el.dispatchEvent(new Event('input',{bubbles:true}));});
-    assert.equal(await page.locator('#paper-width-value').textContent(),'7','visible slider syncs with advanced picker');
-    await page.locator('#paper-quick-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));});
-   }
    await page.locator('#paper-toolbar-more > summary').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'12','pen remembers its own width after switching from highlighter');
    await page.keyboard.press('Escape');
@@ -329,8 +330,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('[data-shape-pick="hexagon"]').click();
    assert.ok(await page.locator('#paper-shapes-popup').isHidden());
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'shape selection must uncover the paper');
-   if(mobile){await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu').evaluate(el=>el.open=true);}
-   await page.locator(mobile?'#paper-line-style':'#paper-quick-line-style').selectOption('dotted');
+   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu').evaluate(el=>el.open=true);
+   await page.locator('#paper-line-style').selectOption('dotted');
    const fromShape=await point(280,780),toShape=await point(400,890);
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
     svg.setPointerCapture=()=>{};
@@ -363,7 +364,6 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await click('save');
     assert.ok(savedShape().w>oldShapeWidth,'east resize handle grows only the right side');
     assert.equal(savedShape().h,oldShapeHeight,'horizontal resize must not stretch height');
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu summary').click();
    await click('ruler');
    assert.equal(await page.locator('[data-paper="ruler"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),1);

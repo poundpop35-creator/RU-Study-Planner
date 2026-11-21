@@ -649,3 +649,10 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 .paper-app:is([data-paper-tool=pen],[data-paper-tool=highlight],[data-paper-tool=eraser],[data-paper-tool=straighten],[data-paper-tool=shape]) .paper-sheet{
  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
 }
+
+.paper-app #paper-align:not([hidden]),.paper-app #paper-ruler-angles:not([hidden]){display:inline-flex;align-items:center;gap:3px;flex:none}
+.paper-app #paper-ruler-angles[hidden],.paper-app #paper-align[hidden]{display:none}
+.paper-app #paper-align button[aria-pressed=true]{background:#e4ecff;color:#2344a8}
+.paper-app .paper-template-tool{display:flex;align-items:center;flex:none;padding-inline:5px}
+.paper-app .paper-template-tool label{font-size:12px;white-space:nowrap}
+.paper-app .paper-template-tool select{font:inherit}
