@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261121-paper-format'); }
+try { await import('./app.js?v=20261121-toolbar-restored'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

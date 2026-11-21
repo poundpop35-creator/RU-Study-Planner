@@ -99,6 +99,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   content+=rulerSVG(ruler);
   if(gesture?.kind==='lasso')content+=`<path d="${gesture.points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ')}" fill="#3155d910" stroke="#3155d9" stroke-width="2" stroke-dasharray="6 4"/>`;
   svg.innerHTML=content;tableUI.sync(!multiSelect&&['select','text'].includes(tool)&&!gesture&&singleTable);svg.dataset.tool=tool;root.dataset.paperTool=tool;
+  inkBar.hidden=!['pen','highlight','shape','straighten'].includes(tool);
   $('#paper-page-label').textContent=`หน้า ${model.pages.findIndex(p=>p.id===pageId)+1} / ${model.pages.length}`;
   $('#paper-template').value=p.template;
   $('[data-paper="multi"]').setAttribute('aria-pressed',String(multiSelect));
@@ -114,6 +115,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
      ?tool==='shape'&&$('#paper-shape').value===b.dataset.paper:tool===b.dataset.paper));
   });
   root.querySelectorAll('[data-paper-color]').forEach(b=>b.setAttribute('aria-pressed',String(color===b.dataset.paperColor)));
+  const inkPicker=$('#paper-ink-custom');if(document.activeElement!==inkPicker)inkPicker.value=color;
    root.querySelectorAll('[data-shape-pick]').forEach(b=>b.setAttribute('aria-pressed',
     String(b.dataset.shapePick===$('#paper-shape').value)));
 
@@ -229,6 +231,34 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  Object.assign(measureClip.style,{position:'absolute',width:'0',height:'0',overflow:'hidden'});
  measureClip.append(textMeasure);sheet.append(measureClip);
  const ribbon=$('#paper-text-ribbon'),wordMenu=$('#paper-word-menu'),rich=document.createElement('div');
+ // Restore one familiar tool row. Move drawing colors out of the advanced
+ // dropdown so pen/highlighter colors cannot be hidden by a clipped menu.
+ const mainTools=$('.paper-toolset'),advancedTools=$('.paper-tool-options');
+ mainTools.append($('[data-paper="scribble-text"]'),$('[data-paper="ruler"]'));
+ advancedTools.append($('#paper-ruler-angles'),$('.paper-template-tool'),$('.paper-global-ink'));
+ const inkBar=document.createElement('div');
+ inkBar.className='paper-ink-bar';inkBar.setAttribute('role','toolbar');
+ inkBar.setAttribute('aria-label','สีปากกาและขนาดเส้น');inkBar.hidden=true;
+ inkBar.append($('.paper-colors'),$('.paper-pen-sizes'));
+ const inkCustom=document.createElement('label');
+ inkCustom.className='paper-ink-custom';
+ inkCustom.innerHTML='สีอื่น <input type="color" id="paper-ink-custom" value="#172033" aria-label="กำหนดสีปากกาหรือไฮไลต์เอง">';
+ inkBar.append(inkCustom);
+ root.querySelector('.paper-toolbar').after(inkBar);
+ // Explicit scroll controls make the Word ribbon operable even when iPadOS
+ // intercepts a horizontal swipe during selection or Pencil input.
+ ribbon.insertAdjacentHTML('afterbegin','<button type="button" class="paper-ribbon-scroll paper-ribbon-prev" data-ribbon-scroll="-1" aria-label="เลื่อนเครื่องมือข้อความไปทางซ้าย">‹</button>');
+ ribbon.insertAdjacentHTML('beforeend','<button type="button" class="paper-ribbon-scroll paper-ribbon-next" data-ribbon-scroll="1" aria-label="เลื่อนเครื่องมือข้อความไปทางขวา">›</button>');
+ bind(ribbon,'click',event=>{
+  const button=event.target.closest('[data-ribbon-scroll]');
+  if(button){event.preventDefault();ribbon.scrollBy({left:Number(button.dataset.ribbonScroll)*245,behavior:'smooth'});}
+ });
+ bind($('#paper-ink-custom'),'input',event=>{
+  const next=textColor(event.target.value);
+  if(!next)return;
+  color=next;draw();say('เลือกสีปากกา '+next+' แล้ว · เริ่มเขียนได้เลย');
+ });
+
  rich.id='paper-rich-editor';rich.contentEditable='true';rich.setAttribute('role','textbox');
  rich.setAttribute('aria-label','แก้ข้อความพร้อมตัวหนา ตัวเอียง ขีดเส้นใต้ และขนาดเฉพาะคำ');
  rich.spellcheck=false;rich.hidden=true;sheet.append(rich);
@@ -323,6 +353,9 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   return true;
  }
  function showWordMenu(event){
+  // On touch-first iPads, keep formatting in the scrollable top ribbon.
+  // Do not create a second floating toolbar over the virtual keyboard.
+  if(window.matchMedia('(pointer:coarse)').matches){closeWordMenu();return false;}
   const selection=currentWordSelection();
   if(!selection){closeWordMenu();return false;}
   wordMenuSelection={start:selection.start,end:selection.end};
