@@ -1036,3 +1036,6 @@ html[data-view=debt] .top-stats{display:none}
 .reader-question h2{font-size:clamp(17px,2vw,21px);line-height:1.8;font-weight:600;margin:16px 0;overflow-wrap:anywhere}
 .reader-question #feedback{margin-top:12px;padding:14px;border-radius:12px;background:var(--soft,#edf0ff)}.reader-question #why{white-space:pre-line}
 .reader-navigation{margin-top:18px}.reader-review{margin-top:14px}.reader-review p:first-child{margin-bottom:10px}.reader-review #notice:empty{display:none}
+
+.note-card-edit.replay-done,.note-card-edit.replay-done:hover{background:#dcfce7;color:#166534;border:1px solid #86efac;font-weight:750}
+.note-card-edit.replay-pending,.note-card-edit.replay-pending:hover{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-weight:750}

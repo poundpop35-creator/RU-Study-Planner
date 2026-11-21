@@ -1,7 +1,7 @@
 import {validateLinks} from './word-links.js';
-import {validateMarks} from './paper-rich-text.js?v=word-format-20261120';
+import {validateMarks} from './paper-rich-text.js?v=20261121-paper-format';
 import {shapes,lineStyles} from './paper-shapes.js?v=notebook-shape-tools-20261120';
-import {validateTableCells} from './paper-table.js?v=20261120-table';
+import {validateTableCells} from './paper-table.js?v=20261121-paper-format';
 export const PAGE_W=900,PAGE_H=1273;
 // Pen and highlighter widths are independent paper-coordinate stroke widths.
 export const PEN_WIDTH_PRESETS=[1,2,3,5,8,12];

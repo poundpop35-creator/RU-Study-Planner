@@ -34,7 +34,7 @@ export function paperPage(space,n){return `<section class="paper-app" aria-label
   <small class="paper-ribbon-help">ลากเลือกเฉพาะคำ แล้วกด B, I, U, สี หรือ ลิงก์</small>
  </div>
  <div id="paper-word-menu" class="paper-word-menu" role="toolbar" aria-label="เมนูคลิกขวาจัดรูปแบบข้อความ" hidden>
-   <div class="paper-word-menu-heading"><strong>จัดรูปแบบข้อความที่เลือก</strong><button type="button" data-word-menu-close aria-label="ปิดเมนู">×</button></div>
+   <div class="paper-word-menu-heading"><strong>⠿ ลากเพื่อย้ายแถบ · จัดรูปแบบข้อความ</strong><button type="button" data-word-menu-close aria-label="ปิดเมนู">×</button></div>
    <div class="paper-word-menu-align" role="group" aria-label="จัดแนวเฉพาะคำที่เลือก"><button type="button" data-word-menu-align="left">ซ้าย</button><button type="button" data-word-menu-align="center">กลาง</button><button type="button" data-word-menu-align="right">ขวา</button></div>
    <div class="paper-word-menu-tools" role="group" aria-label="ตัวหนา ตัวเอียง ขีดเส้นใต้">
     <button type="button" data-word-menu-format="bold" title="ตัวหนา"><b>B</b></button>

@@ -1,5 +1,5 @@
 import {makeTable,tracks,tableStyle} from './paper-table.js?v=20261121-table-colors';
-import {uid} from './paper-core.js?v=20261120-table';
+import {uid} from './paper-core.js?v=20261121-paper-format';
 
 export function mountTableEditor(root,{page,change,writable,finishText,viewport,getScale,onSaved,say}){
  const layer=document.createElement('div');

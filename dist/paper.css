@@ -656,3 +656,26 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 .paper-app .paper-template-tool{display:flex;align-items:center;flex:none;padding-inline:5px}
 .paper-app .paper-template-tool label{font-size:12px;white-space:nowrap}
 .paper-app .paper-template-tool select{font:inherit}
+
+/* Tablet word palette is draggable and content can scroll above the floating keyboard. */
+.paper-app .paper-scribble-action{flex:none;white-space:nowrap;font-weight:700;background:#e7f0ff;border:1px solid #9db9ed;color:#1d4389}
+.paper-app .paper-global-ink{display:inline-flex;flex:none;align-items:center;gap:5px;white-space:nowrap;font-size:12px;font-weight:650}
+.paper-app .paper-global-ink input{height:30px;width:35px;border:1px solid #aab9d4;border-radius:8px;padding:2px;cursor:pointer}
+.paper-app .paper-table-colors{position:relative;flex:none;z-index:15}
+.paper-app .paper-table-colors>summary{cursor:pointer;padding:7px 9px;white-space:nowrap;background:#ecf2ff;border-radius:8px}
+.paper-app .paper-table-colors>div{position:absolute;bottom:calc(100% + 8px);left:0;width:min(280px,75vw);padding:12px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:9px;border:1px solid #afc4e6;border-radius:10px;background:#fff;box-shadow:0 14px 35px #112b5038}
+.paper-app .paper-table-colors label{display:contents;font-size:12px}
+.paper-app .paper-table-colors input[type="color"]{width:42px;height:32px;border:0;padding:0}
+.paper-app .paper-word-menu-heading{position:sticky;top:-10px;z-index:2;background:#fff;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;padding:3px 0 6px;border-bottom:1px solid #e2e8f0}
+.paper-app .paper-word-menu-heading:active{cursor:grabbing}
+.paper-app .paper-word-menu{overscroll-behavior:contain;scrollbar-gutter:stable}
+.paper-app .paper-word-menu-align{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.paper-app .paper-text-ribbon{max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+@media (pointer:coarse){
+ .paper-app .paper-word-menu{max-height:min(43dvh,260px);width:min(340px,calc(100vw - 16px));overflow-y:auto}
+ .paper-app .paper-text-ribbon{flex-wrap:nowrap;max-width:100vw;min-height:44px;touch-action:pan-x}
+ .paper-app .paper-text-ribbon>*{flex:0 0 auto}
+ .paper-app .paper-toolbar{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;-webkit-overflow-scrolling:touch;touch-action:pan-x;max-width:100vw}
+ .paper-app .paper-toolbar>*{flex:0 0 auto}
+}
+@media (max-width:720px){.paper-app.paper-is-editing>.paper-text-ribbon:not([hidden]){max-width:100vw}}

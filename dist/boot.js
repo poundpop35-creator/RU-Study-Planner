@@ -1,4 +1,4 @@
-try { await import('./app.js?v=inline-mobile-text-20261120'); }
+try { await import('./app.js?v=20261121-paper-format'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
