@@ -878,3 +878,44 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-context-settings .paper-text-ribbon{height:34px;min-height:34px!important}
  .paper-app.paper-is-editing>.paper-text-ribbon:not([hidden]){display:none!important}
 }
+
+/* Native full-area Scribble receiver: coordinates of the target stay fixed. */
+.paper-app .paper-viewport{position:relative}
+.paper-app.paper-scribble-mode .paper-viewport{overflow:hidden!important}
+.paper-app .paper-scribble-pad{
+ position:absolute;inset:0;z-index:25;box-sizing:border-box;
+ display:flex;flex-direction:column;gap:0;
+ background:rgba(236,246,255,.52);
+ border:2px dashed #6087d5;border-radius:10px;
+}
+.paper-app .paper-scribble-pad[hidden]{display:none!important}
+.paper-app .paper-scribble-pad-bar{
+ display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+ box-sizing:border-box;min-height:44px;padding:6px 10px;
+ background:#e8f1ff;border-bottom:1px solid #acc3e9;
+ color:#244786;font-size:12px
+}
+.paper-app .paper-scribble-pad-bar strong{font-size:12px;margin-right:auto}
+.paper-app .paper-scribble-pad-bar button{
+ min-height:34px;padding:6px 11px;border-radius:8px;border:1px solid #9cb3dd;
+ background:#fff;color:#234795;font-size:12px;white-space:nowrap;
+}
+.paper-app .paper-scribble-pad-bar #paper-scribble-done{
+ background:#3155d9;color:#fff;border-color:#3155d9;font-weight:750;
+}
+.paper-app #paper-scribble-input{
+ display:block;flex:1 1 auto;box-sizing:border-box;
+ width:100%;min-height:120px;resize:none;outline:none;
+ border:0;margin:0;padding:22px;
+ font-family:'Noto Sans Thai',sans-serif;font-size:19px;line-height:1.6;
+ -webkit-text-size-adjust:100%;
+ background:rgba(240,248,255,.05);color:rgba(27,58,107,.12);
+ caret-color:#3155d9;overflow:auto;touch-action:manipulation;
+}
+.paper-app #paper-scribble-input::placeholder{color:#547bb6;font-size:14px}
+.paper-app.paper-scribble-mode .paper-selection-tools{display:none!important}
+@media(max-width:720px){
+ .paper-app .paper-scribble-pad-bar{min-height:40px;padding:5px 7px}
+ .paper-app .paper-scribble-pad-bar strong{font-size:11px}
+ .paper-app #paper-scribble-input{padding:12px;font-size:18px}
+}
