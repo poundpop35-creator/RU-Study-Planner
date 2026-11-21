@@ -45,3 +45,15 @@ test('floating ruler rotates, snaps to either edge and is never written into a p
  assert.match(rulerSVG(r),/data-ruler="rotate"/);
  assert.equal(rulerSVG({...r,active:false}),'');
 });
+
+test('eraser sweeps actual linework, including reversed arrowheads and elbow bends',async()=>{
+ const {eraserHit}=await import('../dist/paper-shapes.js');
+ const shape=kind=>makeShape('s',kind,{x:200,y:100},{x:0,y:0},'#172033',8);
+ for(const kind of ['line','arrow','doubleArrow'])assert.ok(eraserHit(shape(kind),{x:100,y:-40},{x:100,y:150},0));
+ assert.ok(eraserHit(shape('doubleArrow'),{x:165,y:99},undefined,2));
+ assert.ok(eraserHit(shape('connector'),{x:170,y:100}));
+ assert.equal(eraserHit(shape('connector'),{x:160,y:55}),false);
+ assert.equal(eraserHit(shape('line'),{x:5,y:90}),false);
+ assert.ok(eraserHit({type:'stroke',x:0,y:20,w:100,h:1,width:1,points:[[0,0],[1,0]]},{x:45,y:0},{x:45,y:45},0));
+ for(const type of ['text','image','table'])assert.equal(eraserHit({type},{x:0,y:0}),false);
+});
