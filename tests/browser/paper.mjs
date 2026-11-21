@@ -489,15 +489,16 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.screenshot({path:'test-results/notebook-word-format-'+name+'.png'});
    // Table creation, resizing, editable cells and persistence on each screen size.
    await click('table');
-   const tableDialog=page.locator('#paper-table-dialog');
-   await tableDialog.waitFor({state:'visible'});
-   await tableDialog.locator('#paper-table-rows').fill('4');
-   await tableDialog.locator('#paper-table-rows').press('Tab');
-   await tableDialog.locator('#paper-table-cols').fill('3');
-   await tableDialog.locator('#paper-table-cols').press('Tab');
-   await tableDialog.locator('textarea[data-table-row="0"][data-table-col="0"]').fill('นักปรัชญา');
-   await tableDialog.locator('textarea[data-table-row="1"][data-table-col="0"]').fill('เพลโต');
-   await tableDialog.locator('[data-table-command="save"]').click();
+   const grid=page.locator('.paper-inline-table');
+   await grid.waitFor({state:'visible'});
+   await click('table-add-row');
+   await grid.getByLabel('แถว 1 คอลัมน์ 1',{exact:true}).fill('นักปรัชญา');
+   await grid.getByLabel('แถว 2 คอลัมน์ 1',{exact:true}).fill('เพลโต');
+   const grip=grid.locator('[data-axis="x"][data-index="0"]');
+   await grip.scrollIntoViewIfNeeded();
+   const edge=await grip.boundingBox();
+   await page.mouse.move(edge.x+edge.width/2,edge.y+12);
+   await page.mouse.down();await page.mouse.move(edge.x+edge.width/2+18,edge.y+12);await page.mouse.up();
    await click('save');
    const savedTable=()=>row.payload.notebook.notes.find(n=>n.course==='POL2200'&&n.session===Number(wordSession)).paper.pages[0].objects.find(o=>o.type==='table');
    await wait(()=>savedTable()?.cells[1]?.[0]==='เพลโต');
@@ -506,10 +507,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('table-add-row');await click('table-add-col');await click('save');
    assert.deepEqual([savedTable().cells.length,savedTable().cells[0].length],[5,4]);
    await click('table-edit');
-   await tableDialog.waitFor({state:'visible'});
-   await tableDialog.locator('textarea[data-table-row="2"][data-table-col="1"]').fill('ความยุติธรรม');
-   await tableDialog.locator('[data-table-command="save"]').click();
+   await grid.getByLabel('แถว 3 คอลัมน์ 2',{exact:true}).fill('ความยุติธรรม');
    await click('save');
+   assert.ok(savedTable().columns[0]>savedTable().columns[1]);
    assert.equal(savedTable().cells[2][1],'ความยุติธรรม');
    await page.reload();await page.locator('#paper-svg').waitFor();
    assert.equal(await page.locator('#paper-svg table').count(),1,'table persists after reload');
