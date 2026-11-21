@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261121-smart-shape-release'); }
+try { await import('./app.js?v=20261121-context-all-in-one-final'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

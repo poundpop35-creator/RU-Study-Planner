@@ -1082,8 +1082,9 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    if(action==='scribble-text'){
     // Read the selection BEFORE changing tools; setTool clears it for
     // non-text modes and previously created a new box by mistake.
-    const existing=editing?.object||page().objects.find(o=>selected.has(o.id)&&o.type==='text');
+    const selectedId=editing?.id||page().objects.find(o=>selected.has(o.id)&&o.type==='text')?.id;
     if(editing)finishText();
+    const existing=page().objects.find(o=>o.id===selectedId&&o.type==='text');
     tool='text';activePanel='text';
     selected=existing?new Set([existing.id]):new Set();
     const x=Math.max(28,Math.min(PAGE_W-440,viewport.scrollLeft/scale+75));
