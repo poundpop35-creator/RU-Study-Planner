@@ -99,14 +99,26 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   content+=rulerSVG(ruler);
   if(gesture?.kind==='lasso')content+=`<path d="${gesture.points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ')}" fill="#3155d910" stroke="#3155d9" stroke-width="2" stroke-dasharray="6 4"/>`;
   svg.innerHTML=content;tableUI.sync(!multiSelect&&['select','text'].includes(tool)&&!gesture&&singleTable);svg.dataset.tool=tool;root.dataset.paperTool=tool;
-  inkBar.hidden=!['pen','highlight','shape','straighten'].includes(tool);
+  const showInk=['pen','highlight','shape','straighten'].includes(activePanel);
+  inkBar.hidden=!showInk;
+  shapeOptions.hidden=activePanel!=='shape';
+  penOptions.hidden=!['pen','highlight','straighten','eraser'].includes(activePanel);
+  selectionOptions.hidden=activePanel!=='select';
+  pageOptions.hidden=activePanel!=='page';
+  rulerOptions.hidden=activePanel!=='ruler'||!ruler.active;
+  textOptions.hidden=activePanel!=='text';
+  ribbon.hidden=activePanel!=='text'||!editing;
+  contextBar.hidden=inkBar.hidden&&shapeOptions.hidden&&penOptions.hidden&&selectionOptions.hidden&&pageOptions.hidden&&rulerOptions.hidden&&textOptions.hidden&&ribbon.hidden;
+  root.querySelector('[data-paper="page-settings"]').setAttribute('aria-pressed',String(activePanel==='page'));
   $('#paper-page-label').textContent=`หน้า ${model.pages.findIndex(p=>p.id===pageId)+1} / ${model.pages.length}`;
   $('#paper-template').value=p.template;
   $('[data-paper="multi"]').setAttribute('aria-pressed',String(multiSelect));
-  $('#paper-shape-options').hidden=true;
-  $('#paper-line-options').hidden=tool!=='shape';
+  $('#paper-shape-options').hidden=activePanel!=='shape';
+  $('#paper-line-options').hidden=activePanel!=='shape';
   const rulerButton=$('[data-paper="ruler"]');
   $('#paper-ruler-angles').hidden=!ruler.active;
+  const rulerAngle=$('#paper-ruler-angle');
+  if(document.activeElement!==rulerAngle)rulerAngle.value=String(((ruler.angle%360)+360)%360);
   rulerButton.setAttribute('aria-pressed',String(ruler.active));
   rulerButton.textContent=ruler.active?'📏 ปิดไม้บรรทัด':'📏 เปิดไม้บรรทัด';
   root.querySelectorAll('[data-paper]').forEach(b=>{
@@ -210,6 +222,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  function setTool(next){
   cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;
+  activePanel=['line','arrow','branch3'].includes(next)?'shape':next;
   if(next==='line'||next==='arrow'||next==='branch3'){
    $('#paper-shape').value=next;tool='shape';
   }else tool=next;
@@ -234,8 +247,54 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  // Restore one familiar tool row. Move drawing colors out of the advanced
  // dropdown so pen/highlighter colors cannot be hidden by a clipped menu.
  const mainTools=$('.paper-toolset'),advancedTools=$('.paper-tool-options');
- mainTools.append($('[data-paper="scribble-text"]'),$('[data-paper="ruler"]'));
- advancedTools.append($('#paper-ruler-angles'),$('.paper-template-tool'),$('.paper-global-ink'));
+ mainTools.append($('[data-paper="ruler"]'));
+ // Settings appear beneath whichever main tool is selected. Never stack
+ // separate settings rows over the keyboard or bury them in 'ตัวเลือก'.
+ const contextBar=document.createElement('div');
+ contextBar.className='paper-context-settings';
+ contextBar.setAttribute('role','region');
+ contextBar.setAttribute('aria-label','ตั้งค่าของเครื่องมือที่เลือก');
+ contextBar.hidden=true;
+ root.querySelector('.paper-toolbar').after(contextBar);
+ let activePanel=tool;
+ const shapeOptions=document.createElement('div');
+ shapeOptions.className='paper-context-shape';shapeOptions.hidden=true;
+ const shapeButton=document.createElement('button');
+ shapeButton.type='button';shapeButton.dataset.openShapes='tool';
+ shapeButton.textContent='▱ รูปทรงทั้งหมด';
+ shapeOptions.append(shapeButton,$('#paper-shape-options'),$('#paper-line-options'));
+ const penOptions=document.createElement('div');
+ penOptions.className='paper-context-pen';penOptions.hidden=true;
+ penOptions.append($('.paper-finger'),$('.paper-palm-guard'),$('.paper-geometry-check'));
+ const selectionOptions=document.createElement('div');
+ selectionOptions.className='paper-context-select';selectionOptions.hidden=true;
+ selectionOptions.append($('[data-paper="multi"]'));
+ const pageOptions=document.createElement('div');
+ pageOptions.className='paper-context-page';pageOptions.hidden=true;
+ pageOptions.append($('.paper-template-tool'));
+ const rulerOptions=document.createElement('div');
+ rulerOptions.className='paper-context-ruler';rulerOptions.hidden=true;
+ rulerOptions.append($('#paper-ruler-angles'));
+ $('#paper-ruler-angles').insertAdjacentHTML('beforeend',
+  '<label class="paper-ruler-degree">องศา <input id="paper-ruler-angle" type="number" min="0" max="359" step="1" value="0" aria-label="กำหนดองศาไม้บรรทัด"></label>');
+ const textOptions=document.createElement('div');
+ textOptions.className='paper-context-text';textOptions.hidden=true;
+ textOptions.append($('.paper-default-text-size'),$('.paper-global-ink'),$('[data-paper="scribble-text"]'));
+ const pageSettings=document.createElement('button');
+ pageSettings.type='button';pageSettings.dataset.paper='page-settings';
+ pageSettings.className='paper-main-page-settings';pageSettings.textContent='▤ กระดาษ';
+ pageSettings.setAttribute('aria-label','ตั้งค่าแบบกระดาษ');
+ mainTools.append(pageSettings);
+ // All formerly advanced options now have a home in a contextual row.
+ $('#paper-toolbar-more').remove();
+ contextBar.append(shapeOptions,selectionOptions,pageOptions,rulerOptions,textOptions);
+ bind($('#paper-ruler-angle'),'change',event=>{
+  const val=Number(event.target.value);
+  if(!Number.isFinite(val)){event.target.value=String(ruler.angle);return;}
+  ruler.angle=((Math.round(val)%360)+360)%360;
+  ruler.active=true;activePanel='ruler';draw();
+ });
+
  const inkBar=document.createElement('div');
  inkBar.className='paper-ink-bar';inkBar.setAttribute('role','toolbar');
  inkBar.setAttribute('aria-label','สีปากกาและขนาดเส้น');inkBar.hidden=true;
@@ -244,7 +303,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  inkCustom.className='paper-ink-custom';
  inkCustom.innerHTML='สีอื่น <input type="color" id="paper-ink-custom" value="#172033" aria-label="กำหนดสีปากกาหรือไฮไลต์เอง">';
  inkBar.append(inkCustom);
- root.querySelector('.paper-toolbar').after(inkBar);
+ contextBar.prepend(inkBar);
+ contextBar.append(penOptions,ribbon);
  // Explicit scroll controls make the Word ribbon operable even when iPadOS
  // intercepts a horizontal swipe during selection or Pencil input.
  ribbon.insertAdjacentHTML('afterbegin','<button type="button" class="paper-ribbon-scroll paper-ribbon-prev" data-ribbon-scroll="-1" aria-label="เลื่อนเครื่องมือข้อความไปทางซ้าย">‹</button>');
@@ -317,7 +377,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const range=editing?(editing.rich?(richOffsets()||richSelection):{start:textarea.selectionStart,end:textarea.selectionEnd}):null;
   const marks=editing?(editing.rich?readRich().marks:editing.marks||[]):[];
   const active=range?marks.find(m=>m.start<=range.start&&m.end>=Math.max(range.start+1,range.end)):null;
-  const ink=active?.color||editing?.object?.color||color;
+  const ink=active?.color||editing?.object?.color||defaultTextColor;
   for(const button of ribbon.querySelectorAll('[data-word-format]')){
    button.disabled=!editing;
    button.setAttribute('aria-pressed',String(!!active?.[button.dataset.wordFormat]));
@@ -332,7 +392,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   ribbon.querySelector('.paper-ribbon-help').textContent=editing?'เลือกคำเพื่อจัดกึ่งกลาง เปลี่ยนสี/ขนาด หรือกด B I U':'แตะข้อความเพื่อแก้ · ใช้ ✍ เขียน→ตัวพิมพ์ สำหรับ Apple Pencil';
  }
  function showTextRibbon(){
-  ribbon.hidden=!editing;
+  ribbon.hidden=activePanel!=='text'||!editing;
   textRibbonState();
  }
  // Word-style mini toolbar follows a real selection without changing the stored
@@ -416,7 +476,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  function applyWordFormat(kind,value){
   if(!editing){
-   if(kind==='color')color=textColor(value,color);
+   if(kind==='color')defaultTextColor=textColor(value,defaultTextColor);
    else if(kind==='size'){
     fontSize=textSize(value,fontSize);
     $('#paper-default-text-size').value=String(fontSize);
@@ -504,6 +564,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  function startText(o,caret=null){
   closeWordMenu();finishText();wordSelection=null;richSelection=null;
+  activePanel='text';
   editing={align:o.align,lastText:o.text,links:o.links||[],marks:o.marks||[],rich:false,id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};
   selected=new Set([o.id]);textarea.value=o.text;
   editing.mobile=window.matchMedia('(max-width:720px)').matches;
@@ -512,7 +573,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
     root.classList.add('paper-is-editing');
    }
    ribbon.hidden=false;
-   root.querySelector('.paper-toolbar').after(ribbon);
+   contextBar.append(ribbon);
   $('#paper-word-size').value=o.size;
   Object.assign(textarea.style,{textAlign:o.align||'left',left:o.x+'px',top:o.y+'px',fontSize:o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;
   const style=getComputedStyle(textarea);
@@ -944,7 +1005,13 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     }else{$('#paper-shape').value=kind;setTool('shape');}
     setShapesOpen(false);draw();return;
    }
-    if(b.dataset.paperColor){color=b.dataset.paperColor;if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type!=='image'?{...o,color}:o);});draw();closeExtraTools();return;}
+    if(b.dataset.paperColor){
+    color=b.dataset.paperColor;
+    if(selected.size&&activePanel==='select')change(p=>{
+     p.objects=p.objects.map(o=>selected.has(o.id)&&['stroke','shape'].includes(o.type)?{...o,color}:o);
+    });
+    draw();return;
+   }
     if(b.dataset.paperSizeToggle){
      const picker=$('.paper-pen-sizes'),open=picker.classList.toggle('is-open');
      b.setAttribute('aria-expanded',String(open));return;
@@ -965,16 +1032,21 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     say('เขียนในกรอบด้วย Apple Pencil · หาก iPadOS รองรับภาษาและเปิด Scribble จะเปลี่ยนเป็นตัวพิมพ์');
     return;
    }
-   if(action==='ruler'){ruler.active=!ruler.active;draw();closeExtraTools();return;}
+   if(action==='ruler'){
+    ruler.active=!ruler.active;
+    activePanel=ruler.active?'ruler':tool;
+    draw();return;
+   }
+   if(action==='page-settings'){activePanel=activePanel==='page'?tool:'page';draw();return;}
    if(['ruler-minus','ruler-plus','ruler-zero'].includes(action)){
-    ruler.angle=action==='ruler-zero'?0:Math.round((ruler.angle+(action==='ruler-plus'?15:-15)+360)%360);ruler.active=true;draw();return;
+    ruler.angle=action==='ruler-zero'?0:Math.round((ruler.angle+(action==='ruler-plus'?15:-15)+360)%360);ruler.active=true;activePanel='ruler';draw();return;
    }
    if(action==='word-link'){await linkWord();return;}
    if(action==='multi'){
     multiSelect=!multiSelect;setTool('select');
     say(multiSelect?'แตะเพื่อเพิ่มหรือนำออกจากกลุ่ม · ลากชิ้นที่เลือกเพื่อย้ายพร้อมกัน':'แตะเพื่อเลือก · Shift + คลิกเพื่อเลือกเพิ่ม');return;
    }
-   if(['select','pen','highlight','eraser','text','shape','hand','line','arrow','straighten'].includes(action)){setTool(action);if(action==='shape')setShapesOpen(true);return;}
+   if(['select','pen','highlight','eraser','text','shape','hand','line','arrow','straighten'].includes(action)){setTool(action);return;}
    if(action==='table'){$('.paper-menu').open=false;tableUI.open();return;}
    if(action==='table-edit'){const item=page().objects.find(o=>selected.size===1&&selected.has(o.id)&&o.type==='table');if(item)tableUI.open(item);return;}
    if(['table-add-row','table-remove-row','table-add-col','table-remove-col'].includes(action)){
