@@ -784,3 +784,139 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 }
 .paper-app .paper-open-error p{margin:0;overflow-wrap:anywhere}
 .paper-app .paper-open-error a{color:#21539e;text-decoration:underline;font-weight:700}
+
+/* STAGED contextual controls: no extra popup or fixed/floating toolbar. */
+.paper-app .paper-toolbar-more[hidden]{display:none!important}
+.paper-app .paper-toolbar{position:relative!important;max-width:100%;overflow:visible!important;box-sizing:border-box}
+.paper-app .paper-toolset{
+ display:flex;flex:1 1 auto;min-width:0;max-width:100%;
+ overflow-x:auto!important;overflow-y:hidden!important;
+ -webkit-overflow-scrolling:touch;touch-action:pan-x;scrollbar-width:thin;
+ white-space:nowrap;
+}
+.paper-app .paper-toolset>button{flex:0 0 auto!important;white-space:nowrap}
+.paper-app .paper-strip-arrow{
+ display:inline-flex;align-items:center;justify-content:center;
+ align-self:stretch;flex:0 0 27px;min-width:27px;min-height:37px;
+ padding:0!important;border:0!important;border-radius:0!important;
+ background:#e6eeff!important;color:#234b9b!important;font-size:23px!important;
+ font-weight:750;z-index:2;
+}
+.paper-app .paper-context-wrap{position:relative;display:flex;align-items:stretch;flex:0 0 auto;width:100%;min-width:0;max-width:100%;box-sizing:border-box;z-index:5;background:#f5f8ff;border-bottom:1px solid #d3e0f1}
+.paper-app .paper-context-wrap[hidden]{display:none!important}
+.paper-app .paper-context-controls{
+ flex:1 1 auto;min-width:0;width:auto;display:flex;align-items:center;
+ gap:10px;padding:5px 8px;min-height:42px;
+ overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;touch-action:pan-x;
+ -webkit-overflow-scrolling:touch;box-sizing:border-box;
+}
+.paper-app .paper-context-section:not([hidden]){display:inline-flex;align-items:center;flex:0 0 auto;gap:9px;white-space:nowrap}
+.paper-app .paper-context-section[hidden]{display:none!important}
+.paper-app .paper-context-controls .paper-ink-bar{
+ position:static!important;display:inline-flex;flex:0 0 auto;
+ border:0!important;box-shadow:none!important;background:transparent!important;
+ padding:0!important;margin:0!important;min-height:35px!important;gap:8px;
+}
+.paper-app .paper-context-controls .paper-ink-bar[hidden]{display:none!important}
+.paper-app .paper-context-controls .paper-colors{display:inline-flex;flex-wrap:nowrap;gap:5px}
+.paper-app .paper-context-controls .paper-colors button{flex:0 0 auto;width:26px!important;min-width:26px!important;height:26px!important;min-height:26px!important}
+.paper-app .paper-context-controls .paper-pen-sizes{
+ position:static!important;display:inline-flex;flex:0 0 auto;
+ min-width:0!important;width:max-content!important;min-height:35px!important;
+ padding:0!important;margin:0!important;background:transparent!important;border:0!important;
+}
+.paper-app .paper-context-controls .paper-size-toggle{display:none!important}
+.paper-app .paper-context-controls .paper-size-controls{
+ position:static!important;inset:auto!important;display:flex!important;
+ align-items:center!important;gap:5px!important;flex-wrap:nowrap!important;
+ width:max-content!important;max-width:none!important;max-height:40px!important;
+ padding:0!important;margin:0!important;border:0!important;box-shadow:none!important;
+ background:transparent!important;
+}
+.paper-app .paper-context-controls .paper-size-label{display:none!important}
+.paper-app .paper-context-controls .paper-size-presets{display:flex;flex:0 0 auto!important;flex-wrap:nowrap!important;gap:4px!important}
+.paper-app .paper-context-controls .paper-size-preset{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;flex:0 0 auto!important}
+.paper-app .paper-context-controls .paper-size-slider{display:inline-flex!important;flex:0 0 88px!important;width:88px!important;min-width:88px!important}
+.paper-app .paper-context-controls .paper-pen-preview{display:none!important}
+.paper-app .paper-context-controls label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:12px}
+.paper-app .paper-context-controls label[hidden]{display:none!important}
+.paper-app .paper-context-controls button:not(.paper-ribbon-scroll){white-space:nowrap}
+.paper-app .paper-context-controls .paper-context-shape>button,
+.paper-app .paper-context-controls .paper-context-select>button,
+.paper-app .paper-main-settings-button{
+ min-height:34px;border:1px solid #c5d5f1;background:#eaf1ff;
+ border-radius:7px;padding:4px 10px;font-size:12px;color:#284aa0;
+}
+.paper-app .paper-context-controls .paper-ruler-buttons{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:5px}
+.paper-app .paper-context-controls .paper-ruler-buttons[hidden]{display:none!important}
+.paper-app .paper-context-controls .paper-ruler-buttons button{flex:0 0 auto}
+.paper-app .paper-context-controls .paper-angle-input input{
+ box-sizing:border-box;min-height:34px;width:62px;border:1px solid #c7d5eb;border-radius:7px;padding:3px 4px;background:white
+}
+.paper-app .paper-context-controls .paper-text-ribbon{
+ position:static!important;display:inline-flex!important;flex:0 0 auto;
+ flex-wrap:nowrap!important;width:max-content!important;min-width:0!important;max-width:none!important;
+ height:37px!important;min-height:37px!important;max-height:37px!important;
+ padding:0!important;border:0!important;box-shadow:none!important;
+ background:transparent!important;overflow:visible!important;
+}
+.paper-app .paper-context-controls .paper-text-ribbon[hidden]{display:none!important}
+.paper-app .paper-context-controls .paper-text-ribbon .paper-ribbon-scroll{display:none!important}
+.paper-app .paper-context-controls .paper-text-ribbon .paper-ribbon-help{display:none}
+.paper-app .paper-context-controls .paper-ribbon-colors,
+.paper-app .paper-context-controls .paper-ribbon-format{display:inline-flex;flex-wrap:nowrap}
+.paper-app .paper-context-controls .paper-context-text button{min-height:34px}
+.paper-app.paper-is-editing>.paper-text-ribbon{display:none!important}
+/* Keyboard-safe: controls stay in normal layout at top, not floating over text. */
+.paper-app.paper-keyboard-visible .paper-selection-tools{display:none!important}
+.paper-app.paper-keyboard-visible .paper-word-menu{display:none!important}
+@media(max-width:720px){
+ .paper-app .paper-toolbar{padding:3px 5px!important;min-height:46px!important}
+ .paper-app .paper-context-controls{padding:3px 5px;min-height:41px}
+ .paper-app .paper-strip-arrow{flex-basis:23px;min-width:23px}
+ .paper-app .paper-text-ribbon{white-space:nowrap}
+}
+@media print{.paper-app .paper-context-wrap,.paper-app .paper-strip-arrow{display:none!important}}
+
+/* Wide Scribble reception uses a native text area and never covers the toolbar. */
+.paper-app .paper-viewport{position:relative}
+.paper-app .paper-scribble-panel{
+ position:absolute;inset:0;z-index:7;
+ box-sizing:border-box;display:flex;flex-direction:column;
+ background:rgba(236,246,255,.68);border:2px dashed #6588d0;border-radius:9px;
+}
+.paper-app .paper-scribble-panel[hidden]{display:none!important}
+.paper-app .paper-scribble-panel header{
+ display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+ padding:7px 9px;min-height:39px;
+ background:#eaf2ff;color:#2c4b88;font-size:12px;
+ border-bottom:1px solid #bdd0f0;box-sizing:border-box;
+}
+.paper-app .paper-scribble-panel header b{flex:1 1 auto;font-size:12px}
+.paper-app .paper-scribble-panel header button{
+ padding:6px 10px;min-height:32px;border-radius:7px;
+ background:#fff;border:1px solid #a9bde2;color:#264b94;
+ font-size:12px;white-space:nowrap;
+}
+.paper-app .paper-scribble-panel header [data-pencil-finish]{
+ background:#3155d9;border-color:#3155d9;color:#fff;font-weight:750;
+}
+.paper-app .paper-scribble-panel textarea{
+ flex:1 1 auto;display:block;box-sizing:border-box;width:100%;min-height:120px;
+ margin:0;padding:22px 24px;resize:none;border:0;outline:none;
+ background:rgba(238,248,255,.12);color:rgba(28,59,102,.25);
+ caret-color:#3155d9;overflow:auto;font-family:'Noto Sans Thai',sans-serif;
+ font-size:19px;line-height:1.65;
+}
+.paper-app .paper-scribble-panel textarea::placeholder{color:#5077af;font-size:14px}
+.paper-app.paper-scribble-open .paper-selection-tools{display:none!important}
+@media(max-width:720px){
+ .paper-app .paper-scribble-panel header{padding:5px}
+ .paper-app .paper-scribble-panel textarea{padding:12px;font-size:18px}
+}
+
+/* A keyboard-resized visual viewport should shrink the fixed notebook rather
+   than let the lower writing area disappear under iOS Safari's keyboard. */
+.paper-app.paper-keyboard-visible{bottom:var(--paper-keyboard-inset,0px)!important;height:auto!important}
+.paper-app.paper-is-editing .paper-selection-tools,.paper-app.paper-is-editing .paper-word-menu{display:none!important}
+.paper-app.paper-keyboard-visible .paper-workspace,.paper-app.paper-keyboard-visible .paper-viewport{min-height:0!important}

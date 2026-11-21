@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeShape,shapeSVG,shapes,lineStyles,snapLinePoint,snapMovedLine} from '../dist/paper-shapes.js';
-import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from '../dist/paper-geometry.js';
+import {recognizeHeldShape,recognizeDrawnShape,rulerProject,rulerSnap,rulerSVG} from '../dist/paper-geometry.js';
 import {emptyPage,validatePaper,pageHistory,copy} from '../dist/paper-core.js';
 
 test('extra shapes render editable SVG and retain the selected line style after validation',()=>{
@@ -93,4 +93,16 @@ test('shape on Pencil release: a closed loop becomes circle/ellipse rather than 
  const line=[[10,10,.5],[50,11,.5],[100,10,.5],[175,12,.5]];
  assert.equal(recognizeHeldShape(line)?.kind,'line');
  assert.equal(recognizeHeldShape([[10,10,.5],[45,60,.5],[75,15,.5]]),null);
+});
+
+test('realistic Pencil circles and ellipses, but not an open arc',()=>{
+ const loop=(n,span,rx,ry,jitter=0)=>Array.from({length:n},(_,i)=>{
+  const t=span*i/(n-1),j=jitter*Math.sin(i*3.7);
+  return [230+(rx+j)*Math.cos(t),210+(ry+j)*Math.sin(t),.5];
+ });
+ assert.equal(recognizeDrawnShape(loop(51,Math.PI*1.74,85,81,5))?.kind,'circle');
+ assert.equal(recognizeDrawnShape(loop(51,Math.PI*1.76,118,62,4))?.kind,'ellipse');
+ assert.equal(recognizeDrawnShape(loop(51,Math.PI*2,85,85,9))?.kind,'circle');
+ assert.equal(recognizeDrawnShape(loop(30,Math.PI*1.04,85,85)),null);
+ assert.equal(recognizeDrawnShape([[10,12],[75,13],[150,12]])?.kind,'line');
 });

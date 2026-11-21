@@ -106,3 +106,13 @@ test('legacy fractional text size is displayed and persisted as the nearest whol
  assert.equal(clean.pages[0].objects[0].size,16);
  assert.equal(validatePaper(clean).pages[0].objects[0].size,16);
 });
+
+test('old three-branch diagrams remain readable and unchanged across devices',()=>{
+ const note=newNote({id:'branch-legacy',title:'POL2303 แผนผัง'});
+ const shape=makeShape('branch-shared','branch3',{x:70,y:80},{x:340,y:80},'#172033',3);
+ note.paper={version:1,pages:[{...emptyPage(),objects:[shape]}]};
+ const before=JSON.stringify(note.paper);
+ assert.equal(paperFor(note).pages[0].objects[0].kind,'branch3');
+ assert.equal(JSON.stringify(note.paper),before,'opening a note cannot mutate the source');
+ assert.equal(validateNotebook({version:1,notes:[note]}).notes[0].paper.pages[0].objects[0].kind,'branch3');
+});
