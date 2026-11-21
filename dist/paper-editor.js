@@ -109,12 +109,14 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   inkBar.hidden=!showInk;
   shapeOptions.hidden=activePanel!=='shape';
   penOptions.hidden=!['pen','highlight','straighten','eraser'].includes(activePanel);
+  $('.paper-geometry-check').hidden=!['pen','straighten'].includes(activePanel);
   selectionOptions.hidden=activePanel!=='select';
   pageOptions.hidden=activePanel!=='page';
   rulerOptions.hidden=activePanel!=='ruler'||!ruler.active;
   textOptions.hidden=activePanel!=='text';
   ribbon.hidden=activePanel!=='text'||!editing;
   contextBar.hidden=inkBar.hidden&&shapeOptions.hidden&&penOptions.hidden&&selectionOptions.hidden&&pageOptions.hidden&&rulerOptions.hidden&&textOptions.hidden&&ribbon.hidden;
+  contextWrap.hidden=contextBar.hidden;
   root.querySelector('[data-paper="page-settings"]').setAttribute('aria-pressed',String(activePanel==='page'));
   $('#paper-page-label').textContent=`หน้า ${model.pages.findIndex(p=>p.id===pageId)+1} / ${model.pages.length}`;
   $('#paper-template').value=p.template;
@@ -254,14 +256,31 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  // dropdown so pen/highlighter colors cannot be hidden by a clipped menu.
  const mainTools=$('.paper-toolset'),advancedTools=$('.paper-tool-options');
  mainTools.append($('[data-paper="ruler"]'));
+ // Visible navigation also works when iPadOS intercepts swipe gestures.
+ const mainPrev=document.createElement('button'),mainNext=document.createElement('button');
+ for(const [button,dir,label] of [[mainPrev,-1,'เลื่อนเครื่องมือไปซ้าย'],[mainNext,1,'เลื่อนเครื่องมือไปขวา']]){
+  button.type='button';button.className='paper-strip-scroll';button.textContent=dir<0?'‹':'›';
+  button.setAttribute('aria-label',label);
+  bind(button,'click',()=>mainTools.scrollBy({left:dir*230,behavior:'smooth'}));
+ }
+ mainTools.before(mainPrev);mainTools.after(mainNext);
  // Settings appear beneath whichever main tool is selected. Never stack
  // separate settings rows over the keyboard or bury them in 'ตัวเลือก'.
+ const contextWrap=document.createElement('div');
+ contextWrap.className='paper-context-wrap';contextWrap.hidden=true;
  const contextBar=document.createElement('div');
  contextBar.className='paper-context-settings';
  contextBar.setAttribute('role','region');
  contextBar.setAttribute('aria-label','ตั้งค่าของเครื่องมือที่เลือก');
  contextBar.hidden=true;
- root.querySelector('.paper-toolbar').after(contextBar);
+ const contextPrev=document.createElement('button'),contextNext=document.createElement('button');
+ for(const [button,dir,label] of [[contextPrev,-1,'เลื่อนการตั้งค่าไปซ้าย'],[contextNext,1,'เลื่อนการตั้งค่าไปขวา']]){
+  button.type='button';button.className='paper-strip-scroll';button.textContent=dir<0?'‹':'›';
+  button.setAttribute('aria-label',label);
+  bind(button,'click',()=>contextBar.scrollBy({left:dir*245,behavior:'smooth'}));
+ }
+ contextWrap.append(contextPrev,contextBar,contextNext);
+ root.querySelector('.paper-toolbar').after(contextWrap);
  let activePanel=tool;
  const shapeOptions=document.createElement('div');
  shapeOptions.className='paper-context-shape';shapeOptions.hidden=true;

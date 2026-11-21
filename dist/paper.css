@@ -919,3 +919,25 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-scribble-pad-bar strong{font-size:11px}
  .paper-app #paper-scribble-input{padding:12px;font-size:18px}
 }
+
+/* Small, always-visible scroll arrows for iPadOS, outside scroll containers. */
+.paper-app .paper-context-wrap{
+ display:flex;align-items:stretch;flex:0 0 auto;min-width:0;width:100%;
+ box-sizing:border-box;border-bottom:1px solid #cddbed;background:#f5f8ff;
+}
+.paper-app .paper-context-wrap[hidden]{display:none!important}
+.paper-app .paper-context-wrap>.paper-context-settings{
+ flex:1 1 auto;min-width:0;width:auto!important;max-width:none!important;
+ border:0!important;
+}
+.paper-app .paper-strip-scroll{
+ display:inline-flex;align-items:center;justify-content:center;
+ flex:0 0 27px;min-width:27px;min-height:37px;
+ border:0;background:#e2eafe;color:#2e54ae;
+ font-size:23px;font-weight:800;padding:0;
+}
+.paper-app .paper-strip-scroll:focus-visible{
+ outline:2px solid #224db1;outline-offset:-2px;
+}
+@media(max-width:720px){.paper-app .paper-strip-scroll{flex-basis:24px;min-width:24px}}
+@media print{.paper-app .paper-context-wrap,.paper-app .paper-strip-scroll{display:none!important}}
