@@ -69,6 +69,26 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok((await page.locator('#paper-svg table').innerText()).includes('ความยุติธรรม'));
    await page.screenshot({path:'test-results/notebook-tables-'+name+'.png'});
    
+   await click('pen');
+   const wrote=await page.locator('#paper-svg').evaluate(svg=>{
+    const footer=document.querySelector('#paper-page-label');
+    const select=new Event('selectstart',{bubbles:true,cancelable:true});
+    footer.dispatchEvent(select);
+    const range=document.createRange();range.selectNodeContents(footer);
+    const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+    const rect=svg.getBoundingClientRect();
+    const send=(type,id,device,x)=>svg.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:id,pointerType:device,clientX:rect.x+x,clientY:rect.y+90,pressure:.5}));
+    // Synthetic contacts cannot request native pointer capture.
+    svg.setPointerCapture=()=>{};
+    try{
+     send('pointerdown',81,'touch',45);send('pointerdown',82,'pen',65);
+     send('pointerup',81,'touch',45);send('pointermove',82,'pen',95);send('pointerup',82,'pen',105);
+    }finally{delete svg.setPointerCapture;}
+    return select.defaultPrevented&&selection.isCollapsed;
+   });
+   assert.ok(wrote,'ink suppresses selection on the status bar');
+   await click('save');
+   assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.type==='stroke'),'pen writes with a palm already on the page');
    assert.deepEqual(errors,[]);console.log(name+': inline table PASS');continue;
   }
   const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();return {x:r.x+x*r.width/900,y:r.y+y*r.height/1273};};

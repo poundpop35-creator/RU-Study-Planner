@@ -592,7 +592,25 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  }
  const tableUI=mountTableEditor(root,{page,change,writable,finishText,closeExtraTools,setShapesOpen,viewport,
   getScale:()=>scale,onSaved:tableId=>{multiSelect=false;setTool('select');selected=new Set([tableId]);draw();},say});
+ const inkTools=new Set(['pen','highlight','eraser','straighten','shape']);
+ function guardInkSelection(e){
+  if(!inkTools.has(tool)||e.target.closest('input,textarea,select,[contenteditable="true"],dialog'))return;
+  if(e.target.closest('#paper-sheet,.paper-bottom,.paper-header,.paper-toolbar'))e.preventDefault();
+ }
+ bind(root,'selectstart',guardInkSelection);
+ bind(root,'contextmenu',guardInkSelection);
  function pointerDown(e){
+  if(e.pointerType==='pen'&&inkTools.has(tool)){
+   const selection=window.getSelection();
+   if(selection&&!selection.isCollapsed&&root.contains(selection.anchorNode))selection.removeAllRanges();
+   // A palm already resting on the sheet must not turn the pen into a pinch.
+   for(const [id,contact] of pointers){
+    if(contact.pointerType!=='touch')continue;
+    pointers.delete(id);
+    if(svg.hasPointerCapture(id))svg.releasePointerCapture(id);
+    gesture=null;cancelSmartTimer();
+   }
+  }
   // Resting hands are often interpreted as a two-finger pinch by the browser.
   // Ignore touch contact on the page while protected or immediately after pen use.
   const cell=e.target.closest('[data-table-row][data-table-col]');

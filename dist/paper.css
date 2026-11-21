@@ -639,3 +639,13 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 .table-grip[data-axis=move]::after{content:'✥'}
 .table-grip:hover:not([data-axis=move]){background:#3155d928}
 @media print{.paper-inline-table{display:none}}
+
+.paper-app :is(.paper-header,.paper-toolbar,.paper-bottom){
+ -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+}
+.paper-app :is(input,textarea,[contenteditable="true"]){
+ -webkit-user-select:text;user-select:text;-webkit-touch-callout:default;
+}
+.paper-app:is([data-paper-tool=pen],[data-paper-tool=highlight],[data-paper-tool=eraser],[data-paper-tool=straighten],[data-paper-tool=shape]) .paper-sheet{
+ -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+}
