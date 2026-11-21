@@ -145,7 +145,7 @@ test('exam guides render for every course and both practice modes score correctl
 });
 
 test('game layer: level chip, awards page and celebrations',()=>{
- navigate('#home');assert.ok(get('#top-stats').innerHTML.includes('Lv.'));assert.ok(html().includes('href="#awards"'));assert.ok(html().includes('class="button gold hero-cta"'));
+ navigate('#home');assert.ok(get('#top-stats').innerHTML.includes('Lv.'));assert.ok(html().includes('href="#awards"'));assert.ok(html().includes('class="start-resume"'));
  navigate('#awards');assert.ok(html().includes('รางวัลของฉัน'));assert.equal((html().match(/class="badge-card /g)||[]).length,12);
  navigate('#lesson/POL1101-1');assert.ok(html().includes('อ่านจบรับ +50 XP'));assert.ok(!html().includes('undefined'));
  click('answer',{lesson:'POL1101-1',index:'1',value:String(lessons[0].questions[1].answer)});assert.ok(html().includes('ถูกต้อง'));assert.ok(!html().includes('undefined'));click('retry',{id:'POL1101-1'});
@@ -342,4 +342,10 @@ test('weekly timetable exposes the same time axis and a shortcut to replay at 20
  assert.ok(html().includes('class="unified-axis"'));
  assert.ok(html().includes('data-action="cal-scroll-time" data-target="night"'));
  assert.ok(html().includes('ช่วงค่ำ 20:00'));
+});
+
+test('home offers direct practice and a blank note without a setup dialog',()=>{
+ navigate('#home');assert.match(html(),/class="start-actions"[\s\S]*?href="#practice"/);
+ assert.match(html(),/data-action="nb-new" data-source="general"/);
+ navigate('#practice');assert.ok(html().indexOf('class="panel practice-question"')<html().indexOf('เลือกวิชาและชุดฝึก'));
 });
