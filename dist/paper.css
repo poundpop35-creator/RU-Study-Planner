@@ -628,7 +628,7 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 .paper-inline-table{position:absolute;display:grid;outline:2px solid #3155d9;background:white;color:#172033}
 .paper-inline-table[hidden]{display:none}
 .paper-inline-table textarea{display:block;box-sizing:border-box;width:100%;height:100%;min-width:0;min-height:0;resize:none;border:0;border-radius:0;border-right:1px solid #a7b9d0;border-bottom:1px solid #a7b9d0;padding:7px 9px;background:white;color:inherit;font:16px/1.44 "Noto Sans Thai",sans-serif;touch-action:manipulation}
-.paper-inline-table textarea[data-r="0"]{background:#eaf2ff;font-weight:700}
+.paper-inline-table textarea[data-r="0"]{background:#eaf2ff;color:#1d3c67;font-weight:700}
 .paper-inline-table textarea:focus{outline:2px solid #3155d9;outline-offset:-2px}
 .table-grip{position:absolute;touch-action:none;user-select:none}
 .table-grip:is([data-axis=x],[data-axis=left],[data-axis=right]){top:0;bottom:0;width:12px;transform:translateX(-50%);cursor:col-resize}
