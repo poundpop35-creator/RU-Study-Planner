@@ -231,11 +231,11 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await page.locator('.paper-back').click();await page.locator('.note-card').waitFor();assert.equal(await page.locator('.note-card p').count(),0);await page.screenshot({path:'test-results/library-'+name+'.png'});
   await page.locator('[data-action="nb-classify"]').first().click();
   const category=page.getByRole('dialog');await category.locator('[name="source"]').selectOption('prep');
-  await category.locator('[name="course"]').fill('POL2106');await category.getByText('บันทึก',{exact:true}).click();
+  await category.locator('[name="course"]').selectOption('POL2106');await category.getByText('บันทึก',{exact:true}).click();
   await wait(()=>row.payload.notebook.notes[0].source==='prep');assert.equal(row.payload.notebook.notes[0].course,'POL2106');
   await page.locator('[data-action="nb-new"]').first().click();
-  const create=page.getByRole('dialog');await create.locator('[name="title"]').fill('Pol2104 ครั้งที่ 1');
-  await create.locator('[name="course"]').fill('pol2104');await create.getByText('สร้างโน้ต',{exact:true}).click();
+  const create=page.getByRole('dialog');assert.equal(await create.locator('[name="group"]').inputValue(),'yes');
+  await create.locator('[name="course"]').selectOption('POL2104');await create.getByText('สร้างโน้ต',{exact:true}).click();
   await page.locator('#paper-svg').waitFor();await click('save');assert.ok(row.payload.notebook.notes.some(n=>n.course==='POL2104'&&n.source==='classroom'));
    // A primary teacher file belongs to the course, not this one note page.
    await click('course-materials');
@@ -255,6 +255,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await wait(()=>row.payload.notebook.courseMaterials?.POL2104?.files?.some(f=>f.name==='lecture-week1.pdf'));
     assert.equal(row.payload.notebook.courseMaterials.POL2104.files.length,2,'direct classroom upload shares the course collection');
     await courseCard.locator('[data-action="nb-new"]').click();
+    assert.equal(await page.getByRole('dialog').locator('[name="session"]').inputValue(),'2');
+    await page.getByRole('dialog').getByText('สร้างโน้ต',{exact:true}).click();
    await page.locator('#paper-svg').waitFor();
    const sharedFiles=page.getByRole('button',{name:'ไฟล์หลักวิชา POL2104 · 2 รายการ',exact:true});
    assert.ok(await sharedFiles.isVisible(),'a new note exposes its course files immediately');
@@ -408,8 +410,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('.paper-back').click();await page.locator('.note-card').first().waitFor();
    await page.locator('[data-action="nb-new"]').first().click();
    const createWord=page.getByRole('dialog');
-   await createWord.locator('[name="title"]').fill('Word style link test');
-   await createWord.locator('[name="course"]').fill('POL2200');
+   
+   await createWord.locator('[name="course"]').selectOption('POL2200');
+   const wordSession=await createWord.locator('[name="session"]').inputValue();
    await createWord.getByText('สร้างโน้ต',{exact:true}).click();
    await page.locator('#paper-svg').waitFor();
    await click('text');
@@ -459,7 +462,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await wordLinkDialog.locator('[name="address"]').fill('https://example.org/word');
    await wordLinkDialog.getByText('บันทึกลิงก์').click();
    await click('save');
-   const wordNote=()=>row.payload.notebook.notes.find(n=>n.title==='Word style link test');
+   const wordNote=()=>row.payload.notebook.notes.find(n=>n.course==='POL2200'&&n.session===Number(wordSession));
    await wait(()=>!!wordNote()?.paper?.pages?.[0]?.objects?.some(o=>o.type==='text'&&o.marks?.length&&o.links?.length));
    const wordObject=wordNote().paper.pages[0].objects.find(o=>o.type==='text');
    assert.equal(wordObject.marks[0].size,19);
@@ -487,7 +490,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await tableDialog.locator('textarea[data-table-row="1"][data-table-col="0"]').fill('เพลโต');
    await tableDialog.locator('[data-table-command="save"]').click();
    await click('save');
-   const savedTable=()=>row.payload.notebook.notes.find(n=>n.title==='Word style link test').paper.pages[0].objects.find(o=>o.type==='table');
+   const savedTable=()=>row.payload.notebook.notes.find(n=>n.course==='POL2200'&&n.session===Number(wordSession)).paper.pages[0].objects.find(o=>o.type==='table');
    await wait(()=>savedTable()?.cells[1]?.[0]==='เพลโต');
    assert.deepEqual([savedTable().cells.length,savedTable().cells[0].length],[4,3]);
    assert.ok(await page.locator('#paper-svg foreignObject[data-object]').count(),'table appears on paper, not only in dialog');
