@@ -1,7 +1,7 @@
 // The first destination opens the section. Other destinations stay directly linkable.
 export const sections=[
  {label:'วันนี้',icon:'home',pages:[['home','วันนี้ต้องทำอะไร']]},
- {label:'เรียนและฝึกสอบ',icon:'book',pages:[['courses','ติวก่อนเรียน'],['practice','ฝึกทำข้อสอบ'],['review','ทบทวนบทเรียน'],['exams','วันสอบและแนวข้อสอบ']]},
+ {label:'เรียนและฝึกสอบ',icon:'book',pages:[['courses','ติวก่อนเรียน'],['practice','ฝึกทำข้อสอบ'],['review','ทบทวนบทเรียน']]},
  {label:'สมุดจด',icon:'notes',pages:[['notes','โน้ตทั้งหมด'],['classroom','แยกตามวิชาและเอกสาร']]},
  {label:'แผนของฉัน',icon:'calendar',pages:[['plan','แผนอ่าน'],['calendar','ตารางเรียน–สอบ'],['registration','แผนลงทะเบียน']]},
  {label:'เอกสารและแหล่งเรียน',icon:'doc',pages:[['documents','เอกสารมหาวิทยาลัย'],['resources','แหล่งเรียนออนไลน์'],['about','ที่มาและข้อตกลง']]},
@@ -9,7 +9,7 @@ export const sections=[
  {label:'รางวัลของฉัน',icon:'trophy',pages:[['awards','รางวัลของฉัน']]},
  {label:'แผนจัดการหนี้',icon:'wallet',pages:[['debt','แผนจัดการหนี้']]}
 ];
-const detailParent={lesson:'courses',course:'courses',prep:'exams',note:'notes'};
+const detailParent={lesson:'courses',course:'courses',prep:'practice',note:'notes'};
 export function sectionFor(view){
  const page=detailParent[view]||view;
  return sections.find(section=>section.pages.some(([key])=>key===page));

@@ -17,7 +17,7 @@ export function classroomPage(space){
   return `<article class="panel classroom-course"><span class="cc-code">${c.id}</span><h2>${e(c.title)}</h2>
    <p class="classroom-state">${notes.length?notes.length+' โน้ตที่บันทึกไว้แล้ว':'ยังไม่มีโน้ตวิชานี้'} · ${files} เอกสารหลัก</p>
    ${notes.length?`<div class="classroom-notes">${notes.slice(0,5).map(n=>`<a href="#note/${n.id}" class="classroom-note-link">📖 ${e(n.title)} <span>เปิดต่อ</span></a>`).join('')}</div>`:''}
-   ${c.id==='POL2106'?'<div class="course-material-links"><a href="/pol2106-lab.html">บทติว 6 บท และแลบข้อสอบ 700 ข้อ</a><a href="https://chatgpt.com/library?file_id=libfile_61f3bc82eb70819198b3187a24192d67&amp;account_id=personal" target="_blank" rel="noopener">สไลด์อาจารย์ · บทที่ 1–6 (PowerPoint)</a></div>':''}
+   ${c.id==='POL2106'?'<div class="course-material-links"><a href="https://chatgpt.com/library?file_id=libfile_61f3bc82eb70819198b3187a24192d67&amp;account_id=personal" target="_blank" rel="noopener">สไลด์อาจารย์ · บทที่ 1–6 (PowerPoint)</a></div>':''}
    ${courseMaterialList(book,c.id)}
    <div class="classroom-course-actions">
     ${notes.length?`<button class="button secondary" data-action="nb-filter-course" data-course="${c.id}">ดูโน้ตทั้งหมด</button>`:''}
