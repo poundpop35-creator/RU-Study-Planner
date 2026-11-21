@@ -9,7 +9,7 @@ import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
 import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape,eraserHit,isJoinable,snapLinePoint,snapMovedLine} from './paper-shapes.js?v=eraser-20261121';
-import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=geometry-20261119';
+import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261121-smart-shape-release';
 import {mountTableEditor} from './paper-table-ui.js?v=20261121-paper-format';
 import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
 let active=null;
@@ -218,7 +218,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(!['select','text'].includes(tool))selected.clear();
   syncPenWidthControls();showTextRibbon();
   say(({shape:'เลือกชนิดรูปทรงจากไอคอน แล้วลากบนกระดาษ',
-   straighten:'ลากเส้นด้วยมือแล้วปล่อยให้จัดเป็นเส้นตรงทันที',
+   straighten:'วาดวงกลม วงรี สี่เหลี่ยม หรือเส้นตรง แล้วปล่อยปากกาเพื่อจัดรูปทรง · ถ้าไม่ตรงรูปทรงจะเก็บลายเส้นเดิม',
    pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',
    highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',
    select:'คลิกเพื่อเลือก · ดับเบิลคลิกข้อความเพื่อแก้ทันที',
@@ -832,10 +832,13 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    }
    if(g?.kind==='stroke'&&e.type!=='pointercancel'){
    let result;
-   if(g.straighten&&g.points.length>1){
-    const first=g.points[0],last=g.points.at(-1);
-    if(Math.hypot(last[0]-first[0],last[1]-first[1])>=2)
-     result=makeShape(uid(),'line',{x:first[0],y:first[1]},{x:last[0],y:last[1]},g.color,g.width,lineStyle);
+   if(g.straighten){
+    // The old implementation connected the first/last samples as a line,
+    // destroying circles whenever the stroke began and ended together.
+    // Recognize the whole gesture when the Pencil is lifted instead.
+    const found=recognizeHeldShape(g.points);
+    if(found)result=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);
+    else if(g.snap)result=g.snap;
    }
    else if(g.snap)result=g.snap;
    else if(g.rulerEdge&&g.points.length>1){
@@ -843,7 +846,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     result=makeShape(uid(),'line',{x:first[0],y:first[1]},{x:last[0],y:last[1]},g.color,g.width,lineStyle);
    }
    if(result)change(p=>p.objects.push(result));
-   else if(!g.straighten){const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width});change(p=>p.objects.push(stroke));}
+   else if(g.points.length>1){const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width});change(p=>p.objects.push(stroke));}
   }
   else if(g?.kind==='shape'&&e.type==='pointerup'){
    const end=point(e);

@@ -78,3 +78,19 @@ test('lines attach at an endpoint or along a segment when drawn or moved nearby'
  assert.equal(moved.w,near.w);assert.equal(moved.h,near.h);
  const far={x:50,y:20};assert.equal(snapLinePoint(far,[rail],8),far);
 });
+
+test('shape on Pencil release: a closed loop becomes circle/ellipse rather than a zero-length line',()=>{
+ const circle=Array.from({length:55},(_,i)=>{
+  const a=(i/54)*Math.PI*1.98;
+  return [240+82*Math.cos(a)+(i%3-1)*.7,260+82*Math.sin(a)+(i%4-2)*.6,.5];
+ });
+ const c=recognizeHeldShape(circle);
+ assert.equal(c?.kind,'circle');
+ const oval=Array.from({length:55},(_,i)=>{
+  const a=(i/54)*Math.PI*1.98;return [320+115*Math.cos(a),280+56*Math.sin(a),.5];
+ });
+ assert.equal(recognizeHeldShape(oval)?.kind,'ellipse');
+ const line=[[10,10,.5],[50,11,.5],[100,10,.5],[175,12,.5]];
+ assert.equal(recognizeHeldShape(line)?.kind,'line');
+ assert.equal(recognizeHeldShape([[10,10,.5],[45,60,.5],[75,15,.5]]),null);
+});

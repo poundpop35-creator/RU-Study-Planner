@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261121-toolbar-restored'); }
+try { await import('./app.js?v=20261121-smart-shape-release'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
