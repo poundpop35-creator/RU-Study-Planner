@@ -66,3 +66,23 @@ test('missing source image aborts migration without changing shared notes; retry
  await assert.rejects(()=>migrateLegacy(opts),err=>err.message==='missing image');assert.equal(server.rows.has(sharedKey),false);
  server.images.set(key+'/'+image,new Blob(['recovered'],{type:'image/png'}));await migrateLegacy(opts);assert.equal(server.rows.get(sharedKey).payload.notebook.notes.length,1);
 });
+
+test('a stale local cache with the correct revision is repaired from the shared cloud',async()=>{
+ const server=backend(),storage=memoryStorage(),first=device(storage,server);
+ await first.init();
+ const original=newNote({id:'shared-recover',text:'บันทึกยังอยู่ในคลาวด์'});
+ first.saveNotebook({version:1,notes:[original]});await first.flush();first.dispose();
+ const key='ru-study-workspace.v1:'+sharedKey;
+ const stale=JSON.parse(storage.getItem(key));
+ assert.equal(stale.dirty,false);
+ stale.payload.notebook.notes=[]; // Browser cache corrupted; cloud revision unchanged.
+ storage.setItem(key,JSON.stringify(stale));
+ const second=device(storage,server);
+ try{
+  await second.init();
+  assert.equal(second.info().canEdit,true);
+  assert.equal(second.notebook().notes.length,1);
+  assert.equal(second.notebook().notes[0].id,'shared-recover');
+  assert.equal(JSON.parse(storage.getItem(key)).payload.notebook.notes.length,1);
+ }finally{second.dispose();}
+});
