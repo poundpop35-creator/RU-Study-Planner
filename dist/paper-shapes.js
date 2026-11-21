@@ -2,7 +2,7 @@ export const shapes = {
  rect:'สี่เหลี่ยมผืนผ้า',roundRect:'สี่เหลี่ยมมุมมน',square:'สี่เหลี่ยมจัตุรัส',
  ellipse:'วงรี',circle:'วงกลม',triangle:'สามเหลี่ยม',diamond:'สี่เหลี่ยมข้าวหลามตัด',
  pentagon:'ห้าเหลี่ยม',hexagon:'หกเหลี่ยม',star:'ดาว',line:'เส้นตรง',
- arrow:'ลูกศร',doubleArrow:'ลูกศรสองหัว',connector:'เส้นเชื่อมหักมุม',branch3:'ผังสามกิ่ง'
+ blockArrow:'ลูกศรทึบ',arrow:'ลูกศร',doubleArrow:'ลูกศรสองหัว',connector:'เส้นเชื่อมหักมุม',branch3:'ผังสามกิ่ง'
 };
 export const lineStyles={solid:'เส้นทึบ',dashed:'เส้นประ',dotted:'เส้นจุด'};
 const round=n=>Math.round(n*100)/100;
@@ -20,9 +20,13 @@ export function makeShape(id,kind,start,end,color,width,dash='solid'){
  if(kind==='square'||kind==='circle'){
   const side=Math.max(w,h);w=side;h=side;
  }
+ if(kind==='blockArrow'){
+  const horizontal=w>=h;
+  if(horizontal)h=Math.max(h,Math.min(60,w*.34));else w=Math.max(w,Math.min(60,h*.34));
+ }
  if(kind==='branch3')h=Math.max(h,Math.min(64,Math.max(16,w*.09)));
  return {id,type:'shape',kind,color,width,x,y,w,h,
-  reverseX:end.x<start.x,reverseY:end.y<start.y,...(dash==='solid'?{}:{dash})};
+  ...(kind==='blockArrow'?{fill:color}:{}),reverseX:end.x<start.x,reverseY:end.y<start.y,...(dash==='solid'?{}:{dash})};
 }
 // Each handle moves just its selected edge(s), leaving the opposite edge anchored.
 export function resizeShape(shape,edge,dx,dy){
@@ -53,6 +57,7 @@ function arrowHead(x,y,dx,dy,width,sign=1){
 }
 function linePaths(o){
  const {x,y,w,h}=o,a={x:o.reverseX?x+w:x,y:o.reverseY?y+h:y},b={x:o.reverseX?x:x+w,y:o.reverseY?y:y+h};
+ if(o.kind==='line'){if(w===1)b.x=a.x;if(h===1)b.y=a.y;}
  if(o.kind==='branch3'){
   const mid=x+w/2,rail=y+h/2,bottom=y+h;
   return [[{x,y:bottom},{x,y:rail},{x:x+w,y:rail},{x:x+w,y:bottom}],
@@ -117,7 +122,12 @@ export function eraserHit(o,a,b=a,radius=12){
 export function shapeSVG(o){
  const {x,y,w,h}=o;
  const dash=o.dash==='dashed'?` stroke-dasharray="${Math.max(8,o.width*4)} ${Math.max(4,o.width*3)}"`:o.dash==='dotted'?` stroke-dasharray="1 ${Math.max(5,o.width*3)}"`:'';
- const style=`data-object="${o.id}" data-shape="${o.kind}" fill="none" stroke="${o.color}" stroke-width="${o.width}" stroke-linecap="round" stroke-linejoin="round"${dash}`;
+ const style=`data-object="${o.id}" data-shape="${o.kind}" fill="${isJoinable(o)?'none':(o.fill||(o.kind==='blockArrow'?o.color:'none'))}" stroke="${o.color}" stroke-width="${o.width}" stroke-linecap="round" stroke-linejoin="round"${dash}`;
+ if(o.kind==='blockArrow'){
+  const horizontal=w>=h;
+  const pts=[[0,.32],[.61,.32],[.61,0],[1,.5],[.61,1],[.61,.68],[0,.68]].map(([u,v])=>horizontal?[o.reverseX?1-u:u,v]:[v,o.reverseY?1-u:u]);
+  return `<path ${style} d="${polygonPath(x,y,w,h,pts)}"/>`;
+ }
  if(o.kind==='rect'||o.kind==='square')return `<rect ${style} x="${x}" y="${y}" width="${w}" height="${h}"/>`;
  if(o.kind==='roundRect')return `<rect ${style} x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w,h)*.16}"/>`;
  if(o.kind==='ellipse'||o.kind==='circle')return `<ellipse ${style} cx="${x+w/2}" cy="${y+h/2}" rx="${w/2}" ry="${h/2}"/>`;
