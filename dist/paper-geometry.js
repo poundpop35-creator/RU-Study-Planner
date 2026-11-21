@@ -68,3 +68,32 @@ export function rulerSVG(ruler){
   <g data-ruler="rotate" role="button" aria-label="หมุนไม้บรรทัด" style="cursor:grab"><circle cx="${ruler.length/2+50}" cy="0" r="24" fill="#fff" stroke="#3155d9" stroke-width="3"/><path d="M${ruler.length/2+40} -4 Q${ruler.length/2+55} -18 ${ruler.length/2+62} 1 M${ruler.length/2+62} 1 l-9 -4 M${ruler.length/2+62} 1 l-3 -9" stroke="#3155d9" fill="none" stroke-width="3" pointer-events="none"/></g>
  </g>`;
 }
+
+// Recognize a somewhat open or hand-wobbly circle/ellipse when lifting the
+// Pencil. Hold-to-snap remains conservative for normal freehand writing.
+export function recognizeDrawnShape(samples){
+ const precise=recognizeHeldShape(samples);
+ if(precise)return precise;
+ if(!Array.isArray(samples)||samples.length<9)return null;
+ const pts=samples.map(v=>({x:Number(v[0]),y:Number(v[1])}));
+ if(pts.some(p=>!Number.isFinite(p.x)||!Number.isFinite(p.y)))return null;
+ const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+ const w=maxX-minX,h=maxY-minY,diag=Math.hypot(w,h);
+ if(w<27||h<27||diag<45||Math.max(w,h)/Math.min(w,h)>3.4)return null;
+ if(dist(pts[0],pts.at(-1))>diag*.80)return null;
+ const cx=(minX+maxX)/2,cy=(minY+maxY)/2,rx=w/2,ry=h/2;
+ const angle=pts.map(p=>Math.atan2((p.y-cy)/ry,(p.x-cx)/rx));
+ let winding=0,total=0;
+ for(let i=1;i<angle.length;i++){
+  let delta=angle[i]-angle[i-1];
+  while(delta>Math.PI)delta-=Math.PI*2;
+  while(delta< -Math.PI)delta+=Math.PI*2;
+  winding+=delta;total+=Math.abs(delta);
+ }
+ // Roughly 250 degrees is enough; avoid spirals and scribbles.
+ if(Math.abs(winding)<4.35||Math.abs(winding)>9.5||Math.abs(winding)/Math.max(1,total)<.70)return null;
+ const err=pts.map(p=>Math.abs(Math.hypot((p.x-cx)/rx,(p.y-cy)/ry)-1));
+ if(err.reduce((s,e)=>s+e,0)/err.length>.28||err.filter(e=>e>.43).length/err.length>.25)return null;
+ return {kind:Math.abs(w-h)/Math.max(w,h)<.20?'circle':'ellipse',
+  start:{x:minX,y:minY},end:{x:maxX,y:maxY}};
+}

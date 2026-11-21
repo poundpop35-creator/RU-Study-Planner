@@ -9,7 +9,7 @@ import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
 import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape,eraserHit,isJoinable,snapLinePoint,snapMovedLine} from './paper-shapes.js?v=eraser-20261121';
-import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261121-smart-shape-release';
+import {recognizeHeldShape,recognizeDrawnShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261121-context-tools';
 import {mountTableEditor} from './paper-table-ui.js?v=20261121-paper-format';
 import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
 let active=null;
@@ -836,7 +836,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     // The old implementation connected the first/last samples as a line,
     // destroying circles whenever the stroke began and ended together.
     // Recognize the whole gesture when the Pencil is lifted instead.
-    const found=recognizeHeldShape(g.points);
+    const found=recognizeDrawnShape(g.points);
     if(found)result=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);
     else if(g.snap)result=g.snap;
    }
