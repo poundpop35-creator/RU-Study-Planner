@@ -37,6 +37,40 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await button.evaluate(el=>{let parent=el.parentElement;while(parent){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}});
    await button.click();if(key==='save')await wait(()=>button.isEnabled());
   };
+  if(process.env.PAPER_TEST==='tables'){
+   // Table creation, resizing, editable cells and persistence on each screen size.
+   await click('table');
+   const grid=page.locator('.paper-inline-table');
+   await grid.waitFor({state:'visible'});
+   await click('table-add-row');
+   await grid.getByLabel('แถว 1 คอลัมน์ 1',{exact:true}).fill('นักปรัชญา');
+   await grid.getByLabel('แถว 2 คอลัมน์ 1',{exact:true}).fill('เพลโต');
+   const grip=grid.locator('[data-axis="x"][data-index="0"]');
+   await grip.scrollIntoViewIfNeeded();
+   const tableEdge=await grip.boundingBox();
+   const firstCell=await grid.locator('textarea').first().boundingBox();
+   const handleY=firstCell.y+firstCell.height/2;
+   await page.mouse.move(tableEdge.x+tableEdge.width/2,handleY);
+   await page.mouse.down();await page.mouse.move(tableEdge.x+tableEdge.width/2+18,handleY);await page.mouse.up();
+   await click('save');
+   const savedTable=()=>row.payload.notebook.notes.find(n=>n.id==='browser-note').paper.pages[0].objects.find(o=>o.type==='table');
+   await wait(()=>savedTable()?.cells[1]?.[0]==='เพลโต');
+   assert.deepEqual([savedTable().cells.length,savedTable().cells[0].length],[4,3]);
+   assert.ok(await page.locator('#paper-svg foreignObject[data-object]').count(),'table appears on paper, not only in dialog');
+   await click('table-add-row');await click('table-add-col');await click('save');
+   assert.deepEqual([savedTable().cells.length,savedTable().cells[0].length],[5,4]);
+   await click('table-edit');
+   await grid.getByLabel('แถว 3 คอลัมน์ 2',{exact:true}).fill('ความยุติธรรม');
+   await click('save');
+   assert.ok(savedTable().columns[0]>savedTable().columns[1]);
+   assert.equal(savedTable().cells[2][1],'ความยุติธรรม');
+   await page.reload();await page.locator('#paper-svg').waitFor();
+   assert.equal(await page.locator('#paper-svg table').count(),1,'table persists after reload');
+   assert.ok((await page.locator('#paper-svg table').innerText()).includes('ความยุติธรรม'));
+   await page.screenshot({path:'test-results/notebook-tables-'+name+'.png'});
+   
+   assert.deepEqual(errors,[]);console.log(name+': inline table PASS');continue;
+  }
   const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();return {x:r.x+x*r.width/900,y:r.y+y*r.height/1273};};
   const toolbar=page.locator('.paper-toolbar');
   const toolbarMetrics=await toolbar.evaluate(el=>({height:el.getBoundingClientRect().height,width:el.getBoundingClientRect().width,
@@ -487,35 +521,6 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await page.locator('#paper-svg span[style*="font-weight:700"]').count(),'individual word style must survive reload');
    assert.ok(await page.locator('#paper-svg span[style*="color:#dc4343"]').count(),'per-word color survives reload');
    await page.screenshot({path:'test-results/notebook-word-format-'+name+'.png'});
-   // Table creation, resizing, editable cells and persistence on each screen size.
-   await click('table');
-   const grid=page.locator('.paper-inline-table');
-   await grid.waitFor({state:'visible'});
-   await click('table-add-row');
-   await grid.getByLabel('แถว 1 คอลัมน์ 1',{exact:true}).fill('นักปรัชญา');
-   await grid.getByLabel('แถว 2 คอลัมน์ 1',{exact:true}).fill('เพลโต');
-   const grip=grid.locator('[data-axis="x"][data-index="0"]');
-   await grip.scrollIntoViewIfNeeded();
-   const tableEdge=await grip.boundingBox();
-   await page.mouse.move(tableEdge.x+tableEdge.width/2,tableEdge.y+12);
-   await page.mouse.down();await page.mouse.move(tableEdge.x+tableEdge.width/2+18,tableEdge.y+12);await page.mouse.up();
-   await click('save');
-   const savedTable=()=>row.payload.notebook.notes.find(n=>n.course==='POL2200'&&n.session===Number(wordSession)).paper.pages[0].objects.find(o=>o.type==='table');
-   await wait(()=>savedTable()?.cells[1]?.[0]==='เพลโต');
-   assert.deepEqual([savedTable().cells.length,savedTable().cells[0].length],[4,3]);
-   assert.ok(await page.locator('#paper-svg foreignObject[data-object]').count(),'table appears on paper, not only in dialog');
-   await click('table-add-row');await click('table-add-col');await click('save');
-   assert.deepEqual([savedTable().cells.length,savedTable().cells[0].length],[5,4]);
-   await click('table-edit');
-   await grid.getByLabel('แถว 3 คอลัมน์ 2',{exact:true}).fill('ความยุติธรรม');
-   await click('save');
-   assert.ok(savedTable().columns[0]>savedTable().columns[1]);
-   assert.equal(savedTable().cells[2][1],'ความยุติธรรม');
-   await page.reload();await page.locator('#paper-svg').waitFor();
-   assert.equal(await page.locator('#paper-svg table').count(),1,'table persists after reload');
-   assert.ok((await page.locator('#paper-svg table').innerText()).includes('ความยุติธรรม'));
-   await page.screenshot({path:'test-results/notebook-tables-'+name+'.png'});
-   
   await page.evaluate(()=>{location.hash='#home';});
   await page.locator('.start-card').waitFor();
   const sideNotebook=page.locator('#navigation a[href="#notes"]');
