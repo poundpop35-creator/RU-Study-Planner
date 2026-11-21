@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261121-context-all-in-one-final'); }
+try { await import('./app.js?v=20261121-context-v5'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

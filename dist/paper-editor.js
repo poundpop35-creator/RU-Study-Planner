@@ -988,7 +988,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    const end=point(e);
    if(Math.hypot(end.x-g.start.x,end.y-g.start.y)>2){
     const shape=makeShape(g.id,g.shape,g.start,g.join?snapLinePoint(end,page().objects,10/scale):end,g.color,g.width,g.lineStyle);
-    if(change(p=>p.objects.push(shape))){tool='select';selected=new Set([shape.id]);($('#paper-geometry-menu')||{open:false}).open=false;setShapesOpen(false);showTextRibbon();}
+    if(change(p=>p.objects.push(shape))){tool='select';activePanel='select';selected=new Set([shape.id]);setShapesOpen(false);showTextRibbon();}
    }
   }
   else if(g?.preview&&e.type!=='pointercancel')change(p=>{p.objects=g.preview;});
