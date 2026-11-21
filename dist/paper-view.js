@@ -22,6 +22,7 @@ export function paperPage(space,n){return `<section class="paper-app" aria-label
   <div class="paper-quick-shapes" role="group" aria-label="เส้นตรงและลูกศร">
    <button type="button" data-quick-draw="line" title="เส้นตรง" aria-label="วาดเส้นตรง">${shapeIcon('line')}</button>
    <button type="button" data-quick-draw="arrow" title="ลูกศร" aria-label="วาดลูกศร">${shapeIcon('arrow')}</button>
+   <button type="button" data-quick-draw="branch3" title="ลากเพื่อวาดผังสามกิ่ง" aria-label="วาดผังสามกิ่ง">${shapeIcon('branch3')}</button>
    <button type="button" data-quick-draw="straighten" title="ลากเส้นด้วยมือแล้วจัดตรง" aria-label="ลากเส้นแล้วจัดให้ตรง">⌁→─</button>
   </div>
   <label class="paper-quick-line" id="paper-quick-line-wrap">ลักษณะเส้น <select id="paper-quick-line-style" aria-label="เลือกลักษณะเส้น">${Object.entries(lineStyles).map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select></label>

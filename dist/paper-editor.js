@@ -210,7 +210,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  function setTool(next){
   cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;
-  if(next==='line'||next==='arrow'){
+  if(next==='line'||next==='arrow'||next==='branch3'){
    $('#paper-shape').value=next;$('#paper-quick-shape').value=next;tool='shape';
   }else tool=next;
   closeExtraTools();setShapesOpen(false);
