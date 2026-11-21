@@ -15,7 +15,12 @@ globalThis.fetch=async(url,options)=>{if(String(url).endsWith('/personal-study/o
 const memory=new Map(),elements=new Map(),listeners={};
 const element=()=>({dataset:{},innerHTML:'',textContent:'',value:'',hidden:false,files:[],classList:{add(){},remove(){},contains(){return false}},focus(){},scrollIntoView(){},append(){},remove(){},click(){}});
 function get(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector);}
-globalThis.document={querySelector:get,getElementById:id=>get('#'+id),addEventListener:(type,fn)=>listeners[type]=fn,body:element(),documentElement:{dataset:{}},createElement:element,title:''};
+globalThis.document={querySelector:get,getElementById:id=>get('#'+id),addEventListener:(type,fn)=>listeners[type]=fn,body:element(),documentElement:{dataset:{}},createElement:tag=>{
+ if(tag!=='dialog')return element();
+ const f={group:{},course:{},session:{},source:{value:'classroom'}};
+ const d={...element(),querySelector:k=>k==='form'?{elements:f}:{},showModal(){this.returnValue='save';this.onclose();}};
+ return d;
+},title:''};
 globalThis.location={hash:'#home'};
 globalThis.window={localStorage:{getItem:k=>memory.get(k),setItem:(k,v)=>memory.set(k,v)},scrollY:0,scrollTo(){},addEventListener:(type,fn)=>listeners[type]=fn};
 globalThis.confirm=()=>true;
@@ -62,12 +67,12 @@ test('switching exams back to classes leaves March and returns to the relevant l
  click('cal-jump',{month:'2027-03',type:'exam'});assert.ok(html().includes('calendar-chip exam'));
  click('cal-jump',{month:'2026-11',type:'lecture'});assert.ok(html().includes('calendar-chip lecture'));
 });
-test('pre-class material and actual classroom content are separate, and notes have a visible mobile menu',()=>{
+test('pre-class material and actual classroom content are separate, and notes have a visible mobile menu',async()=>{
  navigate('#courses');assert.ok(html().includes('<h1>ติวก่อนเรียน</h1>'));assert.ok(html().includes('ไม่ใช่คำบรรยายหรือเอกสารของอาจารย์'));
  assert.ok(get('#bottom-nav').innerHTML.includes('href="#notes"'));assert.ok(get('#bottom-nav').innerHTML.includes('สมุดจด'));
  navigate('#classroom');assert.ok(html().includes('ห้องเรียนและสมุดจด'));assert.ok(html().includes('เอกสารหลักวิชา'));assert.ok(!html().includes('class="lesson-row'));
  assert.equal((html().match(/data-source="classroom"/g)||[]).length,7);
- click('nb-new',{course:'POL2301',source:'classroom'});navigate(location.hash);
+ click('nb-new',{course:'POL2301',source:'classroom'});await new Promise(r=>setImmediate(r));navigate(location.hash);
  assert.ok(get('#bottom-nav').innerHTML.includes('href="#notes" aria-current="page"'));
  assert.ok(html().includes('paper-app'));assert.ok(html().includes('data-paper="pen"'));
  navigate('#classroom');assert.ok(html().includes('classroom-note-link'),'classroom must link existing note');
@@ -80,9 +85,9 @@ test('notes save immediately and render as text, never executable user HTML',()=
  navigate('#notes');assert.ok(html().includes('&lt;script&gt;unsafe()&lt;/script&gt;'));assert.ok(!html().includes('<script>unsafe()'));
  navigate('#lesson/POL1101-1');assert.ok(html().includes('รัฐกับรัฐบาลต่างกัน'));
 });
-test('rich notebook page supports course-linked writing, formatting controls, images and recall',()=>{
+test('rich notebook page supports course-linked writing, formatting controls, images and recall',async()=>{
  navigate('#lesson/POL1101-1');assert.ok(html().includes('data-action="nb-from-lesson"'));
- click('nb-from-lesson',{lesson:'POL1101-1'});assert.match(location.hash,/^#note\//);navigate(location.hash);
+ click('nb-from-lesson',{lesson:'POL1101-1'});await new Promise(r=>setImmediate(r));assert.match(location.hash,/^#note\//);navigate(location.hash);
  for(const text of ['ไฮไลต์','เลือกและย้าย','แทรกรูป','คำถามทบทวน','paper-image-file','paper-question','POL1101'])assert.ok(html().includes(text),text);
  navigate('#notes');assert.ok(html().includes('ส่งออกโน้ตพร้อมรูป'));assert.ok(html().includes('POL1101'));click('nb-review');assert.ok(html().includes('ยังไม่มีคำถามจากโน้ต'));click('nb-review-close');
  navigate('#account');assert.ok(html().includes('พื้นที่กลางเดียวกันทุกเบราว์เซอร์'));assert.ok(!html().includes('member-email'));assert.ok(!html().includes('account-google'));assert.ok(!html().includes('account-signin'));assert.ok(!html().includes('URL Configuration'));
