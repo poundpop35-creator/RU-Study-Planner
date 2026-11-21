@@ -45,9 +45,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.ok(toolbarMetrics.height<=90,'notebook toolbar should remain a compact single row: '+JSON.stringify(toolbarMetrics));
    if(mobile)assert.ok(await page.locator('#paper-quickbar').isHidden(),'phone keeps compact toolbar and advanced options');
    else{
-    assert.ok(await page.locator('#paper-text-ribbon').isVisible(),'text mode displays Word formatting ribbon');
+    assert.ok(await page.locator('#paper-text-ribbon').isHidden(),'idle text mode leaves room for the paper');
     assert.ok(await page.locator('#paper-quickbar').isHidden(),'text mode hides drawing-specific quick controls');
-    assert.ok(await page.locator('#paper-word-size').isVisible(),'Word ribbon offers exact text size');
+    assert.ok(await page.locator('#paper-word-size').isHidden(),'size is hidden until editing');
     await click('pen');
     assert.ok(await page.locator('#paper-quickbar').isVisible(),'pen mode shows desktop and tablet quick drawing controls');
     await page.locator('[data-quick-color="#8756c6"]').click();
@@ -56,7 +56,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    }
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
    if(mobile)assert.ok(await page.locator('#paper-text-ribbon').isHidden(),'Word toolbar is inside the editor on narrow phones');
-   else assert.ok(await page.locator('#paper-text-ribbon').isVisible(),'Word-style Home ribbon is visible in text mode');
+   else assert.ok(await page.locator('#paper-text-ribbon').isHidden(),'text format opens only while editing');
   assert.ok(await page.locator('.paper-tool-options').isHidden(),'extra options must not occupy canvas when closed');
    assert.ok(await page.locator('.paper-pages').isHidden(),'page thumbnails start collapsed to maximize writing space');
    await click('pages');
@@ -201,7 +201,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await wait(()=>images.size===2);await wait(()=>page.locator('#paper-svg image').getAttribute('width').then(w=>Number(w)<beforeCropWidth));await click('save');assert.notEqual(picture().imageId,original.imageId);
   await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 sample')});
   await wait(()=>row.payload.notebook.notes[0].files?.[0]?.name==='lesson.pdf');await page.locator('#paper-files form button').click();
-  await page.locator('#paper-template').selectOption('dots');await click('save');
+  await page.locator('.paper-menu').evaluate(el=>el.open=true);await page.locator('#paper-template').selectOption('dots');await page.locator('.paper-menu').evaluate(el=>el.open=false);await click('save');
   await page.screenshot({path:'test-results/paper-'+name+'.png'});
   if(!await page.locator('[data-paper="add-page"]').first().isVisible())await click('pages');await click('add-page');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
   await click('delete-page');await page.getByRole('alertdialog').waitFor();await page.locator('[data-delete-choice="cancel"]').click();assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
@@ -259,7 +259,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await page.getByRole('dialog').getByText('สร้างโน้ต',{exact:true}).click();
    await page.locator('#paper-svg').waitFor();
    const sharedFiles=page.getByRole('button',{name:'ไฟล์หลักวิชา POL2104 · 2 รายการ',exact:true});
-   assert.ok(await sharedFiles.isVisible(),'a new note exposes its course files immediately');
+   await page.locator('.paper-menu').evaluate(el=>el.open=true);assert.ok(await sharedFiles.isVisible(),'a new note exposes its course files immediately');
    await sharedFiles.click();await courseDialog.locator('[data-course-preview]').first().click();
    const preview=page.locator('.paper-file-view');
    await preview.locator('iframe').waitFor();assert.equal(await preview.locator('h2').innerText(),'POL2104-syllabus.pdf');
@@ -394,6 +394,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   },contact);
   assert.equal(await page.locator('#paper-zoom').innerText(),beforeZoom,'palm touches should never pinch-zoom');
   assert.equal(activeNote().paper.pages[0].objects.length,objectCount,'palm touches should not create extra text');
+  const existingTextPoint=await point(continued.x+3,continued.y+5);
+  await page.locator('#paper-svg').evaluate((svg,p)=>{
+   svg.setPointerCapture=()=>{};
+   for(const type of ['pointerdown','pointerup'])svg.dispatchEvent(new PointerEvent(type,{pointerId:812,isPrimary:true,pointerType:'touch',bubbles:true,cancelable:true,clientX:p.x,clientY:p.y}));
+   delete svg.setPointerCapture;
+  },existingTextPoint);
+  assert.equal(await page.locator('#paper-text-input').inputValue(),'รัฐศาสตร์');
+  assert.ok(await page.locator('#paper-text-input').isVisible());
+  await click('finish-text');
   await click('pen');
   const inkFrom=await point(560,910),inkTo=await point(635,950);
   await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
