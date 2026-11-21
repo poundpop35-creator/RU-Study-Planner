@@ -97,6 +97,13 @@ export function mergePaper(base,local,remote){
   const bo=new Map(b.objects.map(o=>[o.id,o])),lo=new Map(l.objects.map(o=>[o.id,o])),ro=new Map(r.objects.map(o=>[o.id,o]));
   for(const [oid,before] of bo){const after=lo.get(oid),current=ro.get(oid);if(same(before,after))continue;if(!same(before,current)&&!same(after,current))throw Error('วัตถุนี้ถูกแก้พร้อมกันจากอีกเครื่อง กรุณาสำรองงานที่ค้างก่อน');if(after)ro.set(oid,copy(after));else ro.delete(oid);}
   for(const [oid,o] of lo)if(!bo.has(oid))ro.set(oid,copy(o));r.objects=[...ro.values()];
+  // Preserve a local stacking edit while retaining unrelated remote drawings.
+  const shared=b.objects.map(o=>o.id).filter(id=>lo.has(id)&&ro.has(id)),ids=new Set(shared);
+  const localOrder=l.objects.map(o=>o.id).filter(id=>ids.has(id)),remoteOrder=r.objects.map(o=>o.id).filter(id=>ids.has(id));
+  if(!same(localOrder,shared)){
+   if(!same(remoteOrder,shared)&&!same(remoteOrder,localOrder))throw Error('ลำดับชั้นวัตถุถูกเปลี่ยนพร้อมกันจากอีกเครื่อง');
+   let index=0;r.objects=r.objects.map(o=>ids.has(o.id)?ro.get(localOrder[index++]):o);
+  }
  }
  for(const [id,p] of lm)if(!bm.has(id))rm.set(id,copy(p));
  return validatePaper({version:1,pages:[...rm.values()]});
