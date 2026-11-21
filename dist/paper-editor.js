@@ -1,24 +1,24 @@
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
-import {PAGE_W,PAGE_H,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS} from './paper-core.js?v=20261120-table';
-import {pageSVG,objectSVG,esc} from './paper-render.js?v=20261120-table';
+import {PAGE_W,PAGE_H,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS} from './paper-core.js?v=20261121-paper-format';
+import {pageSVG,objectSVG,esc} from './paper-render.js?v=20261121-paper-format';
 import {imageHandles,resizeImage,cropImage} from './paper-images.js';
 import {readAttachment,downloadAttachment} from './note-files.js';
 import {replaceLink,moveLinks} from './word-links.js';
-import {textSize,textColor,formattedTextHTML,normalizeMarks,toggleTextFormat,applyTextFormat,moveMarks} from './paper-rich-text.js?v=word-format-20261120';
+import {textSize,textColor,formattedTextHTML,normalizeMarks,toggleTextFormat,applyTextFormat,moveMarks} from './paper-rich-text.js?v=20261121-paper-format';
 import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
 import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape,eraserHit,isJoinable,snapLinePoint,snapMovedLine} from './paper-shapes.js?v=eraser-20261121';
 import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=geometry-20261119';
-import {mountTableEditor} from './paper-table-ui.js?v=20261120-table';
-import {tableWithCells,tableGrid} from './paper-table.js?v=20261120-table';
+import {mountTableEditor} from './paper-table-ui.js?v=20261121-paper-format';
+import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
 let active=null;
 export function refreshPaper(space,id){return active?.id===id?active.refresh(space):false;}
 export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const root=document.querySelector('.paper-app');if(!root)return ()=>{};
  let note=space.notebook().notes.find(n=>n.id===id);if(!note)return ()=>{};
  let conversionWarning='';let initial;try{initial=paperFor(note);}catch{initial={version:1,pages:[emptyPage()]};conversionWarning='ต้นฉบับยาวเกินหน้ากระดาษที่รองรับ ดูฉบับเต็มได้ในเมนู ดูต้นฉบับเดิม';}
- let model=initial,pageId=model.pages[0].id,tool=startInk?'pen':'text',color='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=startInk,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
+ let model=initial,pageId=model.pages[0].id,tool=startInk?'pen':'text',color='#172033',defaultTextColor='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=startInk,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
  let multiSelect=false,wordSelection=null,lineStyle='solid',smartEnabled=true,smartTimer=0,lastTextTap=null;
  let lastSelectionSignature='';
  let ruler={active:false,x:PAGE_W/2,y:PAGE_H/2,angle:0,length:440,height:44};
@@ -120,6 +120,9 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   $('[data-paper="undo"]').disabled=!h().canUndo; $('[data-paper="redo"]').disabled=!h().canRedo;
   const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('#paper-selected-count').textContent=selected.size;
    $('#paper-table-selection').hidden=!singleTable;
+   if(singleTable){const palette=tableStyle(singleTable);root.querySelectorAll('[data-table-style]').forEach(input=>{if(document.activeElement!==input)input.value=palette[input.dataset.tableStyle];});}
+   const globalPicker=$('#paper-global-text-color');
+   if(document.activeElement!==globalPicker)globalPicker.value=editing?.object?.color||visible.find(o=>selected.has(o.id)&&o.type==='text')?.color||singleTable?.textColor||defaultTextColor;
    const shapePanel=$('#paper-shape-selection');shapePanel.hidden=!singleShape;
    if(singleShape){$('#paper-selected-shape').value=singleShape.kind;$('#paper-selected-line-style').value=singleShape.dash||singleShape.lineStyle||'solid';}
   const linkButton=$('[data-paper="image-link"]'),openLink=$('#paper-open-link');
@@ -132,7 +135,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const alignHost=editing?ribbon:tools;
   if(alignGroup.parentElement!==alignHost)alignHost.prepend(alignGroup);
   alignGroup.hidden=!editing&&!texts.length;
-  for(const button of alignGroup.children)button.setAttribute('aria-pressed',String(editing?(editing.align||'left')===button.dataset.textAlign:texts.length>0&&texts.every(t=>(t.align||'left')===button.dataset.textAlign)));
+  if(!editing)for(const button of alignGroup.children)button.setAttribute('aria-pressed',String(texts.length>0&&texts.every(t=>(t.align||'left')===button.dataset.textAlign)));
+  else textRibbonState();
   $('#paper-font-size').value=Math.round(texts[0]?.size||fontSize);
   $('#paper-default-text-size').value=fontSize;
   loadImages();
@@ -260,6 +264,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    if(tag==='s'||tag==='strike'||(css.textDecorationLine||'').includes('line-through'))s.strike=true;
    if(css.fontSize){const size=textSize(parseInt(css.fontSize,10),null);if(size)s.size=size;}
    if(css.color){const ink=textColor(css.color);if(ink)s.color=ink;}
+   if(css.display==='block'&&['left','center','right'].includes(css.textAlign))s.align=css.textAlign;
    const block=tag==='div'||tag==='p';
    if(block&&text&&!text.endsWith('\n'))append('\n',style);
    for(const child of node.childNodes)walk(child,s);
@@ -268,7 +273,10 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   return {text,marks:normalizeMarks(parts,text.length)};
  }
  function textRibbonState(){
-  for(const b of ribbon.querySelectorAll('[data-text-align]'))b.setAttribute('aria-pressed',String(b.dataset.textAlign===(editing?.align||'left')));
+  const alignSelection=editing?(editing.rich?(richOffsets()||richSelection):{start:textarea.selectionStart,end:textarea.selectionEnd}):null;
+  const alignMarks=editing?(editing.rich?readRich().marks:editing.marks||[]):[];
+  const selectedAlign=alignSelection?.end>alignSelection?.start?alignMarks.find(m=>m.start<=alignSelection.start&&m.end>=alignSelection.end)?.align:null;
+  for(const b of ribbon.querySelectorAll('[data-text-align]'))b.setAttribute('aria-pressed',String(b.dataset.textAlign===(selectedAlign||editing?.align||'left')));
   const range=editing?(editing.rich?(richOffsets()||richSelection):{start:textarea.selectionStart,end:textarea.selectionEnd}):null;
   const marks=editing?(editing.rich?readRich().marks:editing.marks||[]):[];
   const active=range?marks.find(m=>m.start<=range.start&&m.end>=Math.max(range.start+1,range.end)):null;
@@ -284,7 +292,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   $('#paper-word-size').value=active?.size||editing?.object?.size||fontSize;
   ribbon.querySelector('[data-paper="word-link"]').disabled=!editing;
   ribbon.querySelector('[data-paper="finish-text"]').hidden=!editing;
-  ribbon.querySelector('.paper-ribbon-help').textContent=editing?'ลากเลือกเฉพาะคำ แล้วกด B, I, U, สี หรือ ลิงก์':'คลิกบนกระดาษเพื่อพิมพ์ · ลากเลือกคำเพื่อจัดรูปแบบ';
+  ribbon.querySelector('.paper-ribbon-help').textContent=editing?'เลือกคำเพื่อจัดกึ่งกลาง เปลี่ยนสี/ขนาด หรือกด B I U':'แตะข้อความเพื่อแก้ · ใช้ ✍ เขียน→ตัวพิมพ์ สำหรับ Apple Pencil';
  }
  function showTextRibbon(){
   ribbon.hidden=!editing;
@@ -314,6 +322,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const marks=editing.rich?readRich().marks:editing.marks||[];
   const active=marks.find(m=>m.start<=selection.start&&m.end>=selection.end);
   const ink=textColor(active?.color||editing.object.color,'#172033');
+  for(const b of wordMenu.querySelectorAll('[data-word-menu-align]'))b.setAttribute('aria-pressed',String(b.dataset.wordMenuAlign===(active?.align||editing.align||'left')));
   for(const b of wordMenu.querySelectorAll('[data-word-menu-format]'))
    b.setAttribute('aria-pressed',String(!!active?.[b.dataset.wordMenuFormat]));
   for(const b of wordMenu.querySelectorAll('[data-word-menu-color]'))
@@ -322,11 +331,14 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   $('#paper-word-menu-size').value=String(active?.size||editing.object.size);
   wordMenu.hidden=false;
   const el=editing.rich?rich:textarea,rect=el.getBoundingClientRect();
-  const box=wordMenu.getBoundingClientRect();
+  const box=wordMenu.getBoundingClientRect(),visual=window.visualViewport;
+  const visualLeft=visual?.offsetLeft||0,visualTop=visual?.offsetTop||0;
+  const visualRight=visualLeft+(visual?.width||window.innerWidth),visualBottom=visualTop+(visual?.height||window.innerHeight);
   const x=event?.clientX>0?event.clientX:rect.left+Math.min(70,rect.width/2);
   const y=event?.clientY>0?event.clientY:rect.top+Math.min(36,rect.height/2);
-  wordMenu.style.left=Math.max(8,Math.min(x,window.innerWidth-box.width-8))+'px';
-  wordMenu.style.top=Math.max(8,Math.min(y+12,window.innerHeight-box.height-8))+'px';
+  const below=y+12,above=y-box.height-12;
+  wordMenu.style.left=Math.max(visualLeft+8,Math.min(x,visualRight-box.width-8))+'px';
+  wordMenu.style.top=Math.max(visualTop+8,Math.min(below+box.height<=visualBottom-8?below:above,visualBottom-box.height-8))+'px';
   return true;
  }
  function fitRichBox(){
@@ -335,12 +347,13 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.fontSize=o.size+'px';textMeasure.style.fontWeight=o.bold?'700':'400';
   textMeasure.style.width='max-content';textMeasure.style.maxWidth='none';textMeasure.style.whiteSpace='pre';
   textMeasure.innerHTML=formattedTextHTML({text,marks},esc,false,false);
-  const width=Math.min(available,Math.max(editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+7));
+  const hasInlineAlign=marks.some(m=>m.align);
+  const width=Math.min(available,Math.max(editing.align||hasInlineAlign?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+7));
   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
   editing.paperWidth=width;
   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
-  rich.style.width=Math.min(available,(editing.align?width:Math.max(250,width)))+'px';
+  rich.style.width=Math.min(available,(editing.align||hasInlineAlign?width:Math.max(250,width)))+'px';
   rich.style.minHeight=Math.max(o.size*1.5,editing.paperHeight)+'px';
  }
  function activateRich(){
@@ -378,8 +391,10 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const before=readRich(),current=richOffsets();
   const range=current?.end>current?.start?current:richSelection||selectedBefore;
   if(!range||range.start===range.end)return;
+  if(kind==='align'&&!editing.alignWidth)editing.alignWidth=Math.min(PAGE_W-editing.object.x,Math.max(editing.object.w,420));
   const marks=kind==='size'?applyTextFormat(before.marks,before.text,range.start,range.end,'size',textSize(value,editing.object.size)):
    kind==='color'?applyTextFormat(before.marks,before.text,range.start,range.end,'color',textColor(value,editing.object.color)):
+   kind==='align'?applyTextFormat(before.marks,before.text,range.start,range.end,'align',value):
    toggleTextFormat(before.marks,before.text,range.start,range.end,kind);
   rich.innerHTML=formattedTextHTML({text:before.text,marks},esc,false,false);
   rich.focus();selectRichOffsets(range.start,range.end);editing.marks=marks;
@@ -519,8 +534,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  // the same menu. On iPad a long-press selection can be completed by touchend.
  for(const editor of [textarea,rich]){
   bind(editor,'contextmenu',e=>{if(showWordMenu(e))e.preventDefault();});
-  bind(editor,'mouseup',e=>{if(e.button===0)showWordMenu(e);});
-  bind(editor,'touchend',()=>{showWordMenu(null);});
+  bind(editor,'mouseup',e=>{if(e.button===0&&!e.sourceCapabilities?.firesTouchEvents)showWordMenu(e);});
+  bind(editor,'touchend',()=>{rememberWord();});
  }
  bind(wordMenu,'pointerdown',e=>{if(e.target.closest('button'))e.preventDefault();});
  bind(wordMenu,'click',async e=>{
@@ -532,6 +547,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(!range||!restoreMenuSelection()){closeWordMenu();return;}
   try{
    if(button.dataset.wordMenuFormat){applyWordFormat(button.dataset.wordMenuFormat);return;}
+   if(button.dataset.wordMenuAlign){applyWordFormat('align',button.dataset.wordMenuAlign);return;}
    if(button.dataset.wordMenuColor){applyWordFormat('color',button.dataset.wordMenuColor);return;}
    if(button.hasAttribute('data-word-menu-copy')){
     const value=editing.rich?readRich().text:textarea.value;
@@ -669,7 +685,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    const table=[...page().objects].reverse().find(o=>o.type==='table'&&contains(p,o));
    if(table){selected=new Set([table.id]);tableUI.open(table);draw();return;}
    const target=findTextToContinue(p);
-   startText(target||{id:uid(),type:'text',x:Math.min(p.x,PAGE_W-32),y:Math.min(p.y,PAGE_H-Math.ceil(fontSize*1.5)),w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color,bold});
+   startText(target||{id:uid(),type:'text',x:Math.min(p.x,PAGE_W-32),y:Math.min(p.y,PAGE_H-Math.ceil(fontSize*1.5)),w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold});
    if(target)say('กำลังเขียนต่อในกล่องเดิม · เขียนจากเคอร์เซอร์ได้เลย');
    return;
   }
@@ -844,6 +860,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     change(p=>{for(const o of p.objects)if(selected.has(o.id)&&o.type==='text')o.align=b.dataset.textAlign;});return;
    }
    if(b.dataset.textAlign&&editing){
+    if(currentWordSelection()){applyWordFormat('align',b.dataset.textAlign);return;}
     if(!editing.align)editing.alignWidth=parseFloat((editing.rich?rich:textarea).style.width);
     editing.align=b.dataset.textAlign;
     textarea.style.textAlign=rich.style.textAlign=editing.align;
@@ -882,6 +899,15 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     }
    const action=b.dataset.paper;if(!action)return;
    if(action==='finish-text'){finishText();return;}
+   if(action==='scribble-text'){
+    setTool('text');
+    const existing=page().objects.find(o=>selected.has(o.id)&&o.type==='text');
+    const x=Math.max(28,Math.min(PAGE_W-440,viewport.scrollLeft/scale+75));
+    const y=Math.max(35,Math.min(PAGE_H-70,viewport.scrollTop/scale+110));
+    startText(existing||{id:uid(),type:'text',x,y,w:440,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold:false});
+    say('เขียนในกรอบด้วย Apple Pencil · หาก iPadOS รองรับภาษาและเปิด Scribble จะเปลี่ยนเป็นตัวพิมพ์');
+    return;
+   }
    if(action==='ruler'){ruler.active=!ruler.active;draw();closeExtraTools();return;}
    if(['ruler-minus','ruler-plus','ruler-zero'].includes(action)){
     ruler.angle=action==='ruler-zero'?0:Math.round((ruler.angle+(action==='ruler-plus'?15:-15)+360)%360);ruler.active=true;draw();return;
@@ -990,6 +1016,17 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text'){o.size=size;o.h=Math.max(o.h,Math.ceil(size*1.5));}}));
  });
  bind($('#paper-word-custom-color'),'input',e=>applyWordFormat('color',e.target.value));
+ bind($('#paper-global-text-color'),'input',e=>{
+  const ink=textColor(e.target.value);if(!ink)return;
+  if(editing){if(currentWordSelection())applyWordFormat('color',ink);else {editing.object.color=ink;textarea.style.color=rich.style.color=ink;finishText(true);}}
+  else if(selected.size)change(p=>p.objects.forEach(o=>{if(selected.has(o.id)){if(o.type==='text')o.color=ink;else if(o.type==='table')o.textColor=ink;}}));
+  else{defaultTextColor=ink;say('ตั้งสีตัวอักษรสำหรับกล่องข้อความใหม่แล้ว');}
+ });
+ for(const input of root.querySelectorAll('[data-table-style]'))bind(input,'input',e=>{
+  const ink=textColor(e.target.value),key=e.target.dataset.tableStyle;
+  if(!ink||!['headerBg','bodyBg','borderColor','textColor','headerTextColor'].includes(key))return;
+  change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='table')o[key]=ink;}));
+ });
  bind($('#paper-word-size'),'change',e=>{
   const size=textSize(e.target.value,editing?.object?.size||fontSize);e.target.value=String(size);
   applyWordFormat('size',size);

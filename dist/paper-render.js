@@ -1,7 +1,7 @@
-import {PAGE_W,PAGE_H} from './paper-core.js?v=20261120-table';
-import {formattedTextHTML} from './paper-rich-text.js?v=word-format-20261120';
+import {PAGE_W,PAGE_H} from './paper-core.js?v=20261121-paper-format';
+import {formattedTextHTML} from './paper-rich-text.js?v=20261121-paper-format';
 import {shapeSVG} from './paper-shapes.js?v=notebook-shape-tools-20261120';
-import {tableSVG} from './paper-table.js?v=20261120-table';
+import {tableSVG} from './paper-table.js?v=20261121-paper-format';
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const round=n=>Math.round(n*100)/100;
 export function objectSVG(o,images=new Map(),interactive=true){
