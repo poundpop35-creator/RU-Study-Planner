@@ -133,3 +133,13 @@ test('ticking replay on a card survives notebook validation, independently of ed
  assert.match(noteCards(synced.notes),/ติวย้อนหลังแล้ว · 21 พ.ย. 2569 01:15/);
  await tick();assert.equal(book.notes[0].replayStudiedAt,undefined);assert.doesNotMatch(noteCards(book.notes),/aria-pressed="true"/);
 });
+
+test('course picker follows registration overrides and builds session titles from the catalog',async()=>{
+ const {sessionDetails,noteCourseChoices}=await import('../dist/notebook-view.js');
+ const state=freshState();state.enrollment={POL1101:false,POL3314:true};
+ assert.ok(noteCourseChoices(state,true).some(c=>c.id==='POL3314'));
+ assert.ok(noteCourseChoices(state,false).some(c=>c.id==='POL1101'));
+ assert.equal(sessionDetails('POL1101',2).title,'POL1101 การเมืองการปกครองไทย · ครั้งที่ 2');
+ assert.equal(sessionDetails('POL1101',0),null);
+ assert.equal(validateNotebook({version:1,notes:[newNote(sessionDetails('POL1101',2))]}).notes[0].session,2);
+});
