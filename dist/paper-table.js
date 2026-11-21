@@ -63,7 +63,7 @@ export function tableSVG(o,escapeText){
  const body=o.cells.map((cells,r)=>{
   const tag=r===0?'th':'td';
   return '<tr style="height:'+tracks(o,'rows',rows)[r]*100+'%">'+cells.map((cell,c)=>
-   '<'+tag+' scope="'+(r===0?'col':'row')+'" data-table-row="'+r+'" data-table-col="'+c+'" style="border:1px solid #a7b9d0;position:relative;padding:0;text-align:left;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;'+(r===0?'background:#eaf2ff;font-weight:700;':'background:#fff;')+'"><div style="position:absolute;inset:0;padding:7px 9px;overflow:hidden">'+escapeText(cell)+'</div></'+tag+'>'
+   '<'+tag+' scope="'+(r===0?'col':'row')+'" data-table-row="'+r+'" data-table-col="'+c+'" style="border:1px solid #a7b9d0;position:relative;padding:0;text-align:left;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;'+(r===0?'background:#eaf2ff;color:#1d3c67;font-weight:700;':'background:#fff;')+'"><div style="position:absolute;inset:0;padding:7px 9px;overflow:hidden">'+escapeText(cell)+'</div></'+tag+'>'
   ).join('')+'</tr>';
  }).join('');
  return '<foreignObject data-object="'+escapeText(o.id)+'" x="'+o.x+'" y="'+o.y+'" width="'+o.w+'" height="'+o.h+'">'+

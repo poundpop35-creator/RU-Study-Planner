@@ -58,6 +58,10 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('table');
    const grid=page.locator('.paper-inline-table');
    await grid.waitFor({state:'visible'});
+   const headerColors=el=>[getComputedStyle(el).color,getComputedStyle(el).backgroundColor];
+   const expectedHeader=['rgb(29, 60, 103)','rgb(234, 242, 255)'];
+   assert.deepEqual(await grid.locator('textarea[data-r="0"]').first().evaluate(headerColors),expectedHeader);
+
    await click('table-add-row');
    await grid.getByLabel('แถว 1 คอลัมน์ 1',{exact:true}).fill('นักปรัชญา');
    await grid.getByLabel('แถว 2 คอลัมน์ 1',{exact:true}).fill('เพลโต');
@@ -82,6 +86,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(savedTable().cells[2][1],'ความยุติธรรม');
    await page.reload();await page.locator('#paper-svg').waitFor();
    assert.equal(await page.locator('#paper-svg table').count(),1,'table persists after reload');
+   assert.deepEqual(await page.locator('#paper-svg th').first().evaluate(headerColors),expectedHeader);
    assert.ok((await page.locator('#paper-svg table').innerText()).includes('ความยุติธรรม'));
    await page.screenshot({path:'test-results/notebook-tables-'+name+'.png'});
    
