@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeShape,shapeSVG,shapes,lineStyles,snapLinePoint,snapMovedLine} from '../dist/paper-shapes.js';
 import {recognizeHeldShape,recognizeDrawnShape,rulerProject,rulerSnap,rulerSVG} from '../dist/paper-geometry.js';
-import {emptyPage,validatePaper,pageHistory,copy} from '../dist/paper-core.js';
+import {emptyPage,validatePaper,pageHistory,copy,mergePaper} from '../dist/paper-core.js';
 
 test('extra shapes render editable SVG and retain the selected line style after validation',()=>{
  assert.equal(Object.keys(shapes).length,16);
@@ -125,4 +125,13 @@ test('filled arrows keep their direction, paint and position behind text across 
  assert.match(shapeSVG({...arrow,fill:'none'}),/fill="none"/);assert.ok(arrow.h>1&&arrow.reverseX);
  assert.throws(()=>validatePaper({version:1,pages:[{...before,objects:[{...arrow,fill:'invalid'}]}]}));
  const history=pageHistory();history.record(before,after);assert.deepEqual(history.step(after),before);
+});
+
+test('cloud edit of an existing object survives a concurrent local layer change; divergent orders conflict',()=>{
+ const objects=['a','b','c'].map(id=>makeShape(id,'rect',{x:1,y:1},{x:40,y:30},'#112233',2));
+ const doc=objects=>({version:1,pages:[{id:'page',template:'plain',objects}]});
+ const [a,b,c]=objects,local=doc([c,a,b]),remote=doc([a,{...b,fill:'#123456'},c]);
+ const out=mergePaper(doc(objects),local,remote).pages[0].objects;
+ assert.deepEqual(out.map(o=>o.id),['c','a','b']);assert.equal(out[2].fill,'#123456');
+ assert.throws(()=>mergePaper(doc(objects),local,doc([b,c,a])),/ลำดับชั้น/);
 });
