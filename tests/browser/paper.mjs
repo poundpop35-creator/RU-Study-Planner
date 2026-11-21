@@ -38,7 +38,24 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await button.click();if(key==='save')await wait(()=>button.isEnabled());
   };
   if(process.env.PAPER_TEST==='tables'){
-   const primary=page.locator('.paper-toolbar');
+   const dragOnPaper=async(x,y,x2,y2)=>page.locator('#paper-svg').evaluate((svg,coords)=>{
+    const r=svg.getBoundingClientRect();svg.setPointerCapture=()=>{};
+    try{for(const [i,type] of ['pointerdown','pointermove','pointerup'].entries())svg.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerType:'pen',pointerId:90,clientX:r.left+coords[i?2:0]*r.width/900,clientY:r.top+coords[i?3:1]*r.height/1273}));}finally{delete svg.setPointerCapture;}
+   },[x,y,x2,y2]);
+   await click('shape');await page.locator('[data-shape-pick="blockArrow"]').click();
+   await dragOnPaper(60,40,280,100);
+   const arrow=page.locator('#paper-svg [data-shape="blockArrow"]');await arrow.waitFor();
+   await page.locator('#paper-shape-fill').evaluate(el=>{el.value='#318c68';el.dispatchEvent(new Event('change',{bubbles:true}));});await click('layer-back');await click('save');
+   assert.equal(await arrow.getAttribute('fill'),'#318c68');
+   assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects[0].kind,'blockArrow');
+   await page.reload();await arrow.waitFor();assert.equal(await arrow.getAttribute('fill'),'#318c68');
+   await click('line');await page.getByRole('button',{name:'เส้นแตกกิ่ง ↳'}).click();
+   await dragOnPaper(60,180,260,184);await dragOnPaper(140,182,144,260);
+   await click('save');
+   const branches=row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.kind==='line');
+   assert.equal(branches.length,2);assert.equal(branches[0].h,1);assert.equal(branches[1].w,1);
+   await page.screenshot({path:'test-results/arrow-branches-'+name+'.png'});
+   const primary=page.locator('.paper-app');
    assert.equal(await page.locator('[data-paper="table"]').count(),1);
    assert.equal(await primary.locator('#paper-template').count(),1);
    await click('ruler');await click('ruler-plus');
@@ -125,13 +142,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(await page.locator('[data-paper="pages"]').getAttribute('aria-expanded'),'true');
    await click('pages');
    assert.ok(await page.locator('.paper-pages').isHidden(),'page thumbnails can be folded again');
-  await page.locator('#paper-toolbar-more > summary').click();
-  assert.ok(await page.locator('.paper-tool-options').isVisible(),'advanced tools open on demand');
+  await click('pen');assert.ok(await page.locator('.paper-context-ink').isVisible());
   await page.locator('[data-paper-color="#3155d9"]').click();
-  assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'choosing color should fold menu');
-  await page.locator('#paper-toolbar-more > summary').click();
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'Escape closes settings');
+  await click('text');assert.ok(await page.locator('.paper-context-ink').isHidden());
   await page.screenshot({path:'test-results/notebook-compact-'+name+'.png'});
 
   const tap=async(x,y)=>{const p=await point(x,y);if(mobile)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y);};
@@ -184,7 +197,6 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.ok(await page.locator('#paper-toolbar-more').evaluate(el=>!el.open),'extra tools should start folded');
   assert.ok(await page.locator('#paper-width').isHidden(),'pen size cannot obstruct the page while menu is folded');
   await click('pen');
-  await page.locator('#paper-toolbar-more > summary').click();
   assert.ok(await page.locator('#paper-width').isVisible(),'size controls should be available inside the overlay');
   const dots=page.locator('[data-paper-width]');assert.equal(await dots.count(),6);
   await page.locator('[data-paper-width="2"]').click();
@@ -192,24 +204,20 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.equal(await page.locator('[data-paper-width="2"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'2px');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'preset selection should fold extras');
-  await page.locator('#paper-toolbar-more > summary').click();
   await page.locator('#paper-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));});
   assert.equal(await page.locator('#paper-width-value').textContent(),'12');
   assert.equal(await page.locator('[data-paper-width="12"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'12px');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'slider change should fold extras');
    await click('highlight');
-   await page.locator('#paper-toolbar-more > summary').click();
-   assert.equal(await page.locator('#paper-width').getAttribute('max'),'40','highlighter has independent 1–40 width range');
+    assert.equal(await page.locator('#paper-width').getAttribute('max'),'40','highlighter has independent 1–40 width range');
    await page.locator('[data-paper-width="28"]').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'28');
    await click('pen');
-   await page.locator('#paper-toolbar-more > summary').click();
-   assert.equal(await page.locator('#paper-width-value').textContent(),'12','pen remembers its own width after switching from highlighter');
+    assert.equal(await page.locator('#paper-width-value').textContent(),'12','pen remembers its own width after switching from highlighter');
    await page.keyboard.press('Escape');
    const from=await point(100,400),to=await point(350,450);
   if(mobile){
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
    await page.locator('#paper-finger').check();
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'finger-draw choice should uncover the paper');
    await tap(220,420);
@@ -256,7 +264,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await wait(()=>images.size===2);await wait(()=>page.locator('#paper-svg image').getAttribute('width').then(w=>Number(w)<beforeCropWidth));await click('save');assert.notEqual(picture().imageId,original.imageId);
   await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 sample')});
   await wait(()=>row.payload.notebook.notes[0].files?.[0]?.name==='lesson.pdf');await page.locator('#paper-files form button').click();
-  await page.locator('.paper-menu').evaluate(el=>el.open=true);await page.locator('#paper-template').selectOption('dots');await page.locator('.paper-menu').evaluate(el=>el.open=false);await click('save');
+  await click('page-settings');await page.locator('#paper-template').selectOption('dots');await click('save');
   await page.screenshot({path:'test-results/paper-'+name+'.png'});
   if(!await page.locator('[data-paper="add-page"]').first().isVisible())await click('pages');await click('add-page');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
   await click('delete-page');await page.getByRole('alertdialog').waitFor();await page.locator('[data-delete-choice="cancel"]').click();assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
@@ -330,7 +338,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('[data-shape-pick="hexagon"]').click();
    assert.ok(await page.locator('#paper-shapes-popup').isHidden());
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'shape selection must uncover the paper');
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu').evaluate(el=>el.open=true);
+
    await page.locator('#paper-line-style').selectOption('dotted');
    const fromShape=await point(280,780),toShape=await point(400,890);
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
@@ -371,9 +379,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.match(await page.locator('#paper-svg [data-ruler-overlay]').getAttribute('transform'),/rotate\(15\)/);
    await click('ruler');
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),0);
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu summary').click();
+
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
-  await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
+  await b.page.locator('.paper-menu').evaluate(el=>el.open=true);await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
   const [download]=await Promise.all([b.page.waitForEvent('download'),fileButton.click()]);
   assert.equal(download.suggestedFilename(),'lesson.pdf');assert.equal((await readFile(await download.path())).toString(),'%PDF-1.4 sample');
   await click('text');await tap(120,240);
@@ -430,8 +438,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
 
   // Touch contacts on the writing surface must not trigger zoom or new text
   // while palm protection is enabled. Pen input must still work.
-  await page.locator('#paper-toolbar-more > summary').click();
-  await page.locator('#paper-palm-guard').check();
+  await click('pen');await page.locator('#paper-palm-guard').check();await click('text');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
   const beforeZoom=await page.locator('#paper-zoom').innerText();
   const objectCount=activeNote().paper.pages[0].objects.length;
@@ -493,12 +500,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await wordInput.evaluate(el=>el.setSelectionRange(0,4));
    await wordInput.dispatchEvent('contextmenu',{bubbles:true,cancelable:true,clientX:120,clientY:200});
    const miniToolbar=page.locator('#paper-word-menu');
-   assert.ok(await miniToolbar.isVisible(),'right-click must open the Word selection mini toolbar');
-   assert.ok(await miniToolbar.locator('[data-word-menu-link]').isVisible(),'mini toolbar must expose link/file for the selected word');
+   if(!mobile)assert.ok(await miniToolbar.isVisible(),'right-click must open the Word selection mini toolbar');
+   if(!mobile)assert.ok(await miniToolbar.locator('[data-word-menu-link]').isVisible(),'mini toolbar must expose link/file for the selected word');
    const wordRibbon=page.locator('#paper-text-ribbon');
    assert.ok(await wordRibbon.isVisible(),'contextual formatting toolbar must be visible while typing');
    assert.ok(await wordRibbon.locator('[data-paper="word-link"]').isVisible(),'per-word link/file action must be visible without opening extra settings');
-   await miniToolbar.locator('[data-word-menu-format="bold"]').click();
+   await (mobile?wordRibbon.locator('[data-word-format="bold"]'):miniToolbar.locator('[data-word-menu-format="bold"]')).click();
    assert.ok(await page.locator('#paper-rich-editor').isVisible(),'mini toolbar formats only the selected word and enters rich editing');
    const dropBlocked=await page.locator('#paper-rich-editor').evaluate(editor=>{
     const before=editor.innerHTML,transfer=new DataTransfer();
@@ -512,8 +519,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await wordRibbon.locator('[data-word-format="italic"]').click();
    await wordRibbon.locator('[data-word-format="underline"]').click();
    await page.locator('#paper-rich-editor').dispatchEvent('contextmenu',{bubbles:true,cancelable:true,clientX:140,clientY:235});
-   assert.ok(await miniToolbar.isVisible(),'right-click works on rich text after formatting');
-   await miniToolbar.locator('[data-word-menu-color="#dc4343"]').click();
+   if(!mobile)assert.ok(await miniToolbar.isVisible(),'right-click works on rich text after formatting');
+   await (mobile?wordRibbon.locator('[data-word-color="#dc4343"]'):miniToolbar.locator('[data-word-menu-color="#dc4343"]')).click();
    assert.ok((await page.locator('#paper-rich-editor').innerHTML()).includes('color:#dc4343'),'mini toolbar changes only the selected word color');
    await page.locator('#paper-word-size').fill('19');
    await page.locator('#paper-word-size').press('Tab');

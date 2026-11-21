@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeShape,shapeSVG,shapes,lineStyles,snapLinePoint,snapMovedLine} from '../dist/paper-shapes.js';
 import {recognizeHeldShape,recognizeDrawnShape,rulerProject,rulerSnap,rulerSVG} from '../dist/paper-geometry.js';
-import {emptyPage,validatePaper,pageHistory,copy} from '../dist/paper-core.js';
+import {emptyPage,validatePaper,pageHistory,copy,mergePaper} from '../dist/paper-core.js';
 
 test('extra shapes render editable SVG and retain the selected line style after validation',()=>{
- assert.equal(Object.keys(shapes).length,15);
+ assert.equal(Object.keys(shapes).length,16);
  assert.deepEqual(Object.keys(lineStyles),['solid','dashed','dotted']);
  for(const kind of Object.keys(shapes)){
   const s=makeShape('test-shape',kind,{x:90,y:80},{x:210,y:170},'#172033',3,'dashed');
@@ -105,4 +105,33 @@ test('realistic Pencil circles and ellipses, but not an open arc',()=>{
  assert.equal(recognizeDrawnShape(loop(51,Math.PI*2,85,85,9))?.kind,'circle');
  assert.equal(recognizeDrawnShape(loop(30,Math.PI*1.04,85,85)),null);
  assert.equal(recognizeDrawnShape([[10,12],[75,13],[150,12]])?.kind,'line');
+});
+
+test('axis lines meet exactly on a rail and render with no one-pixel tilt',()=>{
+ const rail=makeShape('r','line',{x:20,y:50},{x:240,y:50},'#172033',2);
+ const start=snapLinePoint({x:90,y:54},[rail],8);
+ assert.deepEqual(start,{x:90,y:50});
+ const limb=makeShape('l','line',start,{x:start.x,y:180},'#172033',2);
+ assert.match(shapeSVG(rail),/M20 50 L240 50/);
+ assert.match(shapeSVG(limb),/M90 50 L90 180/);
+});
+test('filled arrows keep their direction, paint and position behind text across serialization and undo',()=>{
+ const before=emptyPage(),arrow=makeShape('arrow','blockArrow',{x:180,y:80},{x:20,y:80},'#247a58',2);
+ const text={id:'title',type:'text',x:30,y:60,w:80,h:40,size:16,text:'ใจความ',color:'#172033',bold:false};
+ before.objects=[text,arrow];
+ const after=copy(before);after.objects.reverse();after.objects[0].fill='#ffee88';
+ const checked=validatePaper(JSON.parse(JSON.stringify({version:1,pages:[after]}))).pages[0];
+ assert.deepEqual(checked,after);assert.match(shapeSVG(checked.objects[0]),/fill="#ffee88"/);
+ assert.match(shapeSVG({...arrow,fill:'none'}),/fill="none"/);assert.ok(arrow.h>1&&arrow.reverseX);
+ assert.throws(()=>validatePaper({version:1,pages:[{...before,objects:[{...arrow,fill:'invalid'}]}]}));
+ const history=pageHistory();history.record(before,after);assert.deepEqual(history.step(after),before);
+});
+
+test('cloud edit of an existing object survives a concurrent local layer change; divergent orders conflict',()=>{
+ const objects=['a','b','c'].map(id=>makeShape(id,'rect',{x:1,y:1},{x:40,y:30},'#112233',2));
+ const doc=objects=>({version:1,pages:[{id:'page',template:'plain',objects}]});
+ const [a,b,c]=objects,local=doc([c,a,b]),remote=doc([a,{...b,fill:'#123456'},c]);
+ const out=mergePaper(doc(objects),local,remote).pages[0].objects;
+ assert.deepEqual(out.map(o=>o.id),['c','a','b']);assert.equal(out[2].fill,'#123456');
+ assert.throws(()=>mergePaper(doc(objects),local,doc([b,c,a])),/ลำดับชั้น/);
 });
