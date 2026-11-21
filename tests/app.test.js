@@ -112,7 +112,7 @@ test('plan date controls save completion under the selected date and university 
  navigate('#home');listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});
  assert.ok(html().includes('value="2026-11-05"'));click('block',{id:'explain'});assert.ok(saved().planDone['2026-11-05'].includes('explain'));
  navigate('#documents/curriculum');assert.ok(html().includes('iframe'));assert.ok(html().includes('https://www.ru.ac.th/th/Center_study_plan/21/09_69.pdf'));
- navigate('#exams');assert.equal((html().match(/class="exam-item /g)||[]).length,7);assert.equal((html().match(/รอแนวข้อสอบ/g)||[]).length,6);assert.ok(html().includes('./pol2106-lab.html'));
+ navigate('#exams');assert.equal((html().match(/class="exam-item /g)||[]).length,7);assert.equal((html().match(/รอแนวข้อสอบ/g)||[]).length,6);assert.ok(html().includes('#practice/POL2106'));
 });
 
 test('game layer: level chip, awards page and celebrations',()=>{
