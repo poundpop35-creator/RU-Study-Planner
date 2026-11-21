@@ -563,13 +563,13 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.overflowWrap='normal';textMeasure.style.lineHeight='1.5';
   textMeasure.textContent=textarea.value;
   const availableWidth=Math.max(1,PAGE_W-o.x);
-  const width=Math.min(availableWidth,Math.max(editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+5));
+  const width=Math.min(availableWidth,scribbleMode?Math.max(32,o.w):Math.max(editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+5));
   editing.paperWidth=width;
-  if(editing.mobile){
+  if(editing.mobile||scribbleMode){
    // Store the natural on-paper height, not the temporary interactive target.
    textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
    textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
-   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
+   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight));
   }
   // Leave a wider editable target for Apple Pencil Scribble *without* storing
   // that extra whitespace as the object's final bounds.
@@ -640,6 +640,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  let textTimer;
  function finishText(keepOpen=false){
+  const wasScribble=scribbleMode;
   if(!keepOpen){closeWordMenu();closeScribble();}
   clearTimeout(textTimer);
   if(!editing)return;
@@ -647,7 +648,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(edit.rich)fitRichBox();
   const content=edit.rich?readRich():{text:textarea.value,marks:edit.marks||[]};
   const w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
-  const o={...edit.object,text:content.text,w:edit.paperWidth??w,h:edit.rich||edit.mobile?edit.paperHeight:h};
+  const o={...edit.object,text:content.text,w:edit.paperWidth??w,h:edit.rich||edit.mobile||wasScribble?edit.paperHeight:h};
   if(edit.align)o.align=edit.align;
   if(edit.links.length)o.links=edit.links;else delete o.links;
   if(content.marks.length)o.marks=content.marks;else delete o.marks;
