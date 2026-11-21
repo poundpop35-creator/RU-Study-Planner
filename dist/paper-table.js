@@ -43,20 +43,30 @@ export function makeTable(id,rows=3,cols=3,x=90,y=110){
 
 export function tableWithCells(table,cells){
  const checked=validateTableCells(cells);
- const h=tableHeight(checked,table.w);
+ const h=table.h*checked.length/table.cells.length;
  if(h>1200)throw Error('ตารางยาวเกินหนึ่งหน้ากระดาษ กรุณาแบ่งเป็นหลายตาราง');
- return {...table,cells:checked,h,y:Math.max(12,Math.min(table.y,1273-h-24))};
+ const next={...table};
+ for(const [key,n] of [['rows',checked.length],['columns',checked[0].length]]){
+  if(next[key]){const sizes=tracks(next,key,next[key].length);next[key]=Array.from({length:n},(_,i)=>sizes[i]??1/sizes.length);}
+ }
+ return {...next,cells:checked,h,y:Math.max(12,Math.min(table.y,1273-h-24))};
+}
+
+export function tracks(o,key,count){
+ const values=o[key]||Array(count).fill(1);
+ const total=values.reduce((sum,value)=>sum+value,0);
+ return values.map(value=>value/total);
 }
 
 export function tableSVG(o,escapeText){
  const columns=o.cells[0].length,rows=o.cells.length;
  const body=o.cells.map((cells,r)=>{
   const tag=r===0?'th':'td';
-  return '<tr>'+cells.map((cell,c)=>
-   '<'+tag+' scope="'+(r===0?'col':'row')+'" data-table-row="'+r+'" data-table-col="'+c+'" style="border:1px solid #a7b9d0;padding:7px 9px;text-align:left;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;'+(r===0?'background:#eaf2ff;font-weight:700;':'background:#fff;')+'">'+escapeText(cell)+'</'+tag+'>'
+  return '<tr style="height:'+tracks(o,'rows',rows)[r]*100+'%">'+cells.map((cell,c)=>
+   '<'+tag+' scope="'+(r===0?'col':'row')+'" data-table-row="'+r+'" data-table-col="'+c+'" style="border:1px solid #a7b9d0;position:relative;padding:0;text-align:left;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;'+(r===0?'background:#eaf2ff;font-weight:700;':'background:#fff;')+'"><div style="position:absolute;inset:0;padding:7px 9px;overflow:hidden">'+escapeText(cell)+'</div></'+tag+'>'
   ).join('')+'</tr>';
  }).join('');
  return '<foreignObject data-object="'+escapeText(o.id)+'" x="'+o.x+'" y="'+o.y+'" width="'+o.w+'" height="'+o.h+'">'+
   '<div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;overflow:hidden;color:#172033;font:16px/1.44 Noto Sans Thai,sans-serif;">'+
-  '<table aria-label="ตาราง '+rows+' แถว '+columns+' คอลัมน์" style="border-collapse:collapse;table-layout:fixed;width:100%;height:100%;font:inherit;">'+body+'</table></div></foreignObject>';
+  '<table aria-label="ตาราง '+rows+' แถว '+columns+' คอลัมน์" style="border-collapse:collapse;table-layout:fixed;width:100%;height:100%;font:inherit;">'+'<colgroup>'+tracks(o,'columns',columns).map(w=>'<col style="width:'+w*100+'%">').join('')+'</colgroup>'+body+'</table></div></foreignObject>';
 }

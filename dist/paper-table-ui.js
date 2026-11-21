@@ -1,93 +1,100 @@
-import {makeTable,tableWithCells,tableGrid,TABLE_MAX_ROWS,TABLE_MAX_COLS} from './paper-table.js?v=20261120-table';
-import {esc} from './paper-render.js?v=word-format-20261120';
-import {uid,copy} from './paper-core.js?v=20261120-table';
+import {makeTable,tracks} from './paper-table.js?v=20261120-table';
+import {uid} from './paper-core.js?v=20261120-table';
 
-export function mountTableDialog(root,{page,change,writable,finishText,closeExtraTools,setShapesOpen,viewport,getScale,onSaved,say}){
- const $=selector=>root.querySelector(selector);
- const dialog=$('#paper-table-dialog'),grid=$('#paper-table-grid');
- let draft=null;
- const handlers=[];
- const bind=(el,event,callback)=>{el.addEventListener(event,callback);handlers.push(()=>el.removeEventListener(event,callback));};
- function readCells(){
-  if(!draft)return;
-  for(const field of grid.querySelectorAll('textarea[data-table-row]')){
-   const r=Number(field.dataset.tableRow),c=Number(field.dataset.tableCol);
-   if(draft.cells[r]?.[c]!==undefined)draft.cells[r][c]=field.value;
+export function mountTableEditor(root,{page,change,writable,finishText,viewport,getScale,onSaved,say}){
+ const layer=document.createElement('div');
+ layer.className='paper-inline-table';
+ root.querySelector('#paper-sheet').append(layer);
+ let active='',shape='',drag=null;
+ const current=()=>page().objects.find(o=>o.id===active);
+ const field=(r,c)=>layer.querySelector(`textarea[data-r="${r}"][data-c="${c}"]`);
+ function layout(o){
+  Object.assign(layer.style,{left:o.x+'px',top:o.y+'px',width:o.w+'px',height:o.h+'px'});
+  for(const [axis,key,count] of [['x','columns',o.cells[0].length],['y','rows',o.cells.length]]){
+   const sizes=tracks(o,key,count);
+   layer.style[axis==='x'?'gridTemplateColumns':'gridTemplateRows']=sizes.map(v=>v+'fr').join(' ');
+   let end=0;
+   sizes.slice(0,-1).forEach((v,i)=>{
+    end+=v;
+    layer.querySelector(`[data-axis="${axis}"][data-index="${i}"]`).style[axis==='x'?'left':'top']=end*100+'%';
+   });
   }
  }
- function render(){
-  if(!draft)return;
-  const rows=draft.cells.length,cols=draft.cells[0].length;
-  $('#paper-table-rows').value=rows;$('#paper-table-cols').value=cols;
-  grid.style.setProperty('--table-columns',cols);
-  grid.innerHTML=draft.cells.map((row,r)=>
-   row.map((cell,c)=>
-    '<label class="paper-table-cell'+(r===0?' is-header':'')+'"><span>แถว '+(r+1)+' · คอลัมน์ '+(c+1)+'</span>'+
-    '<textarea data-table-row="'+r+'" data-table-col="'+c+'" rows="2" maxlength="500" aria-label="แถว '+(r+1)+' คอลัมน์ '+(c+1)+'" placeholder="'+(r===0?'หัวตาราง':'ข้อความ')+'">'+esc(cell)+'</textarea></label>'
-   ).join('')
-  ).join('');
-  for(const [cmd,disabled] of [['add-row',rows===TABLE_MAX_ROWS],['remove-row',rows===1],['add-col',cols===TABLE_MAX_COLS],['remove-col',cols===1]]){
-   dialog.querySelector('[data-table-command="'+cmd+'"]').disabled=disabled;
+ function grip(axis,index,label){
+  const el=document.createElement('span');
+  el.className='table-grip';el.dataset.axis=axis;el.dataset.index=index;el.title=label;
+  layer.append(el);
+ }
+ function sync(o){
+  if(!o){active='';shape='';layer.hidden=true;layer.replaceChildren();drag=null;return;}
+  const rows=o.cells.length,cols=o.cells[0].length,key=[o.id,rows,cols].join('/');
+  if(shape!==key){
+   layer.replaceChildren();active=o.id;shape=key;
+   o.cells.forEach((row,r)=>row.forEach((_,c)=>{
+    const input=document.createElement('textarea');
+    input.dataset.r=r;input.dataset.c=c;input.maxLength=500;
+    input.setAttribute('aria-label',`แถว ${r+1} คอลัมน์ ${c+1}`);layer.append(input);
+   }));
+   for(let i=0;i<cols-1;i++)grip('x',i,'ปรับความกว้างคอลัมน์');
+   for(let i=0;i<rows-1;i++)grip('y',i,'ปรับความสูงแถว');
+   for(const axis of ['left','right','top','bottom','move'])grip(axis,-1,axis==='move'?'ย้ายตาราง':'ปรับขนาดตาราง');
   }
-  $('#paper-table-status').textContent='';
+  layer.hidden=false;
+  o.cells.forEach((row,r)=>row.forEach((text,c)=>{const el=field(r,c);if(el.value!==text)el.value=text;}));
+  if(!drag)layout(o);
  }
- function dimensions(rows,cols){
-  readCells();
-  try{draft.cells=tableGrid(draft.cells,rows,cols);render();}
-  catch(error){render();$('#paper-table-status').textContent=error.message;}
- }
- function open(item=null){
-  if(dialog.open)return;
-  writable();finishText();closeExtraTools();setShapesOpen(false);
-  const table=item||makeTable(uid());
-  draft={id:table.id,original:item?copy(item):null,cells:copy(table.cells)};
-  $('#paper-table-title').textContent=item?'แก้ไขตาราง':'สร้างตาราง';
-  render();
-  dialog.showModal();
- }
- function save(){
-  if(!draft)return;
-  readCells();
-  const original=draft.original;
-  if(original&&!page().objects.some(o=>o.id===original.id&&o.type==='table'))throw Error('ไม่พบตารางเดิม กรุณาเปิดใหม่');
-  let table=tableWithCells(original||makeTable(draft.id,draft.cells.length,draft.cells[0].length),draft.cells);
-  if(!original){
-   const y=Math.round(viewport.scrollTop/Math.max(.1,getScale()));
-   table.y=Math.max(12,Math.min(1273-table.h-24,y+110));
+ layer.oninput=e=>{
+  const el=e.target,r=Number(el.dataset.r),c=Number(el.dataset.c),o=current();
+  if(!o)return;
+  if(o.cells.flat().reduce((n,s)=>n+s.length,0)-o.cells[r][c].length+el.value.length>12000){
+   el.value=o.cells[r][c];say('ข้อความในตารางยาวเกินไป กรุณาแยกเป็นหลายตาราง',true);return;
   }
-  if(change(p=>{
-   const i=p.objects.findIndex(o=>o.id===table.id);
-   if(i>=0)p.objects[i]=table;else p.objects.push(table);
-  })){
-   dialog.close();draft=null;onSaved(table.id);
-   say('บันทึกตารางแล้ว · แตะเพื่อเลือกและย้าย หรือกดแก้ตารางเพื่อแก้ช่อง');
-  }else $('#paper-table-status').textContent='บันทึกตารางไม่ได้ กรุณาตรวจการซิงก์';
+  change(p=>{p.objects.find(t=>t.id===active).cells[r][c]=el.value;});
+ };
+ const limit=(v,min,max)=>Math.max(min,Math.min(max,v));
+ layer.onpointerdown=e=>{
+  const {axis,index}=e.target.dataset;
+  if(!axis||drag)return;
+  e.preventDefault();layer.setPointerCapture(e.pointerId);
+  drag={id:e.pointerId,axis,index:Number(index),x:e.clientX,y:e.clientY,original:current(),scale:getScale()};
+ };
+ function preview(e){
+  const {axis,index,original:o,scale}=drag,next={...o};
+  const dx=(e.clientX-drag.x)/scale,dy=(e.clientY-drag.y)/scale;
+  if(axis==='move'){next.x=limit(o.x+dx,0,900-o.w);next.y=limit(o.y+dy,0,1273-o.h);}
+  else if(axis==='x'||axis==='y'){
+   const horizontal=axis==='x',key=horizontal?'columns':'rows';
+   const weights=tracks(o,key,horizontal?o.cells[0].length:o.cells.length);
+   const min=Math.min((horizontal?32:24)/(horizontal?o.w:o.h),weights[index],weights[index+1]);
+   const d=limit((horizontal?dx/o.w:dy/o.h),min-weights[index],weights[index+1]-min);
+   weights[index]+=d;weights[index+1]-=d;next[key]=weights;
+  }else{
+   const mw=Math.min(o.w,o.cells[0].length*32),mh=Math.min(o.h,o.cells.length*24);
+   if(axis==='left'){next.x=limit(o.x+dx,0,o.x+o.w-mw);next.w=o.w+o.x-next.x;}
+   if(axis==='right')next.w=limit(o.w+dx,mw,900-o.x);
+   if(axis==='top'){next.y=limit(o.y+dy,0,o.y+o.h-mh);next.h=o.h+o.y-next.y;}
+   if(axis==='bottom')next.h=limit(o.h+dy,mh,1273-o.y);
+  }
+  return next;
  }
- bind(dialog,'close',()=>{draft=null;});
- bind(dialog,'click',event=>{
-  const cmd=event.target.closest('[data-table-command]')?.dataset.tableCommand;
-  if(!cmd||!draft)return;
-  event.preventDefault();event.stopPropagation();
-  try{
-   if(cmd==='cancel'){dialog.close();draft=null;return;}
-   if(cmd==='save'){save();return;}
-   const rows=draft.cells.length,cols=draft.cells[0].length;
-   if(cmd==='add-row')dimensions(rows+1,cols);
-   if(cmd==='remove-row')dimensions(rows-1,cols);
-   if(cmd==='add-col')dimensions(rows,cols+1);
-   if(cmd==='remove-col')dimensions(rows,cols-1);
-  }catch(error){$('#paper-table-status').textContent=error.message;}
- });
- for(const [selector,axis,max] of [['#paper-table-rows','row',TABLE_MAX_ROWS],['#paper-table-cols','column',TABLE_MAX_COLS]]){
-  bind($(selector),'change',event=>{
-   if(!draft)return;
-   const value=Number(event.target.value);
-   if(!Number.isInteger(value)||value<1||value>max){
-    $('#paper-table-status').textContent='จำนวน'+(axis==='row'?'แถว':'คอลัมน์')+'ต้องอยู่ระหว่าง 1–'+max;
-    event.target.value=axis==='row'?draft.cells.length:draft.cells[0].length;return;
-   }
-   dimensions(axis==='row'?value:draft.cells.length,axis==='column'?value:draft.cells[0].length);
+ layer.onpointermove=e=>{if(drag?.id===e.pointerId)layout(preview(e));};
+ layer.onpointerup=e=>{
+  if(drag?.id!==e.pointerId)return;
+  const next=preview(e),axis=drag.axis;drag=null;
+  change(p=>{const o=p.objects.find(t=>t.id===active);if(!o)return;
+   if(axis==='x')o.columns=next.columns;
+   else if(axis==='y')o.rows=next.rows;
+   else Object.assign(o,{x:next.x,y:next.y,w:next.w,h:next.h});
   });
+ };
+ layer.onlostpointercapture=()=>{if(drag){drag=null;if(current())layout(current());}};
+ function open(item,r=0,c=0){
+  writable();finishText();
+  if(!item){
+   item=makeTable(uid());item.y=limit(viewport.scrollTop/getScale()+110,12,1273-item.h-24);
+   if(!change(p=>p.objects.push(item)))return;
+  }
+  onSaved(item.id);field(r,c)?.focus({preventScroll:true});
  }
- return {open,close:()=>{if(dialog.open)dialog.close();handlers.forEach(off=>off());},get editing(){return dialog.open;}};
+ return {open,sync,close:()=>layer.remove()};
 }
