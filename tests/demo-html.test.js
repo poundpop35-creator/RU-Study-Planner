@@ -14,13 +14,15 @@ test('interactive HTML preview ships as a standalone mobile-friendly page',()=>{
  assert.match(html,/id="view-schedule"/);
  assert.match(html,/id="view-classroom"/);
  assert.match(html,/id="view-exams"/);
+ assert.ok(html.includes('#practice/POL2106'));
+ assert.doesNotMatch(html,/var quizzes=|data-answer=/);
  assert.match(html,/id="view-study"/);
  assert.match(html,/id="tableModal"/);
  assert.match(html,/id="inkCanvas"/);
 });
 test('preview contains working editor and independent review states without production API calls',()=>{
  for(const expected of ['function openTable','function saveTable','function resizeSelectedTable',
-  'function renderPaper','function renderSchedule','function renderQuiz','function checkpoint',
+  'function renderPaper','function renderSchedule','function checkpoint',
   'function actionUndo','function actionRedo','function saveLocal','function renderClassroom']){
   assert.ok(html.includes(expected),expected);
  }

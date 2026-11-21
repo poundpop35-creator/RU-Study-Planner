@@ -98,7 +98,7 @@ body{margin:0;min-height:100dvh}button:focus-visible,input:focus-visible,textare
    <section class="view" id="view-classroom"><div class="help-banner">เอกสารหลักวิชาใช้ร่วมกับโน้ตทุกหน้าของวิชาเดียวกัน · ปุ่มเลือกวิชาจะพาไปยังสมุดจดของวิชานั้น</div><div class="course-list" id="courseList"></div></section>
    <section class="view" id="view-schedule"><div class="help-banner"><b>ตารางตัวอย่างสัปดาห์ 23–29 พฤศจิกายน 2569</b> — คาบสดคงแยกจากแผนทวนส่วนตัว คลิปคาดว่าเข้า 2 วันหลังบรรยาย ยังไม่ได้ตรวจว่าคลิปอัปโหลดแล้ว · ปัดซ้าย–ขวาบนมือถือเพื่อดูวันทั้งหมด</div><div class="panel"><div class="row" style="justify-content:space-between"><h2>แผนเรียนและติวย้อนหลัง</h2><span class="tag">จ.–พฤ. 20:00 · ศุกร์กลางวัน · เสาร์–อาทิตย์จริงจัง</span></div><div class="schedule-scroll"><div class="week" id="week"></div></div></div><div class="panel section"><h2>สถานะการทวน</h2><p class="muted">“ทวนแล้ว” และ “ดูจริงจังจบแล้ว” เก็บแยกกัน คนละปุ่ม ไม่ถือว่าดูจบเพียงเพราะฟังผ่าน ๆ</p><div class="row"><span id="lightCount" class="tag">ทวน 0</span><span id="deepCount" class="tag green">ดูจริงจัง 0</span><button class="btn mini" data-jump="notes">ไปจดสรุป POL2106</button></div></div></section>
    <section class="view" id="view-study"><div class="panel"><h2>แผนอ่านตามความเข้าใจ</h2><div class="help-banner">แบ่งการเรียนเป็น 3 ระดับ: เรียนสดตามเวลา / ทวนเบา ๆ ตอน 20:00 / ดูจริงจังช่วงว่าง พร้อมเวลาอ่านต่อหลังคลิป</div><div id="studyTasks"></div></div></section>
-   <section class="view" id="view-exams"><div class="panel"><h2>ทดลองทำข้อสอบรัฐศาสตร์</h2><p class="muted">ตัวอย่างคำถามที่เขียนขึ้นใหม่เพื่อแสดงปุ่มเลือกคำตอบและเฉลยทันที ไม่ใช่ชุดข้อสอบจริงที่เผยแพร่จากหน่วยงาน</p><div id="quiz"></div></div></section>
+   <section class="view" id="view-exams"><div class="panel"><h2>ข้อสอบเก่า POL2106</h2><p>7 ชุด · 700 ข้อ</p><a class="btn" href="https://study-plan-phi-six.vercel.app/#practice/POL2106">เปิดข้อสอบเก่า</a></div></section>
    <section class="view" id="view-more"><div class="panel"><h2>ฟีเจอร์ทั้งหมดในตัวอย่าง</h2><div class="feature-grid" id="allFeatures"></div><hr style="border:0;border-top:1px solid #e3e9f4;margin:20px 0"><h2>สถานะข้อมูล</h2><p class="muted">นี่คือหน้า <b>Interactive Demo</b> ที่สร้างให้ทดลอง UX เท่านั้น ฟีเจอร์บางส่วนในแอปหลักมีการซิงก์กับ Supabase แต่ไฟล์นี้ <b>ไม่เชื่อมระบบใด ไม่ส่งไฟล์ ไม่ย้ายโน้ตจริง</b> และรายการเรียนในตัวอย่างไม่รับรองว่ามหาวิทยาลัยเผยแพร่คลิปแล้ว</p><div class="row"><button class="btn" id="exportAllBtn">⬇ ดาวน์โหลดข้อมูลทดลอง</button><button class="btn danger" id="resetAllBtn">ล้างข้อมูลทดลอง</button><a class="btn primary" href="./#notes">↗ เปิดแอปจริง</a></div></div></section>
   </main>
  </div>
@@ -125,7 +125,7 @@ function defaults(){return {course:"POL2106",title:"ปรัชญาการ�
 {id:"intro",type:"text",x:9,y:8,w:77,h:11,size:22,color:"#174ca8",bold:true,text:"POL2106  |  ปรัชญาการเมือง"},
 {id:"desc",type:"text",x:9,y:22,w:78,h:12,size:16,color:"#26395a",bold:false,text:"คำถามหลัก: รัฐที่ดีคืออะไร? ความยุติธรรมเกิดขึ้นได้อย่างไร?\nวันศุกร์ทวนพื้นฐาน → วันหยุดดูคลิปจริงจัง"},
 {id:"tb1",type:"table",x:9,y:40,w:82,h:17,cells:[["นักคิด","แนวคิดเบื้องต้น"],["เพลโต","ความยุติธรรมและรัฐในอุดมคติ"],["อริสโตเติล","มนุษย์กับชุมชนการเมือง"]]}],ink:""}],
-files:{},light:{},deep:{},tasks:{},currentPage:0,quiz:0}};
+files:{},light:{},deep:{},tasks:{},currentPage:0}};
 var storageKey="ru-study-20261120-demo-only";
 var state;try{state=JSON.parse(localStorage.getItem(storageKey)||"null");if(!state||!state.pages||!Array.isArray(state.pages))throw Error();}catch(e){state=defaults();}
 var currentView="home",tool="select",selected=null,undoStack=[],redoStack=[],tableEditing=null,tableCells=[],drawing=false,canvasCtx,inkColor="#172d50",isSaved=true;
@@ -281,20 +281,7 @@ function renderStudy(){
  $("#studyTasks").innerHTML=tasks.map(function(t,i){return '<label style="display:flex;gap:12px;padding:13px 6px;border-bottom:1px solid #e3eaf4"><input type="checkbox" data-task="'+i+'" '+(state.tasks[i]?"checked":"")+' style="width:19px;height:19px"><span><b>'+t[0]+'</b><small class="muted" style="display:block">'+t[1]+'</small></span></label>'}).join("");
  $$("[data-task]").forEach(function(el){el.onchange=function(){state.tasks[el.dataset.task]=el.checked;saveLocal()}});
 }
-var quizzes=[
-["ปรัชญาการเมืองตั้งคำถามสำคัญเกี่ยวกับเรื่องใด",["รูปแบบทางธรณีวิทยา","ความยุติธรรม อำนาจ และรัฐที่ดี","การเคลื่อนที่ของดวงดาว","โครงสร้างทางเคมี"],1,"ศึกษาว่ารัฐและอำนาจทางการเมืองควรมีความชอบธรรมและความยุติธรรมอย่างไร"],
-["แนวคิดเรื่องรัฐในอุดมคติมักเชื่อมโยงกับนักคิดคนใด",["เพลโต","ดาร์วิน","นิวตัน","ฟาราเดย์"],0,"เพลโตเสนอการอภิปรายเรื่องรัฐในอุดมคติและความยุติธรรมใน The Republic"],
-["ทำไมการวิเคราะห์ปรัชญาการเมืองจึงต้องดูบริบทของนักคิด",["เพื่อจำปีให้ครบเท่านั้น","เพราะแนวคิดเป็นเรื่องที่ไม่เปลี่ยน","เพื่อเข้าใจปัญหาการเมืองในยุคที่แนวคิดถูกเสนอ","เพื่อแยกวิชานี้ออกจากรัฐศาสตร์"],2,"บริบทช่วยให้เข้าใจว่าแนวคิดตอบคำถามหรือปัญหาใดในช่วงเวลานั้น"]
-];
-function renderQuiz(){
- var q=quizzes[state.quiz%quizzes.length],out='<span class="tag">ข้อ '+((state.quiz%quizzes.length)+1)+' / '+quizzes.length+'</span><h3>'+q[0]+'</h3>';
- out+=q[1].map(function(op,i){return '<button class="quiz-option" data-answer="'+i+'">'+String.fromCharCode(65+i)+'. '+escapeHTML(op)+'</button>'}).join("");
- out+='<div class="muted" id="quizResult" style="margin:12px 0"></div><div class="row"><button class="btn" id="quizNext">ข้อต่อไป →</button></div>';
- $("#quiz").innerHTML=out;
- $$("[data-answer]").forEach(function(btn){btn.onclick=function(){var choice=Number(btn.dataset.answer);$$("[data-answer]").forEach(function(b){b.disabled=true;b.classList.toggle("correct",Number(b.dataset.answer)===q[2]);b.classList.toggle("wrong",Number(b.dataset.answer)===choice&&choice!==q[2])});$("#quizResult").textContent=(choice===q[2]?"✓ ถูกต้อง — ":"✕ ยังไม่ถูก — ")+q[3]}});
- $("#quizNext").onclick=function(){state.quiz=(state.quiz+1)%quizzes.length;saveLocal();renderQuiz()};
-}
-function renderAll(){renderPages();renderPaper();renderMaterials();renderClassroom();renderSchedule();renderStudy();renderQuiz();renderHome();}
+function renderAll(){renderPages();renderPaper();renderMaterials();renderClassroom();renderSchedule();renderStudy();renderHome();}
 function downloadJSON(){var blob=new Blob([JSON.stringify({format:"ru-study-planner-demo-only",note:"Not a production backup",data:state},null,2)],{type:"application/json"});var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="RU-Study-Planner-Interactive-Demo.json";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000)}
 initNav();
 $("#noteCourse").innerHTML=courses.map(function(c){return '<option value="'+c[0]+'">'+c[0]+'</option>'}).join("");$("#noteCourse").value=state.course;$("#noteTitle").value=state.title;
