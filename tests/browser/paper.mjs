@@ -515,6 +515,21 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await page.locator('.hub-tabs a[href="#notes"]').click();
   await page.locator('.hub-tabs a[href="#notes"][aria-current="page"]').waitFor();
 
+  await page.route('**/rest/v1/ru_pol2106_bank*',route=>route.fulfill({status:503,body:''}));
+  await page.route('**/rest/v1/ru_pol2106_answers*',route=>route.fulfill({json:[]}));
+  await page.evaluate(()=>{
+   const bank=Array.from({length:700},(_,i)=>({s:1+Math.floor(i/100),n:1+i%100,stem:'คำถามทดสอบ '.repeat(30),options:['ก','ข','ค','ง','จ'],k:1,p:2}));
+   localStorage.setItem('pol2106-private-v1',JSON.stringify(bank));
+   location.hash='#practice/POL2106';
+  });
+  await page.locator('#exam-reader #next').click();
+  assert.equal(await page.locator('#counter').innerText(),'ข้อ 2 / 100');
+  assert.equal(await page.locator('#choices .choice').count(),5);
+  assert.ok(await page.locator('#bottom-nav').isVisible()||await page.locator('#navigation').isVisible());
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.locator('#exam-reader .back-link').click();
+  await page.locator('.exam-timeline').waitFor();
+
   // The single weekly planner must fit replay cards, including watch buttons, at iPhone widths.
   // Render a fixed sample week so this regression check remains independent of the current date.
   await page.evaluate(async()=>{

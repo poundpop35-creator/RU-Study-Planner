@@ -1023,3 +1023,16 @@ html[data-view=debt] .top-stats{display:none}
 /* Classroom course materials: direct upload without opening a modal. */
 .classroom-course-actions .classroom-course-upload{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:normal;text-align:center}
 .classroom-course-upload input[hidden]{display:none!important}
+
+.exam-reader{max-width:800px;margin:auto;--course:#705ab5}
+.reader-heading{border-inline-start:5px solid var(--course);padding:8px 16px;margin:12px 0}
+.reader-heading h1{font:700 clamp(20px,3vw,30px)/1.4 var(--head);margin:6px 0}
+.reader-heading p,.reader-status,.reader-meta small{color:var(--muted)}
+.reader-heading p,.reader-review p{margin:4px 0}.reader-status{font-size:.85rem}
+.reader-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(82px,110px);gap:14px;margin-bottom:14px}
+.reader-filters label{display:grid;gap:5px;font-size:.85rem;font-weight:600}.reader-filters select{width:100%;min-width:0}
+.reader-meta,.reader-navigation{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.reader-meta strong{padding:4px 12px;border-radius:20px;background:var(--soft,#edf0ff);color:var(--blue)}
+.reader-question h2{font-size:clamp(17px,2vw,21px);line-height:1.8;font-weight:600;margin:16px 0;overflow-wrap:anywhere}
+.reader-question #feedback{margin-top:12px;padding:14px;border-radius:12px;background:var(--soft,#edf0ff)}.reader-question #why{white-space:pre-line}
+.reader-navigation{margin-top:18px}.reader-review{margin-top:14px}.reader-review p:first-child{margin-bottom:10px}.reader-review #notice:empty{display:none}
