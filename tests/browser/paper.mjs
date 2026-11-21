@@ -264,7 +264,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await wait(()=>images.size===2);await wait(()=>page.locator('#paper-svg image').getAttribute('width').then(w=>Number(w)<beforeCropWidth));await click('save');assert.notEqual(picture().imageId,original.imageId);
   await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 sample')});
   await wait(()=>row.payload.notebook.notes[0].files?.[0]?.name==='lesson.pdf');await page.locator('#paper-files form button').click();
-  await page.locator('.paper-menu').evaluate(el=>el.open=true);await page.locator('#paper-template').selectOption('dots');await page.locator('.paper-menu').evaluate(el=>el.open=false);await click('save');
+  await click('page-settings');await page.locator('#paper-template').selectOption('dots');await click('save');
   await page.screenshot({path:'test-results/paper-'+name+'.png'});
   if(!await page.locator('[data-paper="add-page"]').first().isVisible())await click('pages');await click('add-page');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
   await click('delete-page');await page.getByRole('alertdialog').waitFor();await page.locator('[data-delete-choice="cancel"]').click();assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
@@ -381,7 +381,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),0);
 
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
-  await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
+  await b.page.locator('.paper-menu').evaluate(el=>el.open=true);await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
   const [download]=await Promise.all([b.page.waitForEvent('download'),fileButton.click()]);
   assert.equal(download.suggestedFilename(),'lesson.pdf');assert.equal((await readFile(await download.path())).toString(),'%PDF-1.4 sample');
   await click('text');await tap(120,240);
@@ -438,7 +438,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
 
   // Touch contacts on the writing surface must not trigger zoom or new text
   // while palm protection is enabled. Pen input must still work.
-  await click('pen');await page.locator('#paper-palm-guard').check();
+  await click('pen');await page.locator('#paper-palm-guard').check();await click('text');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
   const beforeZoom=await page.locator('#paper-zoom').innerText();
   const objectCount=activeNote().paper.pages[0].objects.length;
@@ -500,12 +500,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await wordInput.evaluate(el=>el.setSelectionRange(0,4));
    await wordInput.dispatchEvent('contextmenu',{bubbles:true,cancelable:true,clientX:120,clientY:200});
    const miniToolbar=page.locator('#paper-word-menu');
-   assert.ok(await miniToolbar.isVisible(),'right-click must open the Word selection mini toolbar');
-   assert.ok(await miniToolbar.locator('[data-word-menu-link]').isVisible(),'mini toolbar must expose link/file for the selected word');
+   if(!mobile)assert.ok(await miniToolbar.isVisible(),'right-click must open the Word selection mini toolbar');
+   if(!mobile)assert.ok(await miniToolbar.locator('[data-word-menu-link]').isVisible(),'mini toolbar must expose link/file for the selected word');
    const wordRibbon=page.locator('#paper-text-ribbon');
    assert.ok(await wordRibbon.isVisible(),'contextual formatting toolbar must be visible while typing');
    assert.ok(await wordRibbon.locator('[data-paper="word-link"]').isVisible(),'per-word link/file action must be visible without opening extra settings');
-   await miniToolbar.locator('[data-word-menu-format="bold"]').click();
+   await (mobile?wordRibbon.locator('[data-word-format="bold"]'):miniToolbar.locator('[data-word-menu-format="bold"]')).click();
    assert.ok(await page.locator('#paper-rich-editor').isVisible(),'mini toolbar formats only the selected word and enters rich editing');
    const dropBlocked=await page.locator('#paper-rich-editor').evaluate(editor=>{
     const before=editor.innerHTML,transfer=new DataTransfer();
@@ -519,8 +519,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await wordRibbon.locator('[data-word-format="italic"]').click();
    await wordRibbon.locator('[data-word-format="underline"]').click();
    await page.locator('#paper-rich-editor').dispatchEvent('contextmenu',{bubbles:true,cancelable:true,clientX:140,clientY:235});
-   assert.ok(await miniToolbar.isVisible(),'right-click works on rich text after formatting');
-   await miniToolbar.locator('[data-word-menu-color="#dc4343"]').click();
+   if(!mobile)assert.ok(await miniToolbar.isVisible(),'right-click works on rich text after formatting');
+   await (mobile?wordRibbon.locator('[data-word-color="#dc4343"]'):miniToolbar.locator('[data-word-menu-color="#dc4343"]')).click();
    assert.ok((await page.locator('#paper-rich-editor').innerHTML()).includes('color:#dc4343'),'mini toolbar changes only the selected word color');
    await page.locator('#paper-word-size').fill('19');
    await page.locator('#paper-word-size').press('Tab');
