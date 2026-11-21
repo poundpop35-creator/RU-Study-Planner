@@ -118,3 +118,18 @@ test('oversized progress and backups leave the editable workspace intact',async 
  await assert.rejects(space.importSnapshot(incoming),/พื้นที่ข้อมูล/);
  assert.deepEqual(space.snapshot(),initial);assert.equal(space.info().dirty,false);
 });
+
+test('ticking replay on a card survives notebook validation, independently of editing time',async()=>{
+ const {noteCards,notebookAction}=await import('../dist/notebook-view.js');
+ const original=newNote({id:'replay-note',title:'POL2200 ครั้งที่ 1'});
+ let book=validateNotebook({version:1,notes:[original,newNote({id:'other'})]});
+ const space={info:()=>({canEdit:true}),notebook:()=>book,saveNotebook:v=>{book=validateNotebook(v)},flush:async()=>{}};
+ const tick=()=>notebookAction('nb-replay-studied',{id:original.id},space,{},()=>{},assert.fail);
+ await tick();assert.ok(Date.parse(book.notes[0].replayStudiedAt));assert.equal(book.notes[0].updatedAt,original.updatedAt);
+ assert.equal(book.notes[1].replayStudiedAt,undefined);
+ const synced=validateNotebook(JSON.parse(JSON.stringify(book)));
+ assert.match(noteCards(synced.notes),/aria-pressed="true"/);
+ synced.notes[0].replayStudiedAt='2026-11-20T18:15:00Z';
+ assert.match(noteCards(synced.notes),/ติวย้อนหลังแล้ว · 21 พ.ย. 2569 01:15/);
+ await tick();assert.equal(book.notes[0].replayStudiedAt,undefined);assert.doesNotMatch(noteCards(book.notes),/aria-pressed="true"/);
+});
