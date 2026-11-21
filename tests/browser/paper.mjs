@@ -45,7 +45,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('shape');await page.locator('[data-shape-pick="blockArrow"]').click();
    await dragOnPaper(60,40,280,100);
    const arrow=page.locator('#paper-svg [data-shape="blockArrow"]');await arrow.waitFor();
-   await page.locator('#paper-shape-fill').fill('#318c68');await click('layer-back');await click('save');
+   await page.locator('#paper-shape-fill').evaluate(el=>{el.value='#318c68';el.dispatchEvent(new Event('change',{bubbles:true}));});await click('layer-back');await click('save');
    assert.equal(await arrow.getAttribute('fill'),'#318c68');
    assert.equal(row.payload.notebook.notes[0].paper.pages[0].objects[0].kind,'blockArrow');
    await page.reload();await arrow.waitFor();assert.equal(await arrow.getAttribute('fill'),'#318c68');
