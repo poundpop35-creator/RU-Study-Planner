@@ -496,9 +496,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await grid.getByLabel('แถว 2 คอลัมน์ 1',{exact:true}).fill('เพลโต');
    const grip=grid.locator('[data-axis="x"][data-index="0"]');
    await grip.scrollIntoViewIfNeeded();
-   const edge=await grip.boundingBox();
-   await page.mouse.move(edge.x+edge.width/2,edge.y+12);
-   await page.mouse.down();await page.mouse.move(edge.x+edge.width/2+18,edge.y+12);await page.mouse.up();
+   const tableEdge=await grip.boundingBox();
+   await page.mouse.move(tableEdge.x+tableEdge.width/2,tableEdge.y+12);
+   await page.mouse.down();await page.mouse.move(tableEdge.x+tableEdge.width/2+18,tableEdge.y+12);await page.mouse.up();
    await click('save');
    const savedTable=()=>row.payload.notebook.notes.find(n=>n.course==='POL2200'&&n.session===Number(wordSession)).paper.pages[0].objects.find(o=>o.type==='table');
    await wait(()=>savedTable()?.cells[1]?.[0]==='เพลโต');
