@@ -617,3 +617,9 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-text-ribbon>*{flex-shrink:0}
  .paper-app .paper-ribbon-help,.paper-app .paper-ribbon-title{display:none}
 }
+
+.paper-app .paper-header{min-height:44px;padding-block:0}
+.paper-app .paper-heading input{font-size:14px;line-height:1.3;padding-block:0;text-overflow:ellipsis}
+.paper-app .paper-save{position:relative;min-width:44px;min-height:30px;height:30px;padding:3px 10px;font-size:12px;line-height:1.3}
+.paper-app .paper-save::after{content:"";position:absolute;inset:-7px 0}
+@media(pointer:coarse){.paper-app .paper-heading input:focus{font-size:16px}}
