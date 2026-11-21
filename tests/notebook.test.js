@@ -119,19 +119,18 @@ test('oversized progress and backups leave the editable workspace intact',async 
  assert.deepEqual(space.snapshot(),initial);assert.equal(space.info().dirty,false);
 });
 
-test('ticking replay on a card survives notebook validation, independently of editing time',async()=>{
- const {noteCards,notebookAction}=await import('../dist/notebook-view.js');
- const original=newNote({id:'replay-note',title:'POL2200 ครั้งที่ 1'});
- let book=validateNotebook({version:1,notes:[original,newNote({id:'other'})]});
- const space={info:()=>({canEdit:true}),notebook:()=>book,saveNotebook:v=>{book=validateNotebook(v)},flush:async()=>{}};
- const tick=()=>notebookAction('nb-replay-studied',{id:original.id},space,{},()=>{},assert.fail);
- await tick();assert.ok(Date.parse(book.notes[0].replayStudiedAt));assert.equal(book.notes[0].updatedAt,original.updatedAt);
- assert.equal(book.notes[1].replayStudiedAt,undefined);
- const synced=validateNotebook(JSON.parse(JSON.stringify(book)));
- assert.match(noteCards(synced.notes),/aria-pressed="true"/);
- synced.notes[0].replayStudiedAt='2026-11-20T18:15:00Z';
- assert.match(noteCards(synced.notes),/ติวย้อนหลังแล้ว · 21 พ.ย. 2569 01:15/);
- await tick();assert.equal(book.notes[0].replayStudiedAt,undefined);assert.doesNotMatch(noteCards(book.notes),/aria-pressed="true"/);
+test('replay dates can be backdated, corrected and cleared without changing edit time',async()=>{
+ const {noteCards,setReplayDate}=await import('../dist/notebook-view.js');
+ const n=newNote({id:'exam-note'}),edited=n.updatedAt;
+ n.replayStudiedAt='2026-11-20T18:15:00Z';
+ assert.match(noteCards([n]),/ติวย้อนหลังแล้ว · 21 พ.ย. 2569</);
+ setReplayDate(n,'2026-11-18','2026-11-21');
+ const saved=validateNotebook({version:1,notes:[n]}).notes[0];
+ assert.equal(saved.replayStudiedAt,'2026-11-18');assert.equal(saved.updatedAt,edited);
+ assert.match(noteCards([saved]),/ติวย้อนหลังแล้ว · 18 พ.ย. 2569</);
+ assert.throws(()=>setReplayDate(n,'2026-11-22','2026-11-21'));
+ assert.throws(()=>setReplayDate(n,'2026-02-30','2026-11-21'));
+ setReplayDate(n,'');assert.equal(n.replayStudiedAt,undefined);
 });
 
 test('course picker follows registration overrides and builds session titles from the catalog',async()=>{
