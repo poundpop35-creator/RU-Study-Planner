@@ -604,3 +604,16 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
   -webkit-text-size-adjust:100%;caret-color:#2347ba;touch-action:manipulation;
  }
 }
+
+/* Keep document actions off the canvas until the note menu is opened. */
+.paper-app .paper-menu>div{max-height:70dvh;overflow:auto}
+.paper-app .paper-menu .paper-context,.paper-app .paper-menu .paper-context-actions,.paper-app .paper-menu .paper-course-materials{position:static;display:grid;min-height:0;padding:4px;gap:3px;box-shadow:none}
+@media(min-width:721px){
+ .paper-app .paper-header{min-height:48px;padding:3px 14px;gap:10px}
+ .paper-app .paper-eyebrow{display:none}
+ .paper-app .paper-toolbar{min-height:44px;padding:2px 10px}
+ .paper-app .paper-toolset button{min-height:44px;height:44px;padding:2px 5px}
+ .paper-app .paper-text-ribbon{flex-wrap:nowrap;overflow-x:auto;padding:2px 8px;min-height:44px}
+ .paper-app .paper-text-ribbon>*{flex-shrink:0}
+ .paper-app .paper-ribbon-help,.paper-app .paper-ribbon-title{display:none}
+}
