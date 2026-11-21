@@ -9,7 +9,7 @@ import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
 import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape,eraserHit,isJoinable,snapLinePoint,snapMovedLine} from './paper-shapes.js?v=eraser-20261121';
-import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261121-smart-shape-release';
+import {recognizeHeldShape,recognizeDrawnShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261121-safe-forms';
 import {mountTableEditor} from './paper-table-ui.js?v=20261121-paper-format';
 import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
 let active=null;
@@ -143,7 +143,15 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   $('#paper-default-text-size').value=fontSize;
   loadImages();
  }
- function thumbs(){ if(!root.classList.contains('pages-open'))return;$('#paper-page-list').innerHTML=model.pages.map((p,i)=>`<button class="paper-thumb ${p.id===pageId?'active':''}" data-paper-page="${p.id}" aria-label="หน้า ${i+1}" aria-current="${p.id===pageId?'page':'false'}"><svg viewBox="0 0 ${PAGE_W} ${PAGE_H}" aria-hidden="true">${pageSVG(p,images,'thumb-'+p.id)}</svg><span>${i+1}</span></button>`).join('');}
+ function thumbs(){
+  if(!root.classList.contains('pages-open'))return;
+  $('#paper-page-list').innerHTML=model.pages.map((p,i)=>{
+   let thumb='';
+   try{thumb=pageSVG(p,images,'thumb-'+p.id);}
+   catch(err){thumb='<text x="20" y="80" font-size="26">รูปตัวอย่างไม่พร้อม</text>';}
+   return `<button class="paper-thumb ${p.id===pageId?'active':''}" data-paper-page="${p.id}" aria-label="หน้า ${i+1}" aria-current="${p.id===pageId?'page':'false'}"><svg viewBox="0 0 ${PAGE_W} ${PAGE_H}" aria-hidden="true">${thumb}</svg><span>${i+1}</span></button>`;
+  }).join('');
+ }
  function loadImages(){
   for(const o of page().objects){if(o.type!=='image'||images.has(o.imageId)||loading.has(o.imageId))continue;loading.add(o.imageId);
    space.image(o.imageId).then(blob=>{if(closed)return;images.set(o.imageId,URL.createObjectURL(blob));imageVersion++;scheduleDraw();thumbs();}).catch(()=>{if(!closed)say('โหลดรูปบางรูปไม่สำเร็จ ลองเชื่อมต่อใหม่',true);}).finally(()=>loading.delete(o.imageId));
@@ -187,7 +195,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   syncPenWidthControls();
  }
  function setPagesOpen(value){
-  root.classList.toggle('pages-open',!!value);if(value)thumbs();
+  root.classList.toggle('pages-open',!!value);
+  if(value)try{thumbs();}catch(err){say('เปิดรายการหน้าแล้ว แต่รูปตัวอย่างบางหน้าไม่พร้อม: '+err.message,true);}
   const toggle=$('[data-paper="pages"]');toggle.setAttribute('aria-expanded',String(!!value));
   toggle.setAttribute('aria-label',value?'ซ่อนรายการหน้ากระดาษ':'แสดงรายการหน้ากระดาษ');
   toggle.textContent=value?'▤ ซ่อนหน้า':'▤ หน้า';
@@ -328,6 +337,15 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   color=next;draw();say('เลือกสีปากกา '+next+' แล้ว · เริ่มเขียนได้เลย');
  });
 
+ // Detect native on-screen keyboard viewport shrink and keep secondary UI
+ // from covering the editable field. No note data is changed.
+ const updateKeyboardClass=()=>{
+  const vv=window.visualViewport;
+  const occlusion=vv?Math.max(0,window.innerHeight-vv.height-vv.offsetTop):0;
+  root.classList.toggle('paper-keyboard-visible',occlusion>120);
+ };
+ if(window.visualViewport){bind(window.visualViewport,'resize',updateKeyboardClass);bind(window.visualViewport,'scroll',updateKeyboardClass);}
+ updateKeyboardClass();
  rich.id='paper-rich-editor';rich.contentEditable='true';rich.setAttribute('role','textbox');
  rich.setAttribute('aria-label','แก้ข้อความพร้อมตัวหนา ตัวเอียง ขีดเส้นใต้ และขนาดเฉพาะคำ');
  rich.spellcheck=false;rich.hidden=true;sheet.append(rich);
@@ -905,7 +923,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     // The old implementation connected the first/last samples as a line,
     // destroying circles whenever the stroke began and ended together.
     // Recognize the whole gesture when the Pencil is lifted instead.
-    const found=recognizeHeldShape(g.points);
+    const found=recognizeDrawnShape(g.points);
     if(found)result=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);
     else if(g.snap)result=g.snap;
    }

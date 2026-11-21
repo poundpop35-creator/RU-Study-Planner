@@ -68,3 +68,31 @@ export function rulerSVG(ruler){
   <g data-ruler="rotate" role="button" aria-label="หมุนไม้บรรทัด" style="cursor:grab"><circle cx="${ruler.length/2+50}" cy="0" r="24" fill="#fff" stroke="#3155d9" stroke-width="3"/><path d="M${ruler.length/2+40} -4 Q${ruler.length/2+55} -18 ${ruler.length/2+62} 1 M${ruler.length/2+62} 1 l-9 -4 M${ruler.length/2+62} 1 l-3 -9" stroke="#3155d9" fill="none" stroke-width="3" pointer-events="none"/></g>
  </g>`;
 }
+
+/* Forgiving release recognizer for the deliberate "จัดทรง" mode. */
+export function recognizeDrawnShape(samples){
+ const exact=recognizeHeldShape(samples);
+ if(exact)return exact;
+ if(!Array.isArray(samples)||samples.length<9)return null;
+ const p=samples.map(s=>({x:Number(s[0]),y:Number(s[1])}));
+ if(p.some(a=>!Number.isFinite(a.x)||!Number.isFinite(a.y)))return null;
+ const xs=p.map(a=>a.x),ys=p.map(a=>a.y);
+ const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+ const w=maxX-minX,h=maxY-minY,diagonal=Math.hypot(w,h);
+ if(w<27||h<27||diagonal<45||Math.max(w,h)/Math.min(w,h)>3.4)return null;
+ if(dist(p[0],p.at(-1))>diagonal*.80)return null;
+ const cx=(maxX+minX)/2,cy=(maxY+minY)/2,rx=w/2,ry=h/2;
+ const theta=p.map(a=>Math.atan2((a.y-cy)/ry,(a.x-cx)/rx));
+ let signed=0,total=0;
+ for(let i=1;i<theta.length;i++){
+  let step=theta[i]-theta[i-1];
+  while(step>Math.PI)step-=Math.PI*2;
+  while(step< -Math.PI)step+=Math.PI*2;
+  signed+=step;total+=Math.abs(step);
+ }
+ if(Math.abs(signed)<4.35||Math.abs(signed)>9.5||Math.abs(signed)/Math.max(1,total)<.70)return null;
+ const err=p.map(a=>Math.abs(Math.hypot((a.x-cx)/rx,(a.y-cy)/ry)-1));
+ if(err.reduce((sum,x)=>sum+x,0)/err.length>.28||err.filter(x=>x>.43).length/err.length>.25)return null;
+ return {kind:Math.abs(w-h)/Math.max(w,h)<.20?'circle':'ellipse',
+  start:{x:minX,y:minY},end:{x:maxX,y:maxY}};
+}
