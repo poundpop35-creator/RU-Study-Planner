@@ -48,7 +48,31 @@ export function resizeShape(shape,edge,dx,dy){
 function arrowHead(x,y,dx,dy,width,sign=1){
  const length=Math.hypot(dx,dy)||1,head=Math.min(length*.45,Math.max(14,width*4));
  const ux=sign*dx/length,uy=sign*dy/length;
- return `M${round(x-head*ux-head*.48*uy)} ${round(y-head*uy+head*.48*ux)} L${round(x)} ${round(y)} L${round(x-head*ux+head*.48*uy)} ${round(y-head*uy-head*.48*ux)}`;
+ return [{x:x-head*ux-head*.48*uy,y:y-head*uy+head*.48*ux},{x,y},{x:x-head*ux+head*.48*uy,y:y-head*uy-head*.48*ux}];
+}
+function linePaths(o){
+ const {x,y,w,h}=o,a={x:o.reverseX?x+w:x,y:o.reverseY?y+h:y},b={x:o.reverseX?x:x+w,y:o.reverseY?y:y+h};
+ if(o.kind==='connector'){const mid=(a.x+b.x)/2;return [[a,{x:mid,y:a.y},{x:mid,y:b.y},b]];}
+ const paths=[[a,b]],dx=b.x-a.x,dy=b.y-a.y;
+ if(o.kind==='arrow'||o.kind==='doubleArrow')paths.push(arrowHead(b.x,b.y,dx,dy,o.width));
+ if(o.kind==='doubleArrow')paths.push(arrowHead(a.x,a.y,dx,dy,o.width,-1));
+ return paths;
+}
+function distance(p,a,b){
+ const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy||1)));
+ return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);
+}
+export function eraserHit(o,a,b=a,radius=12){
+ if(o.type!=='stroke'&&!(o.type==='shape'&&['line','arrow','doubleArrow','connector'].includes(o.kind)))return false;
+ const r=radius+o.width/2,side=(p,q,t)=>(q.x-p.x)*(t.y-p.y)-(q.y-p.y)*(t.x-p.x);
+ function hits(c,d){
+  if(Math.max(a.x,b.x)+r<Math.min(c.x,d.x)||Math.min(a.x,b.x)-r>Math.max(c.x,d.x)||Math.max(a.y,b.y)+r<Math.min(c.y,d.y)||Math.min(a.y,b.y)-r>Math.max(c.y,d.y))return false;
+  return (side(a,b,c)*side(a,b,d)<0&&side(c,d,a)*side(c,d,b)<0)||Math.min(distance(a,c,d),distance(b,c,d),distance(c,a,b),distance(d,a,b))<=r;
+ }
+ if(o.type==='stroke'){
+  let prev;for(const [x,y] of o.points){const p={x:o.x+x*o.w,y:o.y+y*o.h};if(hits(prev||p,p))return true;prev=p;}return false;
+ }
+ return linePaths(o).some(path=>path.slice(1).some((p,i)=>hits(path[i],p)));
 }
 export function shapeSVG(o){
  const {x,y,w,h}=o;
@@ -63,12 +87,7 @@ export function shapeSVG(o){
   const vertices=o.kind==='star'?Array.from({length:10},(_,i)=>{const a=-Math.PI/2+Math.PI*i/5,r=i%2?.22:.49;return [.5+r*Math.cos(a),.5+r*Math.sin(a)];}):polygonVertices(o.kind==='pentagon'?5:6);
   return `<path ${style} d="${polygonPath(x,y,w,h,vertices)}"/>`;
  }
- const x1=o.reverseX?x+w:x,x2=o.reverseX?x:x+w,y1=o.reverseY?y+h:y,y2=o.reverseY?y:y+h;
- const dx=x2-x1,dy=y2-y1;
- let path=`M${x1} ${y1} L${x2} ${y2}`;
- if(o.kind==='connector')path=`M${x1} ${y1} H${(x1+x2)/2} V${y2} H${x2}`;
- if(o.kind==='arrow'||o.kind==='doubleArrow')path+=' '+arrowHead(x2,y2,dx,dy,o.width);
- if(o.kind==='doubleArrow')path+=' '+arrowHead(x1,y1,dx,dy,o.width,-1);
+ const path=linePaths(o).map(line=>line.map((p,i)=>(i?'L':'M')+round(p.x)+' '+round(p.y)).join(' ')).join(' ');
  return `<path ${style} d="${path}"/>`;
 }
 
