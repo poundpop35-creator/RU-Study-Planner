@@ -10,6 +10,7 @@ import {newNote,findNotes,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} 
 import {materialFor,isCourseCode} from './course-materials.js?v=shared-course-20261120';
 import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=inline-course-upload-20261120';
 import {openNoteFile} from './file-viewer.js';
+let quickInkId=null;
 let query='',course='',source='',archived=false,reviewing=false,reviewIndex=0,revealed=false,unmount=()=>{};
 const stamps=x=>new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short'}).format(new Date(x));
 const sourceChoices=value=>Object.entries(NOTE_SOURCES).map(([key,label])=>`<option value="${key}" ${value===key?'selected':''}>${label}</option>`).join('');
@@ -76,7 +77,7 @@ export async function notebookAction(action,data,space,progress,render,toast){
   if(action==='nb-new'&&!data.course&&!data.source){
    details=await noteDetails(chosenCourse,source||'classroom');if(!details)return;
   }
-  const note=newNote({course:l?.course||chosenCourse,lesson:l?.id||'',source:l?'prep':data.source||source||'general',title:l?.title||'โน้ตใหม่',...details});const latest=structuredClone(space.notebook());latest.notes.push(note);space.saveNotebook(latest);location.hash='#note/'+note.id;}
+  const note=newNote({course:l?.course||chosenCourse,lesson:l?.id||'',source:l?'prep':data.source||source||'general',title:l?.title||'โน้ตใหม่',...details});const latest=structuredClone(space.notebook());latest.notes.push(note);space.saveNotebook(latest);if(action==='nb-new'&&data.source==='general')quickInkId=note.id;location.hash='#note/'+note.id;}
   if(action==='nb-delete'&&n){
    if(!await confirmNoteDelete(n.title))return;
    toast('กำลังลบโน้ต…');
@@ -101,4 +102,4 @@ export function notebookFilter(value,key='course'){if(key==='source'){if(value==
 export async function importNotebook(file,space){if(file.size>100*1024*1024)throw Error('ไฟล์สำรองเกิน 100 MB');const data=JSON.parse(await file.text());if(data.format==='ru-paper-recovery'&&data.version===1){const snapshot=space.snapshot();const note={...data.note,id:crypto.randomUUID(),title:(data.note.title||'โน้ต')+' (กู้คืน)',updatedAt:new Date().toISOString()};snapshot.notebook.notes.push(note);await space.importSnapshot(snapshot);return;}if(data.format!=='ru-study-notebook'||data.version!==1)throw Error('ไฟล์ไม่ใช่สมุดจด RU Study Planner');for(const v of Object.values(data.images||{}))if(typeof v!=='string'||!/^data:image\/(png|jpeg|webp|gif);base64,/.test(v)||v.length>7100000)throw Error('รูปในไฟล์สำรองไม่ถูกต้อง');if(!confirm('นำเข้าสมุดจดและความคืบหน้าเพื่อแทนที่ฉบับปัจจุบัน? ระบบจะเก็บสำเนาก่อนนำเข้าไว้ในเครื่อง'))return;await space.importSnapshot(data.snapshot,data.images||{});}
 
 export function notePage(space,id){const n=space.notebook().notes.find(x=>x.id===id);return n?paperPage(space,n):'<section class="panel"><h1>ไม่พบหน้าโน้ต</h1><a href="#notes">กลับสมุดจด</a></section>';}
-export function mountEditor(space,id){destroyEditor();unmount=mountPaper(space,id,{onLegacy:()=>openLegacy(space,id)});}
+export function mountEditor(space,id){destroyEditor();const startInk=quickInkId===id;quickInkId=null;unmount=mountPaper(space,id,{startInk,onLegacy:()=>openLegacy(space,id)});}
