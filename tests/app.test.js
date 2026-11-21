@@ -153,11 +153,12 @@ test('game layer: level chip, awards page and celebrations',()=>{
  navigate('#lesson/POL1101-1');assert.ok(!html().includes('data-fresh'),'only the changed element animates, once');
  click('complete',{id:'POL1101-1'});assert.ok(!saved().completed.includes('POL1101-1'));
 });
-test('five places on the phone bar, each page lights its place, and the menu reaches every page',()=>{
+test('five places on the phone bar, each page lights its place, and the more menu avoids repeating the main places',()=>{
  const bar=()=>get('#bottom-nav').innerHTML,current=key=>bar().includes(`href="#${key}" aria-current="page"`);
  navigate('#home');assert.equal((bar().match(/<a /g)||[]).length,5);for(const key of ['home','courses','plan','notes','menu'])assert.ok(bar().includes(`href="#${key}"`),key);
  for(const [route,place] of [['home','home'],['lesson/POL1101-1','courses'],['classroom','notes'],['practice','courses'],['review','courses'],['prep/POL2106','courses'],['calendar','plan'],['registration','plan'],['notes','notes'],['settings','menu'],['debt','menu']]){navigate('#'+route);assert.ok(current(place),route);assert.equal((bar().match(/aria-current/g)||[]).length,1,route);}
- navigate('#menu');for(const key of ['courses','classroom','practice','review','exams','plan','calendar','registration','documents','resources','awards','account','debt','settings','about'])assert.ok(html().includes(`href="#${key}"`),key);
+ navigate('#menu');for(const key of ['documents','awards','account','debt'])assert.ok(html().includes(`href="#${key}"`),key);
+ for(const key of ['courses','plan','notes','settings','practice'])assert.ok(!html().includes(`href="#${key}"`),key);
  for(const route of ['courses','classroom','practice','review']){navigate('#'+route);assert.ok(html().includes('class="hub-tabs"'),route);assert.ok(html().includes(`href="#${route}" aria-current="page"`),route);}
  for(const route of ['plan','calendar','registration']){navigate('#'+route);assert.equal((html().match(/class="hub-tabs"/g)||[]).length,1,route);assert.ok(html().includes(`href="#${route}" aria-current="page"`),route);}
 });
