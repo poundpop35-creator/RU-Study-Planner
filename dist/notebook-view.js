@@ -1,5 +1,5 @@
 import {paperPage} from './paper-view.js?v=20261121-smart-shape-release';
-import {mountPaper,refreshPaper} from './paper-editor.js?v=20261121-smart-shape-release';
+import {mountPaper,refreshPaper} from './paper-editor.js?v=20261121-shared-recovery-v2';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
@@ -137,5 +137,28 @@ export function notebookSearch(space,value){query=value;document.getElementById(
 export function notebookFilter(value,key='course'){if(key==='source'){if(value===''||Object.hasOwn(NOTE_SOURCES,value))source=value;}else course=value;}
 export async function importNotebook(file,space){if(file.size>100*1024*1024)throw Error('ไฟล์สำรองเกิน 100 MB');const data=JSON.parse(await file.text());if(data.format==='ru-paper-recovery'&&data.version===1){const snapshot=space.snapshot();const note={...data.note,id:crypto.randomUUID(),title:(data.note.title||'โน้ต')+' (กู้คืน)',updatedAt:new Date().toISOString()};snapshot.notebook.notes.push(note);await space.importSnapshot(snapshot);return;}if(data.format!=='ru-study-notebook'||data.version!==1)throw Error('ไฟล์ไม่ใช่สมุดจด RU Study Planner');for(const v of Object.values(data.images||{}))if(typeof v!=='string'||!/^data:image\/(png|jpeg|webp|gif);base64,/.test(v)||v.length>7100000)throw Error('รูปในไฟล์สำรองไม่ถูกต้อง');if(!confirm('นำเข้าสมุดจดและความคืบหน้าเพื่อแทนที่ฉบับปัจจุบัน? ระบบจะเก็บสำเนาก่อนนำเข้าไว้ในเครื่อง'))return;await space.importSnapshot(data.snapshot,data.images||{});}
 
-export function notePage(space,id){const n=space.notebook().notes.find(x=>x.id===id);return n?paperPage(space,n):'<section class="panel"><h1>ไม่พบหน้าโน้ต</h1><a href="#notes">กลับสมุดจด</a></section>';}
-export function mountEditor(space,id){destroyEditor();const startInk=quickInkId===id;quickInkId=null;unmount=mountPaper(space,id,{startInk,onLegacy:()=>openLegacy(space,id)});}
+export function notePage(space,id){
+ const n=space.notebook().notes.find(x=>x.id===id);
+ if(!n)return '<section class="panel"><h1>ไม่พบหน้าโน้ต</h1><a href="#notes">กลับสมุดจด</a></section>';
+ const info=space.info();
+ if(!info.canEdit)return '<section class="panel paper-load-message" role="status"><h1>ยังเปิดสมุดจดไม่ได้</h1><p>'+e(info.status||'กำลังเชื่อมต่อ Supabase…')+'</p><p>ยังไม่พบการเชื่อมต่อที่พร้อมใช้งาน ไม่ควรเขียนทับหน้าว่าง</p><div class="button-row"><a class="button secondary" href="#account">ตรวจข้อมูลและการซิงก์</a><a class="button secondary" href="#notes">กลับรายการโน้ต</a></div></section>';
+ return paperPage(space,n);
+}
+export function mountEditor(space,id){
+ destroyEditor();const startInk=quickInkId===id;quickInkId=null;
+ try{unmount=mountPaper(space,id,{startInk,onLegacy:()=>openLegacy(space,id)});}
+ catch(err){
+  const root=document.querySelector('.paper-app');
+  if(root){
+   const panel=document.createElement('div');panel.className='paper-open-error';
+   panel.setAttribute('role','alert');
+   const heading=document.createElement('strong');heading.textContent='หน้าสมุดจดแสดงผลไม่สำเร็จ แต่ยังไม่ได้ลบข้อมูล';
+   const detail=document.createElement('p');detail.textContent='ข้อผิดพลาด: '+(err?.message||String(err));
+   const link=document.createElement('a');link.href='#account';link.textContent='ตรวจสถานะการซิงก์';
+   panel.append(heading,detail,link);
+   (root.querySelector('.paper-workspace')||root).prepend(panel);
+  }
+  unmount=()=>{};
+  console.error('Notebook editor mount failed; data unchanged',err);
+ }
+}

@@ -44,7 +44,10 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
    if(remote){
     const incoming=validateEnvelope(remote.payload,validateState);
     referencedImages(incoming.notebook).forEach(id=>uploaded.add(id));
-    if(remote.revision!==revision){
+    // The cloud is authoritative: even an equal revision is insufficient
+    // evidence that a device's cached notebook is complete and current.
+    const staleCache=!dirty&&JSON.stringify(incoming)!==JSON.stringify(payload);
+    if(remote.revision!==revision||staleCache){
      if(dirty){hydrated=true;conflict=true;throw {code:'40001'};}
      payload=incoming;revision=remote.revision;lastSync=remote.updated_at;hydrated=true;persist();onProgress(payload.progress);onChange();
     }

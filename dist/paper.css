@@ -773,3 +773,14 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
   flex-wrap:nowrap!important;padding:4px 5px;
  }
 }
+
+/* Preserve user data and surface a visible editor failure, never a blank page. */
+.paper-app .paper-open-error{
+ position:absolute;z-index:40;top:12px;left:12px;right:12px;
+ display:flex;flex-direction:column;gap:9px;box-sizing:border-box;
+ border:1px solid #dea671;border-radius:10px;padding:12px;
+ color:#754018;background:#fff7e9;box-shadow:0 3px 12px #0002;
+ font-size:13px;max-height:42vh;overflow:auto;
+}
+.paper-app .paper-open-error p{margin:0;overflow-wrap:anywhere}
+.paper-app .paper-open-error a{color:#21539e;text-decoration:underline;font-weight:700}

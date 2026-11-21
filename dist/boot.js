@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261121-smart-shape-release'); }
+try { await import('./app.js?v=20261121-shared-recovery-v2'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
