@@ -505,7 +505,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.screenshot({path:'test-results/notebook-tables-'+name+'.png'});
    
   await page.evaluate(()=>{location.hash='#home';});
-  await page.locator('.hero').waitFor();
+  await page.locator('.start-card').waitFor();
   const sideNotebook=page.locator('#navigation a[href="#notes"]');
   const notebookEntry=await sideNotebook.isVisible()?sideNotebook:page.locator('#bottom-nav a[href="#notes"]');
   await notebookEntry.click();
