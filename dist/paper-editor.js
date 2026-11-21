@@ -1160,7 +1160,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     multiSelect=!multiSelect;setTool('select');
     say(multiSelect?'แตะเพื่อเพิ่มหรือนำออกจากกลุ่ม · ลากชิ้นที่เลือกเพื่อย้ายพร้อมกัน':'แตะเพื่อเลือก · Shift + คลิกเพื่อเลือกเพิ่ม');return;
    }
-   if(['select','pen','highlight','eraser','text','shape','hand','line','arrow','straighten'].includes(action)){setTool(action);return;}
+   if(action==='shape'){setTool('shape');setShapesOpen(true);return;}
+   if(['select','pen','highlight','eraser','text','hand','line','arrow','straighten'].includes(action)){setTool(action);return;}
    if(action==='table'){$('.paper-menu').open=false;tableUI.open();return;}
    if(action==='table-edit'){const item=page().objects.find(o=>selected.size===1&&selected.has(o.id)&&o.type==='table');if(item)tableUI.open(item);return;}
    if(['table-add-row','table-remove-row','table-add-col','table-remove-col'].includes(action)){
