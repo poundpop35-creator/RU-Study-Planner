@@ -15,12 +15,13 @@ export function textSize(value,fallback=16){
  const n=Number(value);
  return Number.isInteger(n)&&n>=TEXT_SIZE_MIN&&n<=TEXT_SIZE_MAX?n:fallback;
 }
-const sameStyle=(a,b)=>FLAGS.every(k=>!!a[k]===!!b[k])&&(a.size||null)===(b.size||null)&&(a.color||null)===(b.color||null);
+const sameStyle=(a,b)=>FLAGS.every(k=>!!a[k]===!!b[k])&&(a.size||null)===(b.size||null)&&(a.color||null)===(b.color||null)&&(a.align||null)===(b.align||null);
 function formatOf(m){
  const out={};
  for(const key of FLAGS)if(m[key]===true)out[key]=true;
  if(m.size!==undefined)out.size=m.size;
  if(m.color!==undefined)out.color=m.color;
+ if(m.align!==undefined)out.align=m.align;
  return out;
 }
 export function normalizeMarks(marks,textLength){
@@ -46,11 +47,12 @@ export function validateMarks(marks,text){
   for(const flag of FLAGS)if(m[flag]!==undefined&&m[flag]!==true)throw Error('รูปแบบตัวอักษรไม่ถูกต้อง');
   if(m.size!==undefined&&textSize(m.size,null)===null)throw Error('ขนาดตัวอักษรไม่ถูกต้อง');
   if(m.color!==undefined&&textColor(m.color,null)===null)throw Error('สีตัวอักษรไม่ถูกต้อง');
+  if(m.align!==undefined&&!['left','center','right'].includes(m.align))throw Error('การจัดแนวเฉพาะคำไม่ถูกต้อง');
  }
  return normalizeMarks(marks,text.length);
 }
 export function applyTextFormat(marks,text,start,end,key,value){
- if(![...FLAGS,'size','color'].includes(key)||!Number.isInteger(start)||!Number.isInteger(end)||start<0||end>text.length||start>=end)return normalizeMarks(marks||[],text.length);
+ if(![...FLAGS,'size','color','align'].includes(key)||!Number.isInteger(start)||!Number.isInteger(end)||start<0||end>text.length||start>=end)return normalizeMarks(marks||[],text.length);
  const existing=normalizeMarks(marks||[],text.length);
  const boundaries=[...new Set([0,text.length,start,end,...existing.flatMap(m=>[m.start,m.end])])].sort((a,b)=>a-b);
  const result=[];
@@ -61,6 +63,7 @@ export function applyTextFormat(marks,text,start,end,key,value){
   if(a>=start&&b<=end){
    if(key==='size'){if(value===null)delete style.size;else style.size=textSize(value,16);}
    else if(key==='color'){if(value===null)delete style.color;else{const c=textColor(value);if(!c)throw Error('สีตัวอักษรไม่ถูกต้อง');style.color=c;}}
+   else if(key==='align'){if(value===null)delete style.align;else if(['left','center','right'].includes(value))style.align=value;else throw Error('การจัดแนวเฉพาะคำไม่ถูกต้อง');}
    else if(value===true)style[key]=true;
    else delete style[key];
   }
@@ -108,7 +111,8 @@ export function formattedTextHTML(o,escape,interactive=true,includeLinks=true){
   const span=m?'<span style="'+[
    m.bold?'font-weight:700':'',m.italic?'font-style:italic':'',
    m.underline||m.strike?'text-decoration:'+[(m.underline?'underline':''),(m.strike?'line-through':'')].filter(Boolean).join(' '):'',
-   m.size?'font-size:'+m.size+'px':'',textColor(m.color)?'color:'+textColor(m.color):''].filter(Boolean).join(';')+'">':'';
+   m.size?'font-size:'+m.size+'px':'',textColor(m.color)?'color:'+textColor(m.color):'',
+   ['left','center','right'].includes(m.align)?'display:block;text-align:'+m.align:''].filter(Boolean).join(';')+'">':'';
   let content=span+escape(text.slice(a,b))+(span?'</span>':'');
   if(l){
    if(!interactive)content='<span class="paper-word-mark">'+content+'</span>';

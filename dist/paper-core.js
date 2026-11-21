@@ -1,7 +1,7 @@
 import {validateLinks} from './word-links.js';
-import {validateMarks} from './paper-rich-text.js?v=word-format-20261120';
+import {validateMarks} from './paper-rich-text.js?v=20261121-paper-format';
 import {shapes,lineStyles} from './paper-shapes.js?v=notebook-shape-tools-20261120';
-import {validateTableCells} from './paper-table.js?v=20261120-table';
+import {validateTableCells} from './paper-table.js?v=20261121-paper-format';
 export const PAGE_W=900,PAGE_H=1273;
 // Pen and highlighter widths are independent paper-coordinate stroke widths.
 export const PEN_WIDTH_PRESETS=[1,2,3,5,8,12];
@@ -41,6 +41,9 @@ export function validatePaper(value){
     if(o.dash!==undefined){if(!Object.hasOwn(lineStyles,o.dash))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.dash=o.dash;}
    }else if(o.type==='table'){
     out.cells=validateTableCells(o.cells);
+    for(const key of ['headerBg','bodyBg','borderColor','textColor','headerTextColor']){
+     if(o[key]!==undefined){if(!color(o[key]))throw Error('สีตารางไม่ถูกต้อง');out[key]=o[key].toLowerCase();}
+    }
     for(const [key,count] of [['rows',out.cells.length],['columns',out.cells[0].length]]){
      if(o[key]===undefined)continue;
      if(!Array.isArray(o[key])||o[key].length!==count||!o[key].every(n=>Number.isFinite(n)&&n>0&&n<=10000))throw Error('สัดส่วนช่องตารางไม่ถูกต้อง');
