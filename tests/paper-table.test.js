@@ -76,3 +76,15 @@ test('table objects survive independent cloud-style merges and page undo',()=>{
  remote.pages[0].objects[0].cells[0][0]='B';
  assert.throws(()=>mergePaper(result,conflict,remote),/พร้อมกัน/);
 });
+
+test('header, body, borders and text colors stay editable and header remains readable',()=>{
+ const t=makeTable('table-colors');Object.assign(t,{headerBg:'#0f172a',headerTextColor:'#ffffff',bodyBg:'#fff8dc',textColor:'#16325c',borderColor:'#334155'});
+ t.cells[0][0]='หัวตาราง';
+ const page=paperFor(note()).pages[0];page.objects.push(t);
+ const saved=validatePaper({version:1,pages:[page]}).pages[0].objects[0];
+ assert.equal(saved.headerTextColor,'#ffffff');
+ const html=objectSVG(saved);
+ for(const hex of ['#0f172a','#ffffff','#fff8dc','#16325c','#334155'])assert.ok(html.includes(hex));
+ const invalid={...t,headerBg:'red;position:fixed'};
+ assert.throws(()=>validatePaper({version:1,pages:[{...page,objects:[invalid]}]}),/สีตาราง/);
+});

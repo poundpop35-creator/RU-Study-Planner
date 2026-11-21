@@ -95,3 +95,17 @@ test('rich text color parser accepts only safe opaque RGB or six-digit hex',()=>
   assert.throws(()=>validateMarks([{start:0,end:4,color:unsafe}],sample));
  }
 });
+
+test('alignment is scoped to the selected phrase and survives paper validation',()=>{
+ const text='ก่อน ตรงกลาง หลัง';
+ const start=text.indexOf('ตรงกลาง'),end=start+'ตรงกลาง'.length;
+ const marks=applyTextFormat([],text,start,end,'align','center');
+ assert.deepEqual(marks,[{start,end,align:'center'}]);
+ const html=formattedTextHTML({text,marks},escape);
+ assert.match(html,/display:block;text-align:center/);
+ assert.match(html,/^ก่อน /);
+ assert.match(html,/ หลัง$/);
+ const page=emptyPage();page.objects.push({id:'align-test',type:'text',x:0,y:0,w:500,h:80,text,color:'#172033',size:16,marks});
+ assert.deepEqual(validatePaper({version:1,pages:[page]}).pages[0].objects[0].marks,marks);
+ assert.throws(()=>validateMarks([{start,end,align:'justify'}],text),/การจัดแนว/);
+});

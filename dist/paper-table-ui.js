@@ -1,4 +1,4 @@
-import {makeTable,tracks} from './paper-table.js?v=20261120-table';
+import {makeTable,tracks,tableStyle} from './paper-table.js?v=20261121-table-colors';
 import {uid} from './paper-core.js?v=20261120-table';
 
 export function mountTableEditor(root,{page,change,writable,finishText,viewport,getScale,onSaved,say}){
@@ -40,7 +40,12 @@ export function mountTableEditor(root,{page,change,writable,finishText,viewport,
    for(const axis of ['left','right','top','bottom','move'])grip(axis,-1,axis==='move'?'ย้ายตาราง':'ปรับขนาดตาราง');
   }
   layer.hidden=false;
-  o.cells.forEach((row,r)=>row.forEach((text,c)=>{const el=field(r,c);if(el.value!==text)el.value=text;}));
+  const palette=tableStyle(o);
+  o.cells.forEach((row,r)=>row.forEach((text,c)=>{const el=field(r,c);if(el.value!==text)el.value=text;
+   el.style.backgroundColor=r===0?palette.headerBg:palette.bodyBg;
+   el.style.color=r===0?palette.headerTextColor:palette.textColor;
+   el.style.borderColor=palette.borderColor;
+  }));
   if(!drag)layout(o);
  }
  layer.oninput=e=>{

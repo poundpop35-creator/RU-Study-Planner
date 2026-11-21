@@ -41,6 +41,9 @@ export function validatePaper(value){
     if(o.dash!==undefined){if(!Object.hasOwn(lineStyles,o.dash))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.dash=o.dash;}
    }else if(o.type==='table'){
     out.cells=validateTableCells(o.cells);
+    for(const key of ['headerBg','bodyBg','borderColor','textColor','headerTextColor']){
+     if(o[key]!==undefined){if(!color(o[key]))throw Error('สีตารางไม่ถูกต้อง');out[key]=o[key].toLowerCase();}
+    }
     for(const [key,count] of [['rows',out.cells.length],['columns',out.cells[0].length]]){
      if(o[key]===undefined)continue;
      if(!Array.isArray(o[key])||o[key].length!==count||!o[key].every(n=>Number.isFinite(n)&&n>0&&n<=10000))throw Error('สัดส่วนช่องตารางไม่ถูกต้อง');

@@ -1,6 +1,12 @@
 // Editable, synchronized Word-style table objects on a paper page.
 // Keep cell data as plain text; never store/render executable HTML.
 export const TABLE_MAX_ROWS=16,TABLE_MAX_COLS=8,TABLE_MAX_CELL=500;
+const safeColor=(v,fallback)=>typeof v==='string'&&/^#[0-9a-fA-F]{6}$/.test(v)?v.toLowerCase():fallback;
+export function tableStyle(o){return {
+ headerBg:safeColor(o.headerBg,'#dbeafe'),bodyBg:safeColor(o.bodyBg,'#ffffff'),
+ borderColor:safeColor(o.borderColor,'#97aaca'),textColor:safeColor(o.textColor,'#172033'),
+ headerTextColor:safeColor(o.headerTextColor,'#102a4c')
+};}
 const integer=(n,lo,hi)=>Number.isInteger(n)&&n>=lo&&n<=hi;
 
 export function validateTableCells(cells){
@@ -59,11 +65,11 @@ export function tracks(o,key,count){
 }
 
 export function tableSVG(o,escapeText){
- const columns=o.cells[0].length,rows=o.cells.length;
+ const columns=o.cells[0].length,rows=o.cells.length,{headerBg,bodyBg,borderColor,textColor,headerTextColor}=tableStyle(o);
  const body=o.cells.map((cells,r)=>{
   const tag=r===0?'th':'td';
   return '<tr style="height:'+tracks(o,'rows',rows)[r]*100+'%">'+cells.map((cell,c)=>
-   '<'+tag+' scope="'+(r===0?'col':'row')+'" data-table-row="'+r+'" data-table-col="'+c+'" style="border:1px solid #a7b9d0;position:relative;padding:0;text-align:left;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;'+(r===0?'background:#eaf2ff;font-weight:700;':'background:#fff;')+'"><div style="position:absolute;inset:0;padding:7px 9px;overflow:hidden">'+escapeText(cell)+'</div></'+tag+'>'
+   '<'+tag+' scope="'+(r===0?'col':'row')+'" data-table-row="'+r+'" data-table-col="'+c+'" style="border:1px solid '+borderColor+';position:relative;padding:0;text-align:left;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;background:'+(r===0?headerBg:bodyBg)+';color:'+(r===0?headerTextColor:textColor)+';'+(r===0?'font-weight:700;':'')+'"><div style="position:absolute;inset:0;padding:7px 9px;overflow:hidden">'+escapeText(cell)+'</div></'+tag+'>'
   ).join('')+'</tr>';
  }).join('');
  return '<foreignObject data-object="'+escapeText(o.id)+'" x="'+o.x+'" y="'+o.y+'" width="'+o.w+'" height="'+o.h+'">'+
