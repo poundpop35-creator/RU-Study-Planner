@@ -86,7 +86,14 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const signature=[...selected].sort().join('|');
   if(signature!==lastSelectionSignature){$('#paper-selection-more').open=false;lastSelectionSignature=signature;}
   const p=page();if(cachedPage!==p||cachedImageVersion!==imageVersion){cachedContent=pageSVG(p,images);cachedPage=p;cachedImageVersion=imageVersion;}let content=cachedContent;
-  if(editing)content=pageSVG({...p,objects:p.objects.filter(o=>o.id!==editing.id)},images);
+  if(editing&&scribbleActive){
+   const preview={...editing.object,text:textarea.value,marks:editing.marks||[],links:editing.links||[],
+    w:editing.paperWidth||editing.object.w,
+    h:editing.paperHeight||editing.object.h};
+   const objects=p.objects.some(o=>o.id===editing.id)
+     ?p.objects.map(o=>o.id===editing.id?preview:o):[...p.objects,preview];
+   content=pageSVG({...p,objects},images);
+  }else if(editing)content=pageSVG({...p,objects:p.objects.filter(o=>o.id!==editing.id)},images);
   if(gesture?.kind==='shape'&&gesture.object)content+=objectSVG(gesture.object);
   const visible=gesture?.preview||p.objects;
   if(gesture?.preview)content=pageSVG({...p,objects:visible},images);
@@ -313,6 +320,47 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const angleInput=$('#paper-ruler-angle');
   if(document.activeElement!==angleInput)angleInput.value=String(((ruler.angle%360)+360)%360);
  }
+ // A temporary, native editable handwriting surface. The writing surface
+ // never changes the selected object's ID or x/y page coordinates.
+ let scribbleActive=false;
+ const scribblePad=document.createElement('section');
+ scribblePad.className='paper-scribble-panel';scribblePad.hidden=true;
+ scribblePad.innerHTML='<header><b>✍️ เขียนในพื้นที่สีฟ้า · ข้อความไปยังกล่องเดิม</b><button type="button" data-pencil-keyboard>⌨️ แป้นพิมพ์</button><button type="button" data-pencil-finish>✓ เสร็จสิ้น</button></header><textarea class="paper-scribble-input" lang="th" inputmode="none" spellcheck="false" aria-label="พื้นที่เขียนด้วย Apple Pencil ลงกล่องข้อความที่เลือก" placeholder="ใช้ Apple Pencil เขียนภายในพื้นที่นี้ หรือเปิดแป้นพิมพ์…"></textarea>';
+ viewport.append(scribblePad);
+ const scribbleInput=scribblePad.querySelector('textarea');
+ function closeScribblePanel(){
+  scribbleActive=false;scribblePad.hidden=true;
+  root.classList.remove('paper-scribble-open');
+ }
+ function openScribblePanel(){
+  if(!editing)return;
+  scribbleActive=true;root.classList.add('paper-scribble-open');
+  scribblePad.hidden=false;textarea.hidden=true;
+  scribbleInput.value=textarea.value;
+  scribbleInput.inputMode='none';
+  scribblePad.querySelector('[data-pencil-keyboard]').textContent='⌨️ แป้นพิมพ์';
+  fitTextBox();draw();
+  scribbleInput.focus({preventScroll:true});
+  const caret=scribbleInput.value.length;scribbleInput.setSelectionRange(caret,caret);
+ }
+ bind(scribbleInput,'input',()=>{
+  if(!scribbleActive||!editing)return;
+  const before=editing.lastText,next=scribbleInput.value;
+  editing.links=moveLinks(editing.links,before,next);
+  editing.marks=moveMarks(editing.marks,before,next);
+  editing.lastText=next;textarea.value=next;
+  fitTextBox();draw();
+  clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),700);
+ });
+ bind(scribblePad.querySelector('[data-pencil-keyboard]'),'click',event=>{
+  const viaKeyboard=scribbleInput.inputMode!=='text';
+  scribbleInput.inputMode=viaKeyboard?'text':'none';
+  event.currentTarget.textContent=viaKeyboard?'✍️ กลับไปใช้ปากกา':'⌨️ แป้นพิมพ์';
+  scribbleInput.blur();scribbleInput.focus({preventScroll:true});
+ });
+ bind(scribblePad.querySelector('[data-pencil-finish]'),'click',()=>{
+  finishText();setTool('select');say('บันทึกข้อความไว้ที่กล่องเดิมแล้ว');
+ });
  const inkBar=document.createElement('div');
  inkBar.className='paper-ink-bar';inkBar.setAttribute('role','toolbar');
  inkBar.setAttribute('aria-label','สีปากกาและขนาดเส้น');inkBar.hidden=true;
@@ -538,13 +586,13 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.overflowWrap='normal';textMeasure.style.lineHeight='1.5';
   textMeasure.textContent=textarea.value;
   const availableWidth=Math.max(1,PAGE_W-o.x);
-  const width=Math.min(availableWidth,Math.max(editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+5));
+  const width=Math.min(availableWidth,scribbleActive?Math.max(32,o.w):Math.max(editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+5));
   editing.paperWidth=width;
-  if(editing.mobile){
+  if(editing.mobile||scribbleActive){
    // Store the natural on-paper height, not the temporary interactive target.
    textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
    textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
-   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
+   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight));
   }
   // Leave a wider editable target for Apple Pencil Scribble *without* storing
   // that extra whitespace as the object's final bounds.
@@ -589,7 +637,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   viewport.scrollLeft=Math.max(0,(o.x-24)*scale);
   viewport.scrollTop=Math.max(0,(o.y-54)*scale);
  }
- function startText(o,caret=null){
+ function startText(o,caret=null,{wideArea=false}={}){
   closeWordMenu();finishText();wordSelection=null;richSelection=null;
   activePanel='text';
   editing={align:o.align,lastText:o.text,links:o.links||[],marks:o.marks||[],rich:false,id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};
@@ -604,21 +652,24 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   Object.assign(textarea.style,{textAlign:o.align||'left',left:o.x+'px',top:o.y+'px',fontSize:o.size+'px',fontWeight:o.bold?'700':'400',color:o.color});textarea.hidden=false;
   const style=getComputedStyle(textarea);
   Object.assign(textMeasure.style,{fontFamily:style.fontFamily,fontSize:style.fontSize,fontWeight:style.fontWeight,letterSpacing:style.letterSpacing});
-  fitTextBox();draw();focusInlineText(o);textarea.focus({preventScroll:true});const cursor=caret??textarea.value.length;textarea.setSelectionRange(cursor,cursor);
-  if(o.marks?.length)activateRich();
+  fitTextBox();draw();
+  if(!wideArea){focusInlineText(o);textarea.focus({preventScroll:true});}
+  const cursor=caret??textarea.value.length;textarea.setSelectionRange(cursor,cursor);
+  if(o.marks?.length&&!wideArea)activateRich();
   textRibbonState();
-  if(!editing.mobile&&!editing.rich)textarea.scrollIntoView({block:'nearest',inline:'nearest'});
+  if(!wideArea&&!editing.mobile&&!editing.rich)textarea.scrollIntoView({block:'nearest',inline:'nearest'});
  }
  let textTimer;
  function finishText(keepOpen=false){
-  if(!keepOpen)closeWordMenu();
+  const wasScribble=scribbleActive;
+  if(!keepOpen){closeWordMenu();closeScribblePanel();}
   clearTimeout(textTimer);
   if(!editing)return;
   const edit=editing;
   if(edit.rich)fitRichBox();
   const content=edit.rich?readRich():{text:textarea.value,marks:edit.marks||[]};
   const w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
-  const o={...edit.object,text:content.text,w:edit.paperWidth??w,h:edit.rich||edit.mobile?edit.paperHeight:h};
+  const o={...edit.object,text:content.text,w:edit.paperWidth??w,h:edit.rich||edit.mobile||wasScribble?(edit.paperHeight||h):h};
   if(edit.align)o.align=edit.align;
   if(edit.links.length)o.links=edit.links;else delete o.links;
   if(content.marks.length)o.marks=content.marks;else delete o.marks;
@@ -650,7 +701,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);fitTextBox();
  });
  bind(textarea,'blur',e=>{
-  if(!closed&&!editing?.rich&&!e.relatedTarget?.closest?.('.paper-text-ribbon,.paper-word-menu')){rememberWord();finishText();}
+  if(!closed&&!scribbleActive&&!editing?.rich&&!e.relatedTarget?.closest?.('.paper-text-ribbon,.paper-word-menu,.paper-scribble-panel')){rememberWord();finishText();}
  });
  bind(rich,'input',()=>{
   if(!editing?.rich)return;
@@ -1048,12 +1099,15 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    const action=b.dataset.paper;if(!action)return;
    if(action==='finish-text'){finishText();return;}
    if(action==='scribble-text'){
-    setTool('text');
-    const existing=page().objects.find(o=>selected.has(o.id)&&o.type==='text');
+    const targetId=editing?.id||page().objects.find(o=>selected.has(o.id)&&o.type==='text')?.id;
+    if(editing)finishText();
+    const existing=page().objects.find(o=>o.id===targetId&&o.type==='text');
+    tool='text';activePanel='text';selected=existing?new Set([existing.id]):new Set();
     const x=Math.max(28,Math.min(PAGE_W-440,viewport.scrollLeft/scale+75));
     const y=Math.max(35,Math.min(PAGE_H-70,viewport.scrollTop/scale+110));
-    startText(existing||{id:uid(),type:'text',x,y,w:440,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold:false});
-    say('เขียนในกรอบด้วย Apple Pencil · หาก iPadOS รองรับภาษาและเปิด Scribble จะเปลี่ยนเป็นตัวพิมพ์');
+    startText(existing||{id:uid(),type:'text',x,y,w:440,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold:false},null,{wideArea:true});
+    openScribblePanel();
+    say('เขียนด้วย Apple Pencil ในพื้นที่สีฟ้า · ข้อความที่ iPadOS แปลงจะไปที่กล่องเดิม');
     return;
    }
    if(action==='ruler'){ruler.active=!ruler.active;activePanel=ruler.active?'ruler':tool;draw();return;}

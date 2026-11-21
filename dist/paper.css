@@ -866,3 +866,40 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-text-ribbon{white-space:nowrap}
 }
 @media print{.paper-app .paper-context-wrap,.paper-app .paper-strip-arrow{display:none!important}}
+
+/* Wide Scribble reception uses a native text area and never covers the toolbar. */
+.paper-app .paper-viewport{position:relative}
+.paper-app .paper-scribble-panel{
+ position:absolute;inset:0;z-index:7;
+ box-sizing:border-box;display:flex;flex-direction:column;
+ background:rgba(236,246,255,.68);border:2px dashed #6588d0;border-radius:9px;
+}
+.paper-app .paper-scribble-panel[hidden]{display:none!important}
+.paper-app .paper-scribble-panel header{
+ display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+ padding:7px 9px;min-height:39px;
+ background:#eaf2ff;color:#2c4b88;font-size:12px;
+ border-bottom:1px solid #bdd0f0;box-sizing:border-box;
+}
+.paper-app .paper-scribble-panel header b{flex:1 1 auto;font-size:12px}
+.paper-app .paper-scribble-panel header button{
+ padding:6px 10px;min-height:32px;border-radius:7px;
+ background:#fff;border:1px solid #a9bde2;color:#264b94;
+ font-size:12px;white-space:nowrap;
+}
+.paper-app .paper-scribble-panel header [data-pencil-finish]{
+ background:#3155d9;border-color:#3155d9;color:#fff;font-weight:750;
+}
+.paper-app .paper-scribble-panel textarea{
+ flex:1 1 auto;display:block;box-sizing:border-box;width:100%;min-height:120px;
+ margin:0;padding:22px 24px;resize:none;border:0;outline:none;
+ background:rgba(238,248,255,.12);color:rgba(28,59,102,.25);
+ caret-color:#3155d9;overflow:auto;font-family:'Noto Sans Thai',sans-serif;
+ font-size:19px;line-height:1.65;
+}
+.paper-app .paper-scribble-panel textarea::placeholder{color:#5077af;font-size:14px}
+.paper-app.paper-scribble-open .paper-selection-tools{display:none!important}
+@media(max-width:720px){
+ .paper-app .paper-scribble-panel header{padding:5px}
+ .paper-app .paper-scribble-panel textarea{padding:12px;font-size:18px}
+}
