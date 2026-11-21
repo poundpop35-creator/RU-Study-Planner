@@ -5,7 +5,7 @@ import {recognizeHeldShape,rulerProject,rulerSnap,rulerSVG} from '../dist/paper-
 import {emptyPage,validatePaper,pageHistory,copy} from '../dist/paper-core.js';
 
 test('extra shapes render editable SVG and retain the selected line style after validation',()=>{
- assert.equal(Object.keys(shapes).length,14);
+ assert.equal(Object.keys(shapes).length,15);
  assert.deepEqual(Object.keys(lineStyles),['solid','dashed','dotted']);
  for(const kind of Object.keys(shapes)){
   const s=makeShape('test-shape',kind,{x:90,y:80},{x:210,y:170},'#172033',3,'dashed');
@@ -56,4 +56,12 @@ test('eraser sweeps actual linework, including reversed arrowheads and elbow ben
  assert.equal(eraserHit(shape('line'),{x:5,y:90}),false);
  assert.ok(eraserHit({type:'stroke',x:0,y:20,w:100,h:1,width:1,points:[[0,0],[1,0]]},{x:45,y:0},{x:45,y:45},0));
  for(const type of ['text','image','table'])assert.equal(eraserHit({type},{x:0,y:0}),false);
+});
+
+test('one horizontal drag produces a level three-branch diagram in either direction',()=>{
+ const a={x:40,y:100},b={x:240,y:100};
+ for(const [from,to] of [[a,b],[b,a]]){
+  const shape=makeShape('branch','branch3',from,to,'#172033',2);
+  assert.match(shapeSVG(shape),/M40 118 L40 109 L240 109 L240 118 M140 100 L140 118/);
+ }
 });

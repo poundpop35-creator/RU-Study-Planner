@@ -2,7 +2,7 @@ export const shapes = {
  rect:'สี่เหลี่ยมผืนผ้า',roundRect:'สี่เหลี่ยมมุมมน',square:'สี่เหลี่ยมจัตุรัส',
  ellipse:'วงรี',circle:'วงกลม',triangle:'สามเหลี่ยม',diamond:'สี่เหลี่ยมข้าวหลามตัด',
  pentagon:'ห้าเหลี่ยม',hexagon:'หกเหลี่ยม',star:'ดาว',line:'เส้นตรง',
- arrow:'ลูกศร',doubleArrow:'ลูกศรสองหัว',connector:'เส้นเชื่อมหักมุม'
+ arrow:'ลูกศร',doubleArrow:'ลูกศรสองหัว',connector:'เส้นเชื่อมหักมุม',branch3:'ผังสามกิ่ง'
 };
 export const lineStyles={solid:'เส้นทึบ',dashed:'เส้นประ',dotted:'เส้นจุด'};
 const round=n=>Math.round(n*100)/100;
@@ -20,6 +20,7 @@ export function makeShape(id,kind,start,end,color,width,dash='solid'){
  if(kind==='square'||kind==='circle'){
   const side=Math.max(w,h);w=side;h=side;
  }
+ if(kind==='branch3')h=Math.max(h,Math.min(64,Math.max(16,w*.09)));
  return {id,type:'shape',kind,color,width,x,y,w,h,
   reverseX:end.x<start.x,reverseY:end.y<start.y,...(dash==='solid'?{}:{dash})};
 }
@@ -52,6 +53,11 @@ function arrowHead(x,y,dx,dy,width,sign=1){
 }
 function linePaths(o){
  const {x,y,w,h}=o,a={x:o.reverseX?x+w:x,y:o.reverseY?y+h:y},b={x:o.reverseX?x:x+w,y:o.reverseY?y:y+h};
+ if(o.kind==='branch3'){
+  const mid=x+w/2,rail=y+h/2,bottom=y+h;
+  return [[{x,y:bottom},{x,y:rail},{x:x+w,y:rail},{x:x+w,y:bottom}],
+   [{x:mid,y},{x:mid,y:bottom}]];
+ }
  if(o.kind==='connector'){const mid=(a.x+b.x)/2;return [[a,{x:mid,y:a.y},{x:mid,y:b.y},b]];}
  const paths=[[a,b]],dx=b.x-a.x,dy=b.y-a.y;
  if(o.kind==='arrow'||o.kind==='doubleArrow')paths.push(arrowHead(b.x,b.y,dx,dy,o.width));
@@ -63,7 +69,7 @@ function distance(p,a,b){
  return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);
 }
 export function eraserHit(o,a,b=a,radius=12){
- if(o.type!=='stroke'&&!(o.type==='shape'&&['line','arrow','doubleArrow','connector'].includes(o.kind)))return false;
+ if(o.type!=='stroke'&&!(o.type==='shape'&&['line','arrow','doubleArrow','connector','branch3'].includes(o.kind)))return false;
  const r=radius+o.width/2,side=(p,q,t)=>(q.x-p.x)*(t.y-p.y)-(q.y-p.y)*(t.x-p.x);
  function hits(c,d){
   if(Math.max(a.x,b.x)+r<Math.min(c.x,d.x)||Math.min(a.x,b.x)-r>Math.max(c.x,d.x)||Math.max(a.y,b.y)+r<Math.min(c.y,d.y)||Math.min(a.y,b.y)-r>Math.max(c.y,d.y))return false;

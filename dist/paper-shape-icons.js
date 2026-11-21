@@ -13,6 +13,7 @@ const art={
  line:'<path d="M4 20 28 4"/>',
  arrow:'<path d="M4 20 28 4M17 4H28V15"/>',
  doubleArrow:'<path d="M4 20 28 4M4 9V20H15M17 4H28V15"/>',
+ branch3:'<path d="M3 20V12H29V20 M16 4V20"/>',
  connector:'<path d="M3 19H13V5H29"/>'
 };
 export function shapeIcon(kind){
