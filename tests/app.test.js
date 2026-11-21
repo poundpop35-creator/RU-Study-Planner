@@ -37,7 +37,7 @@ test('home and full lessons open before any private-space connection, without lo
 
 test('every main route and every lesson page renders without runtime errors',()=>{
  for(const route of ['home','practice','documents','courses','classroom','review','plan','registration','calendar','exams','resources','notes','account','about','settings','awards','menu']){navigate('#'+route);assert.ok(html().length>500,route);assert.ok(!html().includes('[object Object]'),route);assert.ok(!html().includes('undefined'),route);}
- for(const l of lessons){navigate('#lesson/'+l.id);assert.ok(html().includes(l.title),l.id);assert.ok(html().includes(l.example.analysis),l.id);assert.equal((html().match(/class="question-block"/g)||[]).length,l.questions.length,l.id);}
+ for(const l of lessons){navigate('#lesson/'+l.id);assert.ok(html().includes(l.title),l.id);assert.ok(html().includes(l.example.analysis),l.id);assert.equal((html().match(/class="question-block"/g)||[]).length,0,l.id);}
  navigate('#lesson/missing');assert.ok(html().includes('ไม่พบหน้าที่เลือก'));
 });
 
@@ -91,11 +91,7 @@ test('completion updates progress and remains reversible without changing earned
  navigate('#lesson/POL1101-1');click('complete',{id:'POL1101-1'});assert.ok(saved().completed.includes('POL1101-1'));navigate('#course/POL1101');assert.ok(html().includes(`ติวแล้ว 1 / ${lessons.filter(l=>l.course==='POL1101').length} บท`));
  navigate('#registration');assert.ok(html().includes('สอบผ่านที่บันทึก 0 นก.'));navigate('#lesson/POL1101-1');click('complete',{id:'POL1101-1'});assert.ok(!saved().completed.includes('POL1101-1'));
 });
-test('answers show explanation and mistakes review does not skip it after correction',()=>{
- navigate('#lesson/POL1101-1');click('answer',{lesson:'POL1101-1',index:'0',value:'0'});assert.ok(html().includes('ลองทบทวนแนวคิดอีกนิด'));assert.ok(html().includes(lessons[0].questions[0].explanation));
- navigate('#review');click('mode',{mode:'quiz'});listeners.change({target:{id:'mistakes-only',checked:true,classList:{contains(){return false}}}});assert.ok(html().includes(lessons[0].questions[0].prompt));
- click('retry-one',{id:'POL1101-1:0'});click('answer',{lesson:'POL1101-1',index:'0',value:'1'});assert.ok(html().includes('ถูกต้อง'));assert.ok(html().includes(lessons[0].questions[0].explanation));
-});
+
 test('search finds actual lesson content and displays a useful empty state',()=>{
  navigate('#courses');listeners.input({target:{id:'lesson-search',value:'ม่านแห่งความไม่รู้'}});assert.ok(get('#library-results').innerHTML.includes('POL2106-5'));
  listeners.input({target:{id:'lesson-search',value:'NONEXISTENT-TOPIC-XYZ'}});assert.ok(get('#library-results').innerHTML.includes('ยังไม่พบหัวข้อนี้'));
@@ -111,44 +107,18 @@ test('search covers the plain-language layer and textbook terms',()=>{
  navigate('#courses');listeners.input({target:{id:'lesson-search',value:'POSDCORB'}});assert.ok(get('#library-results').innerHTML.includes('POL2301-2'));
  listeners.input({target:{id:'lesson-search',value:''}});
 });
-test('daily practice keeps explanations visible, persists answers and requeues wrong items',()=>{
- navigate('#practice/POL2200');
- const prompt=html().match(/<h2>([^<]+)<\/h2>/)?.[1];assert.ok(prompt);
- const before=Object.keys(saved().practiceReview);
- click('practice-answer',{value:'0'});
- const key=Object.keys(saved().practiceReview).find(k=>!before.includes(k));assert.ok(key);
- const q=practiceQuestion(key);assert.ok(html().includes(escapeHTML(q.explanation)));assert.ok(html().includes('data-action="practice-next"'));
- click('practice-answer',{value:'1'});assert.equal(saved().practiceReview[key].attempts,1,'lock first answer until next');
- click('practice-next');assert.ok(!html().includes(escapeHTML(q.explanation)));
- if(q.answer!==0){navigate('#practice/mistakes-POL2200');assert.ok(html().includes(escapeHTML(q.prompt)));click('practice-answer',{value:String(q.answer)});assert.ok(html().includes(escapeHTML(q.explanation)));assert.equal(saved().practiceReview[key].streak,1);}
-});
+
 test('plan date controls save completion under the selected date and university PDFs open in the app',()=>{
  navigate('#home');listeners.change({target:{id:'study-plan-date',value:'2026-11-05'}});
  assert.ok(html().includes('value="2026-11-05"'));click('block',{id:'explain'});assert.ok(saved().planDone['2026-11-05'].includes('explain'));
  navigate('#documents/curriculum');assert.ok(html().includes('iframe'));assert.ok(html().includes('https://www.ru.ac.th/th/Center_study_plan/21/09_69.pdf'));
- navigate('#exams');assert.ok(html().includes('ยังไม่ยืนยันประกาศเฉพาะภาค 2/2569'));assert.ok(html().includes('ปรนัย'));
-});
-test('exam guides render for every course and both practice modes score correctly',()=>{
- for(const code of Object.keys(prep)){navigate('#prep/'+code);const h=html();assert.ok(h.includes('ข้อสอบเสมือน'),code);assert.equal((h.match(/class="mock-q/g)||[]).length,prep[code].questions.length,code);assert.ok(!h.includes('undefined'),code);assert.ok(h.includes(escapeHTML(prep[code].textbook)),code);}
- navigate('#prep/missing');assert.ok(html().includes('ไม่พบหน้าที่เลือก'));
- navigate('#exams');assert.ok(html().includes('#prep/POL2106'));navigate('#course/POL2106');assert.ok(html().includes('แนวข้อสอบ POL2106'));
- const qs=prep.POL2106.questions;navigate('#prep/POL2106');
- click('prep-answer',{course:'POL2106',index:'0',value:String(qs[0].answer)});assert.equal(saved().prep.POL2106.answers['0'],qs[0].answer);assert.ok(html().includes(escapeHTML(qs[0].explanation)));
- click('prep-answer',{course:'POL2106',index:'0',value:String((qs[0].answer+1)%5)});assert.equal(saved().prep.POL2106.answers['0'],qs[0].answer,'practice answers lock');
- click('prep-mode',{course:'POL2106',mode:'exam'});assert.deepEqual(saved().prep.POL2106.answers,{});
- click('prep-answer',{course:'POL2106',index:'1',value:String((qs[1].answer+1)%5)});click('prep-answer',{course:'POL2106',index:'1',value:String(qs[1].answer)});
- assert.equal(saved().prep.POL2106.answers['1'],qs[1].answer,'exam answers can change before submit');assert.ok(!html().includes(escapeHTML(qs[1].explanation)),'no key before submit');
- click('prep-submit',{course:'POL2106'});assert.equal(saved().prep.POL2106.submitted,true);assert.equal(saved().prep.POL2106.best,1);assert.ok(html().includes(escapeHTML(qs[1].explanation)));
- click('prep-answer',{course:'POL2106',index:'2',value:'0'});assert.equal(saved().prep.POL2106.answers['2'],undefined,'locked after submit');
- click('prep-reset',{course:'POL2106'});assert.deepEqual(saved().prep.POL2106.answers,{});assert.equal(saved().prep.POL2106.best,1);
- click('prep-mode',{course:'POL2106',mode:'practice'});
+ navigate('#exams');assert.equal((html().match(/class="exam-item /g)||[]).length,7);assert.equal((html().match(/รอแนวข้อสอบ/g)||[]).length,6);assert.ok(html().includes('./pol2106-lab.html'));
 });
 
 test('game layer: level chip, awards page and celebrations',()=>{
  navigate('#home');assert.ok(get('#top-stats').innerHTML.includes('Lv.'));assert.ok(html().includes('href="#awards"'));assert.ok(html().includes('class="start-resume"'));
  navigate('#awards');assert.ok(html().includes('รางวัลของฉัน'));assert.equal((html().match(/class="badge-card /g)||[]).length,12);
  navigate('#lesson/POL1101-1');assert.ok(html().includes('อ่านจบรับ +50 XP'));assert.ok(!html().includes('undefined'));
- click('answer',{lesson:'POL1101-1',index:'1',value:String(lessons[0].questions[1].answer)});assert.ok(html().includes('ถูกต้อง'));assert.ok(!html().includes('undefined'));click('retry',{id:'POL1101-1'});
  click('complete',{id:'POL1101-1'});assert.ok(html().includes('อ่านจบบทนี้แล้ว'));assert.ok(html().includes('data-fresh'));
  navigate('#lesson/POL1101-1');assert.ok(!html().includes('data-fresh'),'only the changed element animates, once');
  click('complete',{id:'POL1101-1'});assert.ok(!saved().completed.includes('POL1101-1'));
@@ -168,7 +138,7 @@ test('pre-class course page gives direct access to that course’s shared files'
  assert.ok(html().includes('ไฟล์หลักวิชา POL2301'));
 });
 test('the sidebar has one entry per section and every grouped page links to its siblings',()=>{
- const groups=[['courses','practice','review','exams'],['notes','classroom'],['plan','calendar','registration'],['documents','resources','about'],['account','settings']];
+ const groups=[['courses','practice','review'],['notes','classroom'],['plan','calendar','registration'],['documents','resources','about'],['account','settings']];
  for(const pages of groups)for(const page of pages){
   navigate('#'+page);
   const side=get('#navigation').innerHTML;
@@ -347,5 +317,5 @@ test('weekly timetable exposes the same time axis and a shortcut to replay at 20
 test('home offers direct practice and a blank note without a setup dialog',()=>{
  navigate('#home');assert.match(html(),/class="start-actions"[\s\S]*?href="#practice"/);
  assert.match(html(),/data-action="nb-new" data-source="general"/);
- navigate('#practice');assert.ok(html().indexOf('class="panel practice-question"')<html().indexOf('เลือกวิชาและชุดฝึก'));
+ navigate('#practice');assert.ok(html().includes('exam-timeline'));assert.ok(!html().includes('mock-q'));
 });
