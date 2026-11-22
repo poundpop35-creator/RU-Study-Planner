@@ -106,3 +106,15 @@ test('realistic Pencil circles and ellipses, but not an open arc',()=>{
  assert.equal(recognizeDrawnShape(loop(30,Math.PI*1.04,85,85)),null);
  assert.equal(recognizeDrawnShape([[10,12],[75,13],[150,12]])?.kind,'line');
 });
+
+test('straighten preserves three side or downward branches, including retraced ink',async()=>{
+ const {diagramSegments,hasBranchJunction}=await import('../dist/paper-geometry.js');
+ const e=[[80,0],[0,2],[1,40],[74,42],[0,39],[2,82],[81,80]];
+ for(const points of [e,e.map(([x,y])=>[y,x]),[...e].reverse()]){
+  const lines=diagramSegments(points);
+  assert.equal(lines.length,4);
+  assert.ok(hasBranchJunction(lines));
+  assert.ok(lines.every(({start,end})=>start.x===end.x||start.y===end.y));
+ }
+ assert.equal(diagramSegments([[2,1],[13,13],[25,24]]),null);
+});

@@ -9,7 +9,7 @@ import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
 import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape,eraserHit,isJoinable,snapLinePoint,snapMovedLine} from './paper-shapes.js?v=eraser-20261121';
-import {recognizeHeldShape,recognizeDrawnShape,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261121-safe-forms';
+import {recognizeHeldShape,recognizeDrawnShape,diagramSegments,hasBranchJunction,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261121-safe-forms';
 import {mountTableEditor} from './paper-table-ui.js?v=20261121-paper-format';
 import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
 let active=null;
@@ -112,7 +112,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   $('#paper-page-label').textContent=`หน้า ${model.pages.findIndex(p=>p.id===pageId)+1} / ${model.pages.length}`;
   $('#paper-template').value=p.template;
   $('[data-paper="multi"]').setAttribute('aria-pressed',String(multiSelect));
-  $('#paper-shape-options').hidden=activePanel!=='shape';
+  $('#paper-shape-options').hidden=true;
   $('#paper-line-options').hidden=activePanel!=='shape';
   const rulerButton=$('[data-paper="ruler"]');
   $('#paper-ruler-angles').hidden=!ruler.active;
@@ -128,6 +128,10 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    root.querySelectorAll('[data-shape-pick]').forEach(b=>b.setAttribute('aria-pressed',
     String(b.dataset.shapePick===$('#paper-shape').value)));
 
+  const currentIcon=root.querySelector('[data-shape-pick="'+$('#paper-shape').value+'"] svg');
+  if(currentIcon&&shapeGallery.dataset.kind!==$('#paper-shape').value){
+   shapeGallery.dataset.kind=$('#paper-shape').value;shapeGallery.replaceChildren(currentIcon.cloneNode(true));
+  }
   $('[data-paper="undo"]').disabled=!h().canUndo; $('[data-paper="redo"]').disabled=!h().canRedo;
   const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('#paper-selected-count').textContent=selected.size;
    $('#paper-table-selection').hidden=!singleTable;
@@ -237,7 +241,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(!['select','text'].includes(tool))selected.clear();
   syncPenWidthControls();showTextRibbon();
   say(({shape:'เลือกชนิดรูปทรงจากไอคอน แล้วลากบนกระดาษ',
-   straighten:'วาดวงกลม วงรี สี่เหลี่ยม หรือเส้นตรง แล้วปล่อยปากกาเพื่อจัดรูปทรง · ถ้าไม่ตรงรูปทรงจะเก็บลายเส้นเดิม',
+   straighten:'วาดรูปทรงหรือผังกิ่งก้าน แล้วยกปากกาเพื่อจัดเส้น',
    pen:'ใช้ปากกาเขียน · เปิดนิ้วเขียนหากต้องการ',
    highlight:'ลากเพื่อไฮไลต์',eraser:'ลากผ่านเส้นเพื่อลบทั้งเส้น',
    select:'คลิกเพื่อเลือก · ดับเบิลคลิกข้อความเพื่อแก้ทันที',
@@ -278,7 +282,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  inkOptions.hidden=false;
  shapeOptions.append($('#paper-shape-options'),$('#paper-line-options'));
  const shapeGallery=document.createElement('button');shapeGallery.type='button';shapeGallery.dataset.openShapes='context';
- shapeGallery.textContent='▱ รูปทรงทั้งหมด';shapeOptions.prepend(shapeGallery);
+ shapeGallery.setAttribute('aria-label','เลือกรูปทรง');shapeGallery.title='เลือกรูปทรง';shapeOptions.prepend(shapeGallery);
  pencilOptions.append($('.paper-finger'),$('.paper-palm-guard'),$('.paper-geometry-check'));
  textOptions.append($('.paper-default-text-size'),$('.paper-global-ink'),$('[data-paper="scribble-text"]'));
  pageOptions.append($('.paper-template-tool'));
@@ -317,7 +321,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   ribbon.hidden=activePanel!=='text'||!editing;
   inkBar.hidden=!showInk;
   contextWrap.hidden=[inkOptions,pencilOptions,shapeOptions,textOptions,pageOptions,selectOptions,rulerOptions,ribbon].every(el=>el.hidden);
-  $('#paper-shape-options').hidden=activePanel!=='shape';
+  $('#paper-shape-options').hidden=true;
   $('#paper-line-options').hidden=activePanel!=='shape';
   const angleInput=$('#paper-ruler-angle');
   if(document.activeElement!==angleInput)angleInput.value=String(((ruler.angle%360)+360)%360);
@@ -979,13 +983,23 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     }
    }
    if(g?.kind==='stroke'&&e.type!=='pointercancel'){
-   let result;
+   let result,branches;
    if(g.straighten){
     // The old implementation connected the first/last samples as a line,
     // destroying circles whenever the stroke began and ended together.
     // Recognize the whole gesture when the Pencil is lifted instead.
     const found=recognizeDrawnShape(g.points);
-    if(found)result=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);
+    const segments=diagramSegments(g.points);
+    // Keep recognition of closed outlines. Open corners and retraced branches
+    // are represented by individual lines so the next stroke can snap to them.
+    if(segments&&(!found||found.kind==='line'||hasBranchJunction(segments))){
+     branches=segments.map(({start,end})=>{
+      const horizontal=start.y===end.y;
+      const a=snapLinePoint(start,page().objects,8/scale),b=snapLinePoint(end,page().objects,8/scale);
+      const level=horizontal?(a!==start?a.y:b!==end?b.y:start.y):(a!==start?a.x:b!==end?b.x:start.x);
+      return makeShape(uid(),'line',horizontal?{x:a.x,y:level}:{x:level,y:a.y},horizontal?{x:b.x,y:level}:{x:level,y:b.y},g.color,g.width,lineStyle);
+     });
+    }else if(found)result=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);
     else if(g.snap)result=g.snap;
    }
    else if(g.snap)result=g.snap;
@@ -993,7 +1007,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     const first=g.points[0],last=g.points.at(-1);
     result=makeShape(uid(),'line',{x:first[0],y:first[1]},{x:last[0],y:last[1]},g.color,g.width,lineStyle);
    }
-   if(result)change(p=>p.objects.push(result));
+   if(branches)change(p=>p.objects.push(...branches));
+   else if(result)change(p=>p.objects.push(result));
    else if(g.points.length>1){const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width});change(p=>p.objects.push(stroke));}
   }
   else if(g?.kind==='shape'&&e.type==='pointerup'){
@@ -1130,7 +1145,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     multiSelect=!multiSelect;setTool('select');
     say(multiSelect?'แตะเพื่อเพิ่มหรือนำออกจากกลุ่ม · ลากชิ้นที่เลือกเพื่อย้ายพร้อมกัน':'แตะเพื่อเลือก · Shift + คลิกเพื่อเลือกเพิ่ม');return;
    }
-   if(['select','pen','highlight','eraser','text','shape','hand','line','arrow','straighten'].includes(action)){setTool(action);return;}
+   if(action==='shape'){setTool('shape');setShapesOpen(true);return;}
+   if(['select','pen','highlight','eraser','text','hand','line','arrow','straighten'].includes(action)){setTool(action);return;}
    if(action==='table'){$('.paper-menu').open=false;tableUI.open();return;}
    if(action==='table-edit'){const item=page().objects.find(o=>selected.size===1&&selected.has(o.id)&&o.type==='table');if(item)tableUI.open(item);return;}
    if(['table-add-row','table-remove-row','table-add-col','table-remove-col'].includes(action)){
