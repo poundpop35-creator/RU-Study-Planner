@@ -37,6 +37,23 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await button.evaluate(el=>{let parent=el.parentElement;while(parent){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}});
    await button.click();if(key==='save')await wait(()=>button.isEnabled());
   };
+  if(process.env.PAPER_TEST==='crop'){
+   const start=()=>page.evaluate(async src=>{
+    const {cropImage}=await import('/paper-images.js');
+    window.cropResult=cropImage(src).then(r=>r?[r.widthFraction,r.heightFraction,r.blob.size]:null);
+   },'data:image/png;base64,'+png.toString('base64'));
+   await start();
+   const dialog=page.locator('.photo-crop'),frame=dialog.locator('.crop-frame');
+   await frame.waitFor();const rect=await frame.boundingBox();
+   await page.mouse.move(rect.x+4,rect.y+4);await page.mouse.down();
+   await page.mouse.move(rect.x+rect.width*.25,rect.y+rect.height*.25);await page.mouse.up();
+   await dialog.getByRole('button',{name:'เสร็จสิ้น'}).click();
+   const [w,h,size]=await page.evaluate(()=>window.cropResult);
+   assert.ok(w>.65&&w<.85&&h>.65&&h<.85&&size>0);
+   await start();await dialog.getByRole('button',{name:'ยกเลิก'}).click();
+   assert.equal(await page.evaluate(()=>window.cropResult),null);
+   assert.deepEqual(errors,[]);console.log(name+': direct photo crop PASS');continue;
+  }
   if(process.env.PAPER_TEST==='tables'){
    const primary=page.locator('.paper-toolbar');
    assert.equal(await page.locator('[data-paper="table"]').count(),1);
@@ -252,7 +269,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     delete svg.setPointerCapture;
    },mid);await click('save');assert.ok(picture().w>beforePinch.w);assert.equal(await page.locator('#paper-zoom').innerText(),zoom);
   }
-  const beforeCropWidth=picture().w;await click('crop');const crop=page.getByRole('dialog');await crop.locator('input').first().press('ArrowRight');await crop.getByText('ใช้ส่วนที่เลือก').click();
+  const beforeCropWidth=picture().w;await click('crop');const crop=page.getByRole('dialog');await crop.getByRole('button',{name:'ปรับขอบซ้าย',exact:true}).press('ArrowRight');await crop.getByRole('button',{name:'เสร็จสิ้น'}).click();
   await wait(()=>images.size===2);await wait(()=>page.locator('#paper-svg image').getAttribute('width').then(w=>Number(w)<beforeCropWidth));await click('save');assert.notEqual(picture().imageId,original.imageId);
   await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 sample')});
   await wait(()=>row.payload.notebook.notes[0].files?.[0]?.name==='lesson.pdf');await page.locator('#paper-files form button').click();

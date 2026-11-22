@@ -17,6 +17,8 @@ jobs:
           node-version: '22'
       - run: npm install --no-save --package-lock=false playwright@1.62.1
       - run: npx playwright install --with-deps chromium webkit
+      - name: Direct photo crop
+        run: PAPER_TEST=crop node tests/browser/paper.mjs
       - name: Inline notebook tables
         run: PAPER_TEST=tables node tests/browser/paper.mjs
       - run: node tests/browser/paper.mjs
