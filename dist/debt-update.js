@@ -25,7 +25,7 @@ export function decode(token){
   return {label,group,bal,min,bills,carry,old,rate:rate/100,period,storedRate,day,parts,after};
  });
  const baseBudget=items[0][11]?.baseBudget||budget;
- if(!int(baseBudget)||baseBudget>budget||baseBudget<100000)fail();
+ if(!int(baseBudget)||!baseBudget||baseBudget>budget)fail();
  const payWindow=items[0][11]?.payWindow;
  if(payWindow&&(!Array.isArray(payWindow)||payWindow.length!==2||!payWindow.every(n=>int(n,31)&&n>0)||payWindow[0]>payWindow[1]))fail();
  return {date,budget,baseBudget,unit,accounts,note,payWindow};
