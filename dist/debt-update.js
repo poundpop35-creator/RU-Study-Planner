@@ -49,7 +49,7 @@ export function forecast(p,old,rates){
   if(m>=240)fail();const opening=[...left],a=ac.map(()=>0);
   const interest=sum(ac.map((v,i)=>Math.round(left[i]*v.rate/100*(v.period==='y'?30/365:v.period==='m'?1:0))));
   const mandatory=sum(ac.map((v,i)=>Math.min(left[i],(v.bills[m]||0)+v.min)));
-  const roundingBuffer=ac.length*100;
+  const roundingBuffer=p.baseBudget<p.budget?ac.length*100:0; // preserve legacy plan's exact original budget
   const cashCeiling=Math.min(p.budget,Math.max(p.baseBudget||p.budget,mandatory+interest+roundingBuffer));
   let free=cashCeiling-interest-roundingBuffer;
   const put=(i,n)=>{const pay=Math.max(0,Math.min(left[i],n));left[i]-=pay;a[i]+=pay;free-=pay;return pay;};
