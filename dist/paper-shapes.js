@@ -53,6 +53,7 @@ function arrowHead(x,y,dx,dy,width,sign=1){
 }
 function linePaths(o){
  const {x,y,w,h}=o,a={x:o.reverseX?x+w:x,y:o.reverseY?y+h:y},b={x:o.reverseX?x:x+w,y:o.reverseY?y:y+h};
+ if(o.kind==='line'){if(w===1)b.x=a.x;if(h===1)b.y=a.y;}
  if(o.kind==='branch3'){
   const mid=x+w/2,rail=y+h/2,bottom=y+h;
   return [[{x,y:bottom},{x,y:rail},{x:x+w,y:rail},{x:x+w,y:bottom}],

@@ -935,3 +935,16 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 .crop-frame button::after{content:'';display:block;margin:auto;width:12px;height:6px;border-radius:2px;background:white;box-shadow:0 0 3px #000}
 .crop-frame :is([data-edge=e],[data-edge=w])::after{width:6px;height:14px}
 .crop-frame button[data-edge]:focus-visible{outline:2px solid #ffd247;outline-offset:-8px}
+
+/* Notebook tool buttons share one icon weight, selection color and touch size. */
+.paper-app .paper-toolbar{background:#fff;border-bottom:1px solid #dbe2ed}
+.paper-app .paper-toolset>button[data-paper]{border-radius:10px;color:#36465e}
+.paper-app .paper-toolset>button:has(.paper-tool-icon){align-items:center;justify-content:center;gap:2px;min-width:46px;min-height:46px;border:1px solid transparent;background:transparent;box-shadow:none}
+.paper-tool-icon{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.paper-app .paper-toolset>button small{color:inherit;font-size:10px;line-height:1.2}
+.paper-app .paper-toolset>button[aria-pressed=true]{background:#e8efff;border-color:#bbcafa;color:#2146aa}
+.paper-app .paper-toolset>button:disabled{opacity:.42}
+.paper-app .paper-context-wrap{background:#f6f8fc;border-bottom:1px solid #dbe2ed}
+.paper-app .paper-shapes-popup{border:1px solid #d2dcec;border-radius:16px;background:white;box-shadow:0 8px 28px #182b4c22}
+.paper-app .paper-shapes-grid button{min-height:44px;border-radius:9px;background:#f6f8fc;color:#334761}
+.paper-app .paper-shapes-grid button[aria-pressed=true]{background:#e5edff;border-color:#7695db;color:#2146aa}

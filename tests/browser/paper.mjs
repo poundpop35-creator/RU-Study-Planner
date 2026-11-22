@@ -37,6 +37,27 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await button.evaluate(el=>{let parent=el.parentElement;while(parent){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}});
    await button.click();if(key==='save')await wait(()=>button.isEnabled());
   };
+  if(process.env.PAPER_TEST==='branches'){
+   await click('shape');
+   const choice=page.locator('[data-shape-pick="triangle"]');
+   assert.ok(await choice.locator('svg').isVisible());
+   await choice.click();assert.equal(await page.locator('#paper-shape').inputValue(),'triangle');
+   await click('straighten');
+   await page.locator('#paper-svg').evaluate(svg=>{
+    const r=svg.getBoundingClientRect(),scale=r.width/900;
+    const send=(type,x,y)=>svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'pen',pointerId:85,clientX:r.left+(100+x)*scale,clientY:r.top+(180+y)*scale}));
+    svg.setPointerCapture=()=>{};
+    try{
+     send('pointerdown',80,0);
+     for(const [x,y] of [[0,2],[1,40],[74,42],[0,39],[2,82],[81,80]])send('pointermove',x,y);
+     send('pointerup',81,80);
+    }finally{delete svg.setPointerCapture;}
+   });
+   await click('save');
+   const lines=row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.kind==='line');
+   assert.equal(lines.length,4);
+   assert.deepEqual(errors,[]);console.log(name+': gallery and branch ink PASS');continue;
+  }
   if(process.env.PAPER_TEST==='crop'){
    const start=()=>page.evaluate(async src=>{
     const {cropImage}=await import('/paper-images.js');

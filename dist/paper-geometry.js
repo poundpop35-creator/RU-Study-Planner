@@ -96,3 +96,55 @@ export function recognizeDrawnShape(samples){
  return {kind:Math.abs(w-h)/Math.max(w,h)<.20?'circle':'ellipse',
   start:{x:minX,y:minY},end:{x:maxX,y:maxY}};
 }
+
+// Clean up open, axis-aligned diagram strokes, including a pen retracing a branch.
+export function diagramSegments(samples){
+ if(samples.length<2)return null;
+ const points=samples.map(([x,y])=>({x,y}));
+ // Bound the corner search on long Pencil strokes.
+ const step=Math.max(1,Math.ceil(points.length/400));
+ const path=points.filter((_,i)=>i%step===0||i===points.length-1);
+ const span=Math.max(Math.max(...path.map(p=>p.x))-Math.min(...path.map(p=>p.x)),
+  Math.max(...path.map(p=>p.y))-Math.min(...path.map(p=>p.y)));
+ if(span<10)return null;
+ const tolerance=Math.max(3,Math.min(8,span*.055)),nodes=simplify(path,tolerance);
+ if(nodes.length<2||nodes.length>32)return null;
+ const runs=[];
+ for(let i=1;i<nodes.length;i++){
+  const a=nodes[i-1],b=nodes[i],dx=Math.abs(b.x-a.x),dy=Math.abs(b.y-a.y);
+  if(Math.max(dx,dy)<5||Math.min(dx,dy)>Math.max(dx,dy)*.30)return null;
+  const horizontal=dx>=dy,axis=horizontal?'y':'x',along=horizontal?'x':'y';
+  const level=(a[axis]+b[axis])/2;
+  const near=runs.find(r=>r.axis===axis&&Math.abs(r.level-level)<=tolerance*1.6);
+  runs.push({axis,along,level:near?.level??level,lo:Math.min(a[along],b[along]),hi:Math.max(a[along],b[along])});
+ }
+ // Intersect neighboring legs exactly, including reversals back to a junction.
+ for(let i=1;i<runs.length;i++){
+  const a=runs[i-1],b=runs[i];
+  if(a.axis===b.axis)continue;
+  for(const [leg,cross] of [[a,b],[b,a]]){
+   const edge=Math.abs(nodes[i][leg.along]-leg.lo)<Math.abs(nodes[i][leg.along]-leg.hi)?'lo':'hi';
+   leg[edge]=cross.level;
+  }
+ }
+ const merged=[];
+ for(const run of runs){
+  let {lo,hi}=run;
+  for(let i=merged.length-1;i>=0;i--){
+   const other=merged[i];
+   if(other.axis!==run.axis||other.level!==run.level||other.hi<lo-tolerance||other.lo>hi+tolerance)continue;
+   lo=Math.min(lo,other.lo);hi=Math.max(hi,other.hi);merged.splice(i,1);
+  }
+  merged.push({...run,lo,hi});
+ }
+ return merged.map(({axis,along,level,lo,hi})=>({start:{[axis]:level,[along]:lo},end:{[axis]:level,[along]:hi}}));
+}
+
+export function hasBranchJunction(segments){
+ const h=segments.filter(s=>s.start.y===s.end.y),v=segments.filter(s=>s.start.x===s.end.x);
+ return h.some(row=>v.some(col=>{
+  const x=col.start.x,y=row.start.y;
+  return x>=row.start.x-2&&x<=row.end.x+2&&y>=col.start.y-2&&y<=col.end.y+2&&
+   ((x>row.start.x+3&&x<row.end.x-3)||(y>col.start.y+3&&y<col.end.y-3));
+ }));
+}
