@@ -69,8 +69,67 @@ export function rulerSVG(ruler){
  </g>`;
 }
 
+// Even spacing keeps slow corners and fast straight sections equally weighted.
+function tracePoints(samples){
+ const trace=samples.map(([x,y])=>({x,y}));
+ const lengths=[0];
+ for(let i=1;i<trace.length;i++)lengths.push(lengths[i-1]+dist(trace[i-1],trace[i]));
+ const length=lengths.at(-1);
+ if(!Number.isFinite(length)||length<24)return [];
+ let i=1;
+ return Array.from({length:65},(_,j)=>{
+  const at=length*j/64;
+  while(i<trace.length-1&&lengths[i]<at)i++;
+  const t=(at-lengths[i-1])/(lengths[i]-lengths[i-1]||1);
+  return {x:trace[i-1].x+(trace[i].x-trace[i-1].x)*t,y:trace[i-1].y+(trace[i].y-trace[i-1].y)*t};
+ });
+}
+
+function drawnTriangle(p){
+ const xs=p.map(v=>v.x),ys=p.map(v=>v.y);
+ const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+ if(Math.min(w,h)<10||dist(p[0],p.at(-1))>Math.hypot(w,h)*.23)return null;
+ const unit=p.map(v=>({x:(v.x-x)/w,y:(v.y-y)/h}));
+ for(const inverted of [false,true]){
+  const base=inverted?0:1;
+  const corners=[{x:0,y:base},{x:1,y:base},{x:.5,y:1-base}];
+  if(corners.some(c=>!unit.some(v=>dist(v,c)<.21)))continue;
+  const deviations=unit.map(v=>Math.min(...corners.map((c,i)=>distanceToSegment(v,c,corners[(i+1)%3]))));
+  if(Math.max(...deviations)<.19&&deviations.reduce((a,b)=>a+b,0)/unit.length<.075)
+   return {kind:'triangle',inverted,start:{x,y},end:{x:x+w,y:y+h}};
+ }
+ return null;
+}
+
+function drawnArrow(points){
+ // The shaft reaches the tip first. The rest of the trace must visit both wings
+ // behind the tip, allowing a retraced wing or a closed triangular head.
+ const tail=points[0];
+ for(let i=points.length-4;i>=12;i--){
+  const tip=points[i],length=dist(tail,tip);
+  if(length<24)continue;
+  const ux=(tip.x-tail.x)/length,uy=(tip.y-tail.y)/length;
+  if(points.slice(1,i).some(v=>distanceToSegment(v,tail,tip)>length*.09))continue;
+  let left=0,right=0,invalid=false;
+  for(const v of points.slice(i+1)){
+   const dx=(v.x-tip.x)/length,dy=(v.y-tip.y)/length;
+   const back=-dx*ux-dy*uy,side=dx*uy-dy*ux;
+   if(back<-.035||back>.52||Math.abs(side)>back*1.75+.035){invalid=true;break;}
+   left=Math.max(left,side);right=Math.max(right,-side);
+  }
+  if(!invalid&&Math.min(left,right)>.065&&Math.min(left,right)>.32*Math.max(left,right))
+   return {kind:'arrow',start:tail,end:tip};
+ }
+ return null;
+}
+
 /* Forgiving release recognizer for the deliberate "จัดทรง" mode. */
 export function recognizeDrawnShape(samples){
+ if(!Array.isArray(samples)||samples.length<3)return null;
+ const uniform=tracePoints(samples);
+ if(!uniform.length)return null;
+ const directional=drawnTriangle(uniform)||drawnArrow(uniform)||drawnArrow([...uniform].reverse());
+ if(directional)return directional;
  const exact=recognizeHeldShape(samples);
  if(exact)return exact;
  if(!Array.isArray(samples)||samples.length<9)return null;
@@ -112,18 +171,19 @@ export function diagramSegments(samples){
  const runs=[];
  for(let i=1;i<nodes.length;i++){
   const a=nodes[i-1],b=nodes[i],dx=Math.abs(b.x-a.x),dy=Math.abs(b.y-a.y);
-  if(Math.max(dx,dy)<5||Math.min(dx,dy)>Math.max(dx,dy)*.30)return null;
+  if(Math.max(dx,dy)<tolerance)continue;
+  if(Math.min(dx,dy)>Math.max(dx,dy)*.36)return null;
   const horizontal=dx>=dy,axis=horizontal?'y':'x',along=horizontal?'x':'y';
   const level=(a[axis]+b[axis])/2;
   const near=runs.find(r=>r.axis===axis&&Math.abs(r.level-level)<=tolerance*1.6);
-  runs.push({axis,along,level:near?.level??level,lo:Math.min(a[along],b[along]),hi:Math.max(a[along],b[along])});
+  runs.push({from:a,axis,along,level:near?.level??level,lo:Math.min(a[along],b[along]),hi:Math.max(a[along],b[along])});
  }
  // Intersect neighboring legs exactly, including reversals back to a junction.
  for(let i=1;i<runs.length;i++){
   const a=runs[i-1],b=runs[i];
   if(a.axis===b.axis)continue;
   for(const [leg,cross] of [[a,b],[b,a]]){
-   const edge=Math.abs(nodes[i][leg.along]-leg.lo)<Math.abs(nodes[i][leg.along]-leg.hi)?'lo':'hi';
+   const edge=Math.abs(b.from[leg.along]-leg.lo)<Math.abs(b.from[leg.along]-leg.hi)?'lo':'hi';
    leg[edge]=cross.level;
   }
  }
@@ -137,6 +197,7 @@ export function diagramSegments(samples){
   }
   merged.push({...run,lo,hi});
  }
+ if(!merged.length)return null;
  return merged.map(({axis,along,level,lo,hi})=>({start:{[axis]:level,[along]:lo},end:{[axis]:level,[along]:hi}}));
 }
 

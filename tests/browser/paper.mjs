@@ -8,12 +8,13 @@ import {newNote} from '../../dist/notebook-core.js';
 const root=resolve('dist');
 const server=createServer(async(req,res)=>{try{const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname.replace(/\/$/,'/index.html')));if(!path.startsWith(root+'/'))throw Error();const body=await readFile(path);res.writeHead(200,{'Content-Type':({'.js':'text/javascript','.css':'text/css','.html':'text/html','.svg':'image/svg+xml'})[extname(path)]||'application/octet-stream'});res.end(body);}catch{res.writeHead(404);res.end();}});
 await new Promise(r=>server.listen(3000,'127.0.0.1',r));await mkdir('test-results',{recursive:true});
-const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAGAAAABACAIAAABqVuVZAAAAnElEQVR4nO3QQRHAIADAMMDh9CANc1Ow65M9EgW9zmefwbd1O+DvDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFB4AbYIAgdMU5T+AAAAAElFTkSuQmCC','base64');
+const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAAA2ElEQVR4nO3QQRHAIADAMMD4NOAFgVOw65M9EgW9zmefwbd1O+DvDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFB4AXO7AoQ4sya6AAAAAElFTkSuQmCC','base64');
 const wait=async(fn)=>{const until=Date.now()+15000;while(!await fn()){if(Date.now()>until)throw Error('Timed out waiting for state');await new Promise(r=>setTimeout(r,100));}};
 for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,false],['mobile-webkit',webkit,true]]){
- const browser=await type.launch();let row={revision:1,updated_at:new Date().toISOString(),payload:{version:1,progress:freshState(),notebook:{version:1,notes:[newNote({id:'browser-note',title:'สมุดทดสอบ · POL1101',text:'ต้นฉบับบทเรียน\nรัฐและอำนาจ'})]}}},offline=false,delaySave=null;
+ const browser=await type.launch(type===chromium&&process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{});let row={revision:1,updated_at:new Date().toISOString(),payload:{version:1,progress:freshState(),notebook:{version:1,notes:[newNote({id:'browser-note',title:'สมุดทดสอบ · POL1101',text:'ต้นฉบับบทเรียน\nรัฐและอำนาจ'})]}}},offline=false,delaySave=null;
  const errors=[],images=new Map();
  const setup=async()=>{const context=await browser.newContext(mobile?{...devices['iPhone 13']}:{viewport:{width:name==='tablet'?768:1280,height:1000}});
+  await context.route('**/*',route=>(['blob:','data:'].includes(new URL(route.request().url()).protocol)||new URL(route.request().url()).origin==='http://127.0.0.1:3000')?route.continue():route.abort());
   await context.route('**/functions/v1/personal-study/**',async route=>{
    const req=route.request(),path=new URL(req.url()).pathname.split('/personal-study')[1];
    if(offline)return route.fulfill({status:503,json:{error:'offline test'}});
@@ -38,6 +39,25 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await button.click();if(key==='save')await wait(()=>button.isEnabled());
   };
   if(process.env.PAPER_TEST==='branches'){
+   if(name==='desktop'){
+    const {emptyPage,strokeObject}=await import('../../dist/paper-core.js');
+    const pages=Array.from({length:4},()=>({...emptyPage(),objects:Array.from({length:125},(_,i)=>strokeObject([[20,i+10,.5],[100,i+11,.6]],{tool:'pen',color:'#172033',width:2}))}));
+    row.payload.notebook.notes[0].paper={version:1,pages};
+    row.revision++;
+    const large=await setup();
+    const menu=large.page.locator('.paper-menu');
+    await menu.locator('summary').first().click();
+    const popup=large.page.waitForEvent('popup');
+    await menu.locator('[data-paper="print-pages"]').click();
+    const preview=await popup;
+    await preview.locator('article').nth(3).waitFor();
+    assert.equal(await preview.locator('article [data-object]').count(),500);
+    const pdf=await preview.pdf({preferCSSPageSize:true});
+    assert.equal((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length,4);
+    await large.context.close();
+    delete row.payload.notebook.notes[0].paper;
+    row.revision--;
+   }
    await click('shape');
    const choice=page.locator('[data-shape-pick="triangle"]');
    assert.ok(await choice.locator('svg').isVisible());
@@ -78,7 +98,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   if(process.env.PAPER_TEST==='tables'){
    const primary=page.locator('.paper-toolbar');
    assert.equal(await page.locator('[data-paper="table"]').count(),1);
-   assert.equal(await primary.locator('#paper-template').count(),1);
+   await click('page-settings');
+   assert.ok(await page.locator('.paper-context-page #paper-template').isVisible());
    await click('ruler');await click('ruler-plus');
    assert.match(await page.locator('[data-ruler-overlay]').getAttribute('transform'),/rotate\(15\)/);
    await click('ruler-zero');await click('ruler');
@@ -163,13 +184,11 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(await page.locator('[data-paper="pages"]').getAttribute('aria-expanded'),'true');
    await click('pages');
    assert.ok(await page.locator('.paper-pages').isHidden(),'page thumbnails can be folded again');
-  await page.locator('#paper-toolbar-more > summary').click();
-  assert.ok(await page.locator('.paper-tool-options').isVisible(),'advanced tools open on demand');
+  await click('pen');
+  assert.ok(await page.locator('.paper-context-ink').isVisible(),'pen settings available directly');
   await page.locator('[data-paper-color="#3155d9"]').click();
-  assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'choosing color should fold menu');
-  await page.locator('#paper-toolbar-more > summary').click();
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'Escape closes settings');
+  await click('text');
+  assert.ok(await page.locator('.paper-context-ink').isHidden(),'drawing controls leave room for text');
   await page.screenshot({path:'test-results/notebook-compact-'+name+'.png'});
 
   const tap=async(x,y)=>{const p=await point(x,y);if(mobile)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y);};
@@ -222,7 +241,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.ok(await page.locator('#paper-toolbar-more').evaluate(el=>!el.open),'extra tools should start folded');
   assert.ok(await page.locator('#paper-width').isHidden(),'pen size cannot obstruct the page while menu is folded');
   await click('pen');
-  await page.locator('#paper-toolbar-more > summary').click();
+  if(!await page.locator('#paper-width').isVisible())await page.locator('[data-paper-size-toggle]').click();
   assert.ok(await page.locator('#paper-width').isVisible(),'size controls should be available inside the overlay');
   const dots=page.locator('[data-paper-width]');assert.equal(await dots.count(),6);
   await page.locator('[data-paper-width="2"]').click();
@@ -230,24 +249,24 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.equal(await page.locator('[data-paper-width="2"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'2px');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'preset selection should fold extras');
-  await page.locator('#paper-toolbar-more > summary').click();
+  if(!await page.locator('#paper-width').isVisible())await page.locator('[data-paper-size-toggle]').click();
   await page.locator('#paper-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));});
   assert.equal(await page.locator('#paper-width-value').textContent(),'12');
   assert.equal(await page.locator('[data-paper-width="12"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'12px');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'slider change should fold extras');
    await click('highlight');
-   await page.locator('#paper-toolbar-more > summary').click();
+   if(!await page.locator('#paper-width').isVisible())await page.locator('[data-paper-size-toggle]').click();
    assert.equal(await page.locator('#paper-width').getAttribute('max'),'40','highlighter has independent 1–40 width range');
    await page.locator('[data-paper-width="28"]').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'28');
    await click('pen');
-   await page.locator('#paper-toolbar-more > summary').click();
+   if(!await page.locator('#paper-width').isVisible())await page.locator('[data-paper-size-toggle]').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'12','pen remembers its own width after switching from highlighter');
    await page.keyboard.press('Escape');
    const from=await point(100,400),to=await point(350,450);
   if(mobile){
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
+
    await page.locator('#paper-finger').check();
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'finger-draw choice should uncover the paper');
    await tap(220,420);
@@ -294,7 +313,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await wait(()=>images.size===2);await wait(()=>page.locator('#paper-svg image').getAttribute('width').then(w=>Number(w)<beforeCropWidth));await click('save');assert.notEqual(picture().imageId,original.imageId);
   await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 sample')});
   await wait(()=>row.payload.notebook.notes[0].files?.[0]?.name==='lesson.pdf');await page.locator('#paper-files form button').click();
-  await page.locator('.paper-menu').evaluate(el=>el.open=true);await page.locator('#paper-template').selectOption('dots');await page.locator('.paper-menu').evaluate(el=>el.open=false);await click('save');
+  await click('page-settings');await page.locator('#paper-template').selectOption('dots');await click('save');
   await page.screenshot({path:'test-results/paper-'+name+'.png'});
   if(!await page.locator('[data-paper="add-page"]').first().isVisible())await click('pages');await click('add-page');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
   await click('delete-page');await page.getByRole('alertdialog').waitFor();await page.locator('[data-delete-choice="cancel"]').click();assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
@@ -328,7 +347,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await wait(()=>row.payload.notebook.notes[0].source==='prep');assert.equal(row.payload.notebook.notes[0].course,'POL2106');
   await page.locator('[data-action="nb-new"]').first().click();
   const create=page.getByRole('dialog');assert.equal(await create.locator('[name="group"]').inputValue(),'yes');
-  await create.locator('[name="course"]').selectOption('POL2104');await create.getByText('สร้างโน้ต',{exact:true}).click();
+  await create.locator('[name="course"]').selectOption('POL2104');await create.getByRole('button',{name:'สร้างโน้ต',exact:true}).click();
   await page.locator('#paper-svg').waitFor();await click('save');assert.ok(row.payload.notebook.notes.some(n=>n.course==='POL2104'&&n.source==='classroom'));
    // A primary teacher file belongs to the course, not this one note page.
    await click('course-materials');
@@ -349,7 +368,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.equal(row.payload.notebook.courseMaterials.POL2104.files.length,2,'direct classroom upload shares the course collection');
     await courseCard.locator('[data-action="nb-new"]').click();
     assert.equal(await page.getByRole('dialog').locator('[name="session"]').inputValue(),'2');
-    await page.getByRole('dialog').getByText('สร้างโน้ต',{exact:true}).click();
+    await page.getByRole('dialog').getByRole('button',{name:'สร้างโน้ต',exact:true}).click();
    await page.locator('#paper-svg').waitFor();
    const sharedFiles=page.getByRole('button',{name:'ไฟล์หลักวิชา POL2104 · 2 รายการ',exact:true});
    await page.locator('.paper-menu').evaluate(el=>el.open=true);assert.ok(await sharedFiles.isVisible(),'a new note exposes its course files immediately');
@@ -368,7 +387,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('[data-shape-pick="hexagon"]').click();
    assert.ok(await page.locator('#paper-shapes-popup').isHidden());
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'shape selection must uncover the paper');
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu').evaluate(el=>el.open=true);
+   await click('shape');await page.keyboard.press('Escape');
    await page.locator('#paper-line-style').selectOption('dotted');
    const fromShape=await point(280,780),toShape=await point(400,890);
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
@@ -409,8 +428,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.match(await page.locator('#paper-svg [data-ruler-overlay]').getAttribute('transform'),/rotate\(15\)/);
    await click('ruler');
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),0);
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu summary').click();
+   await click('text');
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await b.page.locator('.paper-menu > summary').click();
   await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
   const [download]=await Promise.all([b.page.waitForEvent('download'),fileButton.click()]);
   assert.equal(download.suggestedFilename(),'lesson.pdf');assert.equal((await readFile(await download.path())).toString(),'%PDF-1.4 sample');
@@ -468,7 +488,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
 
   // Touch contacts on the writing surface must not trigger zoom or new text
   // while palm protection is enabled. Pen input must still work.
-  await page.locator('#paper-toolbar-more > summary').click();
+  await click('pen');
   await page.locator('#paper-palm-guard').check();
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
   const beforeZoom=await page.locator('#paper-zoom').innerText();
@@ -486,6 +506,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   },contact);
   assert.equal(await page.locator('#paper-zoom').innerText(),beforeZoom,'palm touches should never pinch-zoom');
   assert.equal(activeNote().paper.pages[0].objects.length,objectCount,'palm touches should not create extra text');
+  await click('text');
   const existingTextPoint=await point(continued.x+3,continued.y+5);
   await page.locator('#paper-svg').evaluate((svg,p)=>{
    svg.setPointerCapture=()=>{};
@@ -514,7 +535,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    
    await createWord.locator('[name="course"]').selectOption('POL2200');
    const wordSession=await createWord.locator('[name="session"]').inputValue();
-   await createWord.getByText('สร้างโน้ต',{exact:true}).click();
+   await createWord.getByRole('button',{name:'สร้างโน้ต',exact:true}).click();
    await page.locator('#paper-svg').waitFor();
    await click('text');
    // A mobile tap can be swallowed by viewport/palm interactions. A stylus event

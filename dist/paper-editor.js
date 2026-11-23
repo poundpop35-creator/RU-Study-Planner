@@ -1,3 +1,4 @@
+import {notebookHistory} from './paper-page-history.js';
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
 import {PAGE_W,PAGE_H,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS} from './paper-core.js?v=20261121-paper-format';
 import {pageSVG,objectSVG,esc} from './paper-render.js?v=20261121-paper-format';
@@ -30,13 +31,13 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(!smartEnabled||g.kind!=='stroke'||g.tool!=='pen'||g.rulerEdge||g.points.length<3)return;
   smartTimer=setTimeout(()=>{
    if(closed||gesture!==g)return;
-   const found=recognizeHeldShape(g.points);
-   if(found){g.snap=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);scheduleDraw();say('วาดเป็นรูปทรงแล้ว · ยกปากกาเพื่อบันทึก · ย้อนกลับได้');}
+   const found=g.straighten?recognizeDrawnShape(g.points):recognizeHeldShape(g.points);
+   if(found){g.snap=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);if(found.inverted)g.snap.inverted=true;scheduleDraw();say('วาดเป็นรูปทรงแล้ว · ยกปากกาเพื่อบันทึก · ย้อนกลับได้');}
   },550);
  }
  let lastStored=JSON.stringify(note.paper||null),pendingRemote=false,draftBase=null;
  let cachedPage=null,cachedContent='',imageVersion=0,cachedImageVersion=-1;
- const scope=space.info().scope,images=new Map(),loading=new Set(),history=new Map(),events=[],pointers=new Map();
+ const scope=space.info().scope,images=new Map(),loading=new Set(),history=notebookHistory(),events=[],pointers=new Map();
  const draftKey='ru-paper-draft:'+scope+':'+id;
  const widthKey='ru-paper-pen-width.v1:'+scope,highlightKey='ru-paper-highlight-width.v1:'+scope,pagesKey='ru-paper-pages-open.v1',textSizeKey='ru-paper-text-font-size.v2';
  const palmKey='ru-paper-palm-guard.v1',fingerKey='ru-paper-finger.v2';
@@ -48,10 +49,40 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  // Default new typed text to 16 pt on each note-opening session.
  const $=s=>root.querySelector(s),svg=$('#paper-svg'),sheet=$('#paper-sheet'),wrap=$('#paper-wrap'),viewport=$('#paper-viewport'),textarea=$('#paper-text-input');
  const bind=(el,type,fn,opts)=>{el.addEventListener(type,fn,opts);events.push(()=>el.removeEventListener(type,fn,opts));};
+ const printButton=document.createElement('button');
+ printButton.type='button';printButton.textContent='พิมพ์ทุกหน้า / PDF';printButton.dataset.paper='print-pages';
+ $('.paper-context-actions').append(printButton);
+ bind(printButton,'click',async()=>{
+  if(composingScribble){say('รอให้แปลงลายมือเสร็จก่อนพิมพ์',true);return;}
+  finishText();
+  const preview=window.open('','_blank');
+  if(!preview){say('กรุณาอนุญาตหน้าต่างตัวอย่างก่อนพิมพ์',true);return;}
+  preview.opener=null;
+  const doc=preview.document;doc.documentElement.lang='th';doc.title=note.title;
+  doc.body.textContent='กำลังเตรียมหน้ากระดาษ…';
+  try{
+   const pages=copy((unsaved||model).pages),assets=new Map();
+   const ids=new Set(pages.flatMap(p=>p.objects.filter(o=>o.type==='image').map(o=>o.imageId)));
+   for(const imageId of ids){
+    const blob=await space.image(imageId);
+    if(preview.closed)return;
+    const url=preview.URL.createObjectURL(blob),img=new preview.Image();
+    img.src=url;await img.decode();assets.set(imageId,url);
+   }
+   if(preview.closed)return;
+   const css=doc.createElement('style');
+   css.textContent='@page{size:A4 portrait;margin:0}body{margin:0;background:#edf1f6;font-family:sans-serif}svg{display:block;width:100%;height:auto}article{background:white;max-width:210mm;margin:12px auto}button{display:block;margin:12px auto;padding:10px 22px}@media print{button{display:none}article{width:210mm;margin:0;break-after:page}article:last-child{break-after:auto}svg{height:296mm}body{background:white}}';
+   doc.head.append(css);doc.body.replaceChildren();
+   const print=doc.createElement('button');print.textContent='พิมพ์ / บันทึก PDF';print.onclick=()=>preview.print();doc.body.append(print);
+   pages.forEach((p,i)=>{
+    const article=doc.createElement('article');article.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+PAGE_W+' '+PAGE_H+'">'+pageSVG(p,assets,'thumb-print-'+i)+'</svg>';doc.body.append(article);
+   });
+  }catch{if(!preview.closed)doc.body.textContent='เตรียมหน้ากระดาษไม่สำเร็จ กรุณาปิดหน้านี้แล้วลองพิมพ์อีกครั้ง';}
+ });
  const palmToggle=$('#paper-palm-guard');
  palmToggle.checked=palmGuard;root.classList.toggle('paper-palm-guard-on',palmGuard);
  const page=()=>model.pages.find(p=>p.id===pageId)||model.pages[0];
- const h=()=>{if(!history.has(pageId))history.set(pageId,pageHistory());return history.get(pageId);};
+
  const say=(text,bad=false)=>{const el=$('#paper-hint');el.textContent=text;el.classList.toggle('error',bad);};
  function setPalmGuard(value){
   palmGuard=!!value;palmToggle.checked=palmGuard;
@@ -65,12 +96,15 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  function persist(next,record=true){
   try{
    writable();const live=currentNote();if(!live)throw Error('โน้ตถูกลบจากอีกเครื่อง');
-   next=validatePaper(next);const before=copy(page());
+   next=validatePaper(next);const before=page(),oldPages=model.pages;
+   const added=next.pages.find(p=>!oldPages.some(old=>old.id===p.id));
+   const removed=oldPages.find(p=>!next.pages.some(now=>now.id===p.id));
+   const after=next.pages.find(p=>p.id===before.id);
    if(draftBase)next=mergePaper(draftBase,next,paperFor(live));
    else if(JSON.stringify(live.paper||null)!==lastStored&&live.paper)next=mergePaper(model,next,live.paper);
    const book=copy(space.notebook()),target=book.notes.find(n=>n.id===id);target.paper=next;target.updatedAt=new Date().toISOString();
    space.saveNotebook(book);model=copy(next);lastStored=JSON.stringify(next);unsaved=null;draftBase=null;try{localStorage.removeItem(draftKey);}catch{}root.classList.remove('paper-has-draft');
-   if(record){const after=model.pages.find(p=>p.id===before.id);if(after&&pageId===before.id)h().record(before,after);}
+   if(record){if(added)history.record(null,added,next.pages.findIndex(p=>p.id===added.id));else if(removed)history.record(removed,null,oldPages.indexOf(removed));else if(after)history.record(before,after,oldPages.indexOf(before));}
    if(!model.pages.some(p=>p.id===pageId))pageId=model.pages[0].id;
    say('บันทึกอัตโนมัติ · ปุ่มบันทึกงานใช้สั่งบันทึกทันที');draw();thumbs();return true;
   }catch(err){draftBase??=copy(model);unsaved=copy(next);try{localStorage.setItem(draftKey,JSON.stringify({paper:unsaved,base:draftBase}));}catch{}say(err.message+' · งานล่าสุดยังอยู่ในหน้านี้ กด “สำรองงานค้าง” ก่อนปิด',true);root.classList.add('paper-has-draft');return false;}
@@ -132,7 +166,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(currentIcon&&shapeGallery.dataset.kind!==$('#paper-shape').value){
    shapeGallery.dataset.kind=$('#paper-shape').value;shapeGallery.replaceChildren(currentIcon.cloneNode(true));
   }
-  $('[data-paper="undo"]').disabled=!h().canUndo; $('[data-paper="redo"]').disabled=!h().canRedo;
+  $('[data-paper="undo"]').disabled=!history.canUndo; $('[data-paper="redo"]').disabled=!history.canRedo;
   const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('#paper-selected-count').textContent=selected.size;
    $('#paper-table-selection').hidden=!singleTable;
    if(singleTable){const palette=tableStyle(singleTable);root.querySelectorAll('[data-table-style]').forEach(input=>{if(document.activeElement!==input)input.value=palette[input.dataset.tableStyle];});}
@@ -165,9 +199,14 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    return `<button class="paper-thumb ${p.id===pageId?'active':''}" data-paper-page="${p.id}" aria-label="หน้า ${i+1}" aria-current="${p.id===pageId?'page':'false'}"><svg viewBox="0 0 ${PAGE_W} ${PAGE_H}" aria-hidden="true">${thumb}</svg><span>${i+1}</span></button>`;
   }).join('');
  }
+ const missingImages=new Set(),retryImages=document.createElement('button');
+ retryImages.type='button';retryImages.hidden=true;retryImages.textContent='โหลดรูปอีกครั้ง';
+ $('#paper-hint').after(retryImages);
+ bind(retryImages,'click',()=>{missingImages.clear();retryImages.hidden=true;loadImages();});
  function loadImages(){
-  for(const o of page().objects){if(o.type!=='image'||images.has(o.imageId)||loading.has(o.imageId))continue;loading.add(o.imageId);
-   space.image(o.imageId).then(blob=>{if(closed)return;images.set(o.imageId,URL.createObjectURL(blob));imageVersion++;scheduleDraw();thumbs();}).catch(()=>{if(!closed)say('โหลดรูปบางรูปไม่สำเร็จ ลองเชื่อมต่อใหม่',true);}).finally(()=>loading.delete(o.imageId));
+  const objects=root.classList.contains('pages-open')?model.pages.flatMap(p=>p.objects):page().objects;
+  for(const o of objects){if(o.type!=='image'||images.has(o.imageId)||loading.has(o.imageId)||missingImages.has(o.imageId))continue;loading.add(o.imageId);
+   space.image(o.imageId).then(blob=>{if(closed)return;images.set(o.imageId,URL.createObjectURL(blob));imageVersion++;scheduleDraw();thumbs();}).catch(()=>{if(!closed){missingImages.add(o.imageId);retryImages.hidden=false;say('โหลดรูปไม่สำเร็จ',true);}}).finally(()=>loading.delete(o.imageId));
   }
  }
  function sizing(){fit=Math.min(1,Math.max(.2,(viewport.clientWidth-48)/PAGE_W));scale=fit*zoom;wrap.style.width=PAGE_W*scale+'px';wrap.style.height=PAGE_H*scale+'px';sheet.style.transform=`scale(${scale})`;$('#paper-zoom').textContent=Math.round(zoom*100)+'%';}
@@ -209,7 +248,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  function setPagesOpen(value){
   root.classList.toggle('pages-open',!!value);
-  if(value)try{thumbs();}catch(err){say('เปิดรายการหน้าแล้ว แต่รูปตัวอย่างบางหน้าไม่พร้อม: '+err.message,true);}
+  if(value)try{thumbs();loadImages();}catch(err){say('เปิดรายการหน้าแล้ว แต่รูปตัวอย่างบางหน้าไม่พร้อม: '+err.message,true);}
   const toggle=$('[data-paper="pages"]');toggle.setAttribute('aria-expanded',String(!!value));
   toggle.setAttribute('aria-label',value?'ซ่อนรายการหน้ากระดาษ':'แสดงรายการหน้ากระดาษ');
   toggle.textContent=value?'▤ ซ่อนหน้า':'▤ หน้า';
@@ -285,6 +324,11 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  shapeGallery.setAttribute('aria-label','เลือกรูปทรง');shapeGallery.title='เลือกรูปทรง';shapeOptions.prepend(shapeGallery);
  pencilOptions.append($('.paper-finger'),$('.paper-palm-guard'),$('.paper-geometry-check'));
  textOptions.append($('.paper-default-text-size'),$('.paper-global-ink'),$('[data-paper="scribble-text"]'));
+ const boldPreset=document.createElement('button');
+ boldPreset.type='button';boldPreset.textContent='B';boldPreset.style.fontWeight='700';
+ boldPreset.setAttribute('aria-label','พิมพ์กล่องใหม่เป็นตัวหนา');boldPreset.setAttribute('aria-pressed',String(bold));
+ textOptions.prepend(boldPreset);
+ bind(boldPreset,'click',()=>{bold=!bold;boldPreset.setAttribute('aria-pressed',String(bold));});
  pageOptions.append($('.paper-template-tool'));
  selectOptions.append($('[data-paper="multi"]'));
  rulerOptions.append($('#paper-ruler-angles'));
@@ -314,7 +358,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   pencilOptions.hidden=!['pen','highlight','eraser','straighten'].includes(activePanel);
   $('.paper-geometry-check').hidden=!['pen','straighten'].includes(activePanel);
   shapeOptions.hidden=activePanel!=='shape';
-  textOptions.hidden=activePanel!=='text';
+  textOptions.hidden=activePanel!=='text';boldPreset.hidden=!!editing;
   pageOptions.hidden=activePanel!=='page';
   selectOptions.hidden=activePanel!=='select';
   rulerOptions.hidden=activePanel!=='ruler'||!ruler.active;
@@ -349,7 +393,11 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   scribbleInput.focus({preventScroll:true});
   const caret=scribbleInput.value.length;scribbleInput.setSelectionRange(caret,caret);
  }
- bind(scribbleInput,'input',()=>{
+ let composingScribble=false;
+ bind(scribbleInput,'compositionstart',()=>{composingScribble=true;clearTimeout(textTimer)});
+ bind(scribbleInput,'compositionend',()=>{composingScribble=false;applyScribble()});
+ bind(scribbleInput,'input',event=>{if(!event.isComposing&&!composingScribble)applyScribble()});
+ function applyScribble(){
   if(!scribbleActive||!editing)return;
   const before=editing.lastText,next=scribbleInput.value;
   editing.links=moveLinks(editing.links,before,next);
@@ -357,7 +405,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   editing.lastText=next;textarea.value=next;
   fitTextBox();draw();
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),700);
- });
+ }
  bind(scribblePad.querySelector('[data-pencil-keyboard]'),'click',event=>{
   const viaKeyboard=scribbleInput.inputMode!=='text';
   scribbleInput.inputMode=viaKeyboard?'text':'none';
@@ -504,7 +552,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  function showWordMenu(event){
   // On touch-first iPads, keep formatting in the scrollable top ribbon.
   // Do not create a second floating toolbar over the virtual keyboard.
-  if(window.matchMedia('(pointer:coarse)').matches){closeWordMenu();return false;}
+  if(event?.type!=='contextmenu'&&window.matchMedia('(pointer:coarse)').matches){closeWordMenu();return false;}
   const selection=currentWordSelection();
   if(!selection){closeWordMenu();return false;}
   wordMenuSelection={start:selection.start,end:selection.end};
@@ -675,6 +723,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  let textTimer;
  function finishText(keepOpen=false){
+  if(scribbleActive&&composingScribble)return;
   const wasScribble=scribbleActive;
   if(!keepOpen){closeWordMenu();closeScribblePanel();}
   clearTimeout(textTimer);
@@ -999,7 +1048,10 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
       const level=horizontal?(a!==start?a.y:b!==end?b.y:start.y):(a!==start?a.x:b!==end?b.x:start.x);
       return makeShape(uid(),'line',horizontal?{x:a.x,y:level}:{x:level,y:a.y},horizontal?{x:b.x,y:level}:{x:level,y:b.y},g.color,g.width,lineStyle);
      });
-    }else if(found)result=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);
+    }else if(found){
+     result=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);
+     if(found.inverted)result.inverted=true;
+    }
     else if(g.snap)result=g.snap;
    }
    else if(g.snap)result=g.snap;
@@ -1122,6 +1174,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
      return;
     }
    const action=b.dataset.paper;if(!action)return;
+   const noteMenu=b.closest("details.paper-menu");
+   if(noteMenu)noteMenu.open=false;
    if(action==='finish-text'){finishText();return;}
    if(action==='scribble-text'){
     const targetId=editing?.id||page().objects.find(o=>selected.has(o.id)&&o.type==='text')?.id;
@@ -1130,7 +1184,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     tool='text';activePanel='text';selected=existing?new Set([existing.id]):new Set();
     const x=Math.max(28,Math.min(PAGE_W-440,viewport.scrollLeft/scale+75));
     const y=Math.max(35,Math.min(PAGE_H-70,viewport.scrollTop/scale+110));
-    startText(existing||{id:uid(),type:'text',x,y,w:440,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold:false},null,{wideArea:true});
+    startText(existing||{id:uid(),type:'text',x,y,w:440,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold},null,{wideArea:true});
     openScribblePanel();
     say('เขียนด้วย Apple Pencil ในพื้นที่สีฟ้า · ข้อความที่ iPadOS แปลงจะไปที่กล่องเดิม');
     return;
@@ -1193,13 +1247,13 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    if(action==='save'){b.disabled=true;try{if(unsaved&&!persist(unsaved))return;await space.flush();say('บันทึกงานใน Supabase แล้ว');}finally{b.disabled=false;}}
    if(action==='discard-draft'){if(await confirmNoteDelete('งานค้างที่ยังไม่บันทึก (ควรกดสำรองงานค้างก่อน)')){unsaved=null;draftBase=null;localStorage.removeItem(draftKey);root.classList.remove('paper-has-draft');refresh(space);say('กลับมาที่ฉบับที่บันทึกแล้ว');}}
    if(action==='draft'){const blob=new Blob([JSON.stringify({format:'ru-paper-recovery',version:1,note:{...currentNote(),paper:unsaved||model}})],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ru-paper-recovery.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-   if(action==='undo'||action==='redo'){const next=h().step(page(),action==='undo');if(next){const doc=copy(model);doc.pages[doc.pages.findIndex(p=>p.id===pageId)]=next;persist(doc,false);selected.clear();draw();}}
+   if(action==='undo'||action==='redo'){history.apply(model.pages,action==='undo',(pages,focus)=>{if(!persist({...model,pages},false))return false;pageId=focus;selected.clear();return true;});draw();thumbs();}
    if(action==='pages'){setPagesOpen(!root.classList.contains('pages-open'));return;}
    if(action==='info')$('#paper-info').hidden=!$('#paper-info').hidden;
    if(action==='zoom-in')zoomAt(zoom*1.2);if(action==='zoom-out')zoomAt(zoom/1.2);if(action==='fit'){zoom=1;sizing();viewport.scrollLeft=0;}
    if(action==='add-page'){const next=copy(model),p=emptyPage();p.template=page().template;next.pages.push(p);if(persist(next)){if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);pageId=p.id;selected.clear();viewport.scrollTop=0;draw();thumbs();}}
    if(action==='duplicate-page'){const next=copy(model),p=copy(page());p.id=uid();p.objects.forEach(o=>o.id=uid());next.pages.splice(next.pages.findIndex(p=>p.id===pageId)+1,0,p);if(persist(next)){if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);pageId=p.id;selected.clear();draw();thumbs();}}
-   if(action==='delete-page'){if(model.pages.length===1)throw Error('ต้องเหลืออย่างน้อยหนึ่งหน้า');const target=pageId;if(await confirmNoteDelete('หน้ากระดาษ '+(model.pages.findIndex(p=>p.id===target)+1))){const next=copy(model);next.pages=next.pages.filter(p=>p.id!==target);persist(next,false);selected.clear();draw();thumbs();}}
+   if(action==='delete-page'){if(model.pages.length===1)throw Error('ต้องเหลืออย่างน้อยหนึ่งหน้า');const target=pageId;if(await confirmNoteDelete('หน้ากระดาษ '+(model.pages.findIndex(p=>p.id===target)+1))){const next=copy(model);next.pages=next.pages.filter(p=>p.id!==target);persist(next);selected.clear();draw();thumbs();}}
    if(action==='delete-object'){$('#paper-selection-more').open=false;change(p=>{p.objects=p.objects.filter(o=>!selected.has(o.id));});selected.clear();draw();}
    if(action==='duplicate'){const ids=[];change(p=>{const objects=p.objects.filter(o=>selected.has(o.id)).map(o=>({...copy(o),id:uid(),x:o.x+24,y:o.y+24}));ids.push(...objects.map(o=>o.id));p.objects.push(...objects);});selected=new Set(ids);draw();}
    if(action==='edit-text'){const o=page().objects.find(o=>selected.has(o.id)&&o.type==='text');if(o)startText(o);}

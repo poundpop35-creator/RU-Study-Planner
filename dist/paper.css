@@ -869,7 +869,7 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 .paper-app.paper-is-editing>.paper-text-ribbon{display:none!important}
 /* Keyboard-safe: controls stay in normal layout at top, not floating over text. */
 .paper-app.paper-keyboard-visible .paper-selection-tools{display:none!important}
-.paper-app.paper-keyboard-visible .paper-word-menu{display:none!important}
+
 @media(max-width:720px){
  .paper-app .paper-toolbar{padding:3px 5px!important;min-height:46px!important}
  .paper-app .paper-context-controls{padding:3px 5px;min-height:41px}
@@ -881,9 +881,9 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 /* Wide Scribble reception uses a native text area and never covers the toolbar. */
 .paper-app .paper-viewport{position:relative}
 .paper-app .paper-scribble-panel{
- position:absolute;inset:0;z-index:7;
+ position:fixed;inset:auto 8px max(8px,env(safe-area-inset-bottom));z-index:7;height:min(30dvh,270px);
  box-sizing:border-box;display:flex;flex-direction:column;
- background:rgba(236,246,255,.68);border:2px dashed #6588d0;border-radius:9px;
+ background:#edf5ff;border:2px dashed #6588d0;border-radius:9px;
 }
 .paper-app .paper-scribble-panel[hidden]{display:none!important}
 .paper-app .paper-scribble-panel header{
@@ -902,9 +902,9 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  background:#3155d9;border-color:#3155d9;color:#fff;font-weight:750;
 }
 .paper-app .paper-scribble-panel textarea{
- flex:1 1 auto;display:block;box-sizing:border-box;width:100%;min-height:120px;
+ flex:1 1 auto;display:block;box-sizing:border-box;width:100%;min-height:0;
  margin:0;padding:22px 24px;resize:none;border:0;outline:none;
- background:rgba(238,248,255,.12);color:rgba(28,59,102,.25);
+ background:rgba(238,248,255,.12);color:#1c3b66;
  caret-color:#3155d9;overflow:auto;font-family:'Noto Sans Thai',sans-serif;
  font-size:19px;line-height:1.65;
 }
@@ -918,7 +918,7 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 /* A keyboard-resized visual viewport should shrink the fixed notebook rather
    than let the lower writing area disappear under iOS Safari's keyboard. */
 .paper-app.paper-keyboard-visible{bottom:var(--paper-keyboard-inset,0px)!important;height:auto!important}
-.paper-app.paper-is-editing .paper-selection-tools,.paper-app.paper-is-editing .paper-word-menu{display:none!important}
+.paper-app.paper-is-editing .paper-selection-tools{display:none!important}
 .paper-app.paper-keyboard-visible .paper-workspace,.paper-app.paper-keyboard-visible .paper-viewport{min-height:0!important}
 
 dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d;color:white;border-radius:16px}
@@ -948,3 +948,11 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 .paper-app .paper-shapes-popup{border:1px solid #d2dcec;border-radius:16px;background:white;box-shadow:0 8px 28px #182b4c22}
 .paper-app .paper-shapes-grid button{min-height:44px;border-radius:9px;background:#f6f8fc;color:#334761}
 .paper-app .paper-shapes-grid button[aria-pressed=true]{background:#e5edff;border-color:#7695db;color:#2146aa}
+
+@media screen {
+ .paper-app .paper-workspace{background:#edf1f6}
+ .paper-app .paper-toolset>button[aria-pressed=true]{background:#e7efff;box-shadow:inset 0 -3px #476ad4}
+ .paper-app .paper-toolset>button:focus-visible,.paper-app .paper-context-controls button:focus-visible{outline:2px solid #3155bd;outline-offset:-3px}
+ .paper-app .paper-context-controls{scroll-padding-inline:16px;overscroll-behavior-x:contain}
+ .paper-app .paper-shapes-grid button:active{background:#dae6ff}
+}

@@ -1,3 +1,4 @@
+import {planRestore,confirmRestore} from './notebook-backup.js';
 import {paperPage} from './paper-view.js?v=20261121-smart-shape-release';
 import {mountPaper,refreshPaper} from './paper-editor.js?v=20261121-safe-notes-toolbar-v1';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
@@ -39,7 +40,7 @@ async function chooseReplayDate(note){
 export function noteCards(items){return items.length?`<div class="notebook-grid">${items.map(n=>`<article class="note-card"><div class="note-card-top">${n.course?`<span class="badge">${e(n.course)}</span>`:''}${n.pinned?'<span>★ ปักหมุด</span>':''}</div><span class="note-origin ${noteSource(n)}">${NOTE_SOURCES[noteSource(n)]}</span><h2><a class="note-card-link" title="${e(n.title)}" href="#note/${n.id}">${e(n.title)}</a></h2><small>แก้ไข ${stamps(n.updatedAt)} · ${n.paper?n.paper.pages.length+' หน้า · ':''}${referencedImages({notes:[n]}).length} รูป</small><button type="button" class="note-card-edit ${n.replayStudiedAt?'replay-done':'replay-pending'}" style="min-height:44px" aria-haspopup="dialog" data-action="nb-replay-studied" data-id="${n.id}">${n.replayStudiedAt?'☑ ติวย้อนหลังแล้ว · '+studyDateLabel(n.replayStudiedAt):'☐ ยังไม่ติวย้อนหลัง'}</button><button class="note-card-edit" data-action="nb-classify" data-id="${n.id}" aria-label="เปลี่ยนประเภท ${e(n.title)}">แก้วิชา / ครั้งที่</button></article>`).join('')}</div>`:'<section class="panel empty"><h2>พื้นที่สำหรับความเข้าใจของคุณ</h2><p>สร้างโน้ตจากคำบรรยาย ตำรา หรือเรื่องที่ยังสงสัยได้เลย</p><button class="button primary" data-action="nb-new">สร้างโน้ตหน้าแรก</button></section>';}
 export function destroyEditor(){unmount();unmount=()=>{};}
 function download(name,data,type='application/json'){const u=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
-async function exportBook(space){const snapshot=space.snapshot(),images={};for(const id of referencedImages(snapshot.notebook)){const b=await space.image(id);images[id]=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b);});}download('ru-study-notebook-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({format:'ru-study-notebook',version:1,snapshot,images}));}
+async function exportBook(space){const notebook=structuredClone(space.notebook()),images={};for(const id of referencedImages(notebook)){const b=await space.image(id);images[id]=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b);});}download('ru-study-notebook-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({format:'ru-study-notebook',version:2,notebook,images}));}
 export function noteCourseChoices(progress,enrolled){
  return courses.filter(c=>isEnrolled(progress,c)===enrolled);
 }
@@ -135,7 +136,9 @@ export async function notebookAction(action,data,space,progress,render,toast){
 }
 export function notebookSearch(space,value){query=value;document.getElementById('notebook-results').innerHTML=noteCards(findNotes(space.notebook(),{query,course,source,archived}));}
 export function notebookFilter(value,key='course'){if(key==='source'){if(value===''||Object.hasOwn(NOTE_SOURCES,value))source=value;}else course=value;}
-export async function importNotebook(file,space){if(file.size>100*1024*1024)throw Error('ไฟล์สำรองเกิน 100 MB');const data=JSON.parse(await file.text());if(data.format==='ru-paper-recovery'&&data.version===1){const snapshot=space.snapshot();const note={...data.note,id:crypto.randomUUID(),title:(data.note.title||'โน้ต')+' (กู้คืน)',updatedAt:new Date().toISOString()};snapshot.notebook.notes.push(note);await space.importSnapshot(snapshot);return;}if(data.format!=='ru-study-notebook'||data.version!==1)throw Error('ไฟล์ไม่ใช่สมุดจด RU Study Planner');for(const v of Object.values(data.images||{}))if(typeof v!=='string'||!/^data:image\/(png|jpeg|webp|gif);base64,/.test(v)||v.length>7100000)throw Error('รูปในไฟล์สำรองไม่ถูกต้อง');if(!confirm('นำเข้าสมุดจดและความคืบหน้าเพื่อแทนที่ฉบับปัจจุบัน? ระบบจะเก็บสำเนาก่อนนำเข้าไว้ในเครื่อง'))return;await space.importSnapshot(data.snapshot,data.images||{});}
+export async function importNotebook(file,space){if(file.size>100*1024*1024)throw Error('ไฟล์สำรองเกิน 100 MB');const data=JSON.parse(await file.text());const baseline=JSON.stringify(space.notebook()),plan=planRestore(data,space.notebook());
+ if(!await confirmRestore(plan)||(!plan.added&&!plan.addedMaterials))return;
+ await space.restoreNotebook(plan,baseline,data.images||{});}
 
 export function notePage(space,id){
  const n=space.notebook().notes.find(x=>x.id===id);
