@@ -595,6 +595,17 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  rich.setAttribute('aria-label','แก้ข้อความพร้อมตัวหนา ตัวเอียง ขีดเส้นใต้ และขนาดเฉพาะคำ');
  rich.spellcheck=false;rich.hidden=true;sheet.append(rich);
  let richSelection=null,wordMenuSelection=null,menuDrag=null,menuPosition=null;
+ // Native color pickers and toolbar inputs can blur a textarea with
+ // relatedTarget=null (especially desktop Safari/Chromium). Keep the editing
+ // object and a valid text selection alive until the formatting action ends.
+ let formattingControlActive=false,formattingSelection=null;
+ const selectedOffsets=()=>{
+  if(!editing)return null;
+  const live=editing.rich?richOffsets():{start:textarea.selectionStart,end:textarea.selectionEnd};
+  if(live?.end>live?.start)return live;
+  if(formattingControlActive)return formattingSelection||((editing.rich&&richSelection?.end>richSelection?.start)?richSelection:null);
+  return live;
+ };
  const menuBounds=()=>{const vv=window.visualViewport;return {left:vv?.offsetLeft||0,top:vv?.offsetTop||0,width:vv?.width||window.innerWidth,height:vv?.height||window.innerHeight};};
  function moveMenu(x,y){
   const b=menuBounds(),w=wordMenu.offsetWidth,h=wordMenu.offsetHeight;
@@ -760,13 +771,18 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    }else{say('คลิกข้อความบนกระดาษ แล้วลากเลือกคำที่ต้องการก่อน',true);return;}
    draw();showTextRibbon();return;
   }
-  const selectedBefore=editing.rich?(richOffsets()||richSelection):{start:textarea.selectionStart,end:textarea.selectionEnd};
+  const selectedBefore=selectedOffsets();
   if(!selectedBefore||selectedBefore.start===selectedBefore.end){
    say('ลากเลือกเฉพาะคำที่ต้องการก่อนเปลี่ยนรูปแบบหรือสี',true);return;
   }
-  if(!editing.rich)activateRich();
+  // When a native color picker takes focus, the browser may collapse the
+  // visible range. Restore the range before switching textarea → rich editor.
+  if(!editing.rich){
+   textarea.setSelectionRange(selectedBefore.start,selectedBefore.end);
+   activateRich();
+  }
   const before=readRich(),current=richOffsets();
-  const range=current?.end>current?.start?current:richSelection||selectedBefore;
+  const range=current?.end>current?.start?current:(formattingSelection?.end>formattingSelection?.start?formattingSelection:richSelection)||selectedBefore;
   if(!range||range.start===range.end)return;
   if(kind==='align'&&!editing.alignWidth)editing.alignWidth=Math.min(PAGE_W-editing.object.x,Math.max(editing.object.w,420));
   const marks=kind==='size'?applyTextFormat(before.marks,before.text,range.start,range.end,'size',textSize(value,editing.object.size)):
@@ -774,7 +790,9 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    kind==='align'?applyTextFormat(before.marks,before.text,range.start,range.end,'align',value):
    toggleTextFormat(before.marks,before.text,range.start,range.end,kind);
   rich.innerHTML=formattedTextHTML({text:before.text,marks},esc,false,false);
-  rich.focus();selectRichOffsets(range.start,range.end);editing.marks=marks;
+  rich.focus();selectRichOffsets(range.start,range.end);
+  formattingSelection={start:range.start,end:range.end};
+  editing.marks=marks;
   fitRichBox();textRibbonState();
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),450);
  }
@@ -814,8 +832,12 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const range=editing.rich?(richOffsets()||richSelection):{start:textarea.selectionStart,end:textarea.selectionEnd};
   const content=editing.rich?readRich().text:textarea.value;
   if(editing.rich&&range)richSelection=range;
-  if(range&&range.end>range.start)wordSelection={pageId,id:editing.id,start:range.start,end:range.end,text:content};
-  else wordSelection=null;
+  if(range&&range.end>range.start){
+   wordSelection={pageId,id:editing.id,start:range.start,end:range.end,text:content};
+   formattingSelection={start:range.start,end:range.end};
+  }else if(!formattingControlActive){
+   wordSelection=null;formattingSelection=null;
+  }
   textRibbonState();
  }
  async function linkWord(){
@@ -845,6 +867,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  function startText(o,caret=null,{wideArea=false}={}){
   closeWordMenu();finishText();wordSelection=null;richSelection=null;
+  formattingSelection=null;formattingControlActive=false;
   activePanel='text';
   editing={align:o.align,lastText:o.text,links:o.links||[],marks:o.marks||[],rich:false,id:o.id,before:copy(page()),fresh:!page().objects.some(x=>x.id===o.id),object:copy(o)};
   selected=new Set([o.id]);textarea.value=o.text;
@@ -882,6 +905,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(content.marks.length)o.marks=content.marks;else delete o.marks;
   if(!keepOpen){
    editing=null;rich.hidden=true;textarea.hidden=true;richSelection=null;
+   formattingSelection=null;formattingControlActive=false;
    if(edit.mobile){
      root.classList.remove('paper-is-editing');
      if(edit.view){zoom=edit.view.zoom;sizing();viewport.scrollLeft=edit.view.left;viewport.scrollTop=edit.view.top;}
@@ -896,9 +920,20 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  bind(textarea,'select',rememberWord);
  for(const linkButton of root.querySelectorAll('[data-paper="word-link"]'))bind(linkButton,'pointerdown',e=>{if(editing){rememberWord();e.preventDefault();}});
  bind(ribbon,'pointerdown',e=>{
-   if(e.target.closest('button,input[type="color"]')&&editing)rememberWord();
+   const formatTarget=e.target.closest('button,input,select,label');
+   if(formatTarget&&editing){
+    rememberWord();formattingControlActive=true;
+   }
+   // Buttons never need focus, so keep the selection highlighted.
+   // Do not cancel pointerdown on input[type=color]: that would block the
+   // operating system's color picker from opening.
    if(e.target.closest('button'))e.preventDefault();
   });
+ bind(ribbon,'focusin',e=>{
+  if(editing&&e.target.matches('input,select,button')){
+   rememberWord();formattingControlActive=true;
+  }
+ });
  bind(textarea,'input',()=>{
   if(editing&&!editing.rich){
    editing.links=moveLinks(editing.links,editing.lastText,textarea.value);
@@ -908,7 +943,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);fitTextBox();
  });
  bind(textarea,'blur',e=>{
-  if(!closed&&!scribbleActive&&!editing?.rich&&!e.relatedTarget?.closest?.('.paper-text-ribbon,.paper-word-menu,.paper-scribble-panel')){rememberWord();finishText();}
+  if(!closed&&!scribbleActive&&!editing?.rich&&!formattingControlActive&&!e.relatedTarget?.closest?.('.paper-text-ribbon,.paper-word-menu,.paper-scribble-panel')){rememberWord();finishText();}
  });
  bind(rich,'input',()=>{
   if(!editing?.rich)return;
@@ -923,7 +958,10 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   bind(editor,'mouseup',e=>{if(e.button===0&&!e.sourceCapabilities?.firesTouchEvents)showWordMenu(e);});
   bind(editor,'touchend',()=>{rememberWord();});
  }
- bind(wordMenu,'pointerdown',e=>{if(e.target.closest('button'))e.preventDefault();});
+ bind(wordMenu,'pointerdown',e=>{
+  if(editing){rememberWord();formattingControlActive=true;}
+  if(e.target.closest('button'))e.preventDefault();
+ });
  const dragHandle=wordMenu.querySelector('.paper-word-menu-heading');
  bind(dragHandle,'pointerdown',e=>{
   if(e.target.closest('button')||e.button!==0)return;
@@ -964,9 +1002,23 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  bind($('#paper-word-menu-custom'),'input',e=>{
   if(restoreMenuSelection())applyWordFormat('color',e.target.value);
  });
-bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
- bind(rich,'pointerup',()=>{richSelection=richOffsets();textRibbonState();});
- bind(rich,'blur',e=>{if(!closed&&!e.relatedTarget?.closest?.('.paper-text-ribbon,.paper-word-menu')){rememberWord();finishText();}});
+bind(rich,'keyup',()=>{
+  richSelection=richOffsets();
+  if(richSelection?.end>richSelection?.start)formattingSelection=richSelection;
+  else if(!formattingControlActive)formattingSelection=null;
+  textRibbonState();
+ });
+ bind(rich,'pointerup',()=>{
+  richSelection=richOffsets();
+  if(richSelection?.end>richSelection?.start)formattingSelection=richSelection;
+  else if(!formattingControlActive)formattingSelection=null;
+  textRibbonState();
+ });
+ bind(rich,'blur',e=>{
+  if(!closed&&!formattingControlActive&&!e.relatedTarget?.closest?.('.paper-text-ribbon,.paper-word-menu')){
+   rememberWord();finishText();
+  }
+ });
  bind(rich,'paste',e=>{e.preventDefault();document.execCommand('insertText',false,e.clipboardData?.getData('text/plain')||'');});
  bind(rich,'dragover',event=>event.preventDefault());
  bind(rich,'drop',event=>{
@@ -1003,6 +1055,58 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  }
  const tableUI=mountTableEditor(root,{page,change,writable,finishText,closeExtraTools,setShapesOpen,viewport,
   getScale:()=>scale,onSaved:tableId=>{multiSelect=false;setTool('select');selected=new Set([tableId]);draw();},say});
+ // In-app Word-style right-click menu. This is local to the notebook canvas,
+ // so browser menus elsewhere in the application are not affected.
+ const canvasMenu=$('#paper-context-menu');
+ let contextAnchor={x:100,y:100},objectClipboard=[];
+ const closeCanvasMenu=()=>{canvasMenu.hidden=true;};
+ function showCanvasMenu(event){
+  if(!event.target.closest('#paper-sheet'))return;
+  // Text with a highlighted range uses the existing rich-text mini toolbar;
+  // a new right-click elsewhere must replace it, not fall through to Safari.
+  if(!wordMenu.hidden&&event.target.closest('#paper-text-input,#paper-rich-editor'))return;
+  closeWordMenu();
+  event.preventDefault();
+  const at=point(event);
+  contextAnchor={x:Math.max(0,Math.min(PAGE_W,at.x)),y:Math.max(0,Math.min(PAGE_H,at.y))};
+  const target=[...page().objects].reverse().find(o=>
+   o.type==='stroke'?strokeHit(o,at,8/scale):
+   o.type==='shape'?shapeContains(o,at,8/scale):contains(at,o,3/scale));
+  // A right-click on an existing object should select that exact object,
+  // including when the pen or highlighter was the previous tool.
+  if(target){
+   if(editing)finishText();
+   if(tool!=='select')setTool('select');
+   if(!selected.has(target.id))selected=new Set([target.id]);
+   draw();
+  }else{
+   if(editing)finishText();
+   selected.clear();draw();
+  }
+  const any=selected.size>0;
+  const shape=any&&page().objects.some(o=>selected.has(o.id)&&o.type==='shape');
+  const onlyText=any&&selected.size===1&&page().objects.some(o=>selected.has(o.id)&&o.type==='text');
+  const visible={
+   'edit-text':onlyText,'copy':any,'paste':!!objectClipboard.length,
+   duplicate:any,'rotate-left':shape,'rotate-right':shape,delete:any,
+   'add-text':!any,'select-tool':true,'pen-tool':true,undo:true,redo:true
+  };
+  for(const button of canvasMenu.querySelectorAll('[data-context-action]')){
+   button.hidden=!visible[button.dataset.contextAction];
+   button.disabled=button.dataset.contextAction==='undo'?!history.canUndo:
+    button.dataset.contextAction==='redo'?!history.canRedo:false;
+  }
+  $('#paper-context-caption').textContent=any
+   ?(selected.size>1?'เลือก '+selected.size+' วัตถุ':
+     ({text:'ข้อความ',shape:'รูปทรง',image:'รูปภาพ',stroke:'เส้นปากกา',table:'ตาราง'}[target?.type]||'วัตถุ'))
+   :'คำสั่งบนกระดาษ';
+  closeWordMenu();
+  canvasMenu.hidden=false;
+  const left=Math.max(8,Math.min(event.clientX,window.innerWidth-canvasMenu.offsetWidth-8));
+  const top=Math.max(8,Math.min(event.clientY,window.innerHeight-canvasMenu.offsetHeight-8));
+  canvasMenu.style.left=left+'px';canvasMenu.style.top=top+'px';
+ }
+ bind(root,'contextmenu',showCanvasMenu);
  const inkTools=new Set(['pen','highlight','eraser','straighten','shape']);
  function guardInkSelection(e){
   if(!inkTools.has(tool)||e.target.closest('input,textarea,select,[contenteditable="true"],dialog'))return;
@@ -1284,6 +1388,44 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  bind(root,'click',async e=>{
   const b=e.target.closest('button');if(!b||!root.contains(b))return;
   try{
+   if(b.dataset.contextAction){
+    const cmd=b.dataset.contextAction;closeCanvasMenu();
+    if(cmd==='copy'){
+     objectClipboard=copy(page().objects.filter(o=>selected.has(o.id)));
+     say('คัดลอก '+objectClipboard.length+' วัตถุแล้ว · คลิกขวาที่ตำแหน่งที่จะวาง');return;
+    }
+    if(cmd==='paste'&&objectClipboard.length){
+     const box=bounds(objectClipboard);
+     if(!box)return;
+     const dx=Math.max(-box.x,Math.min(PAGE_W-box.x-box.w,contextAnchor.x-box.x));
+     const dy=Math.max(-box.y,Math.min(PAGE_H-box.y-box.h,contextAnchor.y-box.y));
+     const pasted=objectClipboard.map(o=>({...copy(o),id:uid(),x:o.x+dx,y:o.y+dy}));
+     if(change(p=>p.objects.push(...pasted))){selected=new Set(pasted.map(o=>o.id));setTool('select');draw();}
+     return;
+    }
+    if(cmd==='duplicate'||cmd==='delete'){root.querySelector('[data-paper="'+(cmd==='duplicate'?'duplicate':'delete-object')+'"]')?.click();return;}
+    if(cmd==='rotate-left'||cmd==='rotate-right'){
+     const delta=cmd==='rotate-left'?-15:15;
+     change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='shape')o.angle=shapeAngle((o.angle||0)+delta);}));
+     return;
+    }
+    if(cmd==='edit-text'){
+     const o=page().objects.find(o=>selected.has(o.id)&&o.type==='text');
+     if(o){setTool('text');startText(o);}
+     return;
+    }
+    if(cmd==='add-text'){
+     setTool('text');
+     startText({id:uid(),type:'text',
+      x:Math.min(PAGE_W-32,Math.max(0,contextAnchor.x)),
+      y:Math.min(PAGE_H-Math.ceil(fontSize*1.5),Math.max(0,contextAnchor.y)),
+      w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold});
+     return;
+    }
+    if(cmd==='select-tool'||cmd==='pen-tool'){setTool(cmd==='select-tool'?'select':'pen');return;}
+    if(cmd==='undo'||cmd==='redo'){root.querySelector('[data-paper="'+cmd+'"]')?.click();return;}
+    return;
+   }
    if(b.dataset.textAlign&&!editing){
     change(p=>{for(const o of p.objects)if(selected.has(o.id)&&o.type==='text')o.align=b.dataset.textAlign;});return;
    }
@@ -1462,8 +1604,13 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  });
   bind($('#paper-width'),'input',e=>updatePenWidth(e.target.value));
  bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();closeExtraTools();});
- bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-selection-more'))$('#paper-selection-more').open=false;if(!e.target.closest('.paper-shapes-popup,[data-open-shapes],[data-paper="shape"]'))setShapesOpen(false);if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();if(!e.target.closest('#paper-eraser-menu,[data-paper="eraser"]'))closeEraserMenu();});
- bind(root,'keydown',e=>{if(e.key==='Escape'){setShapesOpen(false);closeWordMenu();closePenSizePicker();closeExtraTools();closeEraserMenu();}});
+ bind(root,'pointerdown',e=>{
+  if(!e.target.closest('#paper-context-menu'))closeCanvasMenu();
+  if(!e.target.closest('.paper-text-ribbon,.paper-word-menu')){
+   formattingControlActive=false;
+  }
+  if(!e.target.closest('.paper-selection-more'))$('#paper-selection-more').open=false;if(!e.target.closest('.paper-shapes-popup,[data-open-shapes],[data-paper="shape"]'))setShapesOpen(false);if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();if(!e.target.closest('#paper-eraser-menu,[data-paper="eraser"]'))closeEraserMenu();});
+ bind(root,'keydown',e=>{if(e.key==='Escape'){setShapesOpen(false);closeWordMenu();closeCanvasMenu();closePenSizePicker();closeExtraTools();closeEraserMenu();}});
   bind($('#paper-finger'),'change',e=>{
    if(!e.target.checked)return;
    if(palmGuard)setPalmGuard(false);

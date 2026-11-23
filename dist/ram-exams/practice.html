@@ -1,2 +1,123 @@
-<!doctype html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ฝึกข้อสอบ · RU Study Planner</title><link rel="stylesheet" href="../styles.css"><style>main{max-width:760px;margin:auto;padding:20px}#options{display:grid;gap:8px}#options button{text-align:left;white-space:normal;height:auto;padding:12px}label{display:inline-grid;margin:4px}#feedback{white-space:pre-line}nav{display:flex;justify-content:space-between;margin-top:16px}</style>
-<main><a href="../#practice">← เลือกวิชาฝึกสอบ</a><h1 id="title">ฝึกข้อสอบ</h1><p>ชุดเรียบเรียงจาก <a id="source">Ram Test Hub</a></p><p id="status" role="status">กำลังโหลด…</p><section id="panel" class="panel" hidden><label>ชุดข้อสอบ<select id="sets"></select></label><label>ไปข้อที่<input id="number" type="number" min="1"></label><p id="count"></p><h2 id="question"></h2><div id="options"></div><p id="feedback" aria-live="polite"></p><nav><button id="prev">← ก่อนหน้า</button><button id="next">ถัดไป →</button></nav></section></main><script type="module" src="./practice.js"></script></html>
+<!doctype html>
+<html lang="th">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#1d4ed8">
+ <meta name="description" content="ฝึกข้อสอบรายวิชา พร้อมเฉลยและคะแนนรวมใน RU Study Planner">
+ <title>ฝึกข้อสอบ Ram Test Hub · RU Study Planner</title>
+ <link rel="icon" href="../icon.svg" type="image/svg+xml">
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Prompt:wght@500;600;700&display=swap">
+ <link rel="stylesheet" href="../styles.css?v=20261121-paper-format">
+ <link rel="stylesheet" href="./practice.css?v=20261123-unified-quiz-v1">
+</head>
+<body class="ram-body">
+ <a class="skip" href="#ram-main">ข้ามไปยังแบบฝึก</a>
+ <div class="ram-layout">
+  <aside class="ram-sidebar" aria-label="ทางลัด RU Study Planner">
+   <a href="../#home" class="brand">
+    <span class="brand-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 64 64"><path d="M14 19h13c4 0 6 2 6 5v23c-2-3-5-4-9-4H14zm36 0H37v28c2-3 5-4 9-4h4z" fill="#fff"/></svg></span>
+    <span>Study Planner<small>ติวก่อนเรียน · สมุดจด · ห้องเรียน</small></span>
+   </a>
+   <p class="ram-sidebar-label">เมนูการเรียน</p>
+   <nav class="ram-sidebar-links">
+    <a href="../#home">⌂ <span>หน้าหลัก</span></a>
+    <a href="../#plan">▦ <span>แผนอ่านหนังสือ</span></a>
+    <a href="../#exams" class="active" aria-current="page">✓ <span>ฝึกทำข้อสอบ</span></a>
+    <a href="../#practice">✎ <span>ทบทวนและแบบฝึก</span></a>
+    <a href="../#notes">▤ <span>สมุดจด</span></a>
+   </nav>
+   <p class="ram-sidebar-tip">ตอบข้อสอบทีละข้อ ระบบเฉลยให้ทันที และแสดงคะแนนรวมเมื่อทำครบชุด</p>
+  </aside>
+  <div class="ram-workspace">
+   <header class="ram-topbar">
+    <a class="ram-top-brand" href="../#home"><span class="brand-icon" aria-hidden="true">📖</span><span>RU Study Planner</span></a>
+    <span class="ram-top-current">ฝึกทำข้อสอบ / Ram Test Hub</span>
+    <span class="term-badge">ภาค 2/2569</span>
+   </header>
+   <main class="ram-main" id="ram-main">
+    <a class="ram-back" href="../#exams">← กลับไปเลือกวิชา</a>
+    <header class="ram-hero">
+     <div class="ram-hero-content">
+      <span class="ram-eyebrow">📘 RU STUDY PLANNER · PRACTICE</span>
+      <h1 id="title">ฝึกทำข้อสอบ</h1>
+      <p>ฝึกจากชุดเรียบเรียงอ้างอิง <a id="source" href="https://ram-test-hub.com/" target="_blank" rel="noopener noreferrer">Ram Test Hub ↗</a> · ตอบแล้วเฉลยทันที</p>
+     </div>
+     <div class="ram-hero-icon" aria-hidden="true">🎯</div>
+    </header>
+    <p id="status" class="ram-status" role="status" aria-live="polite">กำลังโหลดชุดข้อสอบ…</p>
+    <div id="lab" hidden>
+     <section class="ram-overview" aria-label="คะแนนและความคืบหน้าชุดปัจจุบัน">
+      <div class="ram-stat"><span>ตอบแล้ว</span><strong id="stat-answered">0/0</strong></div>
+      <div class="ram-stat"><span>ตอบถูก</span><strong id="stat-correct">0</strong></div>
+      <div class="ram-stat"><span>ตอบผิด</span><strong id="stat-wrong">0</strong></div>
+      <div class="ram-stat"><span>ยังไม่ตอบ</span><strong id="stat-pending">0</strong></div>
+      <div class="ram-progress"><div class="ram-progress-title"><span>ความคืบหน้าของชุดนี้</span><b id="progress-label">0%</b></div><progress id="progress" max="100" value="0" aria-label="สัดส่วนข้อที่ตอบแล้ว"></progress></div>
+     </section>
+     <div id="exercise" class="ram-grid">
+      <article class="panel ram-question-card" aria-labelledby="question">
+       <div class="ram-question-top"><span id="count" class="ram-counter">ข้อ 1/1</span><span class="ram-question-source">แบบฝึกปรนัย · ตรวจคำตอบทันที</span></div>
+       <h2 id="question">กำลังเปิดคำถาม…</h2>
+       <div id="options" class="choices ram-choices" role="group" aria-label="ตัวเลือกคำตอบ"></div>
+       <section id="feedback" class="ram-feedback" aria-live="polite" hidden>
+        <strong id="feedback-title"></strong>
+        <p id="feedback-answer"></p>
+        <details id="feedback-details" open><summary>คำอธิบายเฉลย</summary><p id="feedback-why"></p></details>
+       </section>
+       <nav class="ram-navigation" aria-label="เลื่อนข้อสอบ">
+        <button class="button secondary" id="prev" type="button">← ข้อก่อนหน้า</button>
+        <button class="button primary" id="next" type="button">ข้อถัดไป →</button>
+       </nav>
+      </article>
+      <aside class="ram-side">
+       <section class="panel ram-filter-panel">
+        <h2>ชุดข้อสอบ</h2>
+        <label class="ram-field">เลือกชุด<select id="sets" aria-label="เลือกชุดข้อสอบ"></select></label>
+        <label class="ram-field">ไปยังข้อที่<input id="number" type="number" min="1" inputmode="numeric" aria-label="ไปยังข้อที่"></label>
+        <button id="finish" class="button secondary ram-finish" type="button">ดูสรุปคะแนนชุดนี้</button>
+       </section>
+       <section class="ram-help">
+        <strong>💡 วิธีทำข้อสอบ</strong>
+        <p>กดคำตอบเพื่อดูเฉลยทันที ย้อนกลับไปทบทวนข้อที่ทำแล้วได้ และดูสรุปคะแนนเมื่อทำครบชุด</p>
+        <small>คำตอบบันทึกในเบราว์เซอร์เครื่องนี้ ไม่ได้ซิงก์กับบัญชีหรือคะแนนของมหาวิทยาลัย</small>
+       </section>
+      </aside>
+     </div>
+     <section id="results" class="panel ram-results" hidden aria-labelledby="results-title">
+      <div class="ram-results-head">
+       <span class="ram-eyebrow">🏁 สรุปผลการฝึก</span>
+       <h2 id="results-title">ผลคะแนนของชุดนี้</h2>
+       <p id="results-subtitle"></p>
+      </div>
+      <div class="ram-score-ring" id="score-ring" aria-label="คะแนนเป็นเปอร์เซ็นต์"><strong id="final-percent">0%</strong><span>คะแนนที่ได้</span></div>
+      <div class="ram-score-grid">
+       <div><span>คะแนน</span><strong id="final-score">0/0</strong></div>
+       <div><span>ตอบผิด</span><strong id="final-wrong">0</strong></div>
+       <div><span>ยังไม่ตอบ</span><strong id="final-pending">0</strong></div>
+       <div><span>ตอบแล้ว</span><strong id="final-answered">0</strong></div>
+      </div>
+      <div class="ram-results-actions">
+       <button class="button primary" id="back-to-questions" type="button">กลับไปดูข้อสอบ</button>
+       <button class="button secondary" id="review-wrong" type="button">ทบทวนข้อที่ผิด</button>
+       <button class="button again" id="reset-set" type="button">เริ่มชุดนี้ใหม่</button>
+      </div>
+      <section class="ram-review">
+       <h3 id="review-heading">รายการข้อที่ควรทบทวน</h3>
+       <div id="review-list" class="ram-review-list"></div>
+      </section>
+     </section>
+    </div>
+    <footer class="ram-footer">ตั้งใจฝึกทีละข้อ · คะแนนนี้เป็นผลการฝึกส่วนตัว ไม่ใช่ผลสอบมหาวิทยาลัย</footer>
+   </main>
+   <nav class="ram-mobile-nav" aria-label="ทางลัดบนมือถือ">
+    <a href="../#home">⌂ <span>หน้าหลัก</span></a>
+    <a href="../#exams" aria-current="page">✓ <span>ข้อสอบ</span></a>
+    <a href="../#practice">✎ <span>ทบทวน</span></a>
+    <a href="../#notes">▤ <span>สมุดจด</span></a>
+   </nav>
+  </div>
+ </div>
+ <script type="module" src="./practice.js?v=20261123-unified-quiz-v1"></script>
+</body>
+</html>

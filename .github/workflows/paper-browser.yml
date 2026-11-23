@@ -23,6 +23,8 @@ jobs:
         run: PAPER_TEST=crop node tests/browser/paper.mjs
       - name: Inline notebook tables
         run: PAPER_TEST=tables node tests/browser/paper.mjs
+      - name: Ram Test Hub responsive quiz and scoring
+        run: node tests/browser/ram-practice.mjs
       - run: node tests/browser/paper.mjs
       - uses: actions/upload-artifact@v4
         if: always()
