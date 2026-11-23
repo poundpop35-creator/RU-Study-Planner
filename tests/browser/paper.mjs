@@ -600,6 +600,43 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await page.locator('#paper-svg span[style*="font-weight:700"]').count(),'individual word style must survive reload');
    assert.ok(await page.locator('#paper-svg span[style*="color:#dc4343"]').count(),'per-word color survives reload');
    await page.screenshot({path:'test-results/notebook-word-format-'+name+'.png'});
+
+   // Scribble quick keys must insert literal whitespace/newlines and format
+   // the same text object, both on iPad-like and touch/mobile layouts.
+   await click('scribble-text');
+   const pencilPanel=page.locator('.paper-scribble-panel');
+   const pencilInput=pencilPanel.locator('.paper-scribble-input');
+   assert.ok(await pencilPanel.isVisible(),'Scribble handwriting input should open');
+   for(const key of ['backspace','space','enter'])
+    assert.ok(await pencilPanel.locator('[data-pencil-edit="'+key+'"]').isVisible(),key+' shortcut is available beside keyboard');
+   await pencilInput.fill('ตัวอย่าง');
+   await pencilInput.evaluate(el=>el.setSelectionRange(el.value.length,el.value.length));
+   await pencilPanel.locator('[data-pencil-edit="space"]').click();
+   await pencilPanel.locator('[data-pencil-edit="enter"]').click();
+   assert.equal(await pencilInput.inputValue(),'ตัวอย่าง \n','space and Enter insert actual whitespace');
+   await pencilPanel.locator('[data-pencil-edit="backspace"]').click();
+   assert.equal(await pencilInput.inputValue(),'ตัวอย่าง ','backspace removes the preceding newline');
+   await pencilInput.evaluate(el=>el.setSelectionRange(0,el.value.indexOf(' ')));
+   await pencilPanel.locator('[data-pencil-format="bold"]').click();
+   assert.ok((await pencilPanel.locator('[data-pencil-preview]').innerHTML()).includes('font-weight:700'),'selected Scribble text is bold in live preview');
+   await pencilInput.evaluate(el=>el.setSelectionRange(el.value.length,el.value.length));
+   await pencilPanel.locator('[data-pencil-format="italic"]').click();
+   await pencilPanel.locator('[data-pencil-format="underline"]').click();
+   await pencilPanel.locator('[data-pencil-color="#dc4343"]').click();
+   await pencilPanel.locator('[data-pencil-edit="space"]').click();
+   await pencilInput.evaluate(el=>{
+    el.setRangeText('ใหม่',el.selectionStart,el.selectionEnd,'end');
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+   });
+   assert.equal(await pencilInput.inputValue(),'ตัวอย่าง  ใหม่');
+   assert.ok((await pencilPanel.locator('[data-pencil-preview]').innerHTML()).includes('color:#dc4343'),'newly typed colored text appears in preview');
+   await pencilPanel.locator('[data-pencil-finish]').click();
+   await click('save');
+   await wait(()=>row.payload.notebook.notes.some(n=>n.paper?.pages?.some(p=>p.objects.some(o=>o.type==='text'&&o.text==='ตัวอย่าง  ใหม่'))));
+   const pencilSaved=row.payload.notebook.notes.flatMap(n=>n.paper?.pages?.flatMap(p=>p.objects)||[]).find(o=>o.type==='text'&&o.text==='ตัวอย่าง  ใหม่');
+   assert.ok(pencilSaved.marks?.some(m=>m.bold&&m.start===0),'selected bold text is saved with original text');
+   assert.ok(pencilSaved.marks?.some(m=>m.italic&&m.underline&&m.color==='#dc4343'),'Scribble typing styles are persisted');
+
   await page.evaluate(()=>{location.hash='#home';});
   await page.locator('.start-card').waitFor();
   const sideNotebook=page.locator('#navigation a[href="#notes"]');
