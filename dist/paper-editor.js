@@ -1308,6 +1308,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    if(b.dataset.eraserKind){
     if(!['stroke','shape','text'].includes(b.dataset.eraserKind))return;
     eraserKind=b.dataset.eraserKind;
+    for(const item of eraserMenu.querySelectorAll('[data-eraser-kind]'))
+     item.setAttribute('aria-pressed',String(item.dataset.eraserKind===eraserKind));
     setTool('eraser');
     eraserButton.title='ยางลบ · '+({stroke:'ลบเส้นปากกา',shape:'ลบรูปทรง',text:'ลบข้อความ'})[eraserKind];
     say('ยางลบ: '+({stroke:'ปาดหรือลากเพื่อลบเส้นปากกาและไฮไลต์',shape:'แตะหรือลากเพื่อลบรูปทรงและลูกศร',text:'แตะหรือลากเพื่อลบกล่องข้อความ'})[eraserKind]);
