@@ -8,13 +8,13 @@ import {newNote} from '../../dist/notebook-core.js';
 const root=resolve('dist');
 const server=createServer(async(req,res)=>{try{const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname.replace(/\/$/,'/index.html')));if(!path.startsWith(root+'/'))throw Error();const body=await readFile(path);res.writeHead(200,{'Content-Type':({'.js':'text/javascript','.css':'text/css','.html':'text/html','.svg':'image/svg+xml'})[extname(path)]||'application/octet-stream'});res.end(body);}catch{res.writeHead(404);res.end();}});
 await new Promise(r=>server.listen(3000,'127.0.0.1',r));await mkdir('test-results',{recursive:true});
-const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAGAAAABACAIAAABqVuVZAAAAnElEQVR4nO3QQRHAIADAMMDh9CANc1Ow65M9EgW9zmefwbd1O+DvDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFB4AbYIAgdMU5T+AAAAAElFTkSuQmCC','base64');
+const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAAA2ElEQVR4nO3QQRHAIADAMMD4NOAFgVOw65M9EgW9zmefwbd1O+DvDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFAwKBgUDAoGBYOCQcGgYFB4AXO7AoQ4sya6AAAAAElFTkSuQmCC','base64');
 const wait=async(fn)=>{const until=Date.now()+15000;while(!await fn()){if(Date.now()>until)throw Error('Timed out waiting for state');await new Promise(r=>setTimeout(r,100));}};
 for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,false],['mobile-webkit',webkit,true]]){
  const browser=await type.launch(type===chromium&&process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{});let row={revision:1,updated_at:new Date().toISOString(),payload:{version:1,progress:freshState(),notebook:{version:1,notes:[newNote({id:'browser-note',title:'สมุดทดสอบ · POL1101',text:'ต้นฉบับบทเรียน\nรัฐและอำนาจ'})]}}},offline=false,delaySave=null;
  const errors=[],images=new Map();
  const setup=async()=>{const context=await browser.newContext(mobile?{...devices['iPhone 13']}:{viewport:{width:name==='tablet'?768:1280,height:1000}});
-  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  await context.route('**/*',route=>(['blob:','data:'].includes(new URL(route.request().url()).protocol)||new URL(route.request().url()).origin==='http://127.0.0.1:3000')?route.continue():route.abort());
   await context.route('**/functions/v1/personal-study/**',async route=>{
    const req=route.request(),path=new URL(req.url()).pathname.split('/personal-study')[1];
    if(offline)return route.fulfill({status:503,json:{error:'offline test'}});
@@ -294,7 +294,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await wait(()=>images.size===2);await wait(()=>page.locator('#paper-svg image').getAttribute('width').then(w=>Number(w)<beforeCropWidth));await click('save');assert.notEqual(picture().imageId,original.imageId);
   await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 sample')});
   await wait(()=>row.payload.notebook.notes[0].files?.[0]?.name==='lesson.pdf');await page.locator('#paper-files form button').click();
-  await page.locator('.paper-menu').evaluate(el=>el.open=true);await page.locator('#paper-template').selectOption('dots');await page.locator('.paper-menu').evaluate(el=>el.open=false);await click('save');
+  await click('page-settings');await page.locator('#paper-template').selectOption('dots');await click('save');
   await page.screenshot({path:'test-results/paper-'+name+'.png'});
   if(!await page.locator('[data-paper="add-page"]').first().isVisible())await click('pages');await click('add-page');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
   await click('delete-page');await page.getByRole('alertdialog').waitFor();await page.locator('[data-delete-choice="cancel"]').click();assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
