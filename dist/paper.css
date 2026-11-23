@@ -1283,7 +1283,7 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  .paper-app .paper-toolset>button[data-paper="pen"]{display:flex!important;order:3}
  .paper-app .paper-toolset>button[data-paper="text"]{display:flex!important;order:4}
  .paper-app .paper-toolset>button[data-paper="eraser"]{display:flex!important;order:5}
- .paper-app .paper-mobile-more{
+ .paper-app .paper-toolset>button.paper-mobile-more{
   display:flex!important;order:6;
   align-items:center;justify-content:center;flex-direction:column;
   border:1px solid #bed0f2!important;
