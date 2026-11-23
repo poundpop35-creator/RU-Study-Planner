@@ -98,6 +98,13 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  };
  syncInputControls();root.classList.toggle('paper-palm-guard-on',palmGuard);
  const page=()=>model.pages.find(p=>p.id===pageId)||model.pages[0];
+ const continuous=()=>model.version===2;
+ const canvasLimit=()=>continuous()?MAX_CANVAS_HEIGHT:PAGE_H;
+ function ensureCanvasHeight(required,extra=PAGE_H){
+  if(!continuous()||required<virtualHeight-180)return;
+  const next=Math.min(MAX_CANVAS_HEIGHT,Math.ceil(Math.max(required+extra,PAGE_H)/PAGE_H)*PAGE_H);
+  if(next>virtualHeight){virtualHeight=next;sizing();scheduleDraw();}
+ }
 
  const say=(text,bad=false)=>{const el=$('#paper-hint');el.textContent=text;el.classList.toggle('error',bad);};
  function setPalmGuard(value){
@@ -126,6 +133,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    space.saveNotebook(book);model=copy(next);lastStored=JSON.stringify(next);unsaved=null;draftBase=null;try{localStorage.removeItem(draftKey);}catch{}root.classList.remove('paper-has-draft');
    if(record){if(added)history.record(null,added,next.pages.findIndex(p=>p.id===added.id));else if(removed)history.record(removed,null,oldPages.indexOf(removed));else if(after)history.record(before,after,oldPages.indexOf(before));}
    if(!model.pages.some(p=>p.id===pageId))pageId=model.pages[0].id;
+   if(continuous())ensureCanvasHeight(pageHeight(page()),PAGE_H);
    say('บันทึกอัตโนมัติ · ปุ่มบันทึกงานใช้สั่งบันทึกทันที');draw();thumbs();return true;
   }catch(err){draftBase??=copy(model);unsaved=copy(next);try{localStorage.setItem(draftKey,JSON.stringify({paper:unsaved,base:draftBase}));}catch{}say(err.message+' · งานล่าสุดยังอยู่ในหน้านี้ กด “สำรองงานค้าง” ก่อนปิด',true);root.classList.add('paper-has-draft');return false;}
  }
@@ -133,7 +141,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const next=copy(unsaved||model),p=next.pages.find(p=>p.id===pageId);
   fn(p,next);
   if(next.version===2){
-   const actual=Math.max(0,...p.objects.map(o=>o.y+o.h));
+   const actual=p.objects.reduce((max,o)=>Math.max(max,o.y+o.h),0);
    if(actual>MAX_CANVAS_HEIGHT)throw Error('กระดาษยาวถึงขีดจำกัดทางเทคนิคแล้ว กรุณาแยกเป็นสมุดใหม่');
    p.height=Math.max(pageHeight(p),continuousContentHeight(p));
   }
@@ -182,7 +190,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   updateContextToolBar();
   const continuous=model.version===2;
   root.dataset.paperContinuous=continuous?'true':'false';
-  $('#paper-page-label').textContent=continuous?'กระดาษต่อเนื่อง · เลื่อนลงเพื่อเพิ่มพื้นที่':`หน้า ${model.pages.findIndex(p=>p.id===pageId)+1} / ${model.pages.length}`;
+  $('#paper-page-label').textContent=continuous?'กระดาษต่อเนื่อง · เส้นประ = ขอบเขต A4 ตอนพิมพ์':`หน้า ${model.pages.findIndex(p=>p.id===pageId)+1} / ${model.pages.length}`;
   for(const button of root.querySelectorAll('[data-paper="continuous"]')){
    button.hidden=continuous;
   }
@@ -923,7 +931,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
   editing.paperWidth=width;
-  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight));
+  editing.paperHeight=Math.min(Math.max(1,canvasLimit()-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight));
+  ensureCanvasHeight(o.y+editing.paperHeight);
   rich.style.width=width+'px';
   rich.style.minHeight=Math.max(o.size*1.5,editing.paperHeight)+'px';
  }
@@ -1026,7 +1035,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   // where the user explicitly entered a newline.
   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
-  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight+3));
+  editing.paperHeight=Math.min(Math.max(1,canvasLimit()-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight+3));
+  ensureCanvasHeight(o.y+editing.paperHeight);
   // Keep a comfortable editing target on iPad/phones even when the
   // text object itself is short. As text grows, the target expands past 250px
   // and the saved box uses its naturally measured width.
@@ -1034,7 +1044,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textarea.style.width=visualWidth+'px';
   textarea.style.overflowY='hidden';
   textarea.style.height='1px';
-  const height=Math.min(Math.max(1,PAGE_H-o.y),Math.max(editing.paperHeight,textarea.scrollHeight));
+  const height=Math.min(Math.max(1,canvasLimit()-o.y),Math.max(editing.paperHeight,textarea.scrollHeight));
+  ensureCanvasHeight(o.y+height);
   textarea.style.height=height+'px';
   if(textarea.scrollHeight>height)textarea.style.overflowY='auto';
  }
@@ -1280,7 +1291,7 @@ bind(rich,'keyup',()=>{
   closeWordMenu();
   event.preventDefault();
   const at=point(event);
-  contextAnchor={x:Math.max(0,Math.min(PAGE_W,at.x)),y:Math.max(0,Math.min(PAGE_H,at.y))};
+  contextAnchor={x:Math.max(0,Math.min(PAGE_W,at.x)),y:Math.max(0,Math.min(canvasLimit(),at.y))};
   const target=[...page().objects].reverse().find(o=>
    o.type==='stroke'?strokeHit(o,at,8/scale):
    o.type==='shape'?shapeContains(o,at,8/scale):contains(at,o,3/scale));
@@ -1403,7 +1414,7 @@ bind(rich,'keyup',()=>{
    const table=[...page().objects].reverse().find(o=>o.type==='table'&&contains(p,o));
    if(table){selected=new Set([table.id]);tableUI.open(table);draw();return;}
    const target=findTextToContinue(p);
-   startText(target||{id:uid(),type:'text',x:Math.min(p.x,PAGE_W-32),y:Math.min(p.y,PAGE_H-Math.ceil(fontSize*1.5)),w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold});
+   startText(target||{id:uid(),type:'text',x:Math.min(p.x,PAGE_W-32),y:Math.min(p.y,canvasLimit()-Math.ceil(fontSize*1.5)),w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold});
    if(target)say('กำลังเขียนต่อในกล่องเดิม · เขียนจากเคอร์เซอร์ได้เลย');
    return;
   }
@@ -1446,7 +1457,7 @@ bind(rich,'keyup',()=>{
   const p=point(e);
   if(gesture.kind==='ruler-move'){
    ruler.x=Math.max(30,Math.min(PAGE_W-30,gesture.startX+p.x-gesture.start.x));
-   ruler.y=Math.max(30,Math.min(PAGE_H-30,gesture.startY+p.y-gesture.start.y));scheduleDraw();return;
+   ruler.y=Math.max(30,Math.min(canvasLimit()-30,gesture.startY+p.y-gesture.start.y));scheduleDraw();return;
   }
   if(gesture.kind==='ruler-rotate'){
    ruler.angle=Math.round(Math.atan2(p.y-ruler.y,p.x-ruler.x)*180/Math.PI/5)*5; scheduleDraw();return;
@@ -1465,7 +1476,8 @@ bind(rich,'keyup',()=>{
    const targets=gesture.before.filter(o=>!selected.has(o.id));
    gesture.preview=gesture.before.map(o=>{
     if(!selected.has(o.id))return o;
-    const moved={...o,x:Math.max(-o.w/2,Math.min(PAGE_W-o.w/2,o.x+p.x-gesture.start.x)),y:Math.max(-o.h/2,Math.min(PAGE_H-o.h/2,o.y+p.y-gesture.start.y))};
+    const moved={...o,x:Math.max(-o.w/2,Math.min(PAGE_W-o.w/2,o.x+p.x-gesture.start.x)),y:Math.max(-o.h/2,Math.min(canvasLimit()-o.h/2,o.y+p.y-gesture.start.y))};
+    ensureCanvasHeight(moved.y+moved.h);
     return selected.size===1?snapMovedLine(moved,targets,10/scale):moved;
    });
   }
@@ -1479,7 +1491,8 @@ bind(rich,'keyup',()=>{
     if(o.type==='text'){
      // Dragging the corner changes only the editable box dimensions.
      // Font size and per-word formatting are deliberately untouched.
-     return {...o,w:Math.max(32,Math.min(PAGE_W-o.x,o.w+dx)),h:Math.max(o.size*1.5,Math.min(PAGE_H-o.y,o.h+dy))};
+     const next={...o,w:Math.max(32,Math.min(PAGE_W-o.x,o.w+dx)),h:Math.max(o.size*1.5,Math.min(canvasLimit()-o.y,o.h+dy))};
+     ensureCanvasHeight(next.y+next.h);return next;
     }
     return {...o,x:b.x+(o.x-b.x)*f,y:b.y+(o.y-b.y)*f,w:Math.max(1,o.w*f),h:Math.max(1,o.h*f)};
    });
@@ -1594,7 +1607,10 @@ bind(rich,'keyup',()=>{
  bind(viewport,'wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();const r=viewport.getBoundingClientRect();zoomAt(zoom*Math.exp(-e.deltaY*.005),e.clientX-r.left,e.clientY-r.top);}},{passive:false});
  async function insertImages(files){
   finishText();loadingImages++;try{for(const file of files){writable();say('กำลังส่งรูปขึ้น Supabase…');const imageId=await space.uploadImage(file);if(closed)return;const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();if(closed){URL.revokeObjectURL(url);return;}images.set(imageId,url);imageVersion++;const w=Math.min(620,img.naturalWidth),height=Math.min(900,w*img.naturalHeight/img.naturalWidth),actualW=height*img.naturalWidth/img.naturalHeight;
-   const o={id:uid(),type:'image',x:(PAGE_W-actualW)/2,y:80,w:actualW,h:height,imageId};if(change(p=>p.objects.push(o))){selected=new Set([o.id]);tool='select';collapsePhoneMore();draw();}}
+   const visibleTop=continuous()?viewport.scrollTop/Math.max(scale,.01):0;
+   const imageY=Math.min(canvasLimit()-height,Math.max(80,visibleTop+70));
+   ensureCanvasHeight(imageY+height);
+   const o={id:uid(),type:'image',x:(PAGE_W-actualW)/2,y:imageY,w:actualW,h:height,imageId};if(change(p=>p.objects.push(o))){selected=new Set([o.id]);tool='select';collapsePhoneMore();draw();}}
   }catch(err){say(err.message,true);}finally{loadingImages--;}
  }
  bind($('#paper-image-file'),'change',e=>{insertImages([...e.target.files]);e.target.value='';});
@@ -1640,7 +1656,7 @@ bind(rich,'keyup',()=>{
      const box=bounds(objectClipboard);
      if(!box)return;
      const dx=Math.max(-box.x,Math.min(PAGE_W-box.x-box.w,contextAnchor.x-box.x));
-     const dy=Math.max(-box.y,Math.min(PAGE_H-box.y-box.h,contextAnchor.y-box.y));
+     const dy=Math.max(-box.y,Math.min(canvasLimit()-box.y-box.h,contextAnchor.y-box.y));
      const pasted=objectClipboard.map(o=>({...copy(o),id:uid(),x:o.x+dx,y:o.y+dy}));
      if(change(p=>p.objects.push(...pasted))){selected=new Set(pasted.map(o=>o.id));setTool('select');draw();}
      return;
@@ -1660,7 +1676,7 @@ bind(rich,'keyup',()=>{
      setTool('text');
      startText({id:uid(),type:'text',
       x:Math.min(PAGE_W-32,Math.max(0,contextAnchor.x)),
-      y:Math.min(PAGE_H-Math.ceil(fontSize*1.5),Math.max(0,contextAnchor.y)),
+      y:Math.min(canvasLimit()-Math.ceil(fontSize*1.5),Math.max(0,contextAnchor.y)),
       w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold});
      return;
     }
@@ -1741,7 +1757,7 @@ bind(rich,'keyup',()=>{
     const existing=page().objects.find(o=>o.id===targetId&&o.type==='text');
     tool='text';activePanel='text';selected=existing?new Set([existing.id]):new Set();
     const x=Math.max(28,Math.min(PAGE_W-440,viewport.scrollLeft/scale+75));
-    const y=Math.max(35,Math.min(PAGE_H-70,viewport.scrollTop/scale+110));
+    const y=Math.max(35,Math.min(canvasLimit()-70,viewport.scrollTop/scale+110));
     startText(existing||{id:uid(),type:'text',x,y,w:440,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold},null,{wideArea:true});
     openScribblePanel();
     say('เขียนด้วย Apple Pencil ในพื้นที่สีฟ้า · ข้อความที่ iPadOS แปลงจะไปที่กล่องเดิม');
