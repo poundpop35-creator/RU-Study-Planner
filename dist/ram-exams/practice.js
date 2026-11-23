@@ -143,13 +143,20 @@ function resetCurrentSet(){
  el('question').scrollIntoView({block:'start',behavior:'smooth'});
 }
 async function openBank(){
- if(!/^POL(?:1101|2104|2106|2107|2200|2301|2303)$/.test(course))
+ if(course!=='PALAD'&&!/^POL(?:1101|2104|2106|2107|2200|2301|2303)$/.test(course))
   throw Error('ไม่พบรายวิชานี้ กรุณากลับไปเลือกวิชาฝึกสอบ');
- const response=await fetch('./'+course+'.gz');
+ const response=await fetch(course==='PALAD'?'./PALAD.json':'./'+course+'.gz');
  if(!response.ok)throw Error('โหลดชุดข้อสอบไม่สำเร็จ');
  const bytes=new Uint8Array(await response.arrayBuffer());
  const body=bytes[0]===31?new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')):bytes;
  const parsed=await new Response(body).json();
+ if(course==='PALAD'){
+  el('title').textContent='ติวสอบปลัด';
+  el('source').parentElement.textContent='เป้าหมายการฝึก · ปี 2571';
+  if(Array.isArray(parsed?.items)&&parsed.items.length===0){
+   el('status').textContent='ยังไม่มีชุดข้อสอบ · รอเพิ่มข้อสอบชุดแรก';return;
+  }
+ }
  if(!parsed||!Array.isArray(parsed.items)||!parsed.items.length||!parsed.sets||typeof parsed.sets!=='object')
   throw Error('ไฟล์ชุดข้อสอบไม่สมบูรณ์');
  for(const q of parsed.items){
@@ -163,8 +170,8 @@ async function openBank(){
  }
  bank=parsed;
  setNames=parsed.sets;
- el('title').textContent=course+' · '+String(parsed.name||'ฝึกทำข้อสอบ');
- el('source').href='https://ram-test-hub.com/s/'+course+'/';
+ if(course!=='PALAD')el('title').textContent=course+' · '+String(parsed.name||'ฝึกทำข้อสอบ');
+ if(course!=='PALAD')el('source').href='https://ram-test-hub.com/s/'+course+'/';
  el('sets').replaceChildren(...[...groups].map(([key,list])=>
   new Option(String(setNames[key]||key)+' · '+list.length+' ข้อ',key)));
  el('sets').onchange=()=>{index=0;showQuestion();};
