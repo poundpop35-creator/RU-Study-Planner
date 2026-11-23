@@ -1141,6 +1141,8 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
      return;
     }
    const action=b.dataset.paper;if(!action)return;
+   const noteMenu=b.closest("details.paper-menu");
+   if(noteMenu)noteMenu.open=false;
    if(action==='finish-text'){finishText();return;}
    if(action==='scribble-text'){
     const targetId=editing?.id||page().objects.find(o=>selected.has(o.id)&&o.type==='text')?.id;
