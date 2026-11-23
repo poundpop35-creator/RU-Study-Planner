@@ -1436,3 +1436,47 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  }
  .paper-app .paper-word-menu [data-word-menu-prefix]{font-size:18px;font-weight:800}
 }
+
+/* Floating one-row selected-object commands on desktop. The dedicated grip
+   moves the toolbar; the rest of its buttons remain normal click targets. */
+.paper-app .paper-selection-drag{display:none}
+@media screen and (min-width:901px) and (pointer:fine){
+ .paper-app .paper-selection-tools{
+  position:fixed!important;z-index:95!important;
+  left:var(--paper-selection-x,calc(50vw - 330px))!important;
+  top:var(--paper-selection-y,calc(100dvh - 100px))!important;
+  right:auto!important;bottom:auto!important;transform:none!important;
+  display:flex!important;align-items:center!important;flex-wrap:nowrap!important;
+  justify-content:flex-start!important;gap:5px!important;
+  width:max-content!important;max-width:calc(100vw - 18px)!important;
+  min-width:0!important;min-height:49px!important;max-height:49px!important;
+  padding:5px 8px!important;box-sizing:border-box;
+  border:1px solid #b7c8e7!important;border-radius:12px!important;
+  background:#fff!important;box-shadow:0 12px 28px #182d5936!important;
+  overflow:visible!important;white-space:nowrap!important;
+ }
+ .paper-app .paper-selection-tools[hidden]{display:none!important}
+ .paper-app .paper-selection-tools>*{flex:0 0 auto!important;white-space:nowrap!important}
+ .paper-app .paper-selection-tools .paper-selection-drag{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  width:30px;min-width:30px;min-height:36px;
+  border-radius:7px;background:#e5edff;color:#2a4ca5;
+  font-size:24px;cursor:grab;touch-action:none;
+  -webkit-user-select:none;user-select:none;
+ }
+ .paper-app .paper-selection-tools .paper-selection-drag:active{cursor:grabbing}
+ .paper-app .paper-selection-tools .paper-selection-drag:focus-visible{
+  outline:2px solid #3155d9;outline-offset:1px;
+ }
+ .paper-app .paper-selection-tools .paper-shape-selection,
+ .paper-app .paper-selection-tools .paper-table-selection,
+ .paper-app .paper-selection-tools .paper-shape-rotation{
+  display:inline-flex;align-items:center;flex-wrap:nowrap!important;
+  white-space:nowrap!important;gap:5px;
+ }
+ .paper-app .paper-selection-tools .paper-shape-selection[hidden],
+ .paper-app .paper-selection-tools .paper-table-selection[hidden]{
+  display:none!important;
+ }
+ .paper-app .paper-selection-tools .paper-shape-rotation{width:auto!important}
+}
