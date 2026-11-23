@@ -470,8 +470,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.ok(await canvasMenu.locator('[data-context-action="add-text"]').isVisible(),'blank page offers an add-text action');
     assert.ok(await canvasMenu.locator('[data-context-action="paste"]').isVisible(),'copied objects may be pasted from the app menu');
     await canvasMenu.locator('[data-context-action="paste"]').click();
+    await click('save');
     assert.equal(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.filter(o=>o.type==='shape').length,2);
-    await click('undo');
+    await click('undo');await click('save');
     assert.equal(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.filter(o=>o.type==='shape').length,1);
    await click('ruler');
    assert.equal(await page.locator('[data-paper="ruler"]').getAttribute('aria-pressed'),'true');
