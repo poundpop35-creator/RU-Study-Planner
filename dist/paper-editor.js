@@ -80,15 +80,24 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   }catch{if(!preview.closed)doc.body.textContent='เตรียมหน้ากระดาษไม่สำเร็จ กรุณาปิดหน้านี้แล้วลองพิมพ์อีกครั้ง';}
  });
  const palmToggle=$('#paper-palm-guard');
- palmToggle.checked=palmGuard;root.classList.toggle('paper-palm-guard-on',palmGuard);
+ const syncInputControls=()=>{
+  $('#paper-finger').checked=finger;
+  $('#paper-pencil-only').checked=!finger;
+  palmToggle.checked=palmGuard;
+ };
+ syncInputControls();root.classList.toggle('paper-palm-guard-on',palmGuard);
  const page=()=>model.pages.find(p=>p.id===pageId)||model.pages[0];
 
  const say=(text,bad=false)=>{const el=$('#paper-hint');el.textContent=text;el.classList.toggle('error',bad);};
  function setPalmGuard(value){
   palmGuard=!!value;palmToggle.checked=palmGuard;
   root.classList.toggle('paper-palm-guard-on',palmGuard);
-  if(palmGuard){finger=false;$('#paper-finger').checked=false;pointers.clear();gesture=null;cancelSmartTimer();scheduleDraw();}
-  try{localStorage.setItem(palmKey,String(palmGuard));}catch{}
+  if(palmGuard){finger=false;pointers.clear();gesture=null;cancelSmartTimer();scheduleDraw();}
+  syncInputControls();
+  try{
+   localStorage.setItem(palmKey,String(palmGuard));
+   if(palmGuard)localStorage.setItem(fingerKey,'false');
+  }catch{}
   say(palmGuard?'กันฝ่ามือแล้ว · Apple Pencil เขียนได้ · ใช้ปุ่ม +/− เพื่อซูม':'ปิดกันฝ่ามือแล้ว · ใช้สองนิ้วซูมได้');
  }
  const currentNote=()=>space.notebook().notes.find(n=>n.id===id);
@@ -304,11 +313,17 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  contextBar.className='paper-context-controls';contextBar.setAttribute('role','toolbar');
  contextBar.setAttribute('aria-label','การตั้งค่าของเครื่องมือที่เลือก');
  contextWrap.append(contextBar);
- root.querySelector('.paper-toolbar').after(contextWrap);
+ // Keep the writing device and palm-protection choices visible beside the
+ // drawing tools instead of burying them inside a horizontally scrolled menu.
+ const inputStrip=document.createElement('div');
+ inputStrip.id='paper-input-strip';inputStrip.className='paper-input-strip';
+ inputStrip.setAttribute('role','group');inputStrip.setAttribute('aria-label','วิธีเขียนและป้องกันฝ่ามือ');
+ inputStrip.hidden=true;
+ inputStrip.append($('.paper-input-switch'),$('.paper-palm-guard'),$('.paper-geometry-check'));
+ root.querySelector('.paper-toolbar').after(inputStrip,contextWrap);
  let activePanel=tool;
  const settingsRow=(name,label)=>{const node=document.createElement('div');node.className='paper-context-section paper-context-'+name;node.hidden=true;node.setAttribute('aria-label',label);contextBar.append(node);return node;};
  const inkOptions=settingsRow('ink','สีและความหนาเส้น');
- const pencilOptions=settingsRow('pencil','การเขียนด้วยปากกา');
  const shapeOptions=settingsRow('shape','การเลือกและปรับรูปทรง');
  const textOptions=settingsRow('text','การพิมพ์ข้อความ');
  const pageOptions=settingsRow('page','แบบหน้ากระดาษ');
@@ -322,7 +337,6 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  shapeOptions.append($('#paper-shape-options'),$('#paper-line-options'));
  const shapeGallery=document.createElement('button');shapeGallery.type='button';shapeGallery.dataset.openShapes='context';
  shapeGallery.setAttribute('aria-label','เลือกรูปทรง');shapeGallery.title='เลือกรูปทรง';shapeOptions.prepend(shapeGallery);
- pencilOptions.append($('.paper-finger'),$('.paper-palm-guard'),$('.paper-geometry-check'));
  textOptions.append($('.paper-default-text-size'),$('.paper-global-ink'),$('[data-paper="scribble-text"]'));
  const boldPreset=document.createElement('button');
  boldPreset.type='button';boldPreset.textContent='B';boldPreset.style.fontWeight='700';
@@ -355,7 +369,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  function updateContextToolBar(){
   const showInk=['pen','highlight','shape','straighten'].includes(activePanel);
   inkOptions.hidden=!showInk;
-  pencilOptions.hidden=!['pen','highlight','eraser','straighten'].includes(activePanel);
+  inputStrip.hidden=!['pen','highlight','eraser','straighten','shape'].includes(activePanel);
   $('.paper-geometry-check').hidden=!['pen','straighten'].includes(activePanel);
   shapeOptions.hidden=activePanel!=='shape';
   textOptions.hidden=activePanel!=='text';boldPreset.hidden=!!editing;
@@ -364,7 +378,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   rulerOptions.hidden=activePanel!=='ruler'||!ruler.active;
   ribbon.hidden=activePanel!=='text'||!editing;
   inkBar.hidden=!showInk;
-  contextWrap.hidden=[inkOptions,pencilOptions,shapeOptions,textOptions,pageOptions,selectOptions,rulerOptions,ribbon].every(el=>el.hidden);
+  contextWrap.hidden=[inkOptions,shapeOptions,textOptions,pageOptions,selectOptions,rulerOptions,ribbon].every(el=>el.hidden);
   $('#paper-shape-options').hidden=true;
   $('#paper-line-options').hidden=activePanel!=='shape';
   const angleInput=$('#paper-ruler-angle');
@@ -1389,9 +1403,20 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();closeExtraTools();});
  bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-selection-more'))$('#paper-selection-more').open=false;if(!e.target.closest('.paper-shapes-popup,[data-open-shapes],[data-paper="shape"]'))setShapesOpen(false);if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
  bind(root,'keydown',e=>{if(e.key==='Escape'){setShapesOpen(false);closeWordMenu();closePenSizePicker();closeExtraTools();}});
-  $('#paper-finger').checked=finger;
-  bind($('#paper-finger'),'change',e=>{finger=e.target.checked;if(finger&&palmGuard)setPalmGuard(false);try{localStorage.setItem(fingerKey,String(finger));}catch{}closeExtraTools();});
- bind(palmToggle,'change',e=>{setPalmGuard(e.target.checked);closeExtraTools();});
+  bind($('#paper-finger'),'change',e=>{
+   if(!e.target.checked)return;
+   if(palmGuard)setPalmGuard(false);
+   finger=true;syncInputControls();
+   try{localStorage.setItem(fingerKey,'true');}catch{}
+   say('ใช้นิ้วเขียนได้แล้ว · Apple Pencil ยังเขียนได้ตามปกติ');
+  });
+  bind($('#paper-pencil-only'),'change',e=>{
+   if(!e.target.checked)return;
+   finger=false;syncInputControls();
+   try{localStorage.setItem(fingerKey,'false');}catch{}
+   say('ใช้ Apple Pencil เขียน · นิ้วใช้เลื่อนกระดาษ ไม่สร้างเส้น');
+  });
+  bind(palmToggle,'change',e=>setPalmGuard(e.target.checked));
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
  bind($('#paper-shape'),'change',()=>{closeExtraTools();});
  bind($('#paper-smart-shape'),'change',e=>{smartEnabled=e.target.checked;if(!smartEnabled)cancelSmartTimer();});
