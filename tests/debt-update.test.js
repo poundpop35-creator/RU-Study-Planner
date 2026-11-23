@@ -24,3 +24,15 @@ test('a late-month pay window holds early bills first, flags any gap, and uses t
  assert.equal(rows[1].carryIn,1000);assert.equal(rows.reduce((v,r)=>v+r.fromBudget,0),49000);
  const view=updatedPage({getItem:()=>null},k,true);assert.match(view,/25–28 ก.พ./);assert.match(view,/ยังขาด 190 บาท/);
 });
+
+test('payment controls respect edit access and closed accounts; pay dates follow the plan',()=>{
+ const map=new Map(),store={getItem:k=>map.get(k),setItem:(k,v)=>map.set(k,v)};
+ assert.equal(updateAction('activate',store,{token}),'');
+ assert.equal(updateAction('add',store,{creditor:'1',amount:'320'}),'');
+ const page=updatedPage(store,'',true);
+ assert.doesNotMatch(page,/โอนวันที่ 25|<option value="1">One-off/);
+ assert.match(page,/id="debt-payment-form"/);
+ const readOnly=updatedPage(store,'',false);
+ assert.doesNotMatch(readOnly,/id="debt-payment-form"|data-action="debt-remove"/);
+ assert.match(readOnly,/ประวัติการจ่าย/);
+});
