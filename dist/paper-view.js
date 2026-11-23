@@ -7,7 +7,8 @@ import {courseMaterialLabel} from './course-materials-ui.js?v=shared-course-2026
 export const colors=['#172033','#3155d9','#15966d','#dc4343','#8756c6','#ef9e39'];
 const icons={
  select:'M5 3l14 10-7 1-3 7z',
-hand:'M8 12V6a1.5 1.5 0 0 1 3 0v6-8a1.5 1.5 0 0 1 3 0v8-6a1.5 1.5 0 0 1 3 0v7-4a1.5 1.5 0 0 1 3 0v6c0 5-3 7-7 7-3 0-5-2-7-5l-3-4q0-3 3-1l2 2z',pen:'M4 20l1-5L16 4l4 4L9 19z M14 6l4 4',
+ hand:'M8 12V6a1.5 1.5 0 0 1 3 0v6-8a1.5 1.5 0 0 1 3 0v8-6a1.5 1.5 0 0 1 3 0v7-4a1.5 1.5 0 0 1 3 0v6c0 5-3 7-7 7-3 0-5-2-7-5l-3-4q0-3 3-1l2 2z',
+ pen:'M4 20l1-5L16 4l4 4L9 19z M14 6l4 4',
  highlight:'M4 16l8-10 6 5-8 9z M4 21h9',eraser:'M3 14L14 3l7 7-10 11H9z M7 10l7 7',
  text:'M4 6V4h16v2 M12 4v16 M8 20h8',shape:'M3 9h10v11H3z M10 9a6 6 0 1 1 3 6',
  line:'M4 20L20 4',arrow:'M4 20L20 4 M10 4h10v10',
