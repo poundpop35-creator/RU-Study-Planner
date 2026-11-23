@@ -948,3 +948,11 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 .paper-app .paper-shapes-popup{border:1px solid #d2dcec;border-radius:16px;background:white;box-shadow:0 8px 28px #182b4c22}
 .paper-app .paper-shapes-grid button{min-height:44px;border-radius:9px;background:#f6f8fc;color:#334761}
 .paper-app .paper-shapes-grid button[aria-pressed=true]{background:#e5edff;border-color:#7695db;color:#2146aa}
+
+@media screen {
+ .paper-app .paper-workspace{background:#edf1f6}
+ .paper-app .paper-toolset>button[aria-pressed=true]{background:#e7efff;box-shadow:inset 0 -3px #476ad4}
+ .paper-app .paper-toolset>button:focus-visible,.paper-app .paper-context-controls button:focus-visible{outline:2px solid #3155bd;outline-offset:-3px}
+ .paper-app .paper-context-controls{scroll-padding-inline:16px;overscroll-behavior-x:contain}
+ .paper-app .paper-shapes-grid button:active{background:#dae6ff}
+}

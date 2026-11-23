@@ -122,7 +122,7 @@ export function shapeSVG(o){
  if(o.kind==='rect'||o.kind==='square')return `<rect ${style} x="${x}" y="${y}" width="${w}" height="${h}"/>`;
  if(o.kind==='roundRect')return `<rect ${style} x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w,h)*.16}"/>`;
  if(o.kind==='ellipse'||o.kind==='circle')return `<ellipse ${style} cx="${x+w/2}" cy="${y+h/2}" rx="${w/2}" ry="${h/2}"/>`;
- if(o.kind==='triangle')return `<path ${style} d="M${x+w/2} ${y} L${x+w} ${y+h} H${x} Z"/>`;
+ if(o.kind==='triangle')return `<path ${style} d="M${x+w/2} ${o.inverted?y+h:y} L${x+w} ${o.inverted?y:y+h} H${x} Z"/>`;
  if(o.kind==='diamond')return `<path ${style} d="M${x+w/2} ${y} L${x+w} ${y+h/2} L${x+w/2} ${y+h} L${x} ${y+h/2} Z"/>`;
  if(o.kind==='pentagon'||o.kind==='hexagon'||o.kind==='star'){
   const vertices=o.kind==='star'?Array.from({length:10},(_,i)=>{const a=-Math.PI/2+Math.PI*i/5,r=i%2?.22:.49;return [.5+r*Math.cos(a),.5+r*Math.sin(a)];}):polygonVertices(o.kind==='pentagon'?5:6);

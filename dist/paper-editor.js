@@ -31,8 +31,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(!smartEnabled||g.kind!=='stroke'||g.tool!=='pen'||g.rulerEdge||g.points.length<3)return;
   smartTimer=setTimeout(()=>{
    if(closed||gesture!==g)return;
-   const found=recognizeHeldShape(g.points);
-   if(found){g.snap=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);scheduleDraw();say('วาดเป็นรูปทรงแล้ว · ยกปากกาเพื่อบันทึก · ย้อนกลับได้');}
+   const found=g.straighten?recognizeDrawnShape(g.points):recognizeHeldShape(g.points);
+   if(found){g.snap=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);if(found.inverted)g.snap.inverted=true;scheduleDraw();say('วาดเป็นรูปทรงแล้ว · ยกปากกาเพื่อบันทึก · ย้อนกลับได้');}
   },550);
  }
  let lastStored=JSON.stringify(note.paper||null),pendingRemote=false,draftBase=null;
@@ -1018,7 +1018,10 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
       const level=horizontal?(a!==start?a.y:b!==end?b.y:start.y):(a!==start?a.x:b!==end?b.x:start.x);
       return makeShape(uid(),'line',horizontal?{x:a.x,y:level}:{x:level,y:a.y},horizontal?{x:b.x,y:level}:{x:level,y:b.y},g.color,g.width,lineStyle);
      });
-    }else if(found)result=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);
+    }else if(found){
+     result=makeShape(uid(),found.kind,found.start,found.end,g.color,g.width,lineStyle);
+     if(found.inverted)result.inverted=true;
+    }
     else if(g.snap)result=g.snap;
    }
    else if(g.snap)result=g.snap;

@@ -118,3 +118,18 @@ test('straighten preserves three side or downward branches, including retraced i
  }
  assert.equal(diagramSegments([[2,1],[13,13],[25,24]]),null);
 });
+
+test('release recognizes traced arrowheads and remembers downward triangle orientation',()=>{
+ const arrow=[[30,0],[29,45],[36,105],[14,85],[35,105],[51,78]];
+ const triangle=[[2,1],[39,3],[33,30],[28,59],[12,25],[1,0]];
+ for(const path of [arrow,[...arrow].reverse(),arrow.map(([x,y])=>[y,x])])
+  assert.equal(recognizeDrawnShape(path)?.kind,'arrow');
+ for(const path of [triangle,[...triangle].reverse()]){
+  const found=recognizeDrawnShape(path);
+  assert.equal(found?.kind,'triangle');assert.equal(found.inverted,true);
+  const o={...makeShape('tri',found.kind,found.start,found.end,'#172033',3),inverted:true};
+  const saved=validatePaper({version:1,pages:[{...emptyPage(),objects:[o]}]}).pages[0].objects[0];
+  assert.ok(saved.inverted);assert.ok(shapeSVG(saved).includes('M'+(o.x+o.w/2)+' '+(o.y+o.h)));
+ }
+ assert.notEqual(recognizeDrawnShape([[0,0],[0,100],[20,80]])?.kind,'arrow');
+});
