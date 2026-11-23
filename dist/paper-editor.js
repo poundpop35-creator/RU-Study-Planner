@@ -423,11 +423,13 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   fitTextBox();draw();
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),700);
  }
- bind(scribblePad.querySelector('[data-pencil-keyboard]'),'click',event=>{
-  const viaKeyboard=scribbleInput.inputMode!=='text';
-  scribbleInput.inputMode=viaKeyboard?'text':'none';
-  event.currentTarget.textContent=viaKeyboard?'✍️ กลับไปใช้ปากกา':'⌨ เปิดคีย์บอร์ด';
-  scribbleInput.blur();scribbleInput.focus({preventScroll:true});
+ bind(scribblePad.querySelector('[data-pencil-keyboard]'),'click',()=>{
+  if(!editing||composingScribble)return;
+  const start=scribbleInput.selectionStart,end=scribbleInput.selectionEnd;
+  applyScribble();closeScribblePanel();
+  textarea.hidden=false;textarea.inputMode='text';
+  focusInlineText(editing.object);textarea.focus({preventScroll:true});
+  textarea.setSelectionRange(start,end);textRibbonState();
  });
  bind(scribblePad.querySelector('[data-pencil-finish]'),'click',()=>{
   finishText();setTool('select');say('บันทึกข้อความไว้ที่กล่องเดิมแล้ว');
