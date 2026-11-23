@@ -77,12 +77,19 @@ try{
 
    // Place writing below the legacy A4 page limit, persist, then reload.
    await page.locator('[data-paper="text"]').first().click();
-   await page.locator('#paper-svg').evaluate(svg=>{
-    const rect=svg.getBoundingClientRect(),scale=rect.width/900;
+   // Use an actual OS pointer/touch event within the visible viewport.
+   // Synthetic PointerEvents cannot acquire native pointer capture.
+   const placement=await page.locator('#paper-viewport').evaluate(viewport=>{
+    const svg=viewport.querySelector('#paper-svg');
+    const scale=svg.getBoundingClientRect().width/900;
+    viewport.scrollTop=Math.max(0,1450*scale-175);
+    const rect=svg.getBoundingClientRect(),v=viewport.getBoundingClientRect();
     const x=rect.left+155*scale,y=rect.top+1450*scale;
-    for(const event of ['pointerdown','pointerup'])svg.dispatchEvent(
-     new PointerEvent(event,{bubbles:true,cancelable:true,pointerType:'mouse',pointerId:91,clientX:x,clientY:y,button:0}));
+    return {x,y,within:y>=v.top&&y<=v.bottom,scroll:viewport.scrollTop,scale};
    });
+   assert.ok(placement.within,'target point in long paper remains visible');
+   if(mobile)await page.touchscreen.tap(placement.x,placement.y);
+   else await page.mouse.click(placement.x,placement.y);
    await page.locator('#paper-text-input').waitFor({state:'visible'});
    await page.locator('#paper-text-input').fill('บทเรียนต่อเนื่องใต้เส้นประ A4');
    await page.locator('[data-paper="save"]').first().click();
