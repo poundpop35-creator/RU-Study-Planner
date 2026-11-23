@@ -25,3 +25,9 @@ test('restore image and attachment on a second device without replacing debt, co
  const b=await open();assert.deepEqual(b.snapshot().progress,before.progress);assert.deepEqual(b.notebook().notes,[before.notebook.notes[0],n]);assert.equal(await (await b.image(img)).text(),'abc');
  await assert.rejects(a.restoreNotebook(plan,base,{}),/เปลี่ยน/);
 });
+test('a recovery draft opens alongside the live note rather than being skipped',()=>{
+ const note=newNote({id:'live',text:'คลาวด์'}),draft=newNote({id:'live',text:'งานค้าง'}),current={version:1,notes:[note]};
+ const plan=planRestore({version:1,format:'ru-paper-recovery',note:draft},current);
+ assert.equal(plan.added,1);assert.deepEqual(plan.next.notes[0],note);assert.notEqual(plan.next.notes[1].id,note.id);
+ assert.deepEqual(plan.next.notes[1].delta,draft.delta);assert.equal(draft.id,'live');
+});
