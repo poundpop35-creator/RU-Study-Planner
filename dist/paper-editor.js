@@ -1055,6 +1055,56 @@ bind(rich,'keyup',()=>{
  }
  const tableUI=mountTableEditor(root,{page,change,writable,finishText,closeExtraTools,setShapesOpen,viewport,
   getScale:()=>scale,onSaved:tableId=>{multiSelect=false;setTool('select');selected=new Set([tableId]);draw();},say});
+ // In-app Word-style right-click menu. This is local to the notebook canvas,
+ // so browser menus elsewhere in the application are not affected.
+ const canvasMenu=$('#paper-context-menu');
+ let contextAnchor={x:100,y:100},objectClipboard=[];
+ const closeCanvasMenu=()=>{canvasMenu.hidden=true;};
+ function showCanvasMenu(event){
+  if(!event.target.closest('#paper-sheet'))return;
+  // Text with a highlighted range uses the existing rich-text mini toolbar.
+  if(!wordMenu.hidden)return;
+  event.preventDefault();
+  const at=point(event);
+  contextAnchor={x:Math.max(0,Math.min(PAGE_W,at.x)),y:Math.max(0,Math.min(PAGE_H,at.y))};
+  const target=[...page().objects].reverse().find(o=>
+   o.type==='stroke'?strokeHit(o,at,8/scale):
+   o.type==='shape'?shapeContains(o,at,8/scale):contains(at,o,3/scale));
+  // A right-click on an existing object should select that exact object,
+  // including when the pen or highlighter was the previous tool.
+  if(target){
+   if(editing)finishText();
+   if(tool!=='select')setTool('select');
+   if(!selected.has(target.id))selected=new Set([target.id]);
+   draw();
+  }else{
+   if(editing)finishText();
+   selected.clear();draw();
+  }
+  const any=selected.size>0;
+  const shape=any&&page().objects.some(o=>selected.has(o.id)&&o.type==='shape');
+  const onlyText=any&&selected.size===1&&page().objects.some(o=>selected.has(o.id)&&o.type==='text');
+  const visible={
+   'edit-text':onlyText,'copy':any,'paste':!!objectClipboard.length,
+   duplicate:any,'rotate-left':shape,'rotate-right':shape,delete:any,
+   'add-text':!any,'select-tool':true,'pen-tool':true,undo:true,redo:true
+  };
+  for(const button of canvasMenu.querySelectorAll('[data-context-action]')){
+   button.hidden=!visible[button.dataset.contextAction];
+   button.disabled=button.dataset.contextAction==='undo'?!history.canUndo:
+    button.dataset.contextAction==='redo'?!history.canRedo:false;
+  }
+  $('#paper-context-caption').textContent=any
+   ?(selected.size>1?'เลือก '+selected.size+' วัตถุ':
+     ({text:'ข้อความ',shape:'รูปทรง',image:'รูปภาพ',stroke:'เส้นปากกา',table:'ตาราง'}[target?.type]||'วัตถุ'))
+   :'คำสั่งบนกระดาษ';
+  closeWordMenu();
+  canvasMenu.hidden=false;
+  const left=Math.max(8,Math.min(event.clientX,window.innerWidth-canvasMenu.offsetWidth-8));
+  const top=Math.max(8,Math.min(event.clientY,window.innerHeight-canvasMenu.offsetHeight-8));
+  canvasMenu.style.left=left+'px';canvasMenu.style.top=top+'px';
+ }
+ bind(root,'contextmenu',showCanvasMenu);
  const inkTools=new Set(['pen','highlight','eraser','straighten','shape']);
  function guardInkSelection(e){
   if(!inkTools.has(tool)||e.target.closest('input,textarea,select,[contenteditable="true"],dialog'))return;
@@ -1336,6 +1386,44 @@ bind(rich,'keyup',()=>{
  bind(root,'click',async e=>{
   const b=e.target.closest('button');if(!b||!root.contains(b))return;
   try{
+   if(b.dataset.contextAction){
+    const cmd=b.dataset.contextAction;closeCanvasMenu();
+    if(cmd==='copy'){
+     objectClipboard=copy(page().objects.filter(o=>selected.has(o.id)));
+     say('คัดลอก '+objectClipboard.length+' วัตถุแล้ว · คลิกขวาที่ตำแหน่งที่จะวาง');return;
+    }
+    if(cmd==='paste'&&objectClipboard.length){
+     const box=bounds(objectClipboard);
+     if(!box)return;
+     const dx=Math.max(-box.x,Math.min(PAGE_W-box.x-box.w,contextAnchor.x-box.x));
+     const dy=Math.max(-box.y,Math.min(PAGE_H-box.y-box.h,contextAnchor.y-box.y));
+     const pasted=objectClipboard.map(o=>({...copy(o),id:uid(),x:o.x+dx,y:o.y+dy}));
+     if(change(p=>p.objects.push(...pasted))){selected=new Set(pasted.map(o=>o.id));setTool('select');draw();}
+     return;
+    }
+    if(cmd==='duplicate'||cmd==='delete'){root.querySelector('[data-paper="'+(cmd==='duplicate'?'duplicate':'delete-object')+'"]')?.click();return;}
+    if(cmd==='rotate-left'||cmd==='rotate-right'){
+     const delta=cmd==='rotate-left'?-15:15;
+     change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='shape')o.angle=shapeAngle((o.angle||0)+delta);}));
+     return;
+    }
+    if(cmd==='edit-text'){
+     const o=page().objects.find(o=>selected.has(o.id)&&o.type==='text');
+     if(o){setTool('text');startText(o);}
+     return;
+    }
+    if(cmd==='add-text'){
+     setTool('text');
+     startText({id:uid(),type:'text',
+      x:Math.min(PAGE_W-32,Math.max(0,contextAnchor.x)),
+      y:Math.min(PAGE_H-Math.ceil(fontSize*1.5),Math.max(0,contextAnchor.y)),
+      w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold});
+     return;
+    }
+    if(cmd==='select-tool'||cmd==='pen-tool'){setTool(cmd==='select-tool'?'select':'pen');return;}
+    if(cmd==='undo'||cmd==='redo'){root.querySelector('[data-paper="'+cmd+'"]')?.click();return;}
+    return;
+   }
    if(b.dataset.textAlign&&!editing){
     change(p=>{for(const o of p.objects)if(selected.has(o.id)&&o.type==='text')o.align=b.dataset.textAlign;});return;
    }
@@ -1515,11 +1603,12 @@ bind(rich,'keyup',()=>{
   bind($('#paper-width'),'input',e=>updatePenWidth(e.target.value));
  bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();closeExtraTools();});
  bind(root,'pointerdown',e=>{
+  if(!e.target.closest('#paper-context-menu'))closeCanvasMenu();
   if(!e.target.closest('.paper-text-ribbon,.paper-word-menu')){
    formattingControlActive=false;
   }
   if(!e.target.closest('.paper-selection-more'))$('#paper-selection-more').open=false;if(!e.target.closest('.paper-shapes-popup,[data-open-shapes],[data-paper="shape"]'))setShapesOpen(false);if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();if(!e.target.closest('#paper-eraser-menu,[data-paper="eraser"]'))closeEraserMenu();});
- bind(root,'keydown',e=>{if(e.key==='Escape'){setShapesOpen(false);closeWordMenu();closePenSizePicker();closeExtraTools();closeEraserMenu();}});
+ bind(root,'keydown',e=>{if(e.key==='Escape'){setShapesOpen(false);closeWordMenu();closeCanvasMenu();closePenSizePicker();closeExtraTools();closeEraserMenu();}});
   bind($('#paper-finger'),'change',e=>{
    if(!e.target.checked)return;
    if(palmGuard)setPalmGuard(false);
