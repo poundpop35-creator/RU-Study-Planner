@@ -522,7 +522,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  function showWordMenu(event){
   // On touch-first iPads, keep formatting in the scrollable top ribbon.
   // Do not create a second floating toolbar over the virtual keyboard.
-  if(window.matchMedia('(pointer:coarse)').matches){closeWordMenu();return false;}
+  if(event?.type!=='contextmenu'&&window.matchMedia('(pointer:coarse)').matches){closeWordMenu();return false;}
   const selection=currentWordSelection();
   if(!selection){closeWordMenu();return false;}
   wordMenuSelection={start:selection.start,end:selection.end};
