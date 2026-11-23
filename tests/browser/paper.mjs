@@ -607,6 +607,19 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    const pencilPanel=page.locator('.paper-scribble-panel');
    const pencilInput=pencilPanel.locator('.paper-scribble-input');
    assert.ok(await pencilPanel.isVisible(),'Scribble handwriting input should open');
+   assert.equal(await pencilPanel.locator('.paper-scribble-preview').count(),0,'the paper already displays formatted text, so no redundant preview');
+   assert.ok(await pencilPanel.locator('.paper-keyboard-input').isHidden(),'keyboard field stays hidden during Apple Pencil handwriting');
+   await pencilInput.fill('ทดสอบแป้นพิมพ์');
+   await pencilPanel.locator('[data-pencil-keyboard]').click();
+   const keyboardInput=pencilPanel.locator('.paper-keyboard-input');
+   assert.ok(await keyboardInput.isVisible(),'keyboard button opens a separate keyboard-enabled field on iPad Safari');
+   assert.equal(await keyboardInput.getAttribute('inputmode'),'text');
+   assert.equal(await keyboardInput.evaluate(el=>document.activeElement===el),true,'tap directly focuses the keyboard-enabled textarea');
+   assert.equal(await keyboardInput.inputValue(),'ทดสอบแป้นพิมพ์','switching to keyboard retains existing handwriting');
+   await keyboardInput.fill('พิมพ์ด้วยคีย์บอร์ด');
+   await pencilPanel.locator('[data-pencil-keyboard]').click();
+   assert.ok(await pencilInput.isVisible(),'back to Pencil keeps the native handwriting field');
+   assert.equal(await pencilInput.inputValue(),'พิมพ์ด้วยคีย์บอร์ด','text survives switching back and forth');
    for(const key of ['backspace','space','enter'])
     assert.ok(await pencilPanel.locator('[data-pencil-edit="'+key+'"]').isVisible(),key+' shortcut is available beside keyboard');
    await pencilInput.fill('ตัวอย่าง');
@@ -618,7 +631,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(await pencilInput.inputValue(),'ตัวอย่าง ','backspace removes the preceding newline');
    await pencilInput.evaluate(el=>el.setSelectionRange(0,el.value.indexOf(' ')));
    await pencilPanel.locator('[data-pencil-format="bold"]').click();
-   assert.ok((await pencilPanel.locator('[data-pencil-preview]').innerHTML()).includes('font-weight:700'),'selected Scribble text is bold in live preview');
+   assert.ok(await page.locator('#paper-svg span[style*="font-weight:700"]').count(),'selected Scribble text renders bold on the actual paper');
    await pencilInput.evaluate(el=>el.setSelectionRange(el.value.length,el.value.length));
    await pencilPanel.locator('[data-pencil-format="italic"]').click();
    await pencilPanel.locator('[data-pencil-format="underline"]').click();
@@ -629,7 +642,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     el.dispatchEvent(new Event('input',{bubbles:true}));
    });
    assert.equal(await pencilInput.inputValue(),'ตัวอย่าง  ใหม่');
-   assert.ok((await pencilPanel.locator('[data-pencil-preview]').innerHTML()).includes('color:#dc4343'),'newly typed colored text appears in preview');
+   assert.ok(await page.locator('#paper-svg span[style*="color:#dc4343"]').count(),'newly typed colored text appears directly on the paper');
    await pencilPanel.locator('[data-pencil-finish]').click();
    await click('save');
    await wait(()=>row.payload.notebook.notes.some(n=>n.paper?.pages?.some(p=>p.objects.some(o=>o.type==='text'&&o.text==='ตัวอย่าง  ใหม่'))));
@@ -662,6 +675,36 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.locator('#exam-reader .back-link').click();
   await page.locator('.exam-timeline').waitFor();
+
+
+  // Regress the real debt plan markup on a narrow viewport: columns must
+  // swipe inside the monthly card rather than be clipped by details overflow.
+  await page.evaluate(async()=>{
+   const {updatedPage}=await import('/debt-update.js?v=20261123-debt-mobile-scroll-v2');
+   const input=['2030-05-01',60000,10000,[['Fixed','',35000,0,[10000,25000],0,'',0,'','',0],['One-off','',32000,0,[0,32000],0,'',0,'','',0],['Variable','',120000,6000,[],0,'example',700,'y','',0]],'Example only'];
+   const token='p2.'+btoa(JSON.stringify(input)).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
+   const html=updatedPage({getItem:()=>null},token,false);
+   const fixture=document.createElement('main');
+   fixture.id='debt-scroll-fixture';
+   fixture.style.cssText='width:min(100%,360px);margin:0 auto;padding:0 8px;box-sizing:border-box';
+   fixture.innerHTML=html;
+   document.body.replaceChildren(fixture);
+  });
+  const debtMonth=page.locator('.debt-month').first();
+  await debtMonth.evaluate(el=>el.open=true);
+  const debtScroller=debtMonth.locator('.debt-month-scroll');
+  const debtGeometry=await debtScroller.evaluate(el=>({
+   width:el.clientWidth,content:el.scrollWidth,overflow:getComputedStyle(el).overflowX,
+   tableWidth:el.querySelector('table').getBoundingClientRect().width
+  }));
+  assert.equal(debtGeometry.overflow,'auto','monthly plan has a dedicated horizontal scroll region');
+  if(mobile){
+   assert.ok(debtGeometry.content>debtGeometry.width+150,'all debt columns remain reachable with horizontal swipe on iPhone');
+   const moved=await debtScroller.evaluate(el=>{el.scrollLeft=el.scrollWidth;return el.scrollLeft;});
+   assert.ok(moved>150,'dragging debt table horizontally is not locked by the surrounding card');
+   assert.ok(await debtMonth.locator('.debt-scroll-hint').isVisible(),'mobile includes a swipe hint');
+  }
+  await page.screenshot({path:'test-results/debt-scroll-'+name+'.png'});
 
   // The single weekly planner must fit replay cards, including watch buttons, at iPhone widths.
   // Render a fixed sample week so this regression check remains independent of the current date.

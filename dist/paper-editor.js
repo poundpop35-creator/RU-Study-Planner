@@ -375,18 +375,19 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  let scribbleActive=false;
  const scribblePad=document.createElement('section');
  scribblePad.className='paper-scribble-panel';scribblePad.hidden=true;
- scribblePad.innerHTML='<header><b class="paper-scribble-title">✍️ เขียนในพื้นที่สีฟ้า · ข้อความไปยังกล่องเดิม</b><div class="paper-scribble-actions" role="group" aria-label="ปุ่มแก้ข้อความระหว่างเขียน"><button type="button" data-pencil-edit="backspace" aria-label="ลบตัวอักษรก่อนเคอร์เซอร์">⌫ ลบ</button><button type="button" data-pencil-edit="space">เว้นวรรค</button><button type="button" data-pencil-edit="enter">Enter ↵</button><button type="button" data-pencil-keyboard>⌨️ แป้นพิมพ์</button><button type="button" data-pencil-finish>✓ เสร็จสิ้น</button></div></header><div class="paper-scribble-formats" role="toolbar" aria-label="จัดรูปแบบตัวพิมพ์ในพื้นที่เขียน"><span class="paper-scribble-format-label">ตัวพิมพ์</span><button type="button" data-pencil-format="bold" aria-label="ตัวหนา" aria-pressed="false"><b>B</b></button><button type="button" data-pencil-format="italic" aria-label="ตัวเอียง" aria-pressed="false"><i>I</i></button><button type="button" data-pencil-format="underline" aria-label="ขีดเส้นใต้" aria-pressed="false"><u>U</u></button><span class="paper-scribble-format-label">สี</span><button type="button" data-pencil-color="#172033" class="paper-pencil-swatch" style="--pencil-ink:#172033" aria-label="สีดำ"></button><button type="button" data-pencil-color="#3155d9" class="paper-pencil-swatch" style="--pencil-ink:#3155d9" aria-label="สีน้ำเงิน"></button><button type="button" data-pencil-color="#15966d" class="paper-pencil-swatch" style="--pencil-ink:#15966d" aria-label="สีเขียว"></button><button type="button" data-pencil-color="#dc4343" class="paper-pencil-swatch" style="--pencil-ink:#dc4343" aria-label="สีแดง"></button><button type="button" data-pencil-color="#8756c6" class="paper-pencil-swatch" style="--pencil-ink:#8756c6" aria-label="สีม่วง"></button><label class="paper-pencil-custom">สีอื่น <input type="color" data-pencil-custom-color value="#172033" aria-label="เลือกสีตัวพิมพ์เพิ่มเติม"></label></div><div class="paper-scribble-preview" data-pencil-preview-wrap hidden><span>ตัวอย่าง</span><div data-pencil-preview aria-label="ตัวอย่างรูปแบบข้อความ"></div></div><textarea class="paper-scribble-input" lang="th" inputmode="none" spellcheck="false" aria-label="พื้นที่เขียนด้วย Apple Pencil ลงกล่องข้อความที่เลือก" placeholder="ใช้ Apple Pencil เขียนภายในพื้นที่นี้ หรือเปิดแป้นพิมพ์…"></textarea>';
+ scribblePad.innerHTML='<header><b class="paper-scribble-title">✍️ เขียนในพื้นที่สีฟ้า · ข้อความไปยังกล่องเดิม</b><div class="paper-scribble-actions" role="group" aria-label="ปุ่มแก้ข้อความระหว่างเขียน"><button type="button" data-pencil-edit="backspace" aria-label="ลบตัวอักษรก่อนเคอร์เซอร์">⌫ ลบ</button><button type="button" data-pencil-edit="space">เว้นวรรค</button><button type="button" data-pencil-edit="enter">Enter ↵</button><button type="button" data-pencil-keyboard>⌨️ แป้นพิมพ์</button><button type="button" data-pencil-finish>✓ เสร็จสิ้น</button></div></header><div class="paper-scribble-formats" role="toolbar" aria-label="จัดรูปแบบตัวพิมพ์ในพื้นที่เขียน"><span class="paper-scribble-format-label">ตัวพิมพ์</span><button type="button" data-pencil-format="bold" aria-label="ตัวหนา" aria-pressed="false"><b>B</b></button><button type="button" data-pencil-format="italic" aria-label="ตัวเอียง" aria-pressed="false"><i>I</i></button><button type="button" data-pencil-format="underline" aria-label="ขีดเส้นใต้" aria-pressed="false"><u>U</u></button><span class="paper-scribble-format-label">สี</span><button type="button" data-pencil-color="#172033" class="paper-pencil-swatch" style="--pencil-ink:#172033" aria-label="สีดำ"></button><button type="button" data-pencil-color="#3155d9" class="paper-pencil-swatch" style="--pencil-ink:#3155d9" aria-label="สีน้ำเงิน"></button><button type="button" data-pencil-color="#15966d" class="paper-pencil-swatch" style="--pencil-ink:#15966d" aria-label="สีเขียว"></button><button type="button" data-pencil-color="#dc4343" class="paper-pencil-swatch" style="--pencil-ink:#dc4343" aria-label="สีแดง"></button><button type="button" data-pencil-color="#8756c6" class="paper-pencil-swatch" style="--pencil-ink:#8756c6" aria-label="สีม่วง"></button><label class="paper-pencil-custom">สีอื่น <input type="color" data-pencil-custom-color value="#172033" aria-label="เลือกสีตัวพิมพ์เพิ่มเติม"></label></div><textarea class="paper-scribble-input" lang="th" inputmode="none" spellcheck="false" aria-label="พื้นที่เขียนด้วย Apple Pencil ลงกล่องข้อความที่เลือก" placeholder="ใช้ Apple Pencil เขียนภายในพื้นที่นี้ หรือเปิดแป้นพิมพ์…"></textarea><textarea class="paper-keyboard-input" inputmode="text" lang="th" spellcheck="false" enterkeyhint="enter" aria-label="พิมพ์ข้อความด้วยแป้นพิมพ์ของ iPad" placeholder="พิมพ์ข้อความด้วยแป้นพิมพ์…" hidden></textarea>';
  viewport.append(scribblePad);
 
- const scribbleInput=scribblePad.querySelector('textarea');
- const scribblePreview=scribblePad.querySelector('[data-pencil-preview]');
- const scribblePreviewWrap=scribblePad.querySelector('[data-pencil-preview-wrap]');
+ const scribbleInput=scribblePad.querySelector('.paper-scribble-input');
+ const keyboardInput=scribblePad.querySelector('.paper-keyboard-input');
+ let keyboardActive=false;
+ const activeScribbleInput=()=>keyboardActive?keyboardInput:scribbleInput;
  // Formatting chosen at a collapsed caret applies to future Scribble or typed input.
  // Selected text is formatted immediately using the same persisted mark ranges
  // used by the ordinary notebook editor; no separate text object is created.
  let scribblePending={};
  function scribbleSelection(){
-  return {start:scribbleInput.selectionStart,end:scribbleInput.selectionEnd};
+  return {start:activeScribbleInput().selectionStart,end:activeScribbleInput().selectionEnd};
  }
  function refreshScribbleControls(){
   if(!scribbleActive||!editing)return;
@@ -402,33 +403,36 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    button.setAttribute('aria-pressed',String(button.dataset.pencilColor===ink));
   const custom=scribblePad.querySelector('[data-pencil-custom-color]');
   if(document.activeElement!==custom)custom.value=ink;
-  scribblePreviewWrap.hidden=!scribbleInput.value.length;
-  scribblePreview.style.color=editing.object.color;
-  scribblePreview.innerHTML=formattedTextHTML({text:scribbleInput.value,marks:editing.marks||[]},esc,false,false);
  }
  function closeScribblePanel(){
   scribbleActive=false;scribblePad.hidden=true;
+  keyboardActive=false;keyboardInput.hidden=true;scribbleInput.hidden=false;
   root.classList.remove('paper-scribble-open');
  }
  function openScribblePanel(){
   if(!editing)return;
   scribbleActive=true;scribblePending={};root.classList.add('paper-scribble-open');
   scribblePad.hidden=false;textarea.hidden=true;
-  scribbleInput.value=textarea.value;
-  scribbleInput.inputMode='none';
+  keyboardActive=false;
+  keyboardInput.hidden=true;scribbleInput.hidden=false;
+  scribbleInput.value=keyboardInput.value=textarea.value;
+  // Keep inputmode fixed per field: iOS Safari does not reliably refresh
+  // its software keyboard when inputmode changes on the focused textarea.
   scribblePad.querySelector('[data-pencil-keyboard]').textContent='⌨️ แป้นพิมพ์';
   fitTextBox();draw();refreshScribbleControls();
-  scribbleInput.focus({preventScroll:true});
-  const caret=scribbleInput.value.length;scribbleInput.setSelectionRange(caret,caret);
+  activeScribbleInput().focus({preventScroll:true});
+  const caret=activeScribbleInput().value.length;activeScribbleInput().setSelectionRange(caret,caret);
  }
  let composingScribble=false;
- bind(scribbleInput,'compositionstart',()=>{composingScribble=true;clearTimeout(textTimer)});
- bind(scribbleInput,'compositionend',()=>{composingScribble=false;applyScribble()});
- bind(scribbleInput,'input',event=>{if(!event.isComposing&&!composingScribble)applyScribble()});
- bind(scribbleInput,'select',refreshScribbleControls);
+ for(const field of [scribbleInput,keyboardInput]){
+  bind(field,'compositionstart',()=>{composingScribble=true;clearTimeout(textTimer)});
+  bind(field,'compositionend',()=>{composingScribble=false;applyScribble()});
+  bind(field,'input',event=>{if(!event.isComposing&&!composingScribble)applyScribble()});
+  bind(field,'select',refreshScribbleControls);
+ }
  function applyScribble(){
   if(!scribbleActive||!editing)return;
-  const before=editing.lastText,next=scribbleInput.value;
+  const before=editing.lastText,next=activeScribbleInput().value;
   let from=0,oldEnd=before.length,newEnd=next.length;
   while(from<oldEnd&&from<newEnd&&before[from]===next[from])from++;
   while(oldEnd>from&&newEnd>from&&before[oldEnd-1]===next[newEnd-1]){oldEnd--;newEnd--;}
@@ -455,15 +459,15 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   else if(action==='backspace'&&from===range.end){
    if(from===0)return;
    if(typeof Intl.Segmenter==='function'){
-    for(const segment of new Intl.Segmenter('th',{granularity:'grapheme'}).segment(scribbleInput.value.slice(0,from)))from=segment.index;
+    for(const segment of new Intl.Segmenter('th',{granularity:'grapheme'}).segment(activeScribbleInput().value.slice(0,from)))from=segment.index;
    }else{
-    from--;if(from>0&&/[\uDC00-\uDFFF]/.test(scribbleInput.value[from]))from--;
-    while(from>0&&/[\u0300-\u036f\u0e31\u0e34-\u0e3a\u0e47-\u0e4e]/.test(scribbleInput.value[from]))from--;
+    from--;if(from>0&&/[\uDC00-\uDFFF]/.test(activeScribbleInput().value[from]))from--;
+    while(from>0&&/[\u0300-\u036f\u0e31\u0e34-\u0e3a\u0e47-\u0e4e]/.test(activeScribbleInput().value[from]))from--;
    }
   }
-  scribbleInput.setRangeText(insert,from,range.end,'end');
+  activeScribbleInput().setRangeText(insert,from,range.end,'end');
   applyScribble();
-  scribbleInput.focus({preventScroll:true});
+  activeScribbleInput().focus({preventScroll:true});
   refreshScribbleControls();
  }
  function formatScribble(kind,value,refocus=true){
@@ -471,14 +475,14 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const range=scribbleSelection(),selected=range.end>range.start;
   if(selected){
    editing.marks=kind==='color'?
-    applyTextFormat(editing.marks,scribbleInput.value,range.start,range.end,'color',textColor(value,editing.object.color)):
-    toggleTextFormat(editing.marks,scribbleInput.value,range.start,range.end,kind);
+    applyTextFormat(editing.marks,activeScribbleInput().value,range.start,range.end,'color',textColor(value,editing.object.color)):
+    toggleTextFormat(editing.marks,activeScribbleInput().value,range.start,range.end,kind);
    clearTimeout(textTimer);finishText(true);
   }else if(kind==='color')scribblePending.color=textColor(value,editing.object.color);
   else scribblePending[kind]=!scribblePending[kind];
   if(refocus){
-   scribbleInput.focus({preventScroll:true});
-   scribbleInput.setSelectionRange(range.start,range.end);
+   activeScribbleInput().focus({preventScroll:true});
+   activeScribbleInput().setSelectionRange(range.start,range.end);
   }
   refreshScribbleControls();
  }
@@ -494,12 +498,24 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   bind(button,'click',()=>formatScribble('color',button.dataset.pencilColor));
  const scribbleCustom=scribblePad.querySelector('[data-pencil-custom-color]');
  bind(scribbleCustom,'input',event=>formatScribble('color',event.target.value,false));
- bind(scribbleCustom,'change',()=>{scribbleInput.focus({preventScroll:true});refreshScribbleControls();});
+ bind(scribbleCustom,'change',()=>{activeScribbleInput().focus({preventScroll:true});refreshScribbleControls();});
  bind(scribblePad.querySelector('[data-pencil-keyboard]'),'click',event=>{
-  const viaKeyboard=scribbleInput.inputMode!=='text';
-  scribbleInput.inputMode=viaKeyboard?'text':'none';
-  event.currentTarget.textContent=viaKeyboard?'✍️ กลับไปใช้ปากกา':'⌨️ แป้นพิมพ์';
-  scribbleInput.blur();scribbleInput.focus({preventScroll:true});
+  if(!scribbleActive||!editing||composingScribble)return;
+  // A fresh, visibly editable text-mode field is focused synchronously
+  // inside the user's tap. This avoids Safari retaining inputmode="none".
+  const current=activeScribbleInput();
+  const start=current.selectionStart,end=current.selectionEnd;
+  const value=current.value;
+  const next=keyboardActive?scribbleInput:keyboardInput;
+  next.value=value;
+  current.blur();
+  current.hidden=true;
+  keyboardActive=!keyboardActive;
+  next.hidden=false;
+  next.focus({preventScroll:true});
+  next.setSelectionRange(start,end);
+  event.currentTarget.textContent=keyboardActive?'✍️ กลับไปใช้ปากกา':'⌨️ แป้นพิมพ์';
+  refreshScribbleControls();
  });
  bind(scribblePad.querySelector('[data-pencil-finish]'),'click',()=>{
   if(composingScribble)return;
@@ -539,7 +555,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   root.style.setProperty('--paper-keyboard-inset',visible?Math.round(occlusion)+'px':'0px');
   if(visible&&editing)requestAnimationFrame(()=>{
    if(!closed&&editing){
-    const field=scribbleActive?scribbleInput:editing.rich?rich:textarea;
+    const field=scribbleActive?activeScribbleInput():editing.rich?rich:textarea;
     field?.scrollIntoView?.({block:'nearest',inline:'nearest'});
    }
   });

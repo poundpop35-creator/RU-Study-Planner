@@ -127,6 +127,33 @@ html[data-view=debt] main{max-width:940px}
 .debt-table tfoot th,.debt-table tfoot td{background:#e8efff;color:var(--ink)}
 /* The app gives every table min-width:640px; these small tables must fit a phone instead. */
 .debt-month table,.debt-table table{min-width:0;table-layout:auto}
+
+/* Monthly debt table lives in its own swipeable region. The details card keeps
+   overflow clipped for rounded corners; the table itself must be scrollable
+   on narrow iPad/iPhone screens instead of disappearing past the right edge. */
+.debt-months,.debt-month{min-width:0;max-width:100%}
+.debt-month-scroll{
+ display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;
+ overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+ overscroll-behavior-x:contain;touch-action:pan-x pan-y;
+ scrollbar-width:thin;scrollbar-color:#8ca5d5 #edf2fa;
+}
+.debt-month-scroll::-webkit-scrollbar{height:8px}
+.debt-month-scroll::-webkit-scrollbar-thumb{background:#8ca5d5;border-radius:8px}
+.debt-month-scroll::-webkit-scrollbar-track{background:#edf2fa}
+.debt-month-scroll:focus-visible{outline:3px solid #3155d9;outline-offset:-3px}
+.debt-month .debt-scroll-hint{display:none}
+@media(max-width:700px){
+ .debt-month-scroll table{width:100%;min-width:600px;table-layout:auto}
+ .debt-month-scroll th:first-child{min-width:155px;white-space:normal}
+ .debt-month-scroll td,.debt-month-scroll thead th:not(:first-child){white-space:nowrap;min-width:118px}
+ .debt-month .debt-scroll-hint{
+  display:block;margin:0;padding:6px 10px;
+  background:#eaf1ff;color:#204698;font-size:12px;font-weight:650;
+  border-top:1px solid #d8e4f7;
+ }
+}
+
 .debt-month td,.debt-table td{white-space:nowrap;vertical-align:middle}
 .debt-month tbody th{width:auto}
 @media(max-width:700px){.debt-table td small{white-space:normal}.debt-month tbody th small{white-space:normal}}

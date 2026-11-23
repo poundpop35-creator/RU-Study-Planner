@@ -36,3 +36,12 @@ test('payment controls respect edit access and closed accounts; pay dates follow
  assert.doesNotMatch(readOnly,/id="debt-payment-form"|data-action="debt-remove"/);
  assert.match(readOnly,/ประวัติการจ่าย/);
 });
+
+
+test('mobile monthly debt tables expose a horizontal scroll region without changing payment values',()=>{
+ const html=updatedPage({getItem:()=>null},token,true);
+ assert.match(html,/class="debt-month-scroll" role="region" tabindex="0"/);
+ assert.match(html,/class="debt-scroll-hint">← เลื่อนตารางซ้าย–ขวา/);
+ assert.match(html,/<\/tbody><\/table><\/div><p class="debt-hint">/);
+ assert.match(html,/<th scope="col">เป้า<\/th><th scope="col">จ่ายแล้ว<\/th><th scope="col">ขาด<\/th>/);
+});

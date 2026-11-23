@@ -908,6 +908,7 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  caret-color:#3155d9;overflow:auto;font-family:'Noto Sans Thai',sans-serif;
  font-size:19px;line-height:1.65;
 }
+.paper-app .paper-scribble-panel textarea[hidden]{display:none!important}
 .paper-app .paper-scribble-panel textarea::placeholder{color:#5077af;font-size:14px}
 .paper-app.paper-scribble-open .paper-selection-tools{display:none!important}
 @media(max-width:720px){
@@ -958,8 +959,8 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 }
 
 
-/* Scribble typing toolbar: compact actions beside Keyboard / Done, with
-   inline formatting and a read-only live preview; handwriting stays native. */
+/* Scribble typing toolbar: compact actions beside Keyboard / Done.
+   Formatting is displayed on the paper itself, without a duplicate preview. */
 .paper-app .paper-scribble-panel header{flex-wrap:nowrap;gap:7px;padding:5px 8px}
 .paper-app .paper-scribble-panel .paper-scribble-title{
  flex:1 1 175px;min-width:0;overflow:hidden;text-overflow:ellipsis;
@@ -1003,25 +1004,10 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  white-space:nowrap;font-size:11px;font-weight:700;color:#315287;
 }
 .paper-app .paper-pencil-custom input{width:30px;height:30px;padding:0;border:0;background:transparent}
-.paper-app .paper-scribble-preview{
- display:flex;align-items:baseline;gap:9px;min-height:34px;max-height:49px;
- padding:5px 12px;overflow:hidden;background:#fff;
- border-bottom:1px solid #d4e2f5;font-size:13px;
-}
-.paper-app .paper-scribble-preview[hidden]{display:none!important}
-.paper-app .paper-scribble-preview>span{
- flex:0 0 auto;font-size:10px;color:#657b9c;font-weight:700;
-}
-.paper-app .paper-scribble-preview [data-pencil-preview]{
- min-width:0;max-width:100%;overflow:auto;white-space:pre-wrap;
- overflow-wrap:anywhere;font-family:'Noto Sans Thai',sans-serif;
- line-height:1.4;
-}
 @media(max-width:720px){
  .paper-app .paper-scribble-panel header{display:block;padding:5px 6px}
  .paper-app .paper-scribble-panel .paper-scribble-title{display:none}
  .paper-app .paper-scribble-actions{width:100%;justify-content:flex-start}
  .paper-app .paper-scribble-actions button{padding:5px 8px;font-size:11px}
  .paper-app .paper-scribble-formats{padding:4px 6px;gap:6px}
- .paper-app .paper-scribble-preview{min-height:29px;max-height:40px;padding:4px 8px}
 }
