@@ -419,8 +419,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await click('page-settings');await page.locator('#paper-template').selectOption('dots');await click('save');
   await page.screenshot({path:'test-results/paper-'+name+'.png'});
   if(!await page.locator('[data-paper="add-page"]').first().isVisible())await click('pages');await click('add-page');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
-  await click('delete-page');await page.getByRole('alertdialog').waitFor();await page.locator('[data-delete-choice="cancel"]').click();assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
-  await click('delete-page');await page.locator('[data-delete-choice="confirm"]').click();await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,1);
+  // Empty pages now delete immediately without a redundant confirmation,
+  // and undo/redo still protects against accidental taps.
+  await click('delete-page');await click('save');
+  assert.equal(row.payload.notebook.notes[0].paper.pages.length,1);
+  assert.equal(await page.getByRole('alertdialog').count(),0);
+  await click('undo');await click('save');
+  assert.equal(row.payload.notebook.notes[0].paper.pages.length,2,'Undo restores a deleted blank page');
+  await click('redo');await click('save');
+  assert.equal(row.payload.notebook.notes[0].paper.pages.length,1,'Redo removes the blank page again');
   // Save waits for acknowledgement instead of reporting success on click.
   offline=true;await page.locator('#paper-title').fill('งานรอออนไลน์');await page.locator('#paper-title').blur();await click('save');assert.match(await page.locator('#paper-hint').innerText(),/offline/);offline=false;await click('save');assert.equal(row.payload.notebook.notes[0].title,'งานรอออนไลน์');
   // Second independent browser context receives the exact same objects without reloading editor.
