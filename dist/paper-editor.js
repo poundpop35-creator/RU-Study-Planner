@@ -349,7 +349,11 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   scribbleInput.focus({preventScroll:true});
   const caret=scribbleInput.value.length;scribbleInput.setSelectionRange(caret,caret);
  }
- bind(scribbleInput,'input',()=>{
+ let composingScribble=false;
+ bind(scribbleInput,'compositionstart',()=>{composingScribble=true;clearTimeout(textTimer)});
+ bind(scribbleInput,'compositionend',()=>{composingScribble=false;applyScribble()});
+ bind(scribbleInput,'input',event=>{if(!event.isComposing&&!composingScribble)applyScribble()});
+ function applyScribble(){
   if(!scribbleActive||!editing)return;
   const before=editing.lastText,next=scribbleInput.value;
   editing.links=moveLinks(editing.links,before,next);
@@ -357,7 +361,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   editing.lastText=next;textarea.value=next;
   fitTextBox();draw();
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),700);
- });
+ }
  bind(scribblePad.querySelector('[data-pencil-keyboard]'),'click',event=>{
   const viaKeyboard=scribbleInput.inputMode!=='text';
   scribbleInput.inputMode=viaKeyboard?'text':'none';
@@ -675,6 +679,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  let textTimer;
  function finishText(keepOpen=false){
+  if(scribbleActive&&composingScribble)return;
   const wasScribble=scribbleActive;
   if(!keepOpen){closeWordMenu();closeScribblePanel();}
   clearTimeout(textTimer);
