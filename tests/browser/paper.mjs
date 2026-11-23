@@ -411,6 +411,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),0);
    await click('text');
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await b.page.locator('.paper-menu > summary').click();
   await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
   const [download]=await Promise.all([b.page.waitForEvent('download'),fileButton.click()]);
   assert.equal(download.suggestedFilename(),'lesson.pdf');assert.equal((await readFile(await download.path())).toString(),'%PDF-1.4 sample');
