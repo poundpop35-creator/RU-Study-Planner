@@ -1139,3 +1139,210 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 .paper-app .paper-context-menu .paper-context-danger:hover{background:#fff0f2}
 .paper-app .paper-context-separator{height:1px;margin:4px 6px;background:#e1e7f0}
 @media print{.paper-app .paper-context-menu{display:none!important}}
+
+
+/* Phone-only notebook workspace.
+   Tablets and desktop keep their existing full-featured toolbars. The phone
+   gets a thumb-reachable dock and a larger, uninterrupted paper viewport. */
+.paper-app .paper-mobile-more{display:none!important}
+@media screen and (max-width:600px){
+ .paper-app{
+  padding-top:env(safe-area-inset-top);
+  min-width:0;overflow:hidden;
+ }
+ .paper-app .paper-header{
+  flex:0 0 auto;order:0;gap:6px;padding:5px 8px!important;
+  min-height:49px!important;height:49px;
+ }
+ .paper-app .paper-back{
+  width:35px;min-width:35px;height:36px;
+  font-size:25px;border-radius:9px;
+ }
+ .paper-app .paper-heading{flex:1 1 auto;min-width:0}
+ .paper-app .paper-heading input{
+  font-size:13px!important;line-height:1.35;
+  padding:3px 0;text-overflow:ellipsis;
+ }
+ .paper-app .paper-heading .paper-eyebrow{
+  display:none!important;
+ }
+ .paper-app .paper-cloud{
+  display:block;font-size:9px;line-height:1;
+  white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+ }
+ .paper-app .paper-save{
+  flex:0 0 auto;min-height:36px;min-width:58px;
+  padding:6px 8px!important;font-size:11px!important;
+ }
+ .paper-app .paper-menu summary{
+  min-height:36px;min-width:34px;padding:6px!important;
+ }
+ .paper-app .paper-workspace{
+  order:1;flex:1 1 0;min-height:0;min-width:0;
+ }
+ .paper-app .paper-viewport{
+  min-height:0;padding:8px 8px 16px!important;
+  overflow:auto;scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
+ }
+ .paper-app .paper-pages{
+  top:50px!important;bottom:125px!important;
+  width:min(73vw,260px);padding:10px!important;
+  overflow:auto;z-index:14;
+  box-shadow:10px 0 35px #20345925;
+ }
+ .paper-app .paper-bottom{
+  min-height:36px;gap:5px;
+  padding:3px 8px!important;
+ }
+ .paper-app .paper-bottom #paper-hint{
+  flex:1 1 auto;min-width:0;max-width:none!important;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10px!important;
+ }
+ .paper-app .paper-bottom>span:first-child{
+  font-size:10px;white-space:nowrap;
+ }
+ .paper-app .paper-bottom>div{flex:0 0 auto;gap:0}
+ .paper-app .paper-bottom button{
+  min-width:27px;min-height:31px;
+  font-size:12px;padding:2px 5px!important;
+ }
+ .paper-app .paper-input-strip{
+  order:3;flex:0 0 auto;display:flex!important;
+  flex-wrap:nowrap!important;width:100%;min-height:40px;
+  max-height:47px;gap:8px;padding:3px 7px!important;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;touch-action:pan-x;
+ }
+ .paper-app .paper-input-strip[hidden]{display:none!important}
+ .paper-app .paper-input-strip .paper-input-switch{
+  flex:0 0 auto;padding:2px;
+ }
+ .paper-app .paper-input-switch label{
+  min-height:31px;padding:3px 6px!important;
+  font-size:10px!important;
+ }
+ .paper-app .paper-input-strip .paper-palm-guard{
+  flex:0 0 auto;min-height:31px;padding:3px 7px!important;
+  white-space:nowrap;font-size:10px!important;
+ }
+ .paper-app .paper-input-strip .paper-geometry-check{
+  flex:0 0 auto;white-space:nowrap;font-size:10px!important;
+ }
+ .paper-app .paper-context-wrap{
+  order:4;flex:0 0 auto;width:100%;min-height:0;
+ }
+ .paper-app .paper-context-controls{
+  min-height:39px;max-height:44px;
+  padding:3px 6px;gap:7px;
+  overflow-x:auto;overflow-y:hidden;
+ }
+ .paper-app .paper-context-wrap .paper-strip-arrow{
+  display:none!important;
+ }
+ .paper-app .paper-toolbar{
+  order:5;flex:0 0 auto;z-index:12;
+  display:flex!important;flex-wrap:nowrap!important;
+  align-items:center;justify-content:flex-start!important;
+  gap:4px!important;min-height:55px!important;
+  padding:4px 7px calc(4px + env(safe-area-inset-bottom))!important;
+  background:#fff!important;border-top:1px solid #cad6eb!important;
+  border-bottom:0!important;
+  box-shadow:0 -4px 14px #20345912;
+ }
+ .paper-app .paper-toolbar>.paper-strip-arrow{
+  display:none!important;
+ }
+ .paper-app .paper-toolset{
+  flex:1 1 0!important;min-width:0;max-width:none;
+  display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:2px!important;justify-items:stretch;align-items:stretch;
+  overflow-x:hidden!important;overflow-y:hidden!important;
+  touch-action:manipulation!important;scroll-behavior:auto;
+  white-space:normal!important;scrollbar-width:none!important;
+ }
+ .paper-app .paper-toolset>button{
+  box-sizing:border-box;min-width:0!important;width:100%;
+  min-height:45px!important;height:46px!important;
+  padding:3px 1px!important;gap:0!important;
+  border-radius:9px!important;
+  flex:initial!important;display:none!important;
+  white-space:normal!important;
+  font-size:10px;line-height:1.2;
+ }
+ .paper-app .paper-toolset>button:has(.paper-tool-icon){
+  min-width:0!important;min-height:45px!important;
+ }
+ .paper-app .paper-toolset .paper-tool-icon{width:20px;height:20px}
+ .paper-app .paper-toolset>button small{
+  white-space:nowrap;font-size:9px!important;line-height:1.35;
+ }
+ .paper-app .paper-toolset>button[data-paper="select"]{display:flex!important;order:1}
+ .paper-app .paper-toolset>button[data-paper="hand"]{display:flex!important;order:2}
+ .paper-app .paper-toolset>button[data-paper="pen"]{display:flex!important;order:3}
+ .paper-app .paper-toolset>button[data-paper="text"]{display:flex!important;order:4}
+ .paper-app .paper-toolset>button[data-paper="eraser"]{display:flex!important;order:5}
+ .paper-app .paper-mobile-more{
+  display:flex!important;order:6;
+  align-items:center;justify-content:center;flex-direction:column;
+  border:1px solid #bed0f2!important;
+  background:#edf3ff!important;color:#2453a9!important;
+  min-height:45px!important;
+ }
+ .paper-app .paper-mobile-more>span{font-size:21px;line-height:1.1}
+ .paper-app .paper-mobile-more[aria-expanded="true"]{
+  background:#dce8ff!important;color:#193e98!important;
+ }
+ .paper-app.paper-mobile-tools-expanded .paper-toolset{
+  max-height:min(39dvh,220px);overflow-y:auto!important;
+  overscroll-behavior:contain;scrollbar-width:thin!important;
+  touch-action:pan-y!important;
+ }
+ .paper-app.paper-mobile-tools-expanded .paper-toolset>button{
+  display:flex!important;
+ }
+ .paper-app.paper-mobile-tools-expanded .paper-toolset>button:not([data-paper]){
+  display:flex!important;
+ }
+ .paper-app .paper-pages-toggle{
+  flex:0 0 41px;min-width:41px!important;
+  min-height:45px!important;height:45px!important;
+  padding:3px!important;font-size:10px!important;
+  border-radius:9px!important;
+ }
+ .paper-app .paper-eraser-menu{
+  top:auto!important;bottom:calc(100% + 5px)!important;
+  left:6px!important;max-height:45dvh;
+  overflow-y:auto;overscroll-behavior:contain;
+ }
+ .paper-app .paper-shapes-popup{
+  position:fixed!important;z-index:18;
+  top:auto!important;bottom:calc(75px + env(safe-area-inset-bottom))!important;
+  left:8px!important;right:8px!important;width:auto!important;
+  max-height:56dvh;overflow-y:auto;
+ }
+ .paper-app .paper-selection-tools{
+  bottom:calc(105px + env(safe-area-inset-bottom))!important;
+  left:7px!important;right:7px!important;
+  transform:none!important;max-width:none!important;min-width:0!important;
+  width:auto;max-height:min(30dvh,220px);
+  overflow-y:auto;overflow-x:hidden;
+  padding:5px 7px!important;gap:4px!important;
+  box-shadow:0 10px 24px #2034592e;
+ }
+ .paper-app .paper-selection-tools>span{padding:0 4px}
+ .paper-app .paper-selection-tools button{min-height:36px}
+ .paper-app.paper-keyboard-visible .paper-toolbar{
+  display:none!important;
+ }
+ .paper-app.paper-keyboard-visible .paper-selection-tools{
+  display:none!important;
+ }
+ .paper-app.paper-keyboard-visible .paper-scribble-panel{
+  bottom:8px!important;
+ }
+}
+@media print{
+ .paper-app .paper-mobile-more{display:none!important}
+}
