@@ -486,6 +486,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   },contact);
   assert.equal(await page.locator('#paper-zoom').innerText(),beforeZoom,'palm touches should never pinch-zoom');
   assert.equal(activeNote().paper.pages[0].objects.length,objectCount,'palm touches should not create extra text');
+  await click('text');
   const existingTextPoint=await point(continued.x+3,continued.y+5);
   await page.locator('#paper-svg').evaluate((svg,p)=>{
    svg.setPointerCapture=()=>{};
