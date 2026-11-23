@@ -721,12 +721,16 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.width='max-content';textMeasure.style.maxWidth='none';textMeasure.style.whiteSpace='pre';
   textMeasure.innerHTML=formattedTextHTML({text,marks},esc,false,false);
   const hasInlineAlign=marks.some(m=>m.align);
-  const width=Math.min(available,Math.max(editing.align||hasInlineAlign?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+7));
+  // Measure the longest explicit line before wrapping. Keep an existing
+  // manually enlarged box as the minimum width and expand with typing, up
+  // to the right paper edge. Mixed B/I/U text uses its real styled width.
+  const naturalWidth=Math.ceil(Math.max(textMeasure.scrollWidth,textMeasure.getBoundingClientRect().width))+14;
+  const width=Math.min(available,Math.max(32,o.w,editing.align||hasInlineAlign?(editing.alignWidth||0):0,naturalWidth));
   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
   editing.paperWidth=width;
-  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
-  rich.style.width=Math.min(available,(editing.align||hasInlineAlign?width:Math.max(250,width)))+'px';
+  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight));
+  rich.style.width=width+'px';
   rich.style.minHeight=Math.max(o.size*1.5,editing.paperHeight)+'px';
  }
  function activateRich(){
@@ -783,20 +787,23 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.overflowWrap='normal';textMeasure.style.lineHeight='1.5';
   textMeasure.textContent=textarea.value;
   const availableWidth=Math.max(1,PAGE_W-o.x);
-  const width=Math.min(availableWidth,scribbleActive?Math.max(32,o.w):Math.max(editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+5));
+  // Measure unwrapped text first. Growing only the textarea's height would
+  // cause premature line breaks (notably when returning to a saved text box).
+  const naturalWidth=Math.ceil(Math.max(textMeasure.scrollWidth,textMeasure.getBoundingClientRect().width))+14;
+  const width=Math.min(availableWidth,Math.max(32,o.w,editing.alignWidth||0,naturalWidth));
   editing.paperWidth=width;
-  if(editing.mobile||scribbleActive){
-   // Store the natural on-paper height, not the temporary interactive target.
-   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
-   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
-   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight));
-  }
-  // Leave a wider editable target for Apple Pencil Scribble *without* storing
-  // that extra whitespace as the object's final bounds.
-  textarea.style.width=Math.min(availableWidth,(editing.align?width:Math.max(250,width)))+'px';
+  // Compute the real height at the actual paper width on every device,
+  // including desktop and Pencil. Only wrap at the paper's right edge or
+  // where the user explicitly entered a newline.
+  textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
+  textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
+  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight+3));
+  // Pencil mode keeps a comfortable target but it is never the saved width.
+  const visualWidth=scribbleActive?Math.min(availableWidth,Math.max(250,width)):width;
+  textarea.style.width=visualWidth+'px';
   textarea.style.overflowY='hidden';
   textarea.style.height='1px';
-  const height=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textarea.scrollHeight));
+  const height=Math.min(Math.max(1,PAGE_H-o.y),Math.max(editing.paperHeight,textarea.scrollHeight));
   textarea.style.height=height+'px';
   if(textarea.scrollHeight>height)textarea.style.overflowY='auto';
  }
@@ -867,7 +874,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(edit.rich)fitRichBox();
   const content=edit.rich?readRich():{text:textarea.value,marks:edit.marks||[]};
   const w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
-  const o={...edit.object,text:content.text,w:edit.paperWidth??w,h:edit.rich||edit.mobile||wasScribble?(edit.paperHeight||h):h};
+  const o={...edit.object,text:content.text,w:edit.paperWidth??w,h:edit.paperHeight??h};
   if(edit.align)o.align=edit.align;
   if(edit.links.length)o.links=edit.links;else delete o.links;
   if(content.marks.length)o.marks=content.marks;else delete o.marks;
@@ -1143,7 +1150,19 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   }
   else if(gesture.kind==='image-resize')gesture.preview=gesture.before.map(o=>o.id===gesture.image.id?resizeImage(o,gesture.edge,p.x-gesture.start.x,p.y-gesture.start.y):o);
    else if(gesture.kind==='shape-resize')gesture.preview=gesture.before.map(o=>o.id===gesture.shape.id?resizeShape(o,gesture.edge,p.x-gesture.start.x,p.y-gesture.start.y):o);
-  else if(gesture.kind==='resize'){const b=gesture.box,f=Math.max(.15,Math.min(4,Math.max((p.x-b.x)/Math.max(1,b.w),(p.y-b.y)/Math.max(1,b.h))));gesture.preview=gesture.before.map(o=>selected.has(o.id)?{...o,x:b.x+(o.x-b.x)*f,y:b.y+(o.y-b.y)*f,w:Math.max(1,o.w*f),h:Math.max(1,o.h*f),...(o.type==='text'?{size:Math.round(Math.min(96,Math.max(10,o.size*f)))}:{})}:o);}
+  else if(gesture.kind==='resize'){
+   const b=gesture.box,dx=p.x-gesture.start.x,dy=p.y-gesture.start.y;
+   const f=Math.max(.15,Math.min(4,Math.max((p.x-b.x)/Math.max(1,b.w),(p.y-b.y)/Math.max(1,b.h))));
+   gesture.preview=gesture.before.map(o=>{
+    if(!selected.has(o.id))return o;
+    if(o.type==='text'){
+     // Dragging the corner changes only the editable box dimensions.
+     // Font size and per-word formatting are deliberately untouched.
+     return {...o,w:Math.max(32,Math.min(PAGE_W-o.x,o.w+dx)),h:Math.max(o.size*1.5,Math.min(PAGE_H-o.y,o.h+dy))};
+    }
+    return {...o,x:b.x+(o.x-b.x)*f,y:b.y+(o.y-b.y)*f,w:Math.max(1,o.w*f),h:Math.max(1,o.h*f)};
+   });
+  }
   scheduleDraw();
  }
  function sweepErase(g,p){g.preview=g.preview.filter(o=>!eraserTargetHit(o,g.last,p,g.eraseMode,10/scale));g.last=p;}
