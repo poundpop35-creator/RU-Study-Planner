@@ -190,6 +190,21 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
    catch(err){setStatus('ส่งรูปเข้า Supabase ไม่สำเร็จ · '+message(err),'error');throw err;}
   },
   async image(id){requireAccount();const ticket=epoch,uid=user.id;let blob;try{blob=await imageStore.get(scope,id);}catch{}if(!blob){const {data,error}=await client.storage.from('ru-study-notes').download(uid+'/'+id);if(error)throw error;if(ticket!==epoch)throw Error('บัญชีเปลี่ยน');blob=data;try{await imageStore.put(scope,id,blob);}catch{}}return blob;},
+  async restoreNotebook(plan,baseline,images){
+   await api.flush();requireAccount();
+   const uid=user.id,ticket=epoch;
+   const guard=()=>{requireAccount();if(ticket!==epoch||conflict||baseline!==JSON.stringify(payload.notebook))throw Error('สมุดจดเปลี่ยนแล้ว กรุณาตรวจรายการอีกครั้ง');};
+   guard();assertCapacity({...payload,notebook:plan.next});
+   if(!cacheBackup('before-notebook-import',payload.notebook))throw Error('เก็บสำเนาก่อนนำเข้าไม่ได้');
+   for(const id of plan.imageIds){
+    const value=images[id];
+    if(value===undefined){await api.image(id);guard();continue;}
+    if(typeof value!=='string'||value.length>7100000||!/^data:image\/(png|jpeg|webp|gif);base64,/.test(value))throw Error('รูปในสำเนาไม่ถูกต้อง');
+    const blob=await (await fetch(value)).blob();newImageId(blob);guard();
+    await upload(id,blob,uid);guard();uploaded.add(id);
+   }
+   guard();api.saveNotebook(plan.next);onChange();await api.flush();
+  },
   async importSnapshot(value,images={}){
    await restoreWorkspace(value,async id=>{
     if(!Object.hasOwn(images,id))return null;
