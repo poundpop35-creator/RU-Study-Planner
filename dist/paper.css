@@ -1111,3 +1111,31 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  .paper-app .paper-shape-rotation button{padding:5px 8px}
  .paper-app .paper-eraser-menu{top:calc(100% + 3px)}
 }
+
+
+/* Native-like in-app context menu on the paper, never on browser chrome. */
+.paper-app .paper-context-menu{
+ position:fixed;z-index:35;left:0;top:0;
+ display:flex;flex-direction:column;gap:1px;
+ width:min(260px,calc(100vw - 16px));max-height:min(75dvh,620px);
+ padding:7px;overflow-y:auto;overscroll-behavior:contain;
+ border:1px solid #b8c9e6;border-radius:13px;background:#fff;
+ box-shadow:0 15px 45px #15294e3b;
+ color:#22395e;font-size:13px;
+}
+.paper-app .paper-context-menu[hidden]{display:none!important}
+.paper-app .paper-context-menu strong{
+ padding:7px 10px 6px;font-size:12px;color:#526b98;
+}
+.paper-app .paper-context-menu button{
+ display:flex;align-items:center;text-align:left;gap:7px;width:100%;
+ min-height:37px;padding:7px 10px;border-radius:8px;
+ font-size:13px;font-weight:600;line-height:1.45;white-space:normal;
+}
+.paper-app .paper-context-menu button:hover:not(:disabled),
+.paper-app .paper-context-menu button:focus-visible{background:#eaf0ff;color:#1e44a3}
+.paper-app .paper-context-menu button[hidden]{display:none!important}
+.paper-app .paper-context-menu .paper-context-danger{color:#af293a}
+.paper-app .paper-context-menu .paper-context-danger:hover{background:#fff0f2}
+.paper-app .paper-context-separator{height:1px;margin:4px 6px;background:#e1e7f0}
+@media print{.paper-app .paper-context-menu{display:none!important}}
