@@ -163,7 +163,7 @@ export function shapeSVG(o){
  const turn=shapeAngle(o.angle),transform=turn&&!isJoinable(o)?` transform="rotate(${turn} ${round(x+w/2)} ${round(y+h/2)})"`:'';
 
  const dash=o.dash==='dashed'?` stroke-dasharray="${Math.max(8,o.width*4)} ${Math.max(4,o.width*3)}"`:o.dash==='dotted'?` stroke-dasharray="1 ${Math.max(5,o.width*3)}"`:'';
- const style=`data-object="${o.id}" data-shape="${o.kind}" fill="none" stroke="${o.color}" stroke-width="${o.width}" stroke-linecap="round" stroke-linejoin="round"${dash}${transform}`;
+ const style=`data-object="${o.id}" data-shape="${o.kind}" fill="${!isJoinable(o)&&/^#[0-9a-f]{6}$/i.test(o.fill)?o.fill:'none'}" opacity="${Number.isFinite(o.opacity)?o.opacity:1}" stroke="${o.color}" stroke-width="${o.width}" stroke-linecap="round" stroke-linejoin="round"${dash}${transform}`;
  if(o.kind==='rect'||o.kind==='square')return `<rect ${style} x="${x}" y="${y}" width="${w}" height="${h}"/>`;
  if(o.kind==='roundRect')return `<rect ${style} x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w,h)*.16}"/>`;
  if(o.kind==='ellipse'||o.kind==='circle')return `<ellipse ${style} cx="${x+w/2}" cy="${y+h/2}" rx="${w/2}" ry="${h/2}"/>`;

@@ -25,6 +25,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  let model=initial,pageId=model.pages[0].id,virtualHeight=initial.version===2?Math.min(MAX_CANVAS_HEIGHT,pageHeight(initial.pages[0])+PAGE_H):PAGE_H,tool=startInk?'pen':window.matchMedia('(max-width:600px)').matches?'hand':'text',color='#172033',defaultTextColor='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=startInk,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
  let multiSelect=false,wordSelection=null,lineStyle='solid',eraserKind='stroke',smartEnabled=true,smartTimer=0,lastTextTap=null,lastMouseTextTap=null;
  let lastSelectionSignature='';
+ let virtualWidth=PAGE_W*2;const canvasWidth=()=>model.version===2?virtualWidth:PAGE_W;
  let ruler={active:false,x:PAGE_W/2,y:PAGE_H/2,angle:0,length:440,height:44};
  function cancelSmartTimer(){clearTimeout(smartTimer);smartTimer=0;}
  function scheduleSmartHold(g){
@@ -159,12 +160,12 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   }
   const signature=[...selected].sort().join('|');
   if(signature!==lastSelectionSignature){$('#paper-selection-more').open=false;lastSelectionSignature=signature;}
-  const p=page();if(model.version===2&&virtualHeight<Math.min(MAX_CANVAS_HEIGHT,pageHeight(p)+PAGE_H)){
+  const p=page();if(model.version===2&&cachedPage!==p){const end=p.objects.reduce((v,o)=>Math.max(v,o.x+o.w),0);virtualWidth=Math.min(PAGE_W*250,Math.max(virtualWidth,(Math.ceil(end/PAGE_W)+1)*PAGE_W));sizing();}if(model.version===2&&virtualHeight<Math.min(MAX_CANVAS_HEIGHT,pageHeight(p)+PAGE_H)){
    virtualHeight=Math.min(MAX_CANVAS_HEIGHT,pageHeight(p)+PAGE_H);sizing();
   }
   const renderHeight=model.version===2?virtualHeight:PAGE_H;
   if(cachedPage!==p||cachedImageVersion!==imageVersion||cachedRenderHeight!==renderHeight){
-   cachedContent=pageSVG(p,images,'paper-lines',renderHeight);
+   cachedContent=pageSVG(p,images,'paper-lines',renderHeight,canvasWidth());
    cachedPage=p;cachedImageVersion=imageVersion;cachedRenderHeight=renderHeight;
   }
   let content=cachedContent;
@@ -174,11 +175,11 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
     h:editing.paperHeight||editing.object.h};
    const objects=p.objects.some(o=>o.id===editing.id)
      ?p.objects.map(o=>o.id===editing.id?preview:o):[...p.objects,preview];
-   content=pageSVG({...p,objects},images,'paper-lines',renderHeight);
-  }else if(editing)content=pageSVG({...p,objects:p.objects.filter(o=>o.id!==editing.id)},images,'paper-lines',renderHeight);
+   content=pageSVG({...p,objects},images,'paper-lines',renderHeight,canvasWidth());
+  }else if(editing)content=pageSVG({...p,objects:p.objects.filter(o=>o.id!==editing.id)},images,'paper-lines',renderHeight,canvasWidth());
   if(gesture?.kind==='shape'&&gesture.object)content+=objectSVG(gesture.object);
   const visible=gesture?.preview||p.objects;
-  if(gesture?.preview)content=pageSVG({...p,objects:visible},images,'paper-lines',renderHeight);
+  if(gesture?.preview)content=pageSVG({...p,objects:visible},images,'paper-lines',renderHeight,canvasWidth());
   const chosen=visible.filter(o=>selected.has(o.id)),box=bounds(chosen);
   if(chosen.length>1)for(const o of chosen)content+=`<rect x="${o.x-2}" y="${o.y-2}" width="${o.w+4}" height="${o.h+4}" fill="none" stroke="#7590fc" stroke-width="1" pointer-events="none"/>`;
   const singleImage=selected.size===1&&visible.find(o=>selected.has(o.id)&&o.type==="image");
@@ -267,20 +268,22 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const horizontalInset=window.matchMedia('(max-width:600px)').matches?18:48;
   fit=Math.min(1,Math.max(.2,(viewport.clientWidth-horizontalInset)/PAGE_W));scale=fit*zoom;
   const h=model.version===2?virtualHeight:PAGE_H;
-  wrap.style.width=PAGE_W*scale+'px';wrap.style.height=h*scale+'px';
+  sheet.style.width=svg.style.width=canvasWidth()+'px';wrap.style.width=canvasWidth()*scale+'px';wrap.style.height=h*scale+'px';
   sheet.style.height=h+'px';svg.style.height=h+'px';
-  svg.setAttribute('viewBox','0 0 '+PAGE_W+' '+h);
+  svg.setAttribute('viewBox','0 0 '+canvasWidth()+' '+h);
   sheet.style.transform=`scale(${scale})`;
   $('#paper-zoom').textContent=Math.round(zoom*100)+'%';
  }
  function zoomAt(next,cx=viewport.clientWidth/2,cy=viewport.clientHeight/2){const old=scale,x=(viewport.scrollLeft+cx)/old,y=(viewport.scrollTop+cy)/old;zoom=Math.min(4,Math.max(.5,next));sizing();viewport.scrollLeft=x*scale-cx;viewport.scrollTop=y*scale-cy;}
  function point(e){
   const r=svg.getBoundingClientRect(),h=model.version===2?virtualHeight:PAGE_H;
-  return {x:Math.max(0,Math.min(PAGE_W,(e.clientX-r.left)/r.width*PAGE_W)),
+  return {x:Math.max(0,Math.min(canvasWidth(),(e.clientX-r.left)/r.width*canvasWidth())),
    y:Math.max(0,Math.min(h,(e.clientY-r.top)/r.height*h))};
  }
  function extendVisibleCanvas(){
-  if(closed||model.version!==2||virtualHeight>=MAX_CANVAS_HEIGHT)return;
+  if(closed||model.version!==2)return;
+  if(virtualWidth<PAGE_W*250&&(viewport.scrollLeft+viewport.clientWidth)/scale>virtualWidth-PAGE_W*.3){virtualWidth+=PAGE_W;cachedPage=null;sizing();scheduleDraw();}
+  if(virtualHeight>=MAX_CANVAS_HEIGHT)return;
   // Blank space is virtual: browsing down never writes a new page to
   // Supabase. Only ink/text actually placed below gets persisted.
   const nearBottom=(viewport.scrollTop+viewport.clientHeight)/Math.max(scale,.01)>=virtualHeight-PAGE_H*.45;
@@ -494,6 +497,22 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  bind(boldPreset,'click',()=>{bold=!bold;boldPreset.setAttribute('aria-pressed',String(bold));});
  pageOptions.append($('.paper-template-tool'));
  selectOptions.append($('[data-paper="multi"]'));
+ const stack=document.createElement('select');stack.setAttribute('aria-label','เลือกเลเยอร์วัตถุ');selectOptions.append(stack);
+ let stackKey='';
+ bind(stack,'change',()=>{selected=new Set(stack.value?[stack.value]:[]);draw();});
+ const paint=document.createElement('span');selectOptions.append(paint);
+ paint.innerHTML='<label>สีพื้น <input type="color" value="#789bd3"></label><button type="button">ไม่มีสีพื้น</button><label>ความทึบ <input type="range" min="0" max="100" value="100"></label><output></output>';
+ const [fill,alpha]=paint.querySelectorAll('input');
+ const paintSelected=fn=>change(p=>p.objects.filter(o=>selected.has(o.id)&&o.type==='shape').forEach(fn));
+ bind(fill,'change',()=>paintSelected(o=>o.fill=fill.value));bind(paint.querySelector('button'),'click',()=>paintSelected(o=>delete o.fill));
+ bind(alpha,'input',()=>paint.lastElementChild.textContent=alpha.value+'%');
+ bind(alpha,'change',()=>paintSelected(o=>o.opacity=Number(alpha.value)/100));
+ const order=document.createElement('span');selectOptions.append(order);
+ for(const [front,label] of [[false,'ไว้หลังสุด'],[true,'ไว้หน้าสุด']]){
+  const btn=document.createElement('button');btn.type='button';btn.textContent=label;order.append(btn);
+  bind(btn,'click',()=>change(p=>{const group=p.objects.filter(o=>selected.has(o.id)),rest=p.objects.filter(o=>!selected.has(o.id));p.objects=front?[...rest,...group]:[...group,...rest];}));
+ }
+
  rulerOptions.append($('#paper-ruler-angles'));
  $('#paper-ruler-angles').insertAdjacentHTML('beforeend','<label class="paper-angle-input">องศา <input id="paper-ruler-angle" type="number" min="0" max="359" step="1" value="0" aria-label="องศาไม้บรรทัด"></label>');
  bind($('#paper-ruler-angle'),'change',event=>{
@@ -524,6 +543,13 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textOptions.hidden=activePanel!=='text';boldPreset.hidden=!!editing;
   pageOptions.hidden=activePanel!=='page';
   selectOptions.hidden=activePanel!=='select';
+  if(!selectOptions.hidden){
+   const objects=page().objects,chosen=objects.filter(o=>selected.has(o.id)),shape=chosen.find(o=>o.type==='shape');
+   const key=JSON.stringify(objects.map(o=>[o.id,o.text?.slice(0,24)]));
+   if(key!==stackKey){stackKey=key;stack.replaceChildren(new Option('เลเยอร์ · หน้าสุดก่อน',''),...objects.slice().reverse().map((o,i)=>new Option((objects.length-i)+' · '+({shape:'รูปทรง',text:o.text?.slice(0,24)||'ข้อความ',image:'รูปภาพ',stroke:'ลายมือ',table:'ตาราง'}[o.type]),o.id)));}
+   stack.value=chosen.length===1?chosen[0].id:'';order.hidden=!chosen.length;paint.hidden=!shape;
+   if(shape){fill.value=shape.fill||'#789bd3';alpha.value=Math.round((shape.opacity??1)*100);paint.lastElementChild.textContent=alpha.value+'%';}
+  }
   rulerOptions.hidden=activePanel!=='ruler'||!ruler.active;
   ribbon.hidden=activePanel!=='text'||!editing;
   inkBar.hidden=!showInk;
@@ -919,7 +945,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  function fitRichBox(){
   if(!editing?.rich)return;
-  const {text,marks}=readRich(),o=editing.object,available=Math.max(1,PAGE_W-o.x);
+  const {text,marks}=readRich(),o=editing.object,available=Math.max(1,canvasWidth()-o.x);
   textMeasure.style.fontSize=o.size+'px';textMeasure.style.fontWeight=o.bold?'700':'400';
   textMeasure.style.width='max-content';textMeasure.style.maxWidth='none';textMeasure.style.whiteSpace='pre';
   textMeasure.innerHTML=formattedTextHTML({text,marks},esc,false,false);
@@ -977,7 +1003,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const before=readRich(),current=richOffsets();
   const range=current?.end>current?.start?current:(formattingSelection?.end>formattingSelection?.start?formattingSelection:richSelection)||selectedBefore;
   if(!range||range.start===range.end)return;
-  if(kind==='align'&&!editing.alignWidth)editing.alignWidth=Math.min(PAGE_W-editing.object.x,Math.max(editing.object.w,420));
+  if(kind==='align'&&!editing.alignWidth)editing.alignWidth=Math.min(canvasWidth()-editing.object.x,Math.max(editing.object.w,420));
   const marks=kind==='size'?applyTextFormat(before.marks,before.text,range.start,range.end,'size',textSize(value,editing.object.size)):
    kind==='color'?applyTextFormat(before.marks,before.text,range.start,range.end,'color',textColor(value,editing.object.color)):
    kind==='align'?applyTextFormat(before.marks,before.text,range.start,range.end,'align',value):
@@ -1025,7 +1051,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.maxWidth='none';textMeasure.style.whiteSpace='pre';
   textMeasure.style.overflowWrap='normal';textMeasure.style.lineHeight='1.5';
   textMeasure.textContent=textarea.value;
-  const availableWidth=Math.max(1,PAGE_W-o.x);
+  const availableWidth=Math.max(1,canvasWidth()-o.x);
   // Measure unwrapped text first. Growing only the textarea's height would
   // cause premature line breaks (notably when returning to a saved text box).
   const naturalWidth=Math.ceil(Math.max(textMeasure.scrollWidth,textMeasure.getBoundingClientRect().width))+14;
@@ -1292,7 +1318,7 @@ bind(rich,'keyup',()=>{
   closeWordMenu();
   event.preventDefault();
   const at=point(event);
-  contextAnchor={x:Math.max(0,Math.min(PAGE_W,at.x)),y:Math.max(0,Math.min(canvasLimit(),at.y))};
+  contextAnchor={x:Math.max(0,Math.min(canvasWidth(),at.x)),y:Math.max(0,Math.min(canvasLimit(),at.y))};
   const target=[...page().objects].reverse().find(o=>
    o.type==='stroke'?strokeHit(o,at,8/scale):
    o.type==='shape'?shapeContains(o,at,8/scale):contains(at,o,3/scale));
@@ -1415,7 +1441,7 @@ bind(rich,'keyup',()=>{
    const table=[...page().objects].reverse().find(o=>o.type==='table'&&contains(p,o));
    if(table){selected=new Set([table.id]);tableUI.open(table);draw();return;}
    const target=findTextToContinue(p);
-   startText(target||{id:uid(),type:'text',x:Math.min(p.x,PAGE_W-32),y:Math.min(p.y,canvasLimit()-Math.ceil(fontSize*1.5)),w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold});
+   startText(target||{id:uid(),type:'text',x:Math.min(p.x,canvasWidth()-32),y:Math.min(p.y,canvasLimit()-Math.ceil(fontSize*1.5)),w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold});
    if(target)say('กำลังเขียนต่อในกล่องเดิม · เขียนจากเคอร์เซอร์ได้เลย');
    return;
   }
@@ -1457,7 +1483,7 @@ bind(rich,'keyup',()=>{
   if(gesture.kind==='pan'){viewport.scrollLeft=gesture.left-(e.clientX-gesture.px);viewport.scrollTop=gesture.top-(e.clientY-gesture.py);return;}
   const p=point(e);
   if(gesture.kind==='ruler-move'){
-   ruler.x=Math.max(30,Math.min(PAGE_W-30,gesture.startX+p.x-gesture.start.x));
+   ruler.x=Math.max(30,Math.min(canvasWidth()-30,gesture.startX+p.x-gesture.start.x));
    ruler.y=Math.max(30,Math.min(canvasLimit()-30,gesture.startY+p.y-gesture.start.y));scheduleDraw();return;
   }
   if(gesture.kind==='ruler-rotate'){
@@ -1477,7 +1503,7 @@ bind(rich,'keyup',()=>{
    const targets=gesture.before.filter(o=>!selected.has(o.id));
    gesture.preview=gesture.before.map(o=>{
     if(!selected.has(o.id))return o;
-    const moved={...o,x:Math.max(-o.w/2,Math.min(PAGE_W-o.w/2,o.x+p.x-gesture.start.x)),y:Math.max(-o.h/2,Math.min(canvasLimit()-o.h/2,o.y+p.y-gesture.start.y))};
+    const moved={...o,x:Math.max(-o.w/2,Math.min(canvasWidth()-o.w/2,o.x+p.x-gesture.start.x)),y:Math.max(-o.h/2,Math.min(canvasLimit()-o.h/2,o.y+p.y-gesture.start.y))};
     ensureCanvasHeight(moved.y+moved.h);
     return selected.size===1?snapMovedLine(moved,targets,10/scale):moved;
    });
@@ -1492,7 +1518,7 @@ bind(rich,'keyup',()=>{
     if(o.type==='text'){
      // Dragging the corner changes only the editable box dimensions.
      // Font size and per-word formatting are deliberately untouched.
-     const next={...o,w:Math.max(32,Math.min(PAGE_W-o.x,o.w+dx)),h:Math.max(o.size*1.5,Math.min(canvasLimit()-o.y,o.h+dy))};
+     const next={...o,w:Math.max(32,Math.min(canvasWidth()-o.x,o.w+dx)),h:Math.max(o.size*1.5,Math.min(canvasLimit()-o.y,o.h+dy))};
      ensureCanvasHeight(next.y+next.h);return next;
     }
     return {...o,x:b.x+(o.x-b.x)*f,y:b.y+(o.y-b.y)*f,w:Math.max(1,o.w*f),h:Math.max(1,o.h*f)};
@@ -1656,7 +1682,7 @@ bind(rich,'keyup',()=>{
     if(cmd==='paste'&&objectClipboard.length){
      const box=bounds(objectClipboard);
      if(!box)return;
-     const dx=Math.max(-box.x,Math.min(PAGE_W-box.x-box.w,contextAnchor.x-box.x));
+     const dx=Math.max(-box.x,Math.min(canvasWidth()-box.x-box.w,contextAnchor.x-box.x));
      const dy=Math.max(-box.y,Math.min(canvasLimit()-box.y-box.h,contextAnchor.y-box.y));
      const pasted=objectClipboard.map(o=>({...copy(o),id:uid(),x:o.x+dx,y:o.y+dy}));
      if(change(p=>p.objects.push(...pasted))){selected=new Set(pasted.map(o=>o.id));setTool('select');draw();}
@@ -1676,7 +1702,7 @@ bind(rich,'keyup',()=>{
     if(cmd==='add-text'){
      setTool('text');
      startText({id:uid(),type:'text',
-      x:Math.min(PAGE_W-32,Math.max(0,contextAnchor.x)),
+      x:Math.min(canvasWidth()-32,Math.max(0,contextAnchor.x)),
       y:Math.min(canvasLimit()-Math.ceil(fontSize*1.5),Math.max(0,contextAnchor.y)),
       w:32,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold});
      return;
@@ -1757,7 +1783,7 @@ bind(rich,'keyup',()=>{
     if(editing)finishText();
     const existing=page().objects.find(o=>o.id===targetId&&o.type==='text');
     tool='text';activePanel='text';selected=existing?new Set([existing.id]):new Set();
-    const x=Math.max(28,Math.min(PAGE_W-440,viewport.scrollLeft/scale+75));
+    const x=Math.max(28,Math.min(canvasWidth()-440,viewport.scrollLeft/scale+75));
     const y=Math.max(35,Math.min(canvasLimit()-70,viewport.scrollTop/scale+110));
     startText(existing||{id:uid(),type:'text',x,y,w:440,h:Math.ceil(fontSize*1.5),text:'',size:fontSize,color:defaultTextColor,bold},null,{wideArea:true});
     openScribblePanel();

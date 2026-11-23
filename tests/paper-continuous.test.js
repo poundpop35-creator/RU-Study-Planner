@@ -113,3 +113,13 @@ test('wide highlight crossing A4 prints both fragments',()=>{
  assert.equal(sheets.length,2);
  for(const sheet of sheets)assert.match(sheet,/data-object="marker"/);
 });
+test('wide notes preserve translucent shapes behind text on reload, merge and A4 print',()=>{
+ const p=emptyPage(),s={id:'badge',type:'shape',kind:'roundRect',x:2800,y:100,w:200,h:80,color:'#3155dd',width:2,fill:'#aabbcc',opacity:0.4};
+ p.objects=[{...txt('label','หัวข้อ',110),x:2820},s];
+ const before=validatePaper({version:2,pages:[p]}),local=structuredClone(before),remote=structuredClone(before);
+ local.pages[0].objects.reverse();remote.pages[0].objects[0].text='เปลี่ยนชื่อ';
+ const merged=mergePaper(before,local,remote);
+ assert.deepEqual(merged.pages[0].objects.map(o=>o.id),['badge','label']);
+ const printed=printableSheets(merged).at(-1);
+ assert.match(printed,/translate\(-2700,/);assert.match(printed,/fill="#aabbcc" opacity="0.4"/);assert.match(printed,/เปลี่ยนชื่อ/);
+});
