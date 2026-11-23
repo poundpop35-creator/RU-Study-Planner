@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261123-notebook-debt-mobile-v3'); }
+try { await import('./app.js?v=20261123-visible-input-mode-v3'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
