@@ -1305,6 +1305,11 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  .paper-app.paper-mobile-tools-expanded .paper-toolset>button:not([data-paper]){
   display:flex!important;
  }
+ /* The expanded tool dock gets full tap priority; object actions return
+    immediately when the user closes More or chooses a quick tool. */
+ .paper-app.paper-mobile-tools-expanded .paper-selection-tools{
+  display:none!important;
+ }
  .paper-app .paper-pages-toggle{
   flex:0 0 41px;min-width:41px!important;
   min-height:45px!important;height:45px!important;
