@@ -165,9 +165,14 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    return `<button class="paper-thumb ${p.id===pageId?'active':''}" data-paper-page="${p.id}" aria-label="หน้า ${i+1}" aria-current="${p.id===pageId?'page':'false'}"><svg viewBox="0 0 ${PAGE_W} ${PAGE_H}" aria-hidden="true">${thumb}</svg><span>${i+1}</span></button>`;
   }).join('');
  }
+ const missingImages=new Set(),retryImages=document.createElement('button');
+ retryImages.type='button';retryImages.hidden=true;retryImages.textContent='โหลดรูปอีกครั้ง';
+ $('#paper-hint').after(retryImages);
+ bind(retryImages,'click',()=>{missingImages.clear();retryImages.hidden=true;loadImages();});
  function loadImages(){
-  for(const o of page().objects){if(o.type!=='image'||images.has(o.imageId)||loading.has(o.imageId))continue;loading.add(o.imageId);
-   space.image(o.imageId).then(blob=>{if(closed)return;images.set(o.imageId,URL.createObjectURL(blob));imageVersion++;scheduleDraw();thumbs();}).catch(()=>{if(!closed)say('โหลดรูปบางรูปไม่สำเร็จ ลองเชื่อมต่อใหม่',true);}).finally(()=>loading.delete(o.imageId));
+  const objects=root.classList.contains('pages-open')?model.pages.flatMap(p=>p.objects):page().objects;
+  for(const o of objects){if(o.type!=='image'||images.has(o.imageId)||loading.has(o.imageId)||missingImages.has(o.imageId))continue;loading.add(o.imageId);
+   space.image(o.imageId).then(blob=>{if(closed)return;images.set(o.imageId,URL.createObjectURL(blob));imageVersion++;scheduleDraw();thumbs();}).catch(()=>{if(!closed){missingImages.add(o.imageId);retryImages.hidden=false;say('โหลดรูปไม่สำเร็จ',true);}}).finally(()=>loading.delete(o.imageId));
   }
  }
  function sizing(){fit=Math.min(1,Math.max(.2,(viewport.clientWidth-48)/PAGE_W));scale=fit*zoom;wrap.style.width=PAGE_W*scale+'px';wrap.style.height=PAGE_H*scale+'px';sheet.style.transform=`scale(${scale})`;$('#paper-zoom').textContent=Math.round(zoom*100)+'%';}
@@ -209,7 +214,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  function setPagesOpen(value){
   root.classList.toggle('pages-open',!!value);
-  if(value)try{thumbs();}catch(err){say('เปิดรายการหน้าแล้ว แต่รูปตัวอย่างบางหน้าไม่พร้อม: '+err.message,true);}
+  if(value)try{thumbs();loadImages();}catch(err){say('เปิดรายการหน้าแล้ว แต่รูปตัวอย่างบางหน้าไม่พร้อม: '+err.message,true);}
   const toggle=$('[data-paper="pages"]');toggle.setAttribute('aria-expanded',String(!!value));
   toggle.setAttribute('aria-label',value?'ซ่อนรายการหน้ากระดาษ':'แสดงรายการหน้ากระดาษ');
   toggle.textContent=value?'▤ ซ่อนหน้า':'▤ หน้า';
