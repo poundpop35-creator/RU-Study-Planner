@@ -869,7 +869,7 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 .paper-app.paper-is-editing>.paper-text-ribbon{display:none!important}
 /* Keyboard-safe: controls stay in normal layout at top, not floating over text. */
 .paper-app.paper-keyboard-visible .paper-selection-tools{display:none!important}
-.paper-app.paper-keyboard-visible .paper-word-menu{display:none!important}
+
 @media(max-width:720px){
  .paper-app .paper-toolbar{padding:3px 5px!important;min-height:46px!important}
  .paper-app .paper-context-controls{padding:3px 5px;min-height:41px}
@@ -918,7 +918,7 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
 /* A keyboard-resized visual viewport should shrink the fixed notebook rather
    than let the lower writing area disappear under iOS Safari's keyboard. */
 .paper-app.paper-keyboard-visible{bottom:var(--paper-keyboard-inset,0px)!important;height:auto!important}
-.paper-app.paper-is-editing .paper-selection-tools,.paper-app.paper-is-editing .paper-word-menu{display:none!important}
+.paper-app.paper-is-editing .paper-selection-tools{display:none!important}
 .paper-app.paper-keyboard-visible .paper-workspace,.paper-app.paper-keyboard-visible .paper-viewport{min-height:0!important}
 
 dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d;color:white;border-radius:16px}
