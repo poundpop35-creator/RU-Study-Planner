@@ -271,6 +271,23 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
    assert.equal(text.size,16,'new text defaults to 16px');
    await click('select');
+   if(name==='desktop'){
+    const selectedBar=page.locator('#paper-selection-tools');
+    assert.ok(await selectedBar.isVisible(),'selected-object controls appear after selecting text');
+    const oldBox=await selectedBar.boundingBox();
+    const drag=selectedBar.locator('.paper-selection-drag');
+    assert.ok(await drag.isVisible(),'selected-object controls have a draggable grip');
+    assert.ok(oldBox.height<62,'selected-object command box is a single horizontal row');
+    const handle=await drag.boundingBox();
+    const sx=handle.x+handle.width/2,sy=handle.y+handle.height/2;
+    await page.mouse.move(sx,sy);
+    await page.mouse.down();
+    await page.mouse.move(sx+90,sy-80,{steps:6});
+    await page.mouse.up();
+    const movedBar=await selectedBar.boundingBox();
+    assert.ok(movedBar.x>oldBox.x+25&&movedBar.y<oldBox.y-25,
+     'selected-object palette can move freely rather than being locked to the footer');
+   }
    const editAt=await point(text.x+10,text.y+8);
    await page.locator('#paper-svg').dispatchEvent('dblclick',{bubbles:true,clientX:editAt.x,clientY:editAt.y});
    assert.ok(await page.locator('#paper-text-input').isVisible(),'double-click opens text for editing immediately');
