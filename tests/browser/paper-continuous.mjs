@@ -106,7 +106,7 @@ try{
     // Print is the only point at which real A4 pages are generated.
     await page.locator('.paper-menu summary').first().click();
     const popupPromise=page.waitForEvent('popup');
-    await page.locator('[data-paper="print-pages"]').click();
+    await page.locator('.paper-menu [data-action="nb-print"]').click();
     const popup=await popupPromise;
     await popup.locator('article').first().waitFor();
     assert.equal(await popup.locator('article').count(),2,'content is split automatically into two A4 pages');
