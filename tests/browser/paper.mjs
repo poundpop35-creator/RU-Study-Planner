@@ -222,7 +222,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.ok(await page.locator('#paper-toolbar-more').evaluate(el=>!el.open),'extra tools should start folded');
   assert.ok(await page.locator('#paper-width').isHidden(),'pen size cannot obstruct the page while menu is folded');
   await click('pen');
-  await page.locator('#paper-toolbar-more > summary').click();
+  if(!await page.locator('#paper-width').isVisible())await page.locator('[data-paper-size-toggle]').click();
   assert.ok(await page.locator('#paper-width').isVisible(),'size controls should be available inside the overlay');
   const dots=page.locator('[data-paper-width]');assert.equal(await dots.count(),6);
   await page.locator('[data-paper-width="2"]').click();
@@ -230,24 +230,24 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.equal(await page.locator('[data-paper-width="2"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'2px');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'preset selection should fold extras');
-  await page.locator('#paper-toolbar-more > summary').click();
+  if(!await page.locator('#paper-width').isVisible())await page.locator('[data-paper-size-toggle]').click();
   await page.locator('#paper-width').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));});
   assert.equal(await page.locator('#paper-width-value').textContent(),'12');
   assert.equal(await page.locator('[data-paper-width="12"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'12px');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'slider change should fold extras');
    await click('highlight');
-   await page.locator('#paper-toolbar-more > summary').click();
+   if(!await page.locator('#paper-width').isVisible())await page.locator('[data-paper-size-toggle]').click();
    assert.equal(await page.locator('#paper-width').getAttribute('max'),'40','highlighter has independent 1–40 width range');
    await page.locator('[data-paper-width="28"]').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'28');
    await click('pen');
-   await page.locator('#paper-toolbar-more > summary').click();
+   if(!await page.locator('#paper-width').isVisible())await page.locator('[data-paper-size-toggle]').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'12','pen remembers its own width after switching from highlighter');
    await page.keyboard.press('Escape');
    const from=await point(100,400),to=await point(350,450);
   if(mobile){
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);
+
    await page.locator('#paper-finger').check();
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'finger-draw choice should uncover the paper');
    await tap(220,420);
@@ -368,7 +368,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await page.locator('[data-shape-pick="hexagon"]').click();
    assert.ok(await page.locator('#paper-shapes-popup').isHidden());
    assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'shape selection must uncover the paper');
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu').evaluate(el=>el.open=true);
+   await click('shape');await page.keyboard.press('Escape');
    await page.locator('#paper-line-style').selectOption('dotted');
    const fromShape=await point(280,780),toShape=await point(400,890);
    await page.locator('#paper-svg').evaluate((svg,[a,b])=>{
@@ -409,7 +409,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.match(await page.locator('#paper-svg [data-ruler-overlay]').getAttribute('transform'),/rotate\(15\)/);
    await click('ruler');
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),0);
-   await page.locator('#paper-toolbar-more').evaluate(el=>el.open=true);await page.locator('#paper-geometry-menu summary').click();
+   await click('text');
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
   const [download]=await Promise.all([b.page.waitForEvent('download'),fileButton.click()]);
@@ -468,7 +468,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
 
   // Touch contacts on the writing surface must not trigger zoom or new text
   // while palm protection is enabled. Pen input must still work.
-  await page.locator('#paper-toolbar-more > summary').click();
+  await click('pen');
   await page.locator('#paper-palm-guard').check();
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false);
   const beforeZoom=await page.locator('#paper-zoom').innerText();
