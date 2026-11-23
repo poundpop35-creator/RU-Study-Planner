@@ -328,7 +328,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await wait(()=>row.payload.notebook.notes[0].source==='prep');assert.equal(row.payload.notebook.notes[0].course,'POL2106');
   await page.locator('[data-action="nb-new"]').first().click();
   const create=page.getByRole('dialog');assert.equal(await create.locator('[name="group"]').inputValue(),'yes');
-  await create.locator('[name="course"]').selectOption('POL2104');await create.getByText('สร้างโน้ต',{exact:true}).click();
+  await create.locator('[name="course"]').selectOption('POL2104');await create.getByRole('button',{name:'สร้างโน้ต',exact:true}).click();
   await page.locator('#paper-svg').waitFor();await click('save');assert.ok(row.payload.notebook.notes.some(n=>n.course==='POL2104'&&n.source==='classroom'));
    // A primary teacher file belongs to the course, not this one note page.
    await click('course-materials');
@@ -349,7 +349,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.equal(row.payload.notebook.courseMaterials.POL2104.files.length,2,'direct classroom upload shares the course collection');
     await courseCard.locator('[data-action="nb-new"]').click();
     assert.equal(await page.getByRole('dialog').locator('[name="session"]').inputValue(),'2');
-    await page.getByRole('dialog').getByText('สร้างโน้ต',{exact:true}).click();
+    await page.getByRole('dialog').getByRole('button',{name:'สร้างโน้ต',exact:true}).click();
    await page.locator('#paper-svg').waitFor();
    const sharedFiles=page.getByRole('button',{name:'ไฟล์หลักวิชา POL2104 · 2 รายการ',exact:true});
    await page.locator('.paper-menu').evaluate(el=>el.open=true);assert.ok(await sharedFiles.isVisible(),'a new note exposes its course files immediately');
@@ -515,7 +515,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    
    await createWord.locator('[name="course"]').selectOption('POL2200');
    const wordSession=await createWord.locator('[name="session"]').inputValue();
-   await createWord.getByText('สร้างโน้ต',{exact:true}).click();
+   await createWord.getByRole('button',{name:'สร้างโน้ต',exact:true}).click();
    await page.locator('#paper-svg').waitFor();
    await click('text');
    // A mobile tap can be swallowed by viewport/palm interactions. A stylus event
