@@ -705,8 +705,11 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await page.locator('#paper-svg span[style*="color:#dc4343"]').count(),'per-word color survives reload');
    await page.screenshot({path:'test-results/notebook-word-format-'+name+'.png'});
 
+   // Scribble is inside the Text tool's contextual controls. A phone
+   // intentionally reopens in Hand mode, so explicitly choose Text first.
    // Scribble quick keys must insert literal whitespace/newlines and format
    // the same text object, both on iPad-like and touch/mobile layouts.
+   if(mobile)await click('text');
    await click('scribble-text');
    const pencilPanel=page.locator('.paper-scribble-panel');
    const pencilInput=pencilPanel.locator('.paper-scribble-input');
