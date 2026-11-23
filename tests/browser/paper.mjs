@@ -223,6 +223,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
      const paperScale=await typingBox.evaluate(el=>el.getBoundingClientRect().width/el.offsetWidth);
      assert.ok(paperScale>=.9,'paper zoom is readable on a phone');
     }else assert.ok(small.w>=250&&small.h<60,'leave room to handwrite after existing words');
+   await typingBox.fill('พิมพ์ข้อความยาวขึ้นโดยไม่ตัดบรรทัดเอง');const medium=await size();
+   assert.ok(medium.w>small.w+40,'text box width must grow with a single line of text');
+   assert.ok(medium.h<=small.h+8,'an ordinary sentence must stay on one line while paper width is available');
    await typingBox.fill('ข้อความสำหรับทดสอบการตัดบรรทัด '.repeat(18));const long=await size();
    assert.ok(long.w>small.w&&long.w<=801&&long.h>small.h);
    await typingBox.fill('จด');assert.deepEqual(await size(),small);
@@ -438,6 +441,14 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await click('save');
     assert.ok(savedShape().w>oldShapeWidth,'east resize handle grows only the right side');
     assert.equal(savedShape().h,oldShapeHeight,'horizontal resize must not stretch height');
+    await page.locator('[data-shape-rotate="90"]').click();
+    await click('save');
+    assert.equal(savedShape().angle,90,'rotation is persisted independently of shape bounds');
+    assert.match(await page.locator('#paper-svg [data-shape="triangle"]').getAttribute('transform'),/rotate\(90 /);
+    await page.locator('#paper-shape-angle').fill('270');
+    await page.locator('#paper-shape-angle').dispatchEvent('change');
+    await click('save');
+    assert.equal(savedShape().angle,270,'numeric angle input changes the selected shape');
    await click('ruler');
    assert.equal(await page.locator('[data-paper="ruler"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),1);
@@ -445,6 +456,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.match(await page.locator('#paper-svg [data-ruler-overlay]').getAttribute('transform'),/rotate\(15\)/);
    await click('ruler');
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),0);
+   await click('eraser');
+   assert.ok(await page.locator('#paper-eraser-menu').isVisible(),'the Eraser button opens the three eraser modes');
+   for(const mode of ['stroke','shape','text'])
+    assert.ok(await page.locator('[data-eraser-kind="'+mode+'"]').isVisible());
+   await page.locator('[data-eraser-kind="shape"]').click();
+   assert.ok(await page.locator('#paper-eraser-menu').isHidden(),'selecting an eraser mode closes its menu');
+   assert.equal(await page.locator('#paper-svg').getAttribute('data-tool'),'eraser');
+   await click('eraser');await page.locator('[data-eraser-kind="text"]').click();
+   assert.equal(await page.locator('[data-eraser-kind="text"]').getAttribute('aria-pressed'),'true');
    await click('text');
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await b.page.locator('.paper-menu > summary').click();
