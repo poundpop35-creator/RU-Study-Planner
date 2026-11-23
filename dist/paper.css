@@ -956,3 +956,72 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  .paper-app .paper-context-controls{scroll-padding-inline:16px;overscroll-behavior-x:contain}
  .paper-app .paper-shapes-grid button:active{background:#dae6ff}
 }
+
+
+/* Scribble typing toolbar: compact actions beside Keyboard / Done, with
+   inline formatting and a read-only live preview; handwriting stays native. */
+.paper-app .paper-scribble-panel header{flex-wrap:nowrap;gap:7px;padding:5px 8px}
+.paper-app .paper-scribble-panel .paper-scribble-title{
+ flex:1 1 175px;min-width:0;overflow:hidden;text-overflow:ellipsis;
+ white-space:nowrap;font-size:11px;
+}
+.paper-app .paper-scribble-actions{
+ display:flex;flex:0 1 auto;min-width:0;gap:5px;align-items:center;
+ overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;
+ -webkit-overflow-scrolling:touch;touch-action:pan-x;
+}
+.paper-app .paper-scribble-actions button{
+ flex:0 0 auto;min-height:34px;padding:5px 9px;font-weight:650;
+}
+.paper-app .paper-scribble-formats{
+ display:flex;flex:0 0 auto;align-items:center;gap:7px;
+ padding:5px 10px;min-height:43px;overflow-x:auto;overflow-y:hidden;
+ background:#f7faff;border-bottom:1px solid #c6d8f3;
+ -webkit-overflow-scrolling:touch;scrollbar-width:thin;touch-action:pan-x;
+}
+.paper-app .paper-scribble-formats button{
+ flex:0 0 auto;min-width:32px;width:32px;height:32px;min-height:32px;
+ padding:3px;border:1px solid #b8c9e3;border-radius:7px;
+ background:#fff;color:#233e78;font-size:14px;
+}
+.paper-app .paper-scribble-formats button[aria-pressed="true"]{
+ background:#dce8ff;border-color:#3155d9;box-shadow:0 0 0 1px #3155d9;
+}
+.paper-app .paper-scribble-formats .paper-scribble-format-label{
+ flex:0 0 auto;white-space:nowrap;font-size:11px;font-weight:700;color:#315287;
+}
+.paper-app .paper-scribble-formats .paper-pencil-swatch{
+ width:25px;min-width:25px;height:25px;min-height:25px;
+ border:3px solid #fff;border-radius:50%;padding:0;
+ background:var(--pencil-ink);box-shadow:0 0 0 1px #9eb4d2;
+}
+.paper-app .paper-scribble-formats .paper-pencil-swatch[aria-pressed="true"]{
+ background:var(--pencil-ink);box-shadow:0 0 0 2px #3155d9,0 0 0 4px #d8e6ff;
+}
+.paper-app .paper-pencil-custom{
+ display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;
+ white-space:nowrap;font-size:11px;font-weight:700;color:#315287;
+}
+.paper-app .paper-pencil-custom input{width:30px;height:30px;padding:0;border:0;background:transparent}
+.paper-app .paper-scribble-preview{
+ display:flex;align-items:baseline;gap:9px;min-height:34px;max-height:49px;
+ padding:5px 12px;overflow:hidden;background:#fff;
+ border-bottom:1px solid #d4e2f5;font-size:13px;
+}
+.paper-app .paper-scribble-preview[hidden]{display:none!important}
+.paper-app .paper-scribble-preview>span{
+ flex:0 0 auto;font-size:10px;color:#657b9c;font-weight:700;
+}
+.paper-app .paper-scribble-preview [data-pencil-preview]{
+ min-width:0;max-width:100%;overflow:auto;white-space:pre-wrap;
+ overflow-wrap:anywhere;font-family:'Noto Sans Thai',sans-serif;
+ line-height:1.4;
+}
+@media(max-width:720px){
+ .paper-app .paper-scribble-panel header{display:block;padding:5px 6px}
+ .paper-app .paper-scribble-panel .paper-scribble-title{display:none}
+ .paper-app .paper-scribble-actions{width:100%;justify-content:flex-start}
+ .paper-app .paper-scribble-actions button{padding:5px 8px;font-size:11px}
+ .paper-app .paper-scribble-formats{padding:4px 6px;gap:6px}
+ .paper-app .paper-scribble-preview{min-height:29px;max-height:40px;padding:4px 8px}
+}
