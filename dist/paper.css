@@ -1483,3 +1483,37 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 
 /* Hidden floating palettes must never intercept clicks on other tools. */
 .paper-app .paper-text-ribbon[data-floating="true"][hidden]{display:none!important;pointer-events:none!important}
+
+
+/* Continuous notebook: a single growing sheet. The A4 boundaries are
+   noninteractive dashed SVG guides; real pagination happens only at print. */
+.paper-app[data-paper-continuous="true"] .paper-pages,
+.paper-app[data-paper-continuous="true"] .paper-pages-toggle,
+.paper-app[data-paper-continuous="true"] .paper-add-page{
+ display:none!important;
+}
+.paper-app[data-paper-continuous="true"] .paper-wrap{
+ box-shadow:0 6px 25px #1d35551c,0 0 0 1px #dbe3ef;
+}
+.paper-app .paper-continuous-menu-action,
+.paper-app .paper-continuous-sidebar-action{
+ display:flex;align-items:center;justify-content:flex-start;
+ gap:6px;text-align:left;white-space:normal;
+ font-weight:700;color:#254a9e;background:#eaf1ff;
+ border:1px solid #bfd0f2;border-radius:10px;
+}
+.paper-app .paper-continuous-sidebar-action{
+ width:100%;font-size:11px;line-height:1.5;
+ margin:8px 0;padding:9px 8px;
+}
+.paper-app .paper-continuous-menu-action{font-size:12px;line-height:1.5}
+.paper-app .paper-continuous-menu-action:hover,
+.paper-app .paper-continuous-sidebar-action:hover{background:#dce8ff}
+.paper-app[data-paper-continuous="true"] .paper-viewport{
+ overscroll-behavior-y:contain;
+}
+@media screen and (max-width:600px){
+ .paper-app[data-paper-continuous="true"] .paper-bottom #paper-page-label{
+  max-width:45%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ }
+}
