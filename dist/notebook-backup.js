@@ -5,6 +5,10 @@ export function planRestore(data,current){
  else if(data.format==='ru-paper-recovery'&&data.version===1)raw={version:2,notes:[data.note]};
  if(!raw)throw Error('ไม่รองรับรูปแบบหรือรุ่นของไฟล์สำรอง');
  const book=validateNotebook(raw),ids=new Set(current.notes.map(n=>n.id));
+ // A recovery draft usually refers to a note that still exists. Preserve both versions.
+ if(data.format==='ru-paper-recovery'&&ids.has(book.notes[0].id)){
+  book.notes[0]={...book.notes[0],id:crypto.randomUUID(),title:(book.notes[0].title.slice(0,146)+' (ฉบับกู้คืน)')};
+ }
  const additions=book.notes.filter(n=>!ids.has(n.id)),skipped=book.notes.length-additions.length;
  const materials={...current.courseMaterials};
  let addedMaterials=0,skippedMaterials=0;
