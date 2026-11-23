@@ -1,4 +1,4 @@
-import {renderDebtCards} from './debt-cards.js?v=20261123-manual-interest-v2';
+import {renderDebtCards} from './debt-cards.js?v=20261123-rollover-v1';
 // Portfolio details arrive from the private workspace or an import link's fragment.
 // No personal plans, balances, lender names, or installment amounts belong in this module.
 import {readPayments} from './debt-payments.js?v=20261027c';
@@ -39,11 +39,45 @@ function earlyInstallments(ac,m,start,left){
   return pieces.filter(x=>x.day>0&&x.day<start&&x.n>0).sort((a,b)=>a.day-b.day).map(x=>{const n=Math.min(bill,x.n);bill-=n;return {...x,n};}).filter(x=>x.n);
  }).sort((a,b)=>a.day-b.day);
 }
+
+const roundCash=c=>Math.ceil(c/100)*100;
+// Exact required installments only. Never allocate leftover cents/tens to a debt.
+// Any unused monthly cash rolls into the next month, subject to the hard payment cap.
+function forecastMinimumsWithRollover(p,accounts){
+ const left=accounts.map(x=>x.bal),arrears=accounts.map(()=>0),rows=[];
+ let reserve=0;
+ for(let m=0;sum(left)>0;m++){
+  if(m>=240)fail();
+  const opening=[...left],a=accounts.map(()=>0),carryIn=reserve;
+  const dues=accounts.map((v,i)=>Math.min(left[i],arrears[i]+(v.bills[m]||0)+v.min));
+  const neededCash=sum(dues.map(roundCash));
+  const emergency=Math.min(Math.max(0,p.budget-p.baseBudget),Math.max(0,neededCash-p.baseBudget-carryIn));
+  const deposit=p.baseBudget+emergency;
+  const cap=Math.min(p.budget,deposit+carryIn);
+  let cashOut=0,shortfall=0;
+  accounts.forEach((v,i)=>{
+   const due=dues[i],cash=roundCash(due);
+   if(!due){arrears[i]=0;return;}
+   if(cashOut+cash>cap){arrears[i]=due;shortfall+=cash;return;}
+   a[i]=due;left[i]-=due;arrears[i]=0;cashOut+=cash;
+  });
+  reserve=carryIn+deposit-cashOut;
+  rows.push({month:month(p.date,m),a,opening,interest:0,early:[],shortfall,
+   cashCeiling:cap,setAside:reserve,carryOut:reserve,carryIn,total:sum(a),
+   transferTotal:cashOut,fromBudget:cashOut-Math.min(carryIn,cashOut),emergency});
+ }
+ return {ac:accounts,rows};
+}
+
 export function forecast(p,old,_rates={}){
  const ac=p.accounts.map(a=>{let credit=sum(old.filter(e=>a.old&&e.creditor===a.old&&(!a.after||Date.parse(e.at)>Date.parse(a.after))).map(e=>e.amountCents));const paid=Math.min(a.bal,credit);
   const use=v=>{const used=Math.min(v,credit);credit-=used;return v-used;};
   return {...a,bal:a.bal-paid,carry:use(a.carry),bills:a.bills.map(use)};
  });
+ // The personal plan with a 25th-of-month payment day uses minimums + cash rollover.
+ // Older imported plans retain the legacy model for compatibility.
+ if(p.baseBudget<p.budget&&p.payWindow?.[0]===25&&p.payWindow?.[1]===25)
+  return forecastMinimumsWithRollover(p,ac);
  const left=ac.map(a=>a.bal),rows=[];let reserve=0;
  for(let m=0;sum(left)>0;m++){
   if(m>=240)fail();const opening=[...left],a=ac.map(()=>0);

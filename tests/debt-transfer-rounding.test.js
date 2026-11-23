@@ -33,3 +33,28 @@ test('manual interest: zero forecast for rates provided in plan or settings, and
   assert.equal(saved.entries[0].p,baht(1000));assert.equal(saved.entries[0].i,baht(200));assert.equal(saved.entries[0].f,0);
  });
 });
+
+test('25th-only plan: exact minimums, no 20.82 AEON padding, leftover rolls into next month',()=>{
+ const items=[
+ ['G end','G',148287,0,[148287],0,'',0,'','',25,{baseBudget:1500000,payWindow:[25,25]}],
+ ['G Wallet','G',1352823,0,[450941,450941,450941],0,'',0,'','',25],
+ ['S1','S1',206669,0,[77590,52960,33793,32323,10003],0,'',0,'','',25],
+ ['S2','S2',469190,0,[0,92999,92999,92999,92999,97194],0,'',0,'','',25],
+ ['S3','S3',300000,0,[300000],0,'',0,'','',25],
+ ['TT','TT',720000,0,[120000,120000,120000,120000,120000,120000],0,'',0,'','',25],
+ ['True','True',120000,0,[0,120000],0,'',0,'','',25],
+ ['AEON 15k','AEON',1500000,100000,[],1500000,'',0,'','',25],
+ ['AEON 10k','AEON',1000000,100000,[],1000000,'',0,'','',25],
+ ['LINE','LINE',2600000,100000,[],2600000,'',0,'','',25],
+ ['Gold','Gold',4600000,100000,[],4600000,'',0,'','',25]
+ ];
+ const token='p2.'+Buffer.from(JSON.stringify(['2026-11-25',1800000,100000,items,'']) ).toString('base64url');
+ const p=decode(token),{rows}=forecast(p,[],{});
+ assert.equal(rows[0].a[7],100000);assert.equal(rows[0].a[8],100000);
+ assert.equal(rows[0].total,1496818);assert.equal(rows[0].transferTotal,1496900);
+ assert.equal(rows[0].carryOut,3100);assert.equal(rows[1].carryIn,3100);
+ assert.equal(rows[1].transferTotal,1237000);assert.equal(rows[1].carryOut,266100);
+ assert.ok(rows.every(r=>r.transferTotal<=1800000&&r.interest===0));
+ assert.ok(rows.slice(0,12).every(r=>[7,8,9,10].every(i=>r.a[i]<=100000)));
+ assert.equal(rows.reduce((a,r)=>a+r.total,0),items.reduce((a,x)=>a+x[2],0));
+});
