@@ -86,7 +86,12 @@ export function paperFor(note){
   for(let i=0;i<Math.max(1,line.length);i+=50){if(y+38>PAGE_H-64){page=makePage();pages.push(page);y=64;}page.objects.push({id:stable(),type:'text',x:64,y,w:PAGE_W-128,h:38,text:line.slice(i,i+50),size:23,color:'#172033',bold:false});y+=38;}
  }text='';};
  for(const op of note.delta?.ops||[]){if(typeof op.insert==='string')text+=op.insert;else if(op.insert?.studyImage){flush();if(y+400>PAGE_H-64){page=makePage();pages.push(page);y=64;}page.objects.push({id:stable(),type:'image',x:64,y,w:PAGE_W-128,h:400,imageId:op.insert.studyImage});y+=432;}}
- if(text.trim())flush();return toContinuousPaper({version:1,pages});
+ if(text.trim())flush();
+ // Empty, newly created notes start on a continuous sheet. Existing legacy
+ // notes with text/images retain their original page layout until the user
+ // explicitly chooses "กระดาษต่อเนื่อง", never silently changing old work.
+ const original={version:1,pages};
+ return pages.some(p=>p.objects.length)?validatePaper(original):toContinuousPaper(original);
 }
 // Conversion happens explicitly for saved notebooks. All text, images, inks,
 // shapes, tables, IDs and per-word links retain their original content.
