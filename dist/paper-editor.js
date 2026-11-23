@@ -1826,9 +1826,35 @@ bind(rich,'keyup',()=>{
    if(action==='pages'){setPagesOpen(!root.classList.contains('pages-open'));return;}
    if(action==='info')$('#paper-info').hidden=!$('#paper-info').hidden;
    if(action==='zoom-in')zoomAt(zoom*1.2);if(action==='zoom-out')zoomAt(zoom/1.2);if(action==='fit'){zoom=1;sizing();viewport.scrollLeft=0;}
+   if(action==='continuous'){
+    if(continuous())return;
+    const next=toContinuousPaper(unsaved||model);
+    if(persist(next,false)){
+     history.clear();pageId=next.pages[0].id;selected.clear();
+     virtualHeight=Math.min(MAX_CANVAS_HEIGHT,pageHeight(next.pages[0])+PAGE_H);
+     setPagesOpen(false);sizing();draw();thumbs();
+     say('ใช้กระดาษต่อเนื่องแล้ว · เลื่อนลงได้เรื่อย ๆ · เส้นประช่วยแบ่งหน้า A4 ตอนพิมพ์');
+    }
+    return;
+   }
    if(action==='add-page'){const next=copy(model),p=emptyPage();p.template=page().template;next.pages.push(p);if(persist(next)){if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);pageId=p.id;selected.clear();viewport.scrollTop=0;draw();thumbs();}}
    if(action==='duplicate-page'){const next=copy(model),p=copy(page());p.id=uid();p.objects.forEach(o=>o.id=uid());next.pages.splice(next.pages.findIndex(p=>p.id===pageId)+1,0,p);if(persist(next)){if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);pageId=p.id;selected.clear();draw();thumbs();}}
-   if(action==='delete-page'){if(model.pages.length===1)throw Error('ต้องเหลืออย่างน้อยหนึ่งหน้า');const target=pageId;if(await confirmNoteDelete('หน้ากระดาษ '+(model.pages.findIndex(p=>p.id===target)+1))){const next=copy(model);next.pages=next.pages.filter(p=>p.id!==target);persist(next);selected.clear();draw();thumbs();}}
+   if(action==='delete-page'){
+    const current=page(),target=pageId;
+    if(model.pages.length===1){
+     if(current.objects.length)throw Error('หน้านี้มีเนื้อหาอยู่ ต้องเหลือกระดาษอย่างน้อยหนึ่งผืน · เลือกกระดาษต่อเนื่องเพื่อไม่ต้องสร้างหน้าเพิ่ม');
+     // Deleting the final blank page is equivalent to an empty infinite
+     // sheet: there is no meaningful "page 0" to keep in the database.
+     const next=toContinuousPaper(model);
+     if(persist(next,false)){history.clear();virtualHeight=PAGE_H*2;setPagesOpen(false);sizing();say('ลบหน้าว่างแล้ว · เปลี่ยนเป็นกระดาษต่อเนื่อง');}
+     return;
+    }
+    if(!current.objects.length||await confirmNoteDelete('หน้ากระดาษ '+(model.pages.findIndex(p=>p.id===target)+1))){
+     const next=copy(model);next.pages=next.pages.filter(p=>p.id!==target);
+     if(persist(next)){selected.clear();draw();thumbs();}
+    }
+    return;
+   }
    if(action==='delete-object'){$('#paper-selection-more').open=false;change(p=>{p.objects=p.objects.filter(o=>!selected.has(o.id));});selected.clear();draw();}
    if(action==='duplicate'){const ids=[];change(p=>{const objects=p.objects.filter(o=>selected.has(o.id)).map(o=>({...copy(o),id:uid(),x:o.x+24,y:o.y+24}));ids.push(...objects.map(o=>o.id));p.objects.push(...objects);});selected=new Set(ids);draw();}
    if(action==='edit-text'){const o=page().objects.find(o=>selected.has(o.id)&&o.type==='text');if(o)startText(o);}
