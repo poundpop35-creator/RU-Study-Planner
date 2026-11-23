@@ -45,6 +45,7 @@ export function paperPage(space,n){return `<section class="paper-app" aria-label
    ${colors.map(c=>`<button type="button" class="paper-word-swatch" data-word-color="${c}" style="--word-ink:${c}" title="เปลี่ยนข้อความที่เลือกเป็นสี ${c}" aria-label="เปลี่ยนเฉพาะคำเป็นสี ${c}" aria-pressed="false"></button>`).join('')}
    <label class="paper-word-custom" title="เลือกสีตัวอักษรเพิ่มเติม">สีอื่น <input id="paper-word-custom-color" type="color" value="#172033" aria-label="เลือกสีตัวอักษรอื่น"></label>
   </div>
+  <div class="paper-ribbon-list-markers" role="group" aria-label="สัญลักษณ์นำหน้าข้อความ"><span>รายการ</span><button type="button" data-list-prefix="bullet" title="เพิ่มหรือลบจุดนำหน้าบรรทัด" aria-label="จุดรายการ">• จุด</button><button type="button" data-list-prefix="triangle" title="เพิ่มหรือลบสามเหลี่ยมนำหน้าบรรทัด" aria-label="สามเหลี่ยมรายการ">▸ สามเหลี่ยม</button></div>
   <button type="button" data-paper="word-link" class="paper-ribbon-link" title="เลือกคำเพื่อแนบเว็บไซต์หรือไฟล์">🔗 ลิงก์ / ไฟล์เฉพาะคำ</button>
   <button type="button" data-paper="finish-text" class="paper-ribbon-done">✓ เสร็จสิ้น</button>
   <small class="paper-ribbon-help">ลากเลือกเฉพาะคำ แล้วกด B, I, U, สี หรือ ลิงก์</small>
