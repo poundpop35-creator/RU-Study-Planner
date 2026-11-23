@@ -177,7 +177,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    shapeGallery.dataset.kind=$('#paper-shape').value;shapeGallery.replaceChildren(currentIcon.cloneNode(true));
   }
   $('[data-paper="undo"]').disabled=!history.canUndo; $('[data-paper="redo"]').disabled=!history.canRedo;
-  const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('#paper-selected-count').textContent=selected.size;
+  const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('#paper-selected-count').textContent=selected.size;if(!tools.hidden&&selectedDesktop.matches)requestAnimationFrame(placeSelectedTools);
    $('#paper-table-selection').hidden=!singleTable;
    if(singleTable){const palette=tableStyle(singleTable);root.querySelectorAll('[data-table-style]').forEach(input=>{if(document.activeElement!==input)input.value=palette[input.dataset.tableStyle];});}
    const globalPicker=$('#paper-global-text-color');
@@ -304,6 +304,48 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  Object.assign(measureClip.style,{position:'absolute',width:'0',height:'0',overflow:'hidden'});
  measureClip.append(textMeasure);sheet.append(measureClip);
  const ribbon=$('#paper-text-ribbon'),wordMenu=$('#paper-word-menu'),rich=document.createElement('div');
+ const selectionTools=$('#paper-selection-tools');
+ const selectionGrip=selectionTools.querySelector('.paper-selection-drag');
+ const selectedDesktop=window.matchMedia('(min-width:901px) and (pointer:fine)');
+ const selectedPositionKey='ru-paper-object-toolbar-xy-v1';
+ let selectionPosition=null,selectionDrag=null;
+ try{
+  const old=JSON.parse(localStorage.getItem(selectedPositionKey)||'null');
+  if(old&&Number.isFinite(old.x)&&Number.isFinite(old.y))selectionPosition={x:old.x,y:old.y};
+ }catch{}
+ function placeSelectedTools(){
+  if(!selectedDesktop.matches||selectionTools.hidden||!selectionTools.isConnected)return;
+  const rect=selectionTools.getBoundingClientRect();
+  const point=selectionPosition||{x:(window.innerWidth-rect.width)/2,y:window.innerHeight-rect.height-90};
+  const x=Math.max(8,Math.min(point.x,window.innerWidth-rect.width-8));
+  const y=Math.max(8,Math.min(point.y,window.innerHeight-rect.height-8));
+  selectionTools.style.setProperty('--paper-selection-x',x+'px');
+  selectionTools.style.setProperty('--paper-selection-y',y+'px');
+ }
+ bind(selectionGrip,'pointerdown',e=>{
+  if(!selectedDesktop.matches||e.button!==0)return;
+  e.preventDefault();
+  const rect=selectionTools.getBoundingClientRect();
+  selectionDrag={id:e.pointerId,x:e.clientX,y:e.clientY,left:rect.left,top:rect.top};
+  selectionGrip.setPointerCapture(e.pointerId);
+ });
+ bind(selectionGrip,'pointermove',e=>{
+  if(!selectionDrag||selectionDrag.id!==e.pointerId)return;
+  e.preventDefault();
+  selectionPosition={x:selectionDrag.left+e.clientX-selectionDrag.x,y:selectionDrag.top+e.clientY-selectionDrag.y};
+  placeSelectedTools();
+ });
+ const finishSelectionDrag=e=>{
+  if(selectionDrag?.id!==e.pointerId)return;
+  selectionDrag=null;
+  const rect=selectionTools.getBoundingClientRect();
+  selectionPosition={x:rect.left,y:rect.top};
+  try{localStorage.setItem(selectedPositionKey,JSON.stringify(selectionPosition));}catch{}
+ };
+ bind(selectionGrip,'pointerup',finishSelectionDrag);
+ bind(selectionGrip,'pointercancel',finishSelectionDrag);
+ bind(window,'resize',placeSelectedTools);
+ bind(selectedDesktop,'change',placeSelectedTools);
  // Restore one familiar tool row. Move drawing colors out of the advanced
  // dropdown so pen/highlighter colors cannot be hidden by a clipped menu.
  const eraserMenu=$('#paper-eraser-menu');
