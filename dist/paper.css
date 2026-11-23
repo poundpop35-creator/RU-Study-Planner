@@ -1360,3 +1360,126 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 @media print{
  .paper-app .paper-mobile-more{display:none!important}
 }
+
+/* Real list markers in the Word text toolbar; one-line controls on desktop.
+   Only the mouse/desktop layout floats, preserving phone/iPad input geometry. */
+.paper-app .paper-ribbon-list-markers{
+ display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;
+ border-left:1px solid #dbe3f1;padding-left:9px;white-space:nowrap;
+}
+.paper-app .paper-ribbon-list-markers span{font-size:11px;font-weight:700;color:#37547d}
+.paper-app .paper-ribbon-list-markers button{min-width:35px;padding:4px 8px;font-size:13px}
+.paper-app .paper-ribbon-drag{display:none}
+@media screen and (min-width:721px) and (pointer:fine){
+ .paper-app .paper-text-ribbon[data-floating="true"]{
+  position:fixed!important;z-index:100!important;
+  left:12px;top:110px;
+  display:flex!important;align-items:center!important;flex-wrap:nowrap!important;
+  gap:6px!important;
+  width:min(790px,calc(100vw - 16px))!important;max-width:calc(100vw - 16px)!important;
+  height:50px!important;min-height:50px!important;max-height:50px!important;
+  padding:5px 6px!important;margin:0!important;
+  border:1px solid #b7c8e7!important;border-radius:12px!important;
+  background:#fff!important;box-shadow:0 12px 28px #182d5936!important;
+  overflow-x:auto!important;overflow-y:hidden!important;
+  scrollbar-width:thin;
+ }
+ .paper-app .paper-text-ribbon[data-floating="true"]>*{
+  flex:0 0 auto!important;white-space:nowrap!important;
+ }
+ .paper-app .paper-text-ribbon[data-floating="true"] .paper-ribbon-title,
+ .paper-app .paper-text-ribbon[data-floating="true"] .paper-ribbon-help{
+  display:none!important;
+ }
+ .paper-app .paper-text-ribbon[data-floating="true"] .paper-ribbon-drag{
+  position:sticky;left:0;z-index:8;
+  display:flex;align-items:center;justify-content:center;
+  flex:0 0 34px!important;width:34px;height:36px;
+  padding:0;border-radius:7px;
+  background:#e4ecff;color:#284ca3;
+  cursor:grab;touch-action:none;
+  -webkit-user-select:none;user-select:none;
+  font-size:24px;box-shadow:0 0 4px #fff;
+ }
+ .paper-app .paper-text-ribbon[data-floating="true"] .paper-ribbon-drag:active{cursor:grabbing}
+ .paper-app .paper-text-ribbon[data-floating="true"] .paper-ribbon-drag:focus-visible{
+  outline:2px solid #3155d9;outline-offset:-2px;
+ }
+ /* The word selection menu is likewise a compact draggable single row:
+    scroll sideways when there are more actions than fit in the viewport. */
+ .paper-app .paper-word-menu{
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  flex-wrap:nowrap!important;gap:6px!important;
+  width:min(780px,calc(100vw - 16px))!important;
+  min-height:49px!important;max-height:49px!important;
+  padding:5px 7px!important;overflow-x:auto!important;overflow-y:hidden!important;
+  white-space:nowrap!important;scrollbar-width:thin;
+ }
+ .paper-app .paper-word-menu[hidden]{display:none!important}
+ .paper-app .paper-word-menu>*{flex:0 0 auto!important;white-space:nowrap!important}
+ .paper-app .paper-word-menu-heading{
+  position:sticky!important;left:0;top:auto!important;
+  z-index:6;display:inline-flex;align-items:center;gap:5px;
+  flex:0 0 66px!important;min-width:66px;height:36px;
+  padding:0 4px!important;margin:0!important;
+  border:0!important;border-right:1px solid #e3e9f4!important;
+  background:#fff!important;
+ }
+ .paper-app .paper-word-menu-heading strong{font-size:22px}
+ .paper-app .paper-word-menu-heading button{min-width:28px!important;min-height:29px!important;padding:0 5px!important}
+ .paper-app .paper-word-menu-align,
+ .paper-app .paper-word-menu-tools,
+ .paper-app .paper-word-menu-colors,
+ .paper-app .paper-word-menu-actions{
+  display:inline-flex!important;align-items:center!important;flex-wrap:nowrap!important;
+  gap:5px!important;white-space:nowrap!important;
+ }
+ .paper-app .paper-word-menu [data-word-menu-prefix]{font-size:18px;font-weight:800}
+}
+
+/* Floating one-row selected-object commands on desktop. The dedicated grip
+   moves the toolbar; the rest of its buttons remain normal click targets. */
+.paper-app .paper-selection-drag{display:none}
+@media screen and (min-width:901px) and (pointer:fine){
+ .paper-app .paper-selection-tools{
+  position:fixed!important;z-index:95!important;
+  left:var(--paper-selection-x,calc(50vw - 330px))!important;
+  top:var(--paper-selection-y,calc(100dvh - 100px))!important;
+  right:auto!important;bottom:auto!important;transform:none!important;
+  display:flex!important;align-items:center!important;flex-wrap:nowrap!important;
+  justify-content:flex-start!important;gap:5px!important;
+  width:max-content!important;max-width:calc(100vw - 18px)!important;
+  min-width:0!important;min-height:49px!important;max-height:49px!important;
+  padding:5px 8px!important;box-sizing:border-box;
+  border:1px solid #b7c8e7!important;border-radius:12px!important;
+  background:#fff!important;box-shadow:0 12px 28px #182d5936!important;
+  overflow:visible!important;white-space:nowrap!important;
+ }
+ .paper-app .paper-selection-tools[hidden]{display:none!important}
+ .paper-app .paper-selection-tools>*{flex:0 0 auto!important;white-space:nowrap!important}
+ .paper-app .paper-selection-tools .paper-selection-drag{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  width:30px;min-width:30px;min-height:36px;
+  border-radius:7px;background:#e5edff;color:#2a4ca5;
+  font-size:24px;cursor:grab;touch-action:none;
+  -webkit-user-select:none;user-select:none;
+ }
+ .paper-app .paper-selection-tools .paper-selection-drag:active{cursor:grabbing}
+ .paper-app .paper-selection-tools .paper-selection-drag:focus-visible{
+  outline:2px solid #3155d9;outline-offset:1px;
+ }
+ .paper-app .paper-selection-tools .paper-shape-selection,
+ .paper-app .paper-selection-tools .paper-table-selection,
+ .paper-app .paper-selection-tools .paper-shape-rotation{
+  display:inline-flex;align-items:center;flex-wrap:nowrap!important;
+  white-space:nowrap!important;gap:5px;
+ }
+ .paper-app .paper-selection-tools .paper-shape-selection[hidden],
+ .paper-app .paper-selection-tools .paper-table-selection[hidden]{
+  display:none!important;
+ }
+ .paper-app .paper-selection-tools .paper-shape-rotation{width:auto!important}
+}
+
+/* Hidden floating palettes must never intercept clicks on other tools. */
+.paper-app .paper-text-ribbon[data-floating="true"][hidden]{display:none!important;pointer-events:none!important}

@@ -271,10 +271,57 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(text.h>=text.size*1.5&&text.h<60&&text.w<400);
    assert.equal(text.size,16,'new text defaults to 16px');
    await click('select');
+   if(name==='desktop'){
+    const selectedBar=page.locator('#paper-selection-tools');
+    assert.ok(await selectedBar.isVisible(),'selected-object controls appear after selecting text');
+    const oldBox=await selectedBar.boundingBox();
+    const drag=selectedBar.locator('.paper-selection-drag');
+    assert.ok(await drag.isVisible(),'selected-object controls have a draggable grip');
+    assert.ok(oldBox.height<62,'selected-object command box is a single horizontal row');
+    const handle=await drag.boundingBox();
+    const sx=handle.x+handle.width/2,sy=handle.y+handle.height/2;
+    await page.mouse.move(sx,sy);
+    await page.mouse.down();
+    await page.mouse.move(sx+90,sy-80,{steps:6});
+    await page.mouse.up();
+    const movedBar=await selectedBar.boundingBox();
+    assert.ok(movedBar.x>oldBox.x+25&&movedBar.y<oldBox.y-25,
+     'selected-object palette can move freely rather than being locked to the footer');
+   }
    const editAt=await point(text.x+10,text.y+8);
    await page.locator('#paper-svg').dispatchEvent('dblclick',{bubbles:true,clientX:editAt.x,clientY:editAt.y});
    assert.ok(await page.locator('#paper-text-input').isVisible(),'double-click opens text for editing immediately');
    await click('save');
+   if(name==='desktop'){
+    // Real mouse double click must reopen a text object from Hand mode,
+    // not merely synthetic dblclick dispatched on the SVG container.
+    await click('hand');
+    const realPoint=await point(text.x+10,text.y+8);
+    await page.mouse.dblclick(realPoint.x,realPoint.y,{delay:75});
+    const reopened=page.locator('#paper-text-input');
+    assert.ok(await reopened.isVisible(),'mouse double-click in Hand mode edits text without choosing the Text tool first');
+    assert.equal(await reopened.inputValue(),'ความเข้าใจของฉัน','double-click preserves the original text');
+    const toolbar=page.locator('#paper-text-ribbon');
+    assert.ok(await toolbar.isVisible());
+    const grip=toolbar.locator('.paper-ribbon-drag');
+    assert.ok(await grip.isVisible(),'desktop text toolbar has a dedicated drag grip');
+    const rect=await toolbar.boundingBox();
+    assert.ok(rect.height<60,'desktop text toolbar stays one row tall');
+    const gripRect=await grip.boundingBox();
+    await page.mouse.move(gripRect.x+gripRect.width/2,gripRect.y+gripRect.height/2);
+    await page.mouse.down();await page.mouse.move(gripRect.x+gripRect.width/2+105,gripRect.y+gripRect.height/2+65,{steps:8});await page.mouse.up();
+    const moved=await toolbar.boundingBox();
+    assert.ok(moved.x>rect.x+30&&moved.y>rect.y+20,'desktop toolbar moves freely on drag');
+    await reopened.evaluate(input=>input.setSelectionRange(0,input.value.length));
+    await toolbar.locator('[data-list-prefix="bullet"]').click();
+    assert.equal(await reopened.inputValue(),'• ความเข้าใจของฉัน','bullet inserts before the actual text');
+    await toolbar.locator('[data-list-prefix="triangle"]').click();
+    assert.equal(await reopened.inputValue(),'▸ ความเข้าใจของฉัน','triangle replaces bullet without duplicating it');
+    await toolbar.locator('[data-list-prefix="triangle"]').click();
+    assert.equal(await reopened.inputValue(),'ความเข้าใจของฉัน','clicking the same symbol again removes the prefix');
+    await click('save');
+    await wait(()=>Promise.resolve(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.id===text.id&&o.text==='ความเข้าใจของฉัน')));
+   }
    await click('text');
   // Real mouse/pen-style pointer flow; touch mode additionally checks pan-vs-ink behavior.
   await click('shape');await page.locator('[data-shape-pick="arrow"]').click();assert.equal(await page.locator('#paper-shape').inputValue(),'arrow');
