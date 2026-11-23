@@ -35,6 +35,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    const button=key==='word-link'&&mobile&&await page.locator('#paper-mobile-editor').isVisible()
     ?page.locator('#paper-mobile-editor [data-paper="word-link"]')
     :page.locator('[data-paper="'+key+'"]').first();
+   // Phone UI folds uncommon tools into a single thumb-reachable More dock.
+   // Navigate the actual UI rather than force-clicking hidden buttons.
+   if(mobile&&await page.locator('#paper-mobile-more').isVisible()&&
+      !(await button.isVisible())&&await button.evaluate(el=>!!el.closest('.paper-toolset'))){
+    await page.locator('#paper-mobile-more').click();
+   }
    await button.evaluate(el=>{let parent=el.parentElement;while(parent){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}});
    await button.click();if(key==='save')await wait(()=>button.isEnabled());
   };
@@ -168,6 +174,36 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   }
   const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();return {x:r.x+x*r.width/900,y:r.y+y*r.height/1273};};
   const toolbar=page.locator('.paper-toolbar');
+  const toolOrder=await page.locator('.paper-toolset>button[data-paper]').evaluateAll(items=>items.map(el=>el.dataset.paper));
+  assert.deepEqual(toolOrder.slice(0,2),['select','hand'],'Select and Pan are the first two neighboring notebook tools');
+  const dockMore=page.locator('#paper-mobile-more');
+  if(mobile){
+   assert.ok(await dockMore.isVisible(),'phone has an accessible More button, not an endlessly scrolling toolbar');
+   assert.ok(await page.locator('[data-paper="hand"]').isVisible(),'Pan is immediately visible on phone');
+   assert.ok(await page.locator('[data-paper="select"]').isVisible(),'Select is immediately visible on phone');
+   assert.ok(await page.locator('[data-paper="pen"]').isVisible(),'Pen is immediately visible on phone');
+   assert.ok(await page.locator('[data-paper="text"]').isVisible(),'Text is immediately visible on phone');
+   assert.ok(await page.locator('[data-paper="eraser"]').isVisible(),'Eraser is immediately visible on phone');
+   assert.ok(await page.locator('[data-paper="shape"]').isHidden(),'advanced shapes do not crowd phone dock');
+   const layout=await page.evaluate(()=>{
+    const bar=document.querySelector('.paper-toolbar').getBoundingClientRect();
+    const paper=document.querySelector('.paper-viewport').getBoundingClientRect();
+    return {dockBelowCanvas:bar.top>=paper.bottom-2,noHorizontalOverflow:document.documentElement.scrollWidth<=innerWidth+2,
+      dockHeight:bar.height,canvasWidth:paper.width};
+   });
+   assert.ok(layout.dockBelowCanvas,'phone toolbar is thumb-reachable below the paper');
+   assert.ok(layout.noHorizontalOverflow,'phone layout does not overflow horizontally');
+   assert.ok(layout.dockHeight>=44&&layout.dockHeight<=90,'phone dock remains compact');
+   await dockMore.click();
+   assert.equal(await dockMore.getAttribute('aria-expanded'),'true');
+   assert.ok(await page.locator('[data-paper="shape"]').isVisible(),'the More section exposes shapes');
+   assert.ok(await page.locator('[data-paper="table"]').isVisible(),'the More section exposes tables');
+   await dockMore.click();
+   assert.equal(await dockMore.getAttribute('aria-expanded'),'false');
+   assert.ok(await page.locator('[data-paper="shape"]').isHidden(),'advanced tools collapse again');
+  }else{
+   assert.ok(await dockMore.isHidden(),'iPad and desktop retain the existing full toolbar');
+  }
   const toolbarMetrics=await toolbar.evaluate(el=>({height:el.getBoundingClientRect().height,width:el.getBoundingClientRect().width,
    children:Array.from(el.children).map(c=>({class:c.className,height:c.getBoundingClientRect().height,display:getComputedStyle(c).display,position:getComputedStyle(c).position})),
    display:getComputedStyle(el).display,flexWrap:getComputedStyle(el).flexWrap}));
@@ -669,8 +705,11 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await page.locator('#paper-svg span[style*="color:#dc4343"]').count(),'per-word color survives reload');
    await page.screenshot({path:'test-results/notebook-word-format-'+name+'.png'});
 
+   // Scribble is inside the Text tool's contextual controls. A phone
+   // intentionally reopens in Hand mode, so explicitly choose Text first.
    // Scribble quick keys must insert literal whitespace/newlines and format
    // the same text object, both on iPad-like and touch/mobile layouts.
+   if(mobile)await click('text');
    await click('scribble-text');
    const pencilPanel=page.locator('.paper-scribble-panel');
    const pencilInput=pencilPanel.locator('.paper-scribble-input');

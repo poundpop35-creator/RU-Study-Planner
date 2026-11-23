@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261123-word-menu-v5'); }
+try { await import('./app.js?v=20261123-phone-notebook-v6'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

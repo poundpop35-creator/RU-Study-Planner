@@ -21,7 +21,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  let conversionWarning='';let initial;
  try{initial=paperFor(note);}
  catch(err){throw Error('อ่านหน้ากระดาษเดิมไม่สำเร็จ: '+(err?.message||'รูปแบบข้อมูลไม่รองรับ')+' · ไม่มีการลบหรือบันทึกทับต้นฉบับ');}
- let model=initial,pageId=model.pages[0].id,tool=startInk?'pen':'text',color='#172033',defaultTextColor='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=startInk,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
+ let model=initial,pageId=model.pages[0].id,tool=startInk?'pen':window.matchMedia('(max-width:600px)').matches?'hand':'text',color='#172033',defaultTextColor='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=startInk,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
  let multiSelect=false,wordSelection=null,lineStyle='solid',eraserKind='stroke',smartEnabled=true,smartTimer=0,lastTextTap=null;
  let lastSelectionSignature='';
  let ruler={active:false,x:PAGE_W/2,y:PAGE_H/2,angle:0,length:440,height:44};
@@ -218,7 +218,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    space.image(o.imageId).then(blob=>{if(closed)return;images.set(o.imageId,URL.createObjectURL(blob));imageVersion++;scheduleDraw();thumbs();}).catch(()=>{if(!closed){missingImages.add(o.imageId);retryImages.hidden=false;say('โหลดรูปไม่สำเร็จ',true);}}).finally(()=>loading.delete(o.imageId));
   }
  }
- function sizing(){fit=Math.min(1,Math.max(.2,(viewport.clientWidth-48)/PAGE_W));scale=fit*zoom;wrap.style.width=PAGE_W*scale+'px';wrap.style.height=PAGE_H*scale+'px';sheet.style.transform=`scale(${scale})`;$('#paper-zoom').textContent=Math.round(zoom*100)+'%';}
+ function sizing(){const horizontalInset=window.matchMedia('(max-width:600px)').matches?18:48;fit=Math.min(1,Math.max(.2,(viewport.clientWidth-horizontalInset)/PAGE_W));scale=fit*zoom;wrap.style.width=PAGE_W*scale+'px';wrap.style.height=PAGE_H*scale+'px';sheet.style.transform=`scale(${scale})`;$('#paper-zoom').textContent=Math.round(zoom*100)+'%';}
  function zoomAt(next,cx=viewport.clientWidth/2,cy=viewport.clientHeight/2){const old=scale,x=(viewport.scrollLeft+cx)/old,y=(viewport.scrollTop+cy)/old;zoom=Math.min(4,Math.max(.5,next));sizing();viewport.scrollLeft=x*scale-cx;viewport.scrollTop=y*scale-cy;}
  function point(e){const r=svg.getBoundingClientRect();return {x:Math.max(0,Math.min(PAGE_W,(e.clientX-r.left)/r.width*PAGE_W)),y:Math.max(0,Math.min(PAGE_H,(e.clientY-r.top)/r.height*PAGE_H))};}
  function syncPenWidthControls(){
@@ -285,6 +285,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    $('#paper-shape').value=next;tool='shape';
   }else tool=next;
   closeExtraTools();setShapesOpen(false);
+  if(typeof collapsePhoneMore==='function'&&phoneQuickTools.has(tool))collapsePhoneMore();
   if(next!=='select')multiSelect=false;
   if(!['select','text'].includes(tool))selected.clear();
   syncPenWidthControls();showTextRibbon();
@@ -320,6 +321,29 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    b.setAttribute('aria-pressed',String(b.dataset.eraserKind===eraserKind));
  }
  const mainTools=$('.paper-toolset');
+ // A compact phone tool dock: five common tools are always visible.
+ // Less frequent tools can be expanded in place without duplicating buttons
+ // or changing their event handlers, notebook data, or desktop/tablet UI.
+ const phoneMore=document.createElement('button');
+ phoneMore.type='button';phoneMore.className='paper-mobile-more';
+ phoneMore.id='paper-mobile-more';phoneMore.setAttribute('aria-expanded','false');
+ phoneMore.setAttribute('aria-label','แสดงเครื่องมือเพิ่มเติม');
+ phoneMore.innerHTML='<span aria-hidden="true">⊞</span><small>เพิ่มเติม</small>';
+ mainTools.append(phoneMore);
+ const phoneQuickTools=new Set(['select','hand','pen','text','eraser']);
+ bind(phoneMore,'click',()=>{
+  const expanded=root.classList.toggle('paper-mobile-tools-expanded');
+  phoneMore.setAttribute('aria-expanded',String(expanded));
+  phoneMore.setAttribute('aria-label',expanded?'ซ่อนเครื่องมือเพิ่มเติม':'แสดงเครื่องมือเพิ่มเติม');
+  const label=phoneMore.querySelector('small');
+  if(label)label.textContent=expanded?'ย่อเมนู':'เพิ่มเติม';
+ });
+ function collapsePhoneMore(){
+  root.classList.remove('paper-mobile-tools-expanded');
+  phoneMore.setAttribute('aria-expanded','false');
+  phoneMore.setAttribute('aria-label','แสดงเครื่องมือเพิ่มเติม');
+  phoneMore.querySelector('small').textContent='เพิ่มเติม';
+ }
  // Use a contextual settings strip, not a nested options popup. Keep the
  // actual controls and IDs intact so their existing event bindings survive.
  const contextWrap=document.createElement('div');
@@ -1115,6 +1139,9 @@ bind(rich,'keyup',()=>{
  bind(root,'selectstart',guardInkSelection);
  bind(root,'contextmenu',guardInkSelection);
  function pointerDown(e){
+  // The phone's More drawer must never remain over the paper after the user
+  // starts working with a tool or selects a shape/text box.
+  if(root.classList.contains('paper-mobile-tools-expanded'))collapsePhoneMore();
   if(e.pointerType==='pen'&&inkTools.has(tool)){
    const selection=window.getSelection();
    if(selection&&!selection.isCollapsed&&root.contains(selection.anchorNode))selection.removeAllRanges();
@@ -1135,7 +1162,7 @@ bind(rich,'keyup',()=>{
   }
   const guardedTextTap=e.pointerType==='touch'&&palmGuard&&tool==='text'&&e.isPrimary!==false&&!multiSelect&&page().objects.some(o=>o.type==='text'&&contains(point(e),o,2));
   if(e.pointerType==='touch'&&((palmGuard&&!guardedTextTap&&!(['select','hand'].includes(tool)&&e.isPrimary!==false))||[...pointers.values()].some(p=>p.pointerType==='pen'))){if(e.cancelable)e.preventDefault();return;}
-  if(e.target.closest('[data-word-link],[data-word-file]')&&['text','select'].includes(tool)&&!multiSelect&&!e.shiftKey)return;
+  if(e.target.closest('[data-word-link],[data-word-file]')&&['text','select','hand'].includes(tool)&&!multiSelect&&!e.shiftKey)return;
   wordSelection=null;
   if(e.pointerType==='mouse'&&e.button!==0)return;
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,pointerType:e.pointerType});
@@ -1336,7 +1363,7 @@ bind(rich,'keyup',()=>{
  }
  bind(svg,'click',e=>{
   const link=e.target.closest('[data-word-link],[data-word-file]');if(!link)return;
-  if(!['text','select'].includes(tool)||multiSelect||e.shiftKey){e.preventDefault();return;}
+  if(!['text','select','hand'].includes(tool)||multiSelect||e.shiftKey){e.preventDefault();return;}
   if(link.dataset.wordFile){
    const file=currentNote()?.files?.find(f=>f.id===link.dataset.wordFile);
    if(file)openNoteFile(file).catch(err=>say(err.message,true));else say('ไฟล์แนบนี้ถูกลบแล้ว',true);
@@ -1352,7 +1379,7 @@ bind(rich,'keyup',()=>{
  bind(viewport,'wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();const r=viewport.getBoundingClientRect();zoomAt(zoom*Math.exp(-e.deltaY*.005),e.clientX-r.left,e.clientY-r.top);}},{passive:false});
  async function insertImages(files){
   finishText();loadingImages++;try{for(const file of files){writable();say('กำลังส่งรูปขึ้น Supabase…');const imageId=await space.uploadImage(file);if(closed)return;const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();if(closed){URL.revokeObjectURL(url);return;}images.set(imageId,url);imageVersion++;const w=Math.min(620,img.naturalWidth),height=Math.min(900,w*img.naturalHeight/img.naturalWidth),actualW=height*img.naturalWidth/img.naturalHeight;
-   const o={id:uid(),type:'image',x:(PAGE_W-actualW)/2,y:80,w:actualW,h:height,imageId};if(change(p=>p.objects.push(o))){selected=new Set([o.id]);tool='select';draw();}}
+   const o={id:uid(),type:'image',x:(PAGE_W-actualW)/2,y:80,w:actualW,h:height,imageId};if(change(p=>p.objects.push(o))){selected=new Set([o.id]);tool='select';collapsePhoneMore();draw();}}
   }catch(err){say(err.message,true);}finally{loadingImages--;}
  }
  bind($('#paper-image-file'),'change',e=>{insertImages([...e.target.files]);e.target.value='';});

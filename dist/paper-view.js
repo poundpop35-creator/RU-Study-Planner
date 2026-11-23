@@ -6,14 +6,15 @@ import {shapeIcon} from './paper-shape-icons.js?v=shape-gallery-20261120';
 import {courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 export const colors=['#172033','#3155d9','#15966d','#dc4343','#8756c6','#ef9e39'];
 const icons={
- select:'M5 3l14 10-7 1-3 7z',pen:'M4 20l1-5L16 4l4 4L9 19z M14 6l4 4',
+ select:'M5 3l14 10-7 1-3 7z',
+ hand:'M8 12V6a1.5 1.5 0 0 1 3 0v6-8a1.5 1.5 0 0 1 3 0v8-6a1.5 1.5 0 0 1 3 0v7-4a1.5 1.5 0 0 1 3 0v6c0 5-3 7-7 7-3 0-5-2-7-5l-3-4q0-3 3-1l2 2z',
+ pen:'M4 20l1-5L16 4l4 4L9 19z M14 6l4 4',
  highlight:'M4 16l8-10 6 5-8 9z M4 21h9',eraser:'M3 14L14 3l7 7-10 11H9z M7 10l7 7',
  text:'M4 6V4h16v2 M12 4v16 M8 20h8',shape:'M3 9h10v11H3z M10 9a6 6 0 1 1 3 6',
  line:'M4 20L20 4',arrow:'M4 20L20 4 M10 4h10v10',
  straighten:'M2 18l4-7 4 3L18 4 M13 4h6v6',
  image:'M3 4h18v16H3z M4 17l5-5 4 4 3-3 5 5 M8 8h1',
  table:'M3 4h18v16H3z M3 10h18 M3 15h18 M10 4v16',
- hand:'M8 12V6a1.5 1.5 0 0 1 3 0v6-8a1.5 1.5 0 0 1 3 0v8-6a1.5 1.5 0 0 1 3 0v7-4a1.5 1.5 0 0 1 3 0v6c0 5-3 7-7 7-3 0-5-2-7-5l-3-4q0-3 3-1l2 2z',
  undo:'M9 5L3 11l6 6 M4 11h9q7 0 7 8',redo:'M15 5l6 6-6 6 M20 11h-9q-7 0-7 8'
 };
 export function paperPage(space,n){return `<section class="paper-app" aria-label="สมุดกระดาษ"><header class="paper-header"><a class="paper-back" href="#notes" aria-label="กลับสมุดจด">‹</a><div class="paper-heading"><span class="paper-eyebrow">MY NOTEBOOK <span> / ${esc(n.course||'ทั่วไป')}</span></span><input id="paper-title" aria-label="ชื่อโน้ต" maxlength="160" value="${esc(n.title)}"><span class="paper-cloud" data-sync-status role="status">${esc(space.info().status)}</span></div><button class="paper-save" data-paper="save">บันทึกงาน</button><details class="paper-menu"><summary aria-label="ตัวเลือกโน้ต">•••</summary><div><div class="paper-context"><div class="paper-context-actions"><button data-paper="duplicate-page" title="ทำสำเนาหน้า">ทำสำเนา</button><button data-paper="delete-page">ลบหน้า</button><button data-paper="files" title="แนบไฟล์เฉพาะโน้ตนี้">ไฟล์โน้ต</button><button data-paper="info">รายละเอียด</button></div></div><div class="paper-course-materials"><button type="button" data-paper="course-materials">${courseMaterialLabel(space.notebook(),n.course)}</button></div><button data-action="nb-pin" data-id="${n.id}">${n.pinned?'เลิกปักหมุด':'ปักหมุดโน้ต'}</button><button data-action="nb-archive" data-id="${n.id}">${n.archived?'นำกลับมาใช้':'เก็บเข้าคลัง'}</button><button data-action="nb-print">พิมพ์หน้านี้</button><button data-action="nb-export">สำรองโน้ตพร้อมรูป</button><button data-paper="legacy">ดูต้นฉบับเดิม</button><button data-action="nb-delete" data-id="${n.id}" class="paper-danger">ลบโน้ต</button></div></details></header>
