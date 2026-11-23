@@ -52,8 +52,8 @@ export function validatePaper(value){
   }
   return {...(sections?{sections}:{}),id:page.id,template:page.template,...(continuous?{height:pageHeight(page)}:{}),objects:page.objects.map(o=>{
    if(!idOK(o.id)||ids.has(o.id)||!['stroke','text','image','shape','table'].includes(o.type)||
-     !num(o.x,-PAGE_W,PAGE_W*2)||!num(o.y,-PAGE_H,continuous?MAX_CANVAS_HEIGHT:PAGE_H*2)||
-     !num(o.w,1,PAGE_W*3)||!num(o.h,1,continuous?MAX_CANVAS_HEIGHT:PAGE_H*3)||
+     !num(o.x,-PAGE_W,continuous?PAGE_W*250:PAGE_W*2)||!num(o.y,-PAGE_H,continuous?MAX_CANVAS_HEIGHT:PAGE_H*2)||
+     !num(o.w,1,continuous?PAGE_W*250:PAGE_W*3)||!num(o.h,1,continuous?MAX_CANVAS_HEIGHT:PAGE_H*3)||
      continuous&&o.y+o.h>pageHeight(page)+1)
      throw Error('วัตถุบนกระดาษไม่ถูกต้อง');
    ids.add(o.id);
@@ -64,6 +64,8 @@ export function validatePaper(value){
    }else if(o.type==='shape'){
     if(!Object.hasOwn(shapes,o.kind)||!color(o.color)||!num(o.width,1,40))throw Error('รูปทรงไม่ถูกต้อง');
     Object.assign(out,{kind:o.kind,color:o.color,width:o.width,reverseX:o.reverseX===true,reverseY:o.reverseY===true});
+    if(o.fill!==undefined){if(!color(o.fill))throw Error('สีพื้นรูปทรงไม่ถูกต้อง');out.fill=o.fill;}
+    if(o.opacity!==undefined){if(!num(o.opacity,0,1))throw Error('ความทึบรูปทรงไม่ถูกต้อง');out.opacity=o.opacity;}
     if(o.kind==='triangle'&&o.inverted===true)out.inverted=true;
     if(o.angle!==undefined){if(!num(o.angle,0,359))throw Error('มุมหมุนรูปทรงไม่ถูกต้อง');out.angle=o.angle;}
     if(o.lineStyle!==undefined){if(!Object.hasOwn(lineStyles,o.lineStyle))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.lineStyle=o.lineStyle;}
@@ -155,8 +157,11 @@ export function mergePaper(base,local,remote){
   }
   if(local.version===2)r.height=Math.max(pageHeight(l),pageHeight(r));
   const bo=new Map(b.objects.map(o=>[o.id,o])),lo=new Map(l.objects.map(o=>[o.id,o])),ro=new Map(r.objects.map(o=>[o.id,o]));
+  const ids=m=>[...m.keys()],baseOrder=ids(bo).filter(k=>lo.has(k)),localOrder=ids(lo).filter(k=>bo.has(k));
+  const reordered=!same(baseOrder,localOrder);
+  if(reordered&&!same(ids(ro),ids(bo))&&!same(ids(ro),ids(lo)))throw Error('ลำดับเลเยอร์เปลี่ยนจากอีกเครื่อง');
   for(const [oid,before] of bo){const after=lo.get(oid),current=ro.get(oid);if(same(before,after))continue;if(!same(before,current)&&!same(after,current))throw Error('วัตถุนี้ถูกแก้พร้อมกันจากอีกเครื่อง กรุณาสำรองงานที่ค้างก่อน');if(after)ro.set(oid,copy(after));else ro.delete(oid);}
-  for(const [oid,o] of lo)if(!bo.has(oid))ro.set(oid,copy(o));r.objects=[...ro.values()];
+  for(const [oid,o] of lo)if(!bo.has(oid))ro.set(oid,copy(o));r.objects=reordered?ids(lo).map(k=>ro.get(k)).filter(Boolean):[...ro.values()];
  }
  for(const [id,p] of lm)if(!bm.has(id))rm.set(id,copy(p));
  return validatePaper({version:local.version===2||remote.version===2?2:1,pages:[...rm.values()]});
