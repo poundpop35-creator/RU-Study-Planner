@@ -1313,6 +1313,21 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type==='shape'?{...o,dash:lineStyle}:o);});
   closeExtraTools();
  });
+ const boxSize=$('#paper-font-size');
+ const sizeGroup=document.createElement('span');
+ sizeGroup.setAttribute('role','group');sizeGroup.setAttribute('aria-label','ขนาดตัวอักษรทั้งกล่อง');
+ boxSize.parentElement.replaceWith(sizeGroup);
+ sizeGroup.append('ขนาดทั้งกล่อง ',boxSize);
+ for(const [step,label] of [[-1,'ลด'],[1,'เพิ่ม']]){
+  const button=document.createElement('button');button.type='button';
+  button.textContent=step<0?'−':'+';button.setAttribute('aria-label',label+'ขนาดทั้งกล่อง');
+  boxSize.insertAdjacentElement(step<0?'beforebegin':'afterend',button);
+  bind(button,'click',()=>{
+   const size=textSize(Number(boxSize.value)+step,fontSize);
+   if(size===Number(boxSize.value))return;
+   boxSize.value=String(size);boxSize.dispatchEvent(new Event('change'));
+  });
+ }
  bind($('#paper-font-size'),'change',e=>{
   const size=textSize(e.target.value,fontSize);e.target.value=String(size);fontSize=size;
   change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text'){o.size=size;o.h=Math.max(o.h,Math.ceil(size*1.5));}}));
