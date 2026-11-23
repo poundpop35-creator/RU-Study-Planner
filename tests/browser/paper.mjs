@@ -39,6 +39,25 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await button.click();if(key==='save')await wait(()=>button.isEnabled());
   };
   if(process.env.PAPER_TEST==='branches'){
+   if(name==='desktop'){
+    const {emptyPage,strokeObject}=await import('../../dist/paper-core.js');
+    const pages=Array.from({length:4},()=>({...emptyPage(),objects:Array.from({length:125},(_,i)=>strokeObject([[20,i+10,.5],[100,i+11,.6]],{tool:'pen',color:'#172033',width:2}))}));
+    row.payload.notebook.notes[0].paper={version:1,pages};
+    row.revision++;
+    const large=await setup();
+    const menu=large.page.locator('.paper-menu');
+    await menu.locator('summary').first().click();
+    const popup=large.page.waitForEvent('popup');
+    await menu.locator('[data-paper="print-pages"]').click();
+    const preview=await popup;
+    await preview.locator('article').nth(3).waitFor();
+    assert.equal(await preview.locator('article [data-object]').count(),500);
+    const pdf=await preview.pdf({preferCSSPageSize:true});
+    assert.equal((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length,4);
+    await large.context.close();
+    delete row.payload.notebook.notes[0].paper;
+    row.revision--;
+   }
    await click('shape');
    const choice=page.locator('[data-shape-pick="triangle"]');
    assert.ok(await choice.locator('svg').isVisible());

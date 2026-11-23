@@ -49,6 +49,36 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  // Default new typed text to 16 pt on each note-opening session.
  const $=s=>root.querySelector(s),svg=$('#paper-svg'),sheet=$('#paper-sheet'),wrap=$('#paper-wrap'),viewport=$('#paper-viewport'),textarea=$('#paper-text-input');
  const bind=(el,type,fn,opts)=>{el.addEventListener(type,fn,opts);events.push(()=>el.removeEventListener(type,fn,opts));};
+ const printButton=document.createElement('button');
+ printButton.type='button';printButton.textContent='พิมพ์ทุกหน้า / PDF';printButton.dataset.paper='print-pages';
+ $('.paper-context-actions').append(printButton);
+ bind(printButton,'click',async()=>{
+  if(composingScribble){say('รอให้แปลงลายมือเสร็จก่อนพิมพ์',true);return;}
+  finishText();
+  const preview=window.open('','_blank');
+  if(!preview){say('กรุณาอนุญาตหน้าต่างตัวอย่างก่อนพิมพ์',true);return;}
+  preview.opener=null;
+  const doc=preview.document;doc.documentElement.lang='th';doc.title=note.title;
+  doc.body.textContent='กำลังเตรียมหน้ากระดาษ…';
+  try{
+   const pages=copy((unsaved||model).pages),assets=new Map();
+   const ids=new Set(pages.flatMap(p=>p.objects.filter(o=>o.type==='image').map(o=>o.imageId)));
+   for(const imageId of ids){
+    const blob=await space.image(imageId);
+    if(preview.closed)return;
+    const url=preview.URL.createObjectURL(blob),img=new preview.Image();
+    img.src=url;await img.decode();assets.set(imageId,url);
+   }
+   if(preview.closed)return;
+   const css=doc.createElement('style');
+   css.textContent='@page{size:A4 portrait;margin:0}body{margin:0;background:#edf1f6;font-family:sans-serif}svg{display:block;width:100%;height:auto}article{background:white;max-width:210mm;margin:12px auto}button{display:block;margin:12px auto;padding:10px 22px}@media print{button{display:none}article{width:210mm;margin:0;break-after:page}article:last-child{break-after:auto}svg{height:296mm}body{background:white}}';
+   doc.head.append(css);doc.body.replaceChildren();
+   const print=doc.createElement('button');print.textContent='พิมพ์ / บันทึก PDF';print.onclick=()=>preview.print();doc.body.append(print);
+   pages.forEach((p,i)=>{
+    const article=doc.createElement('article');article.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+PAGE_W+' '+PAGE_H+'">'+pageSVG(p,assets,'thumb-print-'+i)+'</svg>';doc.body.append(article);
+   });
+  }catch{if(!preview.closed)doc.body.textContent='เตรียมหน้ากระดาษไม่สำเร็จ กรุณาปิดหน้านี้แล้วลองพิมพ์อีกครั้ง';}
+ });
  const palmToggle=$('#paper-palm-guard');
  palmToggle.checked=palmGuard;root.classList.toggle('paper-palm-guard-on',palmGuard);
  const page=()=>model.pages.find(p=>p.id===pageId)||model.pages[0];
