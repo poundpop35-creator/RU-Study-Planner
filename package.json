@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Personal pre-class study, classroom material, rich notes with handwriting, and class/exam planning",
   "scripts": {
-    "test": "node --test tests/*.test.js",
+    "test": "node --import ./tests/offline-fetch.mjs --test tests/*.test.js",
     "check": "node scripts/check.mjs",
     "prepare:seed": "node scripts/generate-seed.mjs",
     "prepare:vendor": "node scripts/vendor.mjs"
