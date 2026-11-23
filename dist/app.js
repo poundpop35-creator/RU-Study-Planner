@@ -4,7 +4,7 @@ import {courseMaterialLabel,uploadSharedCourseFile} from './course-materials-ui.
 import {registrationChecklist,enrollmentControl} from './registration-checklist.js?v=registration-status';
 import {readingStart,afterPlan,firstChecklist,weekView,mayConfirm} from './after-class.js?v=20261112a';
 import {importPanel,resolvePlan} from './debt-import.js?v=20261111b';
-import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261123-rounded-v1';
+import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261123-manual-interest-v1';
 import {saveRates,rateFields} from './debt-interest.js?v=20261027c';
 import {debtPage,debtAction} from './debt-view.js?v=20261027c';
 import {documentsPage} from './documents-view.js?v=20261027c';
@@ -222,7 +222,7 @@ function render(keepScroll=false){
  closeExamReader?.();closeExamReader=null;
  destroyEditor();const oldY=window.scrollY;document.documentElement.dataset.font=state.font;document.documentElement.dataset.view=currentView;updateNav();
  const info=studySpace.info();
- main.innerHTML=inReader?examReader():sectionTabs(currentView)+({home,debt:()=>{adoptLocalDebt();if(!info.hydrated&&info.phase==='loading')return '<section class="panel" role="status">กำลังโหลดแผนหนี้และประวัติการจ่ายของพื้นที่นี้…</section>';return updatedPage(debtStore,currentId,info.canEdit)??(importPanel()+debtPage(debtStore));},practice:examPage,documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:()=>classroomPage(studySpace),course:()=>coursePage(currentId),prep:examPage,lesson:()=>lessonPage(currentId),review,plan,registration,calendar:()=>calendarPage(state,info.canEdit),menu:menuPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings,awards}[currentView]||missing)();
+ main.innerHTML=inReader?examReader():sectionTabs(currentView)+({home,debt:()=>{adoptLocalDebt();if(!info.hydrated&&info.phase==='loading')return '<section class="panel" role="status">กำลังโหลดแผนหนี้และประวัติการจ่ายของพื้นที่นี้…</section>';if(!info.hydrated||!info.canEdit)return '<section class="panel" role="status">ยังโหลดแผนหนี้จากพื้นที่ออนไลน์ไม่เสร็จ กรุณาตรวจสถานะการเชื่อมต่อและลองเปิดใหม่</section>';const latest=updatedPage(debtStore,currentId,info.canEdit);return latest??('<section class="panel" role="alert"><h2>ยังไม่พบแผนหนี้ฉบับล่าสุด</h2><p>ไม่แสดงแผนเก่าและยอดค้างเก่าที่อาจผิด กรุณาตรวจพื้นที่ซิงก์ หรือนำเข้าแผนฉบับใหม่</p></section>'+importPanel());},practice:examPage,documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:()=>classroomPage(studySpace),course:()=>coursePage(currentId),prep:examPage,lesson:()=>lessonPage(currentId),review,plan,registration,calendar:()=>calendarPage(state,info.canEdit),menu:menuPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings,awards}[currentView]||missing)();
  if(inReader)closeExamReader=mountExamReader(main.querySelector('#exam-reader'));
  fresh=null;
  if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=info.status;if(el.classList?.contains('paper-cloud'))el.dataset.phase=info.phase;});
@@ -336,8 +336,8 @@ document.addEventListener('submit',async event=>{
  if(event.target.id!=='debt-payment-form')return;
  event.preventDefault();
  const creditor=document.querySelector('#debt-creditor').value,amount=document.querySelector('#debt-payment-amount').value;
- const interest=document.querySelector('#debt-payment-interest')?.value||'0',fee=document.querySelector('#debt-payment-fee')?.value||'0';
- const error=debtStore.getItem(snapshotKey)?updateAction('add',debtStore,{creditor,amount,interest,fee}):debtAction('debt-add',{creditor,amount,interest,fee},debtStore);
+ const interest=document.querySelector('#debt-payment-interest')?.value||'0';
+ const error=debtStore.getItem(snapshotKey)?updateAction('add',debtStore,{creditor,amount,interest}):debtAction('debt-add',{creditor,amount,interest,fee},debtStore);
  if(error){const warning=document.querySelector('#debt-payment-error');warning.textContent=error;warning.hidden=false;return;}
  render(true);document.querySelector('#debt-creditor').value=creditor;document.querySelector('#debt-payment-amount').focus({preventScroll:true});toast('บันทึกยอดจ่ายสะสมแล้ว');
 });

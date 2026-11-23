@@ -10,3 +10,26 @@ test('normal 15k and emergency 18k cap allow interest and rounding',()=>{
  const p=decode(token),rows=forecast(p,[],{}).rows;
  assert.equal(p.baseBudget,baht(15000));assert.equal(rows[0].a[0],baht(14500));assert.equal(rows[0].a[1],baht(1000));assert.ok(rows.every(r=>r.fromBudget+r.interest+200<=baht(18000)));
 });
+
+test('manual interest: zero forecast for rates provided in plan or settings, and no insurance field',()=>{
+ const items=[
+  ['G','G',baht(1000),0,[baht(1000)],0,'',0,'','',25,{baseBudget:baht(15000),payWindow:[25,25]}],
+  ['AEON','AEON',baht(25000),baht(1000),[],baht(25000),'',2500,'y','aeonUpper',25],
+  ['LINE','LINE BK',baht(26000),baht(1000),[],baht(26000),'',2500,'y','line',25]
+ ];
+ const token='p2.'+Buffer.from(JSON.stringify(['2026-11-23',baht(18000),100000,items,'old interest assumptions must be ignored'])).toString('base64url');
+ const p=decode(token),zero=forecast(p,[],{}),high=forecast(p,[],{aeonUpper:99,line:99});
+ assert.ok(zero.rows.length>0);
+ assert.ok(zero.rows.every(r=>r.interest===0));
+ assert.deepEqual(zero.rows,high.rows);
+ const storage=new Map([['debtPrivateSchedule_v1',JSON.stringify({token,entries:[]})],['debtPayments_20261025_v1','[]']]);
+ return import('../dist/debt-update.js').then(({updatedPage,updateAction})=>{
+  const store={getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)};
+  const before=updatedPage(store,'',true);
+  assert.doesNotMatch(before,/debt-payment-fee|ค่าประกัน AEON ประมาณ|ดอกประมาณ|ดอกเบี้ยที่ต้องเตรียมเพิ่ม/);
+  assert.match(before,/ดอกเบี้ยจริง/);
+  assert.equal(updateAction('add',store,{creditor:'1',amount:'1200',interest:'200'}),'');
+  const saved=JSON.parse(storage.get('debtPrivateSchedule_v1'));
+  assert.equal(saved.entries[0].p,baht(1000));assert.equal(saved.entries[0].i,baht(200));assert.equal(saved.entries[0].f,0);
+ });
+});
