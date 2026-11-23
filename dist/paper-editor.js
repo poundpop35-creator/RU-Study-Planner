@@ -1139,6 +1139,9 @@ bind(rich,'keyup',()=>{
  bind(root,'selectstart',guardInkSelection);
  bind(root,'contextmenu',guardInkSelection);
  function pointerDown(e){
+  // The phone's More drawer must never remain over the paper after the user
+  // starts working with a tool or selects a shape/text box.
+  if(root.classList.contains('paper-mobile-tools-expanded'))collapsePhoneMore();
   if(e.pointerType==='pen'&&inkTools.has(tool)){
    const selection=window.getSelection();
    if(selection&&!selection.isCollapsed&&root.contains(selection.anchorNode))selection.removeAllRanges();
@@ -1376,7 +1379,7 @@ bind(rich,'keyup',()=>{
  bind(viewport,'wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();const r=viewport.getBoundingClientRect();zoomAt(zoom*Math.exp(-e.deltaY*.005),e.clientX-r.left,e.clientY-r.top);}},{passive:false});
  async function insertImages(files){
   finishText();loadingImages++;try{for(const file of files){writable();say('กำลังส่งรูปขึ้น Supabase…');const imageId=await space.uploadImage(file);if(closed)return;const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();if(closed){URL.revokeObjectURL(url);return;}images.set(imageId,url);imageVersion++;const w=Math.min(620,img.naturalWidth),height=Math.min(900,w*img.naturalHeight/img.naturalWidth),actualW=height*img.naturalWidth/img.naturalHeight;
-   const o={id:uid(),type:'image',x:(PAGE_W-actualW)/2,y:80,w:actualW,h:height,imageId};if(change(p=>p.objects.push(o))){selected=new Set([o.id]);tool='select';draw();}}
+   const o={id:uid(),type:'image',x:(PAGE_W-actualW)/2,y:80,w:actualW,h:height,imageId};if(change(p=>p.objects.push(o))){selected=new Set([o.id]);tool='select';collapsePhoneMore();draw();}}
   }catch(err){say(err.message,true);}finally{loadingImages--;}
  }
  bind($('#paper-image-file'),'change',e=>{insertImages([...e.target.files]);e.target.value='';});
