@@ -676,6 +676,36 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await page.locator('#exam-reader .back-link').click();
   await page.locator('.exam-timeline').waitFor();
 
+
+  // Regress the real debt plan markup on a narrow viewport: columns must
+  // swipe inside the monthly card rather than be clipped by details overflow.
+  await page.evaluate(async()=>{
+   const {updatedPage}=await import('/debt-update.js?v=20261123-debt-mobile-scroll-v2');
+   const input=['2030-05-01',60000,10000,[['Fixed','',35000,0,[10000,25000],0,'',0,'','',0],['One-off','',32000,0,[0,32000],0,'',0,'','',0],['Variable','',120000,6000,[],0,'example',700,'y','',0]],'Example only'];
+   const token='p2.'+btoa(JSON.stringify(input)).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
+   const html=updatedPage({getItem:()=>null},token,false);
+   const fixture=document.createElement('main');
+   fixture.id='debt-scroll-fixture';
+   fixture.style.cssText='width:min(100%,360px);margin:0 auto;padding:0 8px;box-sizing:border-box';
+   fixture.innerHTML=html;
+   document.body.replaceChildren(fixture);
+  });
+  const debtMonth=page.locator('.debt-month').first();
+  await debtMonth.evaluate(el=>el.open=true);
+  const debtScroller=debtMonth.locator('.debt-month-scroll');
+  const debtGeometry=await debtScroller.evaluate(el=>({
+   width:el.clientWidth,content:el.scrollWidth,overflow:getComputedStyle(el).overflowX,
+   tableWidth:el.querySelector('table').getBoundingClientRect().width
+  }));
+  assert.equal(debtGeometry.overflow,'auto','monthly plan has a dedicated horizontal scroll region');
+  if(mobile){
+   assert.ok(debtGeometry.content>debtGeometry.width+150,'all debt columns remain reachable with horizontal swipe on iPhone');
+   const moved=await debtScroller.evaluate(el=>{el.scrollLeft=el.scrollWidth;return el.scrollLeft;});
+   assert.ok(moved>150,'dragging debt table horizontally is not locked by the surrounding card');
+   assert.ok(await debtMonth.locator('.debt-scroll-hint').isVisible(),'mobile includes a swipe hint');
+  }
+  await page.screenshot({path:'test-results/debt-scroll-'+name+'.png'});
+
   // The single weekly planner must fit replay cards, including watch buttons, at iPhone widths.
   // Render a fixed sample week so this regression check remains independent of the current date.
   await page.evaluate(async()=>{
