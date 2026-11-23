@@ -1,4 +1,4 @@
-import {answerKey,parsedAnswer,scoreSet} from './score.js?v=20261123-unified-quiz-v1';
+import {accepts,answerKey,parsedAnswer,scoreSet} from './score.js?v=20261123-multikey';
 
 const el=id=>document.getElementById(id);
 const course=new URL(location.href).searchParams.get('course');
@@ -40,16 +40,16 @@ function reveal(q,choice,buttons){
  const graded=Number.isInteger(q.a)&&q.a>=0&&q.a<q.o.length;
  buttons.forEach((button,i)=>{
   button.disabled=true;
-  button.classList.toggle('correct',graded&&i===q.a);
-  button.classList.toggle('incorrect',graded&&i===choice&&choice!==q.a);
+  button.classList.toggle('correct',graded&&accepts(q,i));
+  button.classList.toggle('incorrect',graded&&i===choice&&!accepts(q,choice));
   button.classList.toggle('picked',!graded&&i===choice);
   button.setAttribute('aria-pressed',String(i===choice));
  });
  el('feedback').hidden=false;
- el('feedback').classList.toggle('is-wrong',graded&&choice!==q.a);
- el('feedback-title').textContent=!graded?'ข้อนี้ยังไม่มีเฉลย':choice===q.a?'✓ ถูกต้อง!':'✗ ยังไม่ถูกต้อง';
+ el('feedback').classList.toggle('is-wrong',graded&&!accepts(q,choice));
+ el('feedback-title').textContent=!graded?'ข้อนี้ยังไม่มีเฉลย':accepts(q,choice)?'✓ ถูกต้อง!':'✗ ยังไม่ถูกต้อง';
  el('feedback-answer').textContent=!graded?'คำตอบข้อนี้ยังไม่นับคะแนน':
-  choice===q.a?'คุณตอบข้อ '+(choice+1)+' ได้ถูกต้อง':'คำตอบที่ถูกคือข้อ '+(q.a+1)+' · '+q.o[q.a];
+  accepts(q,choice)?'คุณตอบข้อ '+(choice+1)+' ได้ถูกต้อง':'คำตอบที่ถูกคือข้อ '+(q.a+1)+' · '+q.o[q.a];
  el('feedback-why').textContent=String(q.why||'ไม่มีคำอธิบายเพิ่มเติม');
 }
 function showQuestion(){
@@ -124,7 +124,7 @@ function showResults(){
  el('final-answered').textContent=data.answered;
  el('score-ring').style.setProperty('--score',data.percent+'%');
  el('score-ring').setAttribute('aria-label','ตอบถูก '+data.correct+' จาก '+data.gradable+' ข้อที่นับคะแนน คิดเป็น '+data.percent+'%');
- const missed=list.map((q,i)=>[i,q]).filter(([,q])=>getAnswer(q)!==q.a||getAnswer(q)===null);
+ const missed=list.map((q,i)=>[i,q]).filter(([,q])=>!accepts(q,getAnswer(q))||getAnswer(q)===null);
  el('review-heading').textContent=missed.length?'ข้อที่ตอบผิดหรือยังไม่ได้ทำ · '+missed.length+' ข้อ':'ตอบถูกครบทุกข้อ 🎉';
  displayReview(missed);
  updateOverview();
@@ -178,7 +178,7 @@ async function openBank(){
  el('finish').onclick=showResults;
  el('back-to-questions').onclick=()=>showQuestion();
  el('review-wrong').onclick=()=>{
-  const list=currentList(),wrong=list.findIndex(q=>getAnswer(q)!==null&&getAnswer(q)!==q.a);
+  const list=currentList(),wrong=list.findIndex(q=>getAnswer(q)!==null&&!accepts(q,getAnswer(q)));
   const pending=list.findIndex(q=>getAnswer(q)===null);
   index=wrong>=0?wrong:pending>=0?pending:0;
   showQuestion();

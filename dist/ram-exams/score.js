@@ -1,3 +1,4 @@
+export const accepts=(q,v)=>v===q.a||!!q.accepted?.includes(v);
 // Scoring helpers for the seven Ram Test Hub practice banks.
 // Preserve the original per-question localStorage keys across the redesign.
 export const answerKey=(course,id)=>'ru:ram-test-hub:'+course+':'+id;
@@ -17,7 +18,7 @@ export function scoreSet(items,getAnswer){
   if(!Number.isInteger(value)||value<0||value>=q.o.length)continue;
   answered++;
   if(!Number.isInteger(q.a)||q.a<0||q.a>=q.o.length){ungraded++;continue;}
-  if(value===q.a)correct++;else wrong++;
+  if(accepts(q,value))correct++;else wrong++;
  }
  const total=items.length,pending=total-answered,gradable=total-items.filter(q=>!Number.isInteger(q.a)||q.a<0||q.a>=q.o.length).length;
  return {total,answered,pending,correct,wrong,ungraded,gradable,
