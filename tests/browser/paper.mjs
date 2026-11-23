@@ -79,7 +79,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   if(process.env.PAPER_TEST==='tables'){
    const primary=page.locator('.paper-toolbar');
    assert.equal(await page.locator('[data-paper="table"]').count(),1);
-   assert.equal(await primary.locator('#paper-template').count(),1);
+   await click('page-settings');
+   assert.ok(await page.locator('.paper-context-page #paper-template').isVisible());
    await click('ruler');await click('ruler-plus');
    assert.match(await page.locator('[data-ruler-overlay]').getAttribute('transform'),/rotate\(15\)/);
    await click('ruler-zero');await click('ruler');
@@ -164,13 +165,11 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(await page.locator('[data-paper="pages"]').getAttribute('aria-expanded'),'true');
    await click('pages');
    assert.ok(await page.locator('.paper-pages').isHidden(),'page thumbnails can be folded again');
-  await page.locator('#paper-toolbar-more > summary').click();
-  assert.ok(await page.locator('.paper-tool-options').isVisible(),'advanced tools open on demand');
+  await click('pen');
+  assert.ok(await page.locator('.paper-context-ink').isVisible(),'pen settings available directly');
   await page.locator('[data-paper-color="#3155d9"]').click();
-  assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'choosing color should fold menu');
-  await page.locator('#paper-toolbar-more > summary').click();
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'Escape closes settings');
+  await click('text');
+  assert.ok(await page.locator('.paper-context-ink').isHidden(),'drawing controls leave room for text');
   await page.screenshot({path:'test-results/notebook-compact-'+name+'.png'});
 
   const tap=async(x,y)=>{const p=await point(x,y);if(mobile)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y);};
