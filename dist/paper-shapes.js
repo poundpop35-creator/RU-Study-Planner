@@ -130,6 +130,34 @@ export function eraserHit(o,a,b=a,radius=12){
  }
  return linePaths(o).some(path=>path.slice(1).some((p,i)=>hits(path[i],p)));
 }
+// Eraser mode keeps text, shapes and hand-drawn strokes independent. All
+// gesture points are in paper coordinates, and rotated shapes are tested in
+// their local coordinate system, so a swipe reaches the visible target.
+function sweptBox(a,b,x,y,w,h,pad=0){
+ const x0=x-pad,x1=x+w+pad,y0=y-pad,y1=y+h+pad;
+ const inside=p=>p.x>=x0&&p.x<=x1&&p.y>=y0&&p.y<=y1;
+ if(inside(a)||inside(b))return true;
+ const dx=b.x-a.x,dy=b.y-a.y;
+ let t0=0,t1=1;
+ for(const [p,q] of [[-dx,a.x-x0],[dx,x1-a.x],[-dy,a.y-y0],[dy,y1-a.y]]){
+  if(Math.abs(p)<1e-9){if(q<0)return false;continue;}
+  const t=q/p;
+  if(p<0)t0=Math.max(t0,t);else t1=Math.min(t1,t);
+  if(t0>t1)return false;
+ }
+ return true;
+}
+export function eraserTargetHit(o,a,b,mode='stroke',radius=12){
+ if(mode==='stroke')return o.type==='stroke'&&eraserHit(o,a,b,radius);
+ if(mode==='shape'){
+  if(o.type!=='shape')return false;
+  if(isJoinable(o))return eraserHit(o,a,b,radius);
+  return sweptBox(shapePoint(o,a,true),shapePoint(o,b,true),o.x,o.y,o.w,o.h,radius);
+ }
+ if(mode==='text')return o.type==='text'&&sweptBox(a,b,o.x,o.y,o.w,o.h,radius);
+ return false;
+}
+
 export function shapeSVG(o){
  const {x,y,w,h}=o;
  const turn=shapeAngle(o.angle),transform=turn&&!isJoinable(o)?` transform="rotate(${turn} ${round(x+w/2)} ${round(y+h/2)})"`:'';
