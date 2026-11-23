@@ -375,7 +375,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  let scribbleActive=false;
  const scribblePad=document.createElement('section');
  scribblePad.className='paper-scribble-panel';scribblePad.hidden=true;
- scribblePad.innerHTML='<header><b>✍️ เขียนในพื้นที่สีฟ้า · ข้อความไปยังกล่องเดิม</b><button type="button" data-pencil-keyboard>⌨️ แป้นพิมพ์</button><button type="button" data-pencil-finish>✓ เสร็จสิ้น</button></header><textarea class="paper-scribble-input" lang="th" inputmode="none" spellcheck="false" aria-label="พื้นที่เขียนด้วย Apple Pencil ลงกล่องข้อความที่เลือก" placeholder="ใช้ Apple Pencil เขียนภายในพื้นที่นี้ หรือเปิดแป้นพิมพ์…"></textarea>';
+ scribblePad.innerHTML='<header><b>✍️ เขียนในพื้นที่สีฟ้า · ข้อความไปยังกล่องเดิม</b><button type="button" data-pencil-edit="space">เว้นวรรค</button><button type="button" data-pencil-edit="delete">⌫ ลบ</button><button type="button" data-pencil-keyboard>⌨ เปิดคีย์บอร์ด</button><button type="button" data-pencil-finish>✓ เสร็จสิ้น</button></header><textarea class="paper-scribble-input" lang="th" inputmode="none" spellcheck="false" aria-label="พื้นที่เขียนด้วย Apple Pencil ลงกล่องข้อความที่เลือก" placeholder="ใช้ Apple Pencil เขียนภายในพื้นที่นี้ หรือเปิดแป้นพิมพ์…"></textarea>';
  viewport.append(scribblePad);
  const scribbleInput=scribblePad.querySelector('textarea');
  function closeScribblePanel(){
@@ -388,12 +388,29 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   scribblePad.hidden=false;textarea.hidden=true;
   scribbleInput.value=textarea.value;
   scribbleInput.inputMode='none';
-  scribblePad.querySelector('[data-pencil-keyboard]').textContent='⌨️ แป้นพิมพ์';
+  scribblePad.querySelector('[data-pencil-keyboard]').textContent='⌨ เปิดคีย์บอร์ด';
   fitTextBox();draw();
   scribbleInput.focus({preventScroll:true});
   const caret=scribbleInput.value.length;scribbleInput.setSelectionRange(caret,caret);
  }
  let composingScribble=false;
+ for(const button of scribblePad.querySelectorAll('[data-pencil-edit]')){
+  bind(button,'pointerdown',event=>event.preventDefault());
+  bind(button,'click',()=>{
+   if(composingScribble)return;
+   let start=scribbleInput.selectionStart;
+   const end=scribbleInput.selectionEnd,space=button.dataset.pencilEdit==='space';
+   if(!space&&start===end&&start>0){
+    const before=scribbleInput.value.slice(0,start);
+    const previous=typeof Intl.Segmenter==='function'
+     ?Array.from(new Intl.Segmenter('th',{granularity:'grapheme'}).segment(before)).at(-1).segment
+     :Array.from(before).at(-1);
+    start-=previous.length;
+   }
+   scribbleInput.setRangeText(space?' ':'',start,end,'end');
+   applyScribble();scribbleInput.focus({preventScroll:true});
+  });
+ }
  bind(scribbleInput,'compositionstart',()=>{composingScribble=true;clearTimeout(textTimer)});
  bind(scribbleInput,'compositionend',()=>{composingScribble=false;applyScribble()});
  bind(scribbleInput,'input',event=>{if(!event.isComposing&&!composingScribble)applyScribble()});
@@ -409,7 +426,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  bind(scribblePad.querySelector('[data-pencil-keyboard]'),'click',event=>{
   const viaKeyboard=scribbleInput.inputMode!=='text';
   scribbleInput.inputMode=viaKeyboard?'text':'none';
-  event.currentTarget.textContent=viaKeyboard?'✍️ กลับไปใช้ปากกา':'⌨️ แป้นพิมพ์';
+  event.currentTarget.textContent=viaKeyboard?'✍️ กลับไปใช้ปากกา':'⌨ เปิดคีย์บอร์ด';
   scribbleInput.blur();scribbleInput.focus({preventScroll:true});
  });
  bind(scribblePad.querySelector('[data-pencil-finish]'),'click',()=>{
