@@ -172,7 +172,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.type==='stroke'),'pen writes with a palm already on the page');
    assert.deepEqual(errors,[]);console.log(name+': inline table PASS');continue;
   }
-  const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();return {x:r.x+x*r.width/900,y:r.y+y*r.height/1273};};
+  const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();const scale=r.width/900;return {x:r.x+x*scale,y:r.y+y*scale};};
   const toolbar=page.locator('.paper-toolbar');
   const toolOrder=await page.locator('.paper-toolset>button[data-paper]').evaluateAll(items=>items.map(el=>el.dataset.paper));
   assert.deepEqual(toolOrder.slice(0,2),['select','hand'],'Select and Pan are the first two neighboring notebook tools');
@@ -419,8 +419,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await click('page-settings');await page.locator('#paper-template').selectOption('dots');await click('save');
   await page.screenshot({path:'test-results/paper-'+name+'.png'});
   if(!await page.locator('[data-paper="add-page"]').first().isVisible())await click('pages');await click('add-page');await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
-  await click('delete-page');await page.getByRole('alertdialog').waitFor();await page.locator('[data-delete-choice="cancel"]').click();assert.equal(row.payload.notebook.notes[0].paper.pages.length,2);
-  await click('delete-page');await page.locator('[data-delete-choice="confirm"]').click();await click('save');assert.equal(row.payload.notebook.notes[0].paper.pages.length,1);
+  // Empty pages now delete immediately without a redundant confirmation,
+  // and undo/redo still protects against accidental taps.
+  await click('delete-page');await click('save');
+  assert.equal(row.payload.notebook.notes[0].paper.pages.length,1);
+  assert.equal(await page.getByRole('alertdialog').count(),0);
+  await click('undo');await click('save');
+  assert.equal(row.payload.notebook.notes[0].paper.pages.length,2,'Undo restores a deleted blank page');
+  await click('redo');await click('save');
+  assert.equal(row.payload.notebook.notes[0].paper.pages.length,1,'Redo removes the blank page again');
   // Save waits for acknowledgement instead of reporting success on click.
   offline=true;await page.locator('#paper-title').fill('งานรอออนไลน์');await page.locator('#paper-title').blur();await click('save');assert.match(await page.locator('#paper-hint').innerText(),/offline/);offline=false;await click('save');assert.equal(row.payload.notebook.notes[0].title,'งานรอออนไลน์');
   // Second independent browser context receives the exact same objects without reloading editor.

@@ -22,5 +22,6 @@ export function notebookHistory(limit=40){
   if(!save(next,focus))return;
   from.pop();to.push(item);bytes+=(back?-1:1)*item.bytes;
  }
- return {record,apply,get canUndo(){return undo.length>0},get canRedo(){return redo.length>0}};
+ return {record,apply,clear(){undo.length=0;redo.length=0;bytes=0;},
+  get canUndo(){return undo.length>0},get canRedo(){return redo.length>0}};
 }

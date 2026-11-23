@@ -1,7 +1,7 @@
 import {makeTable,tracks,tableStyle} from './paper-table.js?v=20261121-table-colors';
-import {uid} from './paper-core.js?v=20261121-paper-format';
+import {uid} from './paper-core.js?v=20261123-continuous-v1';
 
-export function mountTableEditor(root,{page,change,writable,finishText,viewport,getScale,onSaved,say}){
+export function mountTableEditor(root,{page,change,writable,finishText,viewport,getScale,getCanvasLimit=()=>1273,onSaved,say}){
  const layer=document.createElement('div');
  layer.className='paper-inline-table';
  root.querySelector('#paper-sheet').append(layer);
@@ -66,7 +66,7 @@ export function mountTableEditor(root,{page,change,writable,finishText,viewport,
  function preview(e){
   const {axis,index,original:o,scale}=drag,next={...o};
   const dx=(e.clientX-drag.x)/scale,dy=(e.clientY-drag.y)/scale;
-  if(axis==='move'){next.x=limit(o.x+dx,0,900-o.w);next.y=limit(o.y+dy,0,1273-o.h);}
+  if(axis==='move'){next.x=limit(o.x+dx,0,900-o.w);next.y=limit(o.y+dy,0,getCanvasLimit()-o.h);}
   else if(axis==='x'||axis==='y'){
    const horizontal=axis==='x',key=horizontal?'columns':'rows';
    const weights=tracks(o,key,horizontal?o.cells[0].length:o.cells.length);
@@ -78,7 +78,7 @@ export function mountTableEditor(root,{page,change,writable,finishText,viewport,
    if(axis==='left'){next.x=limit(o.x+dx,0,o.x+o.w-mw);next.w=o.w+o.x-next.x;}
    if(axis==='right')next.w=limit(o.w+dx,mw,900-o.x);
    if(axis==='top'){next.y=limit(o.y+dy,0,o.y+o.h-mh);next.h=o.h+o.y-next.y;}
-   if(axis==='bottom')next.h=limit(o.h+dy,mh,1273-o.y);
+   if(axis==='bottom')next.h=limit(o.h+dy,mh,getCanvasLimit()-o.y);
   }
   return next;
  }
@@ -96,7 +96,7 @@ export function mountTableEditor(root,{page,change,writable,finishText,viewport,
  function open(item,r=0,c=0){
   writable();finishText();
   if(!item){
-   item=makeTable(uid());item.y=limit(viewport.scrollTop/getScale()+110,12,1273-item.h-24);
+   item=makeTable(uid());item.y=limit(viewport.scrollTop/getScale()+110,12,getCanvasLimit()-item.h-24);
    if(!change(p=>p.objects.push(item)))return;
   }
   onSaved(item.id);field(r,c)?.focus({preventScroll:true});
