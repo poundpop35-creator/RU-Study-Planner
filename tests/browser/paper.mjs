@@ -172,7 +172,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.type==='stroke'),'pen writes with a palm already on the page');
    assert.deepEqual(errors,[]);console.log(name+': inline table PASS');continue;
   }
-  const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();return {x:r.x+x*r.width/900,y:r.y+y*r.height/1273};};
+  const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();const scale=r.width/900;return {x:r.x+x*scale,y:r.y+y*scale};};
   const toolbar=page.locator('.paper-toolbar');
   const toolOrder=await page.locator('.paper-toolset>button[data-paper]').evaluateAll(items=>items.map(el=>el.dataset.paper));
   assert.deepEqual(toolOrder.slice(0,2),['select','hand'],'Select and Pan are the first two neighboring notebook tools');
