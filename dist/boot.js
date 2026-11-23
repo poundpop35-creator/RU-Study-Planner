@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261123-scribble-typing-v1'); }
+try { await import('./app.js?v=20261123-ipad-keyboard-v2'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
