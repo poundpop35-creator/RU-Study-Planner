@@ -1277,7 +1277,7 @@ bind(rich,'keyup',()=>{
   return near.sort((a,b)=>Math.abs(p.x-(a.x+a.w))-Math.abs(p.x-(b.x+b.w)))[0]||null;
  }
  const tableUI=mountTableEditor(root,{page,change,writable,finishText,closeExtraTools,setShapesOpen,viewport,
-  getScale:()=>scale,onSaved:tableId=>{multiSelect=false;setTool('select');selected=new Set([tableId]);draw();},say});
+  getScale:()=>scale,getCanvasLimit:canvasLimit,onSaved:tableId=>{multiSelect=false;setTool('select');selected=new Set([tableId]);draw();},say});
  // In-app Word-style right-click menu. This is local to the notebook canvas,
  // so browser menus elsewhere in the application are not affected.
  const canvasMenu=$('#paper-context-menu');
@@ -1449,7 +1449,7 @@ bind(rich,'keyup',()=>{
    const o=gesture.image,f=Math.min(2700/o.w,3819/o.h,Math.max(12/Math.min(o.w,o.h),Math.hypot(a.x-b.x,a.y-b.y)/gesture.distance));
    const w=o.w*f,h=o.h*f;
    const x=Math.max(-900,Math.min(1800,o.x+(o.w-w)/2+((a.x+b.x)/2-gesture.cx)/scale));
-   const y=Math.max(-1273,Math.min(2546,o.y+(o.h-h)/2+((a.y+b.y)/2-gesture.cy)/scale));
+   const y=Math.max(-PAGE_H,Math.min(canvasLimit()-h,o.y+(o.h-h)/2+((a.y+b.y)/2-gesture.cy)/scale));
    gesture.preview=gesture.before.map(item=>item.id===o.id?{...o,x,y,w,h}:item);scheduleDraw();return;
   }
   if(gesture.kind==='pinch'&&pointers.size>=2){const [a,b]=[...pointers.values()],r=viewport.getBoundingClientRect(),cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;zoomAt(gesture.zoom*Math.hypot(a.x-b.x,a.y-b.y)/Math.max(10,gesture.distance),cx-r.left,cy-r.top);viewport.scrollLeft-=cx-gesture.cx;viewport.scrollTop-=cy-gesture.cy;gesture.cx=cx;gesture.cy=cy;return;}
