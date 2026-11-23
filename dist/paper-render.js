@@ -1,4 +1,4 @@
-import {PAGE_W,PAGE_H,pageHeight,continuousContentHeight} from './paper-core.js?v=20261123-continuous-v1';
+import {PAGE_W,PAGE_H,inkPadding,pageHeight,continuousContentHeight} from './paper-core.js?v=20261123-continuous-v1';
 import {formattedTextHTML} from './paper-rich-text.js?v=20261121-paper-format';
 import {shapeSVG} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {tableSVG} from './paper-table.js?v=20261121-paper-format';
@@ -29,7 +29,8 @@ export function printBoundaryGuides(height){
 }
 export function pageSVG(page,images,id='paper-lines',height=pageHeight(page)){
  const guides=height>PAGE_H&&!id.startsWith('thumb-')?printBoundaryGuides(height):'';
- return paperBackground(page.template,id,height)+guides+page.objects.map(o=>objectSVG(o,images,!id.startsWith('thumb-'))).join('');
+ const bands=(page.sections||[]).map((section,i)=>section.template===page.template?'':`<g transform="translate(0,${i*PAGE_H})">${paperBackground(section.template,id+'-section-'+i,PAGE_H)}</g>`).join('');
+ return paperBackground(page.template,id,height)+bands+guides+page.objects.map(o=>objectSVG(o,images,!id.startsWith('thumb-'))).join('');
 }
 // Paginate only at print time. Shared artwork across boundaries is clipped
 // into adjacent A4-sized sheets without changing or splitting saved objects.
@@ -39,11 +40,11 @@ export function printableSheets(model,images=new Map()){
   const count=model.version===2?Math.ceil(continuousContentHeight(page)/PAGE_H):1;
   for(let index=0;index<count;index++){
    const start=index*PAGE_H,finish=start+PAGE_H;
-   const content=page.objects.filter(o=>o.y+o.h>=start&&o.y<=finish)
+   const content=page.objects.filter(o=>o.y+o.h+inkPadding(o)>=start&&o.y-inkPadding(o)<=finish)
     .map(o=>objectSVG(o,images,false)).join('');
    const id='print-'+sheets.length;
    sheets.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+PAGE_W+' '+PAGE_H+'">'+
-    paperBackground(page.template,id,PAGE_H)+
+    paperBackground(page.sections?.[index]?.template||page.template,id,PAGE_H)+
     '<g transform="translate(0,-'+start+')">'+content+'</g></svg>');
   }
  }

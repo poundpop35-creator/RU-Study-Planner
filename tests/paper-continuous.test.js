@@ -87,3 +87,29 @@ test('conversion can safely clear stale per-page undo without changing the saved
  assert.equal(history.canUndo,false);
  assert.equal(history.canRedo,false);
 });
+
+test('converted page templates and identifiers survive reload and print; undo protects newer edits',()=>{
+ const a=emptyPage(),b=emptyPage();
+ b.template='grid';b.objects=[txt('grid-content','ในตาราง',100)];
+ const original=validatePaper({version:1,pages:[a,b]});
+ const converted=validatePaper(toContinuousPaper(original));
+ assert.deepEqual(converted.pages[0].sections,[{id:a.id,template:'ruled'},{id:b.id,template:'grid'}]);
+ assert.match(pageSVG(converted.pages[0],new Map()),/M30 0 H0 V30/);
+ assert.match(printableSheets(converted)[1],/M30 0 H0 V30/);
+ const history=notebookHistory();
+ history.record(original,converted,0,true);
+ const newer=structuredClone(converted);newer.pages[0].objects[0].text+='!';
+ assert.throws(()=>history.apply(newer.pages,true,()=>true));
+ assert.throws(()=>mergePaper(converted,original,newer));
+ let restored;
+ const save=(pages,id,version)=>{restored={version,pages};return true;};
+ history.apply(converted.pages,true,save);assert.deepEqual(restored,original);
+ history.apply(restored.pages,false,save);assert.deepEqual(restored,converted);
+});
+
+test('wide highlight crossing A4 prints both fragments',()=>{
+ const page={...emptyPage(),height:PAGE_H*2,objects:[{id:'marker',type:'stroke',tool:'highlight',width:40,color:'#ffff00',x:100,y:PAGE_H-5,w:100,h:1,points:[[0,0,.5],[1,0,.5]]}]};
+ const sheets=printableSheets({version:2,pages:[page]});
+ assert.equal(sheets.length,2);
+ for(const sheet of sheets)assert.match(sheet,/data-object="marker"/);
+});
