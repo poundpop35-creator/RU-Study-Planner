@@ -255,7 +255,7 @@ body.paper-mode{overflow:hidden;background:#edf0f3}
  .paper-app .paper-toolbar-more>summary{height:38px!important;min-height:38px!important;max-height:38px!important;padding:0 8px!important}
 }
 
-/* Pencil palm guard is kept inside the folded settings menu. */
+/* Palm protection is displayed in the drawing input strip, never in a folded menu. */
 .paper-palm-guard{display:inline-flex;align-items:center;gap:7px;flex:1 1 200px;min-height:38px;padding:6px 9px;border:1px solid #cddaf2;background:#f1f6ff;border-radius:10px;color:#28487d;font-weight:650;font-size:12px}
 .paper-palm-guard input{width:18px;height:18px;accent-color:#3155d9;flex-shrink:0}
 .paper-app.paper-palm-guard-on .paper-viewport{touch-action:pan-x pan-y}
@@ -1010,4 +1010,104 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  .paper-app .paper-scribble-actions{width:100%;justify-content:flex-start}
  .paper-app .paper-scribble-actions button{padding:5px 8px;font-size:11px}
  .paper-app .paper-scribble-formats{padding:4px 6px;gap:6px}
+}
+
+
+/* Visible writing input controls, intentionally outside the scrollable
+   tool/settings strips so iPad users can always find them when drawing. */
+.paper-app .paper-input-strip{
+ display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;
+ gap:7px 11px;flex:0 0 auto;min-width:0;max-width:100%;
+ box-sizing:border-box;padding:6px 12px;
+ background:#f2f6ff;border-bottom:1px solid #cbdaf3;
+ color:#29446d;font-size:12px;
+}
+.paper-app .paper-input-strip[hidden]{display:none!important}
+.paper-app .paper-input-switch{
+ display:inline-flex;align-items:stretch;flex:0 0 auto;gap:0;
+ padding:3px;border:1px solid #b5c6e8;border-radius:11px;background:#e5edfb;
+}
+.paper-app .paper-input-switch label{
+ display:inline-flex;align-items:center;justify-content:center;gap:5px;
+ min-height:32px;padding:5px 10px;white-space:nowrap;
+ cursor:pointer;border-radius:8px;color:#35517d;font-size:12px;font-weight:650;
+}
+.paper-app .paper-input-switch input{
+ width:15px;height:15px;flex:0 0 auto;margin:0;accent-color:#3155d9;
+}
+.paper-app .paper-input-switch label:has(input:checked){
+ color:#1b43a0;background:#fff;box-shadow:0 1px 3px #142b5840;
+ font-weight:750;
+}
+.paper-app .paper-input-strip .paper-palm-guard{
+ flex:0 1 auto;min-width:0;min-height:38px;padding:6px 10px;
+ border-color:#b5c6e8;background:#fff;
+ font-size:12px;cursor:pointer;
+}
+.paper-app .paper-input-strip .paper-palm-guard:has(input:checked){
+ border-color:#3155d9;background:#dce8ff;color:#1d3f9b;
+}
+.paper-app .paper-input-strip .paper-geometry-check{
+ display:inline-flex;align-items:center;gap:5px;
+ min-height:34px;font-size:12px;cursor:pointer;
+ white-space:normal;color:#35517d;
+}
+.paper-app .paper-input-strip .paper-geometry-check[hidden]{display:none!important}
+.paper-app .paper-input-strip :is(input,button):focus-visible{
+ outline:2px solid #3155d9;outline-offset:2px;
+}
+@media(max-width:720px){
+ .paper-app .paper-input-strip{gap:5px 8px;padding:5px 7px}
+ .paper-app .paper-input-switch label{padding:4px 7px;min-height:32px;font-size:11px}
+ .paper-app .paper-input-strip .paper-palm-guard{padding:5px 8px;font-size:11px}
+ .paper-app .paper-input-strip .paper-geometry-check{font-size:11px}
+}
+
+
+/* Eraser type picker is inside the single Eraser tool but renders outside
+   the horizontally scrolling tools row, so Safari cannot clip its choices. */
+.paper-app .paper-eraser-menu{
+ position:absolute;z-index:24;top:calc(100% + 5px);
+ width:min(245px,calc(100vw - 16px));box-sizing:border-box;
+ display:flex;flex-direction:column;gap:5px;padding:9px;
+ border:1px solid #b9cae7;border-radius:13px;
+ background:#fff;box-shadow:0 12px 32px #20345935;
+}
+.paper-app .paper-eraser-menu[hidden]{display:none!important}
+.paper-app .paper-eraser-menu strong{
+ font-size:12px;color:#35517b;padding:3px 7px 6px;
+}
+.paper-app .paper-eraser-menu button{
+ display:block;min-height:41px;padding:9px 10px;
+ border:1px solid transparent;border-radius:9px;
+ background:#f4f7fd;text-align:left;font-size:13px;
+}
+.paper-app .paper-eraser-menu button[aria-pressed="true"]{
+ background:#e3ecff;color:#1840a0;
+ border-color:#93b2f2;font-weight:750;
+}
+.paper-app .paper-shape-rotation{
+ display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;
+ min-width:0;border-left:1px solid #d7dfed;padding-left:8px;
+}
+.paper-app .paper-shape-rotation button{
+ min-height:34px;padding:5px 9px;
+ border:1px solid #bdcceb;border-radius:8px;
+ background:#f2f6ff;color:#2850a3;
+ font-size:12px;font-weight:650;
+}
+.paper-app .paper-shape-rotation label{
+ display:inline-flex;align-items:center;gap:4px;
+ min-height:34px;font-size:12px;font-weight:650;
+ white-space:nowrap;color:#35517b;
+}
+.paper-app .paper-shape-rotation input{
+ width:57px;min-height:34px;padding:4px 5px;
+ border:1px solid #bac9df;border-radius:7px;
+ font-size:14px;background:#fff;color:#172033;
+}
+@media(max-width:720px){
+ .paper-app .paper-shape-rotation{width:100%;justify-content:flex-start;padding-left:0;border-left:0}
+ .paper-app .paper-shape-rotation button{padding:5px 8px}
+ .paper-app .paper-eraser-menu{top:calc(100% + 3px)}
 }

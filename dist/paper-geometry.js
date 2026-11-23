@@ -30,10 +30,10 @@ export function recognizeHeldShape(samples){
  if(ellipseError<.19){
   return {kind:Math.abs(w-h)/Math.max(w,h)<.12?'circle':'ellipse',start:{x:minX,y:minY},end:{x:maxX,y:maxY}};
  }
- const nodes=simplify(p,diag*.10);
- if(nodes.length===4&&dist(nodes[0],nodes.at(-1))<Math.max(18,diag*.20)){
-  return {kind:'triangle',start:{x:minX,y:minY},end:{x:maxX,y:maxY}};
- }
+ // Validate the three sides and preserve the apex direction. A simple
+ // 3-corner simplification alone can turn a downward triangle upright.
+ const triangle=drawnTriangle(tracePoints(samples));
+ if(triangle)return triangle;
  return null;
 }
 export function rulerProject(point,ruler,edge=1){
@@ -101,6 +101,29 @@ function drawnTriangle(p){
  return null;
 }
 
+// A rough but clearly single-direction pen stroke may have more local jitter
+// than the hold recognizer permits. Never turn a bent stroke or open V into a
+// line: the midpoint/overall deviation must remain small.
+function forgivingStraightLine(points){
+ if(points.length<3)return null;
+ const start=points[0],end=points.at(-1),length=dist(start,end);
+ if(length<42)return null;
+ const traveled=points.slice(1).reduce((n,p,i)=>n+dist(p,points[i]),0);
+ const dev=points.map(p=>distanceToSegment(p,start,end));
+ const mean=dev.reduce((a,b)=>a+b,0)/dev.length;
+ if(traveled/length>1.38||Math.max(...dev)>Math.max(9,length*.125)||mean>Math.max(4,length*.045))return null;
+ // A tiny backwards flourish is okay, but a U-turn/retracing is not.
+ const vx=(end.x-start.x)/length,vy=(end.y-start.y)/length;
+ let progress=-Infinity,back=0;
+ for(const p of points){
+  const t=(p.x-start.x)*vx+(p.y-start.y)*vy;
+  if(t<progress-length*.055)back+=progress-t;
+  progress=Math.max(progress,t);
+ }
+ if(back>length*.17)return null;
+ return {kind:'line',start,end};
+}
+
 function drawnArrow(points){
  // The shaft reaches the tip first. The rest of the trace must visit both wings
  // behind the tip, allowing a retraced wing or a closed triangular head.
@@ -132,6 +155,8 @@ export function recognizeDrawnShape(samples){
  if(directional)return directional;
  const exact=recognizeHeldShape(samples);
  if(exact)return exact;
+ const line=forgivingStraightLine(uniform);
+ if(line)return line;
  if(!Array.isArray(samples)||samples.length<9)return null;
  const p=samples.map(s=>({x:Number(s[0]),y:Number(s[1])}));
  if(p.some(a=>!Number.isFinite(a.x)||!Number.isFinite(a.y)))return null;

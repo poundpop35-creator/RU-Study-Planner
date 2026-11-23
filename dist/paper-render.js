@@ -1,6 +1,6 @@
-import {PAGE_W,PAGE_H} from './paper-core.js?v=20261121-paper-format';
+import {PAGE_W,PAGE_H} from './paper-core.js?v=20261123-shapes-eraser-v4';
 import {formattedTextHTML} from './paper-rich-text.js?v=20261121-paper-format';
-import {shapeSVG} from './paper-shapes.js?v=notebook-shape-tools-20261120';
+import {shapeSVG} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {tableSVG} from './paper-table.js?v=20261121-paper-format';
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const round=n=>Math.round(n*100)/100;

@@ -1,7 +1,7 @@
 import {notebookHistory} from './paper-page-history.js';
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
-import {PAGE_W,PAGE_H,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS} from './paper-core.js?v=20261121-paper-format';
-import {pageSVG,objectSVG,esc} from './paper-render.js?v=20261121-paper-format';
+import {PAGE_W,PAGE_H,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS} from './paper-core.js?v=20261123-shapes-eraser-v4';
+import {pageSVG,objectSVG,esc} from './paper-render.js?v=20261123-shapes-eraser-v4';
 import {imageHandles,resizeImage,cropImage} from './paper-images.js';
 import {readAttachment,downloadAttachment} from './note-files.js';
 import {replaceLink,moveLinks} from './word-links.js';
@@ -9,8 +9,8 @@ import {textSize,textColor,formattedTextHTML,normalizeMarks,toggleTextFormat,app
 import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
 import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
-import {makeShape,resizeShape,eraserHit,isJoinable,snapLinePoint,snapMovedLine} from './paper-shapes.js?v=eraser-20261121';
-import {recognizeHeldShape,recognizeDrawnShape,diagramSegments,hasBranchJunction,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261121-safe-forms';
+import {makeShape,resizeShape,shapeAngle,shapeContains,eraserTargetHit,isJoinable,snapLinePoint,snapMovedLine} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
+import {recognizeHeldShape,recognizeDrawnShape,diagramSegments,hasBranchJunction,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261123-shapes-eraser-v4';
 import {mountTableEditor} from './paper-table-ui.js?v=20261121-paper-format';
 import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
 let active=null;
@@ -22,7 +22,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  try{initial=paperFor(note);}
  catch(err){throw Error('อ่านหน้ากระดาษเดิมไม่สำเร็จ: '+(err?.message||'รูปแบบข้อมูลไม่รองรับ')+' · ไม่มีการลบหรือบันทึกทับต้นฉบับ');}
  let model=initial,pageId=model.pages[0].id,tool=startInk?'pen':'text',color='#172033',defaultTextColor='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=startInk,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
- let multiSelect=false,wordSelection=null,lineStyle='solid',smartEnabled=true,smartTimer=0,lastTextTap=null;
+ let multiSelect=false,wordSelection=null,lineStyle='solid',eraserKind='stroke',smartEnabled=true,smartTimer=0,lastTextTap=null;
  let lastSelectionSignature='';
  let ruler={active:false,x:PAGE_W/2,y:PAGE_H/2,angle:0,length:440,height:44};
  function cancelSmartTimer(){clearTimeout(smartTimer);smartTimer=0;}
@@ -80,15 +80,24 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   }catch{if(!preview.closed)doc.body.textContent='เตรียมหน้ากระดาษไม่สำเร็จ กรุณาปิดหน้านี้แล้วลองพิมพ์อีกครั้ง';}
  });
  const palmToggle=$('#paper-palm-guard');
- palmToggle.checked=palmGuard;root.classList.toggle('paper-palm-guard-on',palmGuard);
+ const syncInputControls=()=>{
+  $('#paper-finger').checked=finger;
+  $('#paper-pencil-only').checked=!finger;
+  palmToggle.checked=palmGuard;
+ };
+ syncInputControls();root.classList.toggle('paper-palm-guard-on',palmGuard);
  const page=()=>model.pages.find(p=>p.id===pageId)||model.pages[0];
 
  const say=(text,bad=false)=>{const el=$('#paper-hint');el.textContent=text;el.classList.toggle('error',bad);};
  function setPalmGuard(value){
   palmGuard=!!value;palmToggle.checked=palmGuard;
   root.classList.toggle('paper-palm-guard-on',palmGuard);
-  if(palmGuard){finger=false;$('#paper-finger').checked=false;pointers.clear();gesture=null;cancelSmartTimer();scheduleDraw();}
-  try{localStorage.setItem(palmKey,String(palmGuard));}catch{}
+  if(palmGuard){finger=false;pointers.clear();gesture=null;cancelSmartTimer();scheduleDraw();}
+  syncInputControls();
+  try{
+   localStorage.setItem(palmKey,String(palmGuard));
+   if(palmGuard)localStorage.setItem(fingerKey,'false');
+  }catch{}
   say(palmGuard?'กันฝ่ามือแล้ว · Apple Pencil เขียนได้ · ใช้ปุ่ม +/− เพื่อซูม':'ปิดกันฝ่ามือแล้ว · ใช้สองนิ้วซูมได้');
  }
  const currentNote=()=>space.notebook().notes.find(n=>n.id===id);
@@ -173,7 +182,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    const globalPicker=$('#paper-global-text-color');
    if(document.activeElement!==globalPicker)globalPicker.value=editing?.object?.color||visible.find(o=>selected.has(o.id)&&o.type==='text')?.color||singleTable?.textColor||defaultTextColor;
    const shapePanel=$('#paper-shape-selection');shapePanel.hidden=!singleShape;
-   if(singleShape){$('#paper-selected-shape').value=singleShape.kind;$('#paper-selected-line-style').value=singleShape.dash||singleShape.lineStyle||'solid';}
+   if(singleShape){$('#paper-selected-shape').value=singleShape.kind;$('#paper-selected-line-style').value=singleShape.dash||singleShape.lineStyle||'solid';const angleInput=$('#paper-shape-angle');if(document.activeElement!==angleInput)angleInput.value=String(shapeAngle(singleShape.angle));}
   const linkButton=$('[data-paper="image-link"]'),openLink=$('#paper-open-link');
   linkButton.hidden=!singleImage;linkButton.textContent=singleImage?.link?'แก้ลิงก์':'ใส่ลิงก์';
   openLink.hidden=!singleImage?.link;
@@ -270,7 +279,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   }
  }
  function setTool(next){
-  cancelSmartTimer();closePenSizePicker();finishText();pointers.clear();gesture=null;
+  cancelSmartTimer();closePenSizePicker();closeEraserMenu();finishText();pointers.clear();gesture=null;
   activePanel=['line','arrow','branch3'].includes(next)?'shape':next;
   if(next==='line'||next==='arrow'||next==='branch3'){
    $('#paper-shape').value=next;tool='shape';
@@ -295,6 +304,21 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const ribbon=$('#paper-text-ribbon'),wordMenu=$('#paper-word-menu'),rich=document.createElement('div');
  // Restore one familiar tool row. Move drawing colors out of the advanced
  // dropdown so pen/highlighter colors cannot be hidden by a clipped menu.
+ const eraserMenu=$('#paper-eraser-menu');
+ const eraserButton=$('[data-paper="eraser"]');
+ eraserButton.setAttribute('aria-haspopup','true');
+ eraserButton.setAttribute('aria-expanded','false');
+ eraserButton.setAttribute('aria-controls','paper-eraser-menu');
+ function closeEraserMenu(){eraserMenu.hidden=true;eraserButton.setAttribute('aria-expanded','false');}
+ function toggleEraserMenu(){
+  if(!eraserMenu.hidden){closeEraserMenu();return;}
+  eraserMenu.hidden=false;
+  const anchor=eraserButton.getBoundingClientRect(),parent=$('.paper-toolbar').getBoundingClientRect();
+  eraserMenu.style.left=Math.max(6,Math.min(anchor.left-parent.left,parent.width-eraserMenu.offsetWidth-6))+'px';
+  eraserButton.setAttribute('aria-expanded','true');
+  for(const b of eraserMenu.querySelectorAll('[data-eraser-kind]'))
+   b.setAttribute('aria-pressed',String(b.dataset.eraserKind===eraserKind));
+ }
  const mainTools=$('.paper-toolset');
  // Use a contextual settings strip, not a nested options popup. Keep the
  // actual controls and IDs intact so their existing event bindings survive.
@@ -304,11 +328,17 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  contextBar.className='paper-context-controls';contextBar.setAttribute('role','toolbar');
  contextBar.setAttribute('aria-label','การตั้งค่าของเครื่องมือที่เลือก');
  contextWrap.append(contextBar);
- root.querySelector('.paper-toolbar').after(contextWrap);
+ // Keep the writing device and palm-protection choices visible beside the
+ // drawing tools instead of burying them inside a horizontally scrolled menu.
+ const inputStrip=document.createElement('div');
+ inputStrip.id='paper-input-strip';inputStrip.className='paper-input-strip';
+ inputStrip.setAttribute('role','group');inputStrip.setAttribute('aria-label','วิธีเขียนและป้องกันฝ่ามือ');
+ inputStrip.hidden=true;
+ inputStrip.append($('.paper-input-switch'),$('.paper-palm-guard'),$('.paper-geometry-check'));
+ root.querySelector('.paper-toolbar').after(inputStrip,contextWrap);
  let activePanel=tool;
  const settingsRow=(name,label)=>{const node=document.createElement('div');node.className='paper-context-section paper-context-'+name;node.hidden=true;node.setAttribute('aria-label',label);contextBar.append(node);return node;};
  const inkOptions=settingsRow('ink','สีและความหนาเส้น');
- const pencilOptions=settingsRow('pencil','การเขียนด้วยปากกา');
  const shapeOptions=settingsRow('shape','การเลือกและปรับรูปทรง');
  const textOptions=settingsRow('text','การพิมพ์ข้อความ');
  const pageOptions=settingsRow('page','แบบหน้ากระดาษ');
@@ -322,7 +352,6 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  shapeOptions.append($('#paper-shape-options'),$('#paper-line-options'));
  const shapeGallery=document.createElement('button');shapeGallery.type='button';shapeGallery.dataset.openShapes='context';
  shapeGallery.setAttribute('aria-label','เลือกรูปทรง');shapeGallery.title='เลือกรูปทรง';shapeOptions.prepend(shapeGallery);
- pencilOptions.append($('.paper-finger'),$('.paper-palm-guard'),$('.paper-geometry-check'));
  textOptions.append($('.paper-default-text-size'),$('.paper-global-ink'),$('[data-paper="scribble-text"]'));
  const boldPreset=document.createElement('button');
  boldPreset.type='button';boldPreset.textContent='B';boldPreset.style.fontWeight='700';
@@ -355,7 +384,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  function updateContextToolBar(){
   const showInk=['pen','highlight','shape','straighten'].includes(activePanel);
   inkOptions.hidden=!showInk;
-  pencilOptions.hidden=!['pen','highlight','eraser','straighten'].includes(activePanel);
+  inputStrip.hidden=!['pen','highlight','eraser','straighten','shape'].includes(activePanel);
   $('.paper-geometry-check').hidden=!['pen','straighten'].includes(activePanel);
   shapeOptions.hidden=activePanel!=='shape';
   textOptions.hidden=activePanel!=='text';boldPreset.hidden=!!editing;
@@ -364,7 +393,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   rulerOptions.hidden=activePanel!=='ruler'||!ruler.active;
   ribbon.hidden=activePanel!=='text'||!editing;
   inkBar.hidden=!showInk;
-  contextWrap.hidden=[inkOptions,pencilOptions,shapeOptions,textOptions,pageOptions,selectOptions,rulerOptions,ribbon].every(el=>el.hidden);
+  contextWrap.hidden=[inkOptions,shapeOptions,textOptions,pageOptions,selectOptions,rulerOptions,ribbon].every(el=>el.hidden);
   $('#paper-shape-options').hidden=true;
   $('#paper-line-options').hidden=activePanel!=='shape';
   const angleInput=$('#paper-ruler-angle');
@@ -692,12 +721,16 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.width='max-content';textMeasure.style.maxWidth='none';textMeasure.style.whiteSpace='pre';
   textMeasure.innerHTML=formattedTextHTML({text,marks},esc,false,false);
   const hasInlineAlign=marks.some(m=>m.align);
-  const width=Math.min(available,Math.max(editing.align||hasInlineAlign?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+7));
+  // Measure the longest explicit line before wrapping. Keep an existing
+  // manually enlarged box as the minimum width and expand with typing, up
+  // to the right paper edge. Mixed B/I/U text uses its real styled width.
+  const naturalWidth=Math.ceil(Math.max(textMeasure.scrollWidth,textMeasure.getBoundingClientRect().width))+14;
+  const width=Math.min(available,Math.max(32,o.w,editing.align||hasInlineAlign?(editing.alignWidth||0):0,naturalWidth));
   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
   editing.paperWidth=width;
-  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textMeasure.offsetHeight));
-  rich.style.width=Math.min(available,(editing.align||hasInlineAlign?width:Math.max(250,width)))+'px';
+  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight));
+  rich.style.width=width+'px';
   rich.style.minHeight=Math.max(o.size*1.5,editing.paperHeight)+'px';
  }
  function activateRich(){
@@ -754,20 +787,25 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.overflowWrap='normal';textMeasure.style.lineHeight='1.5';
   textMeasure.textContent=textarea.value;
   const availableWidth=Math.max(1,PAGE_W-o.x);
-  const width=Math.min(availableWidth,scribbleActive?Math.max(32,o.w):Math.max(editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+5));
+  // Measure unwrapped text first. Growing only the textarea's height would
+  // cause premature line breaks (notably when returning to a saved text box).
+  const naturalWidth=Math.ceil(Math.max(textMeasure.scrollWidth,textMeasure.getBoundingClientRect().width))+14;
+  const width=Math.min(availableWidth,Math.max(32,o.w,editing.alignWidth||0,naturalWidth));
   editing.paperWidth=width;
-  if(editing.mobile||scribbleActive){
-   // Store the natural on-paper height, not the temporary interactive target.
-   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
-   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
-   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight));
-  }
-  // Leave a wider editable target for Apple Pencil Scribble *without* storing
-  // that extra whitespace as the object's final bounds.
-  textarea.style.width=Math.min(availableWidth,(editing.align?width:Math.max(250,width)))+'px';
+  // Compute the real height at the actual paper width on every device,
+  // including desktop and Pencil. Only wrap at the paper's right edge or
+  // where the user explicitly entered a newline.
+  textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
+  textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
+  editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight+3));
+  // Keep a comfortable editing target on iPad/phones even when the
+  // text object itself is short. As text grows, the target expands past 250px
+  // and the saved box uses its naturally measured width.
+  const visualWidth=Math.min(availableWidth,Math.max(250,width));
+  textarea.style.width=visualWidth+'px';
   textarea.style.overflowY='hidden';
   textarea.style.height='1px';
-  const height=Math.min(Math.max(1,PAGE_H-o.y),Math.max(Math.ceil(o.size*1.5),textarea.scrollHeight));
+  const height=Math.min(Math.max(1,PAGE_H-o.y),Math.max(editing.paperHeight,textarea.scrollHeight));
   textarea.style.height=height+'px';
   if(textarea.scrollHeight>height)textarea.style.overflowY='auto';
  }
@@ -838,7 +876,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(edit.rich)fitRichBox();
   const content=edit.rich?readRich():{text:textarea.value,marks:edit.marks||[]};
   const w=parseFloat(textarea.style.width),h=parseFloat(textarea.style.height);
-  const o={...edit.object,text:content.text,w:edit.paperWidth??w,h:edit.rich||edit.mobile||wasScribble?(edit.paperHeight||h):h};
+  const o={...edit.object,text:content.text,w:edit.paperWidth??w,h:edit.paperHeight??h};
   if(edit.align)o.align=edit.align;
   if(edit.links.length)o.links=edit.links;else delete o.links;
   if(content.marks.length)o.marks=content.marks;else delete o.marks;
@@ -1011,11 +1049,11 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    return;
   }
   if(unsaved){say('มีงานค้าง กรุณาบันทึกหรือสำรองก่อนเขียนต่อ',true);return;}
-  if(tool==='hand'||e.pointerType==='touch'&&!finger&&['pen','highlight','eraser'].includes(tool)){gesture={kind:'pan',px:e.clientX,py:e.clientY,left:viewport.scrollLeft,top:viewport.scrollTop};return;}
+  if(tool==='hand'||e.pointerType==='touch'&&!finger&&['pen','highlight','eraser','straighten','shape'].includes(tool)){gesture={kind:'pan',px:e.clientX,py:e.clientY,left:viewport.scrollLeft,top:viewport.scrollTop};return;}
   try{writable();}catch(err){say(err.message,true);return;}
   if((tool==='select'||tool==='text')&&(e.shiftKey||multiSelect)){
    tool='select';
-   const hit=[...page().objects].reverse().find(o=>o.type==='stroke'?strokeHit(o,p,8):contains(p,o,o.type==='shape'?8:0));
+   const hit=[...page().objects].reverse().find(o=>o.type==='stroke'?strokeHit(o,p,8):(o.type==='shape'?shapeContains(o,p,8):contains(p,o,0)));
    if(hit){
     const alreadySelected=selected.has(hit.id);
     selected.add(hit.id);
@@ -1036,7 +1074,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   }
   if(['text','select'].includes(tool)){
    const edge=e.target.closest('[data-edge]')?.dataset.edge;
-   const hit=edge?page().objects.find(o=>selected.has(o.id)&&(o.type==='image'||o.type==='shape')):[...page().objects].reverse().find(o=>o.type==='stroke'?strokeHit(o,p,8):contains(p,o,o.type==='shape'?8:0));
+   const hit=edge?page().objects.find(o=>selected.has(o.id)&&(o.type==='image'||o.type==='shape')):[...page().objects].reverse().find(o=>o.type==='stroke'?strokeHit(o,p,8):(o.type==='shape'?shapeContains(o,p,8):contains(p,o,0)));
    if(hit?.type==='shape'&&edge){selected=new Set([hit.id]);gesture={kind:'shape-resize',edge,shape:hit,start:p,before:copy(page().objects)};draw();return;}
    if(hit?.type==='image'&&(edge||tool==='text'||selected.size<=1||!selected.has(hit.id))){
     selected=new Set([hit.id]);gesture={kind:edge?'image-resize':'move',edge,image:hit,start:p,before:copy(page().objects)};draw();return;
@@ -1053,7 +1091,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   if(tool==='select'){
    const box=bounds(page().objects.filter(o=>selected.has(o.id)));
    if(box&&contains(p,{x:box.x+box.w-15,y:box.y+box.h-15,w:30,h:30})){gesture={kind:'resize',start:p,before:copy(page().objects),box};return;}
-   const hit=[...page().objects].reverse().find(o=>o.type==='stroke'?strokeHit(o,p,8):contains(p,o,o.type==='shape'?8:0));
+   const hit=[...page().objects].reverse().find(o=>o.type==='stroke'?strokeHit(o,p,8):(o.type==='shape'?shapeContains(o,p,8):contains(p,o,0)));
    if(hit){if(!selected.has(hit.id))selected=new Set([hit.id]);gesture={kind:'move',start:p,before:copy(page().objects)};}
    else{selected.clear();gesture={kind:'lasso',points:[p]};}draw();return;
   }
@@ -1063,7 +1101,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    gesture={kind:'shape',id:uid(),shape:kind,start:join?snapLinePoint(p,page().objects,10/scale):p,join,color,width,lineStyle};
    return;
   }
-  if(tool==='eraser'){gesture={kind:'erase',last:p,before:copy(page().objects),preview:page().objects.filter(o=>!eraserHit(o,p))};scheduleDraw();return;}
+  if(tool==='eraser'){gesture={kind:'erase',eraseMode:eraserKind,last:p,before:copy(page().objects),preview:copy(page().objects)};sweepErase(gesture,p);scheduleDraw();return;}
   const snapped=tool==='pen'?rulerSnap(p,ruler):null,initial=snapped||p;
   gesture={kind:'stroke',tool:tool==='straighten'?'pen':tool,straighten:tool==='straighten',color:tool==='highlight'&&color==='#172033'?'#f4cd45':color,width:tool==='highlight'?highlighterSize:width,
    points:[[initial.x,initial.y,e.pointerType==='pen'&&e.pressure>0?e.pressure:.5]],
@@ -1114,10 +1152,22 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   }
   else if(gesture.kind==='image-resize')gesture.preview=gesture.before.map(o=>o.id===gesture.image.id?resizeImage(o,gesture.edge,p.x-gesture.start.x,p.y-gesture.start.y):o);
    else if(gesture.kind==='shape-resize')gesture.preview=gesture.before.map(o=>o.id===gesture.shape.id?resizeShape(o,gesture.edge,p.x-gesture.start.x,p.y-gesture.start.y):o);
-  else if(gesture.kind==='resize'){const b=gesture.box,f=Math.max(.15,Math.min(4,Math.max((p.x-b.x)/Math.max(1,b.w),(p.y-b.y)/Math.max(1,b.h))));gesture.preview=gesture.before.map(o=>selected.has(o.id)?{...o,x:b.x+(o.x-b.x)*f,y:b.y+(o.y-b.y)*f,w:Math.max(1,o.w*f),h:Math.max(1,o.h*f),...(o.type==='text'?{size:Math.round(Math.min(96,Math.max(10,o.size*f)))}:{})}:o);}
+  else if(gesture.kind==='resize'){
+   const b=gesture.box,dx=p.x-gesture.start.x,dy=p.y-gesture.start.y;
+   const f=Math.max(.15,Math.min(4,Math.max((p.x-b.x)/Math.max(1,b.w),(p.y-b.y)/Math.max(1,b.h))));
+   gesture.preview=gesture.before.map(o=>{
+    if(!selected.has(o.id))return o;
+    if(o.type==='text'){
+     // Dragging the corner changes only the editable box dimensions.
+     // Font size and per-word formatting are deliberately untouched.
+     return {...o,w:Math.max(32,Math.min(PAGE_W-o.x,o.w+dx)),h:Math.max(o.size*1.5,Math.min(PAGE_H-o.y,o.h+dy))};
+    }
+    return {...o,x:b.x+(o.x-b.x)*f,y:b.y+(o.y-b.y)*f,w:Math.max(1,o.w*f),h:Math.max(1,o.h*f)};
+   });
+  }
   scheduleDraw();
  }
- function sweepErase(g,p){g.preview=g.preview.filter(o=>!eraserHit(o,g.last,p));g.last=p;}
+ function sweepErase(g,p){g.preview=g.preview.filter(o=>!eraserTargetHit(o,g.last,p,g.eraseMode,10/scale));g.last=p;}
  function pointerUp(e){
   if(!pointers.has(e.pointerId))return;const g=gesture;
   cancelSmartTimer();
@@ -1255,6 +1305,24 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    if(b.dataset.paperPage){finishText();pageId=b.dataset.paperPage;selected.clear();viewport.scrollTop=0;if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);draw();thumbs();return;}
    if(b.hasAttribute('data-open-shapes')){setShapesOpen($('#paper-shapes-popup').hidden);return;}
    if(b.hasAttribute('data-shapes-close')){setShapesOpen(false);return;}
+   if(b.dataset.eraserKind){
+    if(!['stroke','shape','text'].includes(b.dataset.eraserKind))return;
+    eraserKind=b.dataset.eraserKind;
+    for(const item of eraserMenu.querySelectorAll('[data-eraser-kind]'))
+     item.setAttribute('aria-pressed',String(item.dataset.eraserKind===eraserKind));
+    setTool('eraser');
+    eraserButton.title='ยางลบ · '+({stroke:'ลบเส้นปากกา',shape:'ลบรูปทรง',text:'ลบข้อความ'})[eraserKind];
+    say('ยางลบ: '+({stroke:'ปาดหรือลากเพื่อลบเส้นปากกาและไฮไลต์',shape:'แตะหรือลากเพื่อลบรูปทรงและลูกศร',text:'แตะหรือลากเพื่อลบกล่องข้อความ'})[eraserKind]);
+    return;
+   }
+   if(b.dataset.shapeRotate){
+    const delta=b.dataset.shapeRotate==='reset'?null:Number(b.dataset.shapeRotate);
+    if(delta!==null&&!Number.isFinite(delta))return;
+    change(p=>p.objects.forEach(o=>{
+     if(selected.has(o.id)&&o.type==='shape')o.angle=delta===null?0:shapeAngle((o.angle||0)+delta);
+    }));
+    return;
+   }
    if(b.dataset.shapePick){
     const kind=b.dataset.shapePick;
     const single=page().objects.find(o=>selected.size===1&&selected.has(o.id)&&o.type==='shape');
@@ -1305,6 +1373,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
     multiSelect=!multiSelect;setTool('select');
     say(multiSelect?'แตะเพื่อเพิ่มหรือนำออกจากกลุ่ม · ลากชิ้นที่เลือกเพื่อย้ายพร้อมกัน':'แตะเพื่อเลือก · Shift + คลิกเพื่อเลือกเพิ่ม');return;
    }
+   if(action==='eraser'){toggleEraserMenu();return;}
    if(action==='shape'){setTool('shape');setShapesOpen(true);return;}
    if(['select','pen','highlight','eraser','text','hand','line','arrow','straighten'].includes(action)){setTool(action);return;}
    if(action==='table'){$('.paper-menu').open=false;tableUI.open();return;}
@@ -1376,6 +1445,12 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    if(next==='square'||next==='circle'){const side=Math.max(o.w,o.h);o.w=side;o.h=side;}
   }));
  });
+ bind($('#paper-shape-angle'),'change',e=>{
+  const raw=Number(e.target.value);
+  if(!Number.isFinite(raw)){draw();return;}
+  const angle=shapeAngle(raw);
+  change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='shape')o.angle=angle;}));
+ });
  bind($('#paper-selected-line-style'),'change',e=>{
   const style=e.target.value;
   if(!selected.size)return;
@@ -1387,11 +1462,22 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
  });
   bind($('#paper-width'),'input',e=>updatePenWidth(e.target.value));
  bind($('#paper-width'),'change',e=>{updatePenWidth(e.target.value);closePenSizePicker();closeExtraTools();});
- bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-selection-more'))$('#paper-selection-more').open=false;if(!e.target.closest('.paper-shapes-popup,[data-open-shapes],[data-paper="shape"]'))setShapesOpen(false);if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();});
- bind(root,'keydown',e=>{if(e.key==='Escape'){setShapesOpen(false);closeWordMenu();closePenSizePicker();closeExtraTools();}});
-  $('#paper-finger').checked=finger;
-  bind($('#paper-finger'),'change',e=>{finger=e.target.checked;if(finger&&palmGuard)setPalmGuard(false);try{localStorage.setItem(fingerKey,String(finger));}catch{}closeExtraTools();});
- bind(palmToggle,'change',e=>{setPalmGuard(e.target.checked);closeExtraTools();});
+ bind(root,'pointerdown',e=>{if(!e.target.closest('.paper-selection-more'))$('#paper-selection-more').open=false;if(!e.target.closest('.paper-shapes-popup,[data-open-shapes],[data-paper="shape"]'))setShapesOpen(false);if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();if(!e.target.closest('#paper-eraser-menu,[data-paper="eraser"]'))closeEraserMenu();});
+ bind(root,'keydown',e=>{if(e.key==='Escape'){setShapesOpen(false);closeWordMenu();closePenSizePicker();closeExtraTools();closeEraserMenu();}});
+  bind($('#paper-finger'),'change',e=>{
+   if(!e.target.checked)return;
+   if(palmGuard)setPalmGuard(false);
+   finger=true;syncInputControls();
+   try{localStorage.setItem(fingerKey,'true');}catch{}
+   say('ใช้นิ้วเขียนได้แล้ว · Apple Pencil ยังเขียนได้ตามปกติ');
+  });
+  bind($('#paper-pencil-only'),'change',e=>{
+   if(!e.target.checked)return;
+   finger=false;syncInputControls();
+   try{localStorage.setItem(fingerKey,'false');}catch{}
+   say('ใช้ Apple Pencil เขียน · นิ้วใช้เลื่อนกระดาษ ไม่สร้างเส้น');
+  });
+  bind(palmToggle,'change',e=>setPalmGuard(e.target.checked));
  bind($('#paper-template'),'change',e=>change(p=>{p.template=e.target.value;}));
  bind($('#paper-shape'),'change',()=>{closeExtraTools();});
  bind($('#paper-smart-shape'),'change',e=>{smartEnabled=e.target.checked;if(!smartEnabled)cancelSmartTimer();});

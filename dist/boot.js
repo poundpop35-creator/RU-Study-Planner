@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261123-notebook-debt-mobile-v3'); }
+try { await import('./app.js?v=20261123-shapes-eraser-v4'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeShape,shapeSVG,shapes,lineStyles,snapLinePoint,snapMovedLine} from '../dist/paper-shapes.js';
+import {makeShape,shapeSVG,shapePoint,shapeContains,eraserTargetHit,shapes,lineStyles,snapLinePoint,snapMovedLine} from '../dist/paper-shapes.js';
 import {recognizeHeldShape,recognizeDrawnShape,rulerProject,rulerSnap,rulerSVG} from '../dist/paper-geometry.js';
 import {emptyPage,validatePaper,pageHistory,copy} from '../dist/paper-core.js';
 
@@ -132,4 +132,50 @@ test('release recognizes traced arrowheads and remembers downward triangle orien
   assert.ok(saved.inverted);assert.ok(shapeSVG(saved).includes('M'+(o.x+o.w/2)+' '+(o.y+o.h)));
  }
  assert.notEqual(recognizeDrawnShape([[0,0],[0,100],[20,80]])?.kind,'arrow');
+});
+
+
+test('held triangles retain their apex direction and modestly shaky lines still straighten',()=>{
+ const descending=[[20,20],[90,20],[70,65],[55,110],[35,65],[20,20]];
+ const samples=descending.flatMap((p,i)=>i?Array.from({length:9},(_,j)=>{
+  const a=descending[i-1],t=(j+1)/9;
+  return [a[0]+(p[0]-a[0])*t,a[1]+(p[1]-a[1])*t];
+ }):[p]);
+ const held=recognizeHeldShape(samples);
+ assert.equal(held?.kind,'triangle');
+ assert.equal(held?.inverted,true,'a downward apex may not be replaced by an upright triangle');
+ const wavering=Array.from({length:25},(_,i)=>[10+i*7,30+i*.44+Math.sin(i*1.8)*3]);
+ assert.equal(recognizeDrawnShape(wavering)?.kind,'line','moderately uneven straight pen strokes should snap');
+ assert.notEqual(recognizeDrawnShape([[0,0],[55,60],[110,0]])?.kind,'line','an open V must remain ink');
+});
+test('rotation survives persistence, keeps old shapes at zero and adjusts hit-testing',()=>{
+ const original=makeShape('angled','triangle',{x:100,y:100},{x:190,y:180},'#172033',3);
+ const rotated={...original,angle:90};
+ const svg=shapeSVG(rotated);
+ assert.match(svg,/transform="rotate\(90 145 140\)"/);
+ assert.doesNotMatch(shapeSVG(original),/rotate\(/);
+ const saved=validatePaper({version:1,pages:[{...emptyPage(),objects:[rotated]}]}).pages[0].objects[0];
+ assert.equal(saved.angle,90);
+ const before=copy(saved);
+ assert.equal(shapeContains(rotated,shapePoint(rotated,{x:105,y:110})),true);
+ assert.ok(eraserTargetHit(rotated,{x:145,y:140},{x:145,y:140},'shape'));
+ assert.ok(!eraserTargetHit(rotated,{x:145,y:140},{x:145,y:140},'stroke'));
+ const history=pageHistory();const page=emptyPage();page.objects=[before];
+ const after=copy(page);after.objects[0].angle=180;
+ history.record(page,after);
+ assert.deepEqual(history.step(after),page);
+ assert.throws(()=>validatePaper({version:1,pages:[{...emptyPage(),objects:[{...rotated,angle:900}]}]}),/มุมหมุน/);
+});
+test('eraser modes do not delete object types outside the chosen category',()=>{
+ const stroke={type:'stroke',x:0,y:0,w:100,h:1,width:3,points:[[0,0],[1,0]]};
+ const shape=makeShape('fig','rect',{x:10,y:5},{x:110,y:90},'#172033',3);
+ const line=makeShape('line','line',{x:0,y:50},{x:100,y:50},'#172033',3);
+ const textBox={type:'text',x:0,y:0,w:130,h:30,text:'ประโยค'};
+ assert.ok(eraserTargetHit(stroke,{x:35,y:0},{x:35,y:0},'stroke'));
+ assert.ok(!eraserTargetHit(stroke,{x:35,y:0},{x:35,y:0},'text'));
+ assert.ok(eraserTargetHit(shape,{x:55,y:50},{x:55,y:50},'shape'));
+ assert.ok(!eraserTargetHit(shape,{x:55,y:50},{x:55,y:50},'stroke'));
+ assert.ok(eraserTargetHit(line,{x:50,y:48},{x:50,y:52},'shape'));
+ assert.ok(eraserTargetHit(textBox,{x:4,y:5},{x:4,y:5},'text'));
+ assert.ok(!eraserTargetHit(textBox,{x:4,y:5},{x:4,y:5},'shape'));
 });

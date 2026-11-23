@@ -1,6 +1,6 @@
 import {validateLinks} from './word-links.js';
 import {validateMarks} from './paper-rich-text.js?v=20261121-paper-format';
-import {shapes,lineStyles} from './paper-shapes.js?v=notebook-shape-tools-20261120';
+import {shapes,lineStyles} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {validateTableCells} from './paper-table.js?v=20261121-paper-format';
 export const PAGE_W=900,PAGE_H=1273;
 // Pen and highlighter widths are independent paper-coordinate stroke widths.
@@ -38,6 +38,7 @@ export function validatePaper(value){
     if(!Object.hasOwn(shapes,o.kind)||!color(o.color)||!num(o.width,1,40))throw Error('รูปทรงไม่ถูกต้อง');
     Object.assign(out,{kind:o.kind,color:o.color,width:o.width,reverseX:o.reverseX===true,reverseY:o.reverseY===true});
     if(o.kind==='triangle'&&o.inverted===true)out.inverted=true;
+    if(o.angle!==undefined){if(!num(o.angle,0,359))throw Error('มุมหมุนรูปทรงไม่ถูกต้อง');out.angle=o.angle;}
     if(o.lineStyle!==undefined){if(!Object.hasOwn(lineStyles,o.lineStyle))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.lineStyle=o.lineStyle;}
     if(o.dash!==undefined){if(!Object.hasOwn(lineStyles,o.dash))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.dash=o.dash;}
    }else if(o.type==='table'){

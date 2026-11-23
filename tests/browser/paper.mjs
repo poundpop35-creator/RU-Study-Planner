@@ -185,9 +185,26 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('pages');
    assert.ok(await page.locator('.paper-pages').isHidden(),'page thumbnails can be folded again');
   await click('pen');
+  const inputStrip=page.locator('#paper-input-strip');
+  assert.ok(await inputStrip.isVisible(),'Pencil/finger and palm-protection choices appear directly below pen tools');
+  assert.equal(await inputStrip.locator('#paper-pencil-only').count(),1,'Pencil-only mode is visible');
+  assert.equal(await inputStrip.locator('#paper-finger').count(),1,'finger drawing mode is visible');
+  assert.equal(await inputStrip.locator('#paper-palm-guard').count(),1,'palm/zoom protection stays in the same visible strip');
+  assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'settings popup stays closed');
+  await inputStrip.locator('#paper-pencil-only').check();
+  assert.ok(await inputStrip.locator('#paper-pencil-only').isChecked(),'Pencil-only mode can be selected');
+  assert.ok(!await inputStrip.locator('#paper-finger').isChecked(),'only one drawing input mode is selected');
+  await inputStrip.locator('#paper-palm-guard').check();
+  assert.ok(await inputStrip.locator('#paper-pencil-only').isChecked(),'enabling palm guard selects Pencil-only input');
+  assert.ok(await page.locator('.paper-app').evaluate(el=>el.classList.contains('paper-palm-guard-on')),'palm/zoom protection applies immediately');
+  await inputStrip.locator('#paper-finger').check();
+  assert.ok(!await inputStrip.locator('#paper-palm-guard').isChecked(),'selecting finger input automatically releases palm lock');
+  assert.ok(await inputStrip.locator('#paper-finger').isChecked(),'finger mode is now active');
+  assert.ok(await inputStrip.locator('.paper-geometry-check').isVisible(),'hold-to-shape drawing option is not hidden inside an advanced menu');
   assert.ok(await page.locator('.paper-context-ink').isVisible(),'pen settings available directly');
   await page.locator('[data-paper-color="#3155d9"]').click();
   await click('text');
+  assert.ok(await inputStrip.isHidden(),'drawing controls disappear when typing to preserve writing space');
   assert.ok(await page.locator('.paper-context-ink').isHidden(),'drawing controls leave room for text');
   await page.screenshot({path:'test-results/notebook-compact-'+name+'.png'});
 
@@ -206,6 +223,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
      const paperScale=await typingBox.evaluate(el=>el.getBoundingClientRect().width/el.offsetWidth);
      assert.ok(paperScale>=.9,'paper zoom is readable on a phone');
     }else assert.ok(small.w>=250&&small.h<60,'leave room to handwrite after existing words');
+   await typingBox.fill('พิมพ์ข้อความยาวขึ้นโดยไม่ตัดบรรทัดเอง');const medium=await size();
+   assert.ok(medium.w>small.w+40,'text box width must grow with a single line of text');
+   assert.ok(medium.h<=small.h+8,'an ordinary sentence must stay on one line while paper width is available');
    await typingBox.fill('ข้อความสำหรับทดสอบการตัดบรรทัด '.repeat(18));const long=await size();
    assert.ok(long.w>small.w&&long.w<=801&&long.h>small.h);
    await typingBox.fill('จด');assert.deepEqual(await size(),small);
@@ -421,6 +441,14 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await click('save');
     assert.ok(savedShape().w>oldShapeWidth,'east resize handle grows only the right side');
     assert.equal(savedShape().h,oldShapeHeight,'horizontal resize must not stretch height');
+    await page.locator('[data-shape-rotate="90"]').click();
+    await click('save');
+    assert.equal(savedShape().angle,90,'rotation is persisted independently of shape bounds');
+    assert.match(await page.locator('#paper-svg [data-shape="triangle"]').getAttribute('transform'),/rotate\(90 /);
+    await page.locator('#paper-shape-angle').fill('270');
+    await page.locator('#paper-shape-angle').dispatchEvent('change');
+    await click('save');
+    assert.equal(savedShape().angle,270,'numeric angle input changes the selected shape');
    await click('ruler');
    assert.equal(await page.locator('[data-paper="ruler"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),1);
@@ -428,6 +456,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.match(await page.locator('#paper-svg [data-ruler-overlay]').getAttribute('transform'),/rotate\(15\)/);
    await click('ruler');
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),0);
+   await click('eraser');
+   assert.ok(await page.locator('#paper-eraser-menu').isVisible(),'the Eraser button opens the three eraser modes');
+   for(const mode of ['stroke','shape','text'])
+    assert.ok(await page.locator('[data-eraser-kind="'+mode+'"]').isVisible());
+   await page.locator('[data-eraser-kind="shape"]').click();
+   assert.ok(await page.locator('#paper-eraser-menu').isHidden(),'selecting an eraser mode closes its menu');
+   assert.equal(await page.locator('#paper-svg').getAttribute('data-tool'),'eraser');
+   await click('eraser');await page.locator('[data-eraser-kind="text"]').click();
+   assert.equal(await page.locator('[data-eraser-kind="text"]').getAttribute('aria-pressed'),'true');
    await click('text');
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await b.page.locator('.paper-menu > summary').click();

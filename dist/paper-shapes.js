@@ -6,6 +6,21 @@ export const shapes = {
 };
 export const lineStyles={solid:'เส้นทึบ',dashed:'เส้นประ',dotted:'เส้นจุด'};
 const round=n=>Math.round(n*100)/100;
+// The angle is optional so all previously saved shapes render exactly as
+// before. Rotation is around the original shape's centre.
+export const shapeAngle=value=>((Math.round(Number(value)||0)%360)+360)%360;
+export function shapePoint(o,p,inverse=false){
+ const angle=shapeAngle(o.angle)*(inverse?-1:1)*Math.PI/180;
+ if(!angle)return p;
+ const cx=o.x+o.w/2,cy=o.y+o.h/2;
+ const dx=p.x-cx,dy=p.y-cy;
+ return {x:cx+dx*Math.cos(angle)-dy*Math.sin(angle),y:cy+dx*Math.sin(angle)+dy*Math.cos(angle)};
+}
+export function shapeContains(o,p,pad=0){
+ const at=shapePoint(o,p,true);
+ return at.x>=o.x-pad&&at.x<=o.x+o.w+pad&&at.y>=o.y-pad&&at.y<=o.y+o.h+pad;
+}
+
 const hypot=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 function polygonPath(x,y,w,h,vertices){
  return vertices.map(([dx,dy],i)=>(i?'L':'M')+round(x+w*dx)+' '+round(y+h*dy)).join(' ')+' Z';
@@ -57,13 +72,13 @@ function linePaths(o){
  if(o.kind==='branch3'){
   const mid=x+w/2,rail=y+h/2,bottom=y+h;
   return [[{x,y:bottom},{x,y:rail},{x:x+w,y:rail},{x:x+w,y:bottom}],
-   [{x:mid,y},{x:mid,y:bottom}]];
+   [{x:mid,y},{x:mid,y:bottom}]].map(path=>path.map(point=>shapePoint(o,point)));
  }
- if(o.kind==='connector'){const mid=(a.x+b.x)/2;return [[a,{x:mid,y:a.y},{x:mid,y:b.y},b]];}
+ if(o.kind==='connector'){const mid=(a.x+b.x)/2;return [[a,{x:mid,y:a.y},{x:mid,y:b.y},b].map(point=>shapePoint(o,point))];}
  const paths=[[a,b]],dx=b.x-a.x,dy=b.y-a.y;
  if(o.kind==='arrow'||o.kind==='doubleArrow')paths.push(arrowHead(b.x,b.y,dx,dy,o.width));
  if(o.kind==='doubleArrow')paths.push(arrowHead(a.x,a.y,dx,dy,o.width,-1));
- return paths;
+ return paths.map(path=>path.map(point=>shapePoint(o,point)));
 }
 const joinable=new Set(['line','connector','arrow','doubleArrow','branch3']);
 export function isJoinable(o){return o?.type==='shape'&&joinable.has(o.kind);}
@@ -115,10 +130,40 @@ export function eraserHit(o,a,b=a,radius=12){
  }
  return linePaths(o).some(path=>path.slice(1).some((p,i)=>hits(path[i],p)));
 }
+// Eraser mode keeps text, shapes and hand-drawn strokes independent. All
+// gesture points are in paper coordinates, and rotated shapes are tested in
+// their local coordinate system, so a swipe reaches the visible target.
+function sweptBox(a,b,x,y,w,h,pad=0){
+ const x0=x-pad,x1=x+w+pad,y0=y-pad,y1=y+h+pad;
+ const inside=p=>p.x>=x0&&p.x<=x1&&p.y>=y0&&p.y<=y1;
+ if(inside(a)||inside(b))return true;
+ const dx=b.x-a.x,dy=b.y-a.y;
+ let t0=0,t1=1;
+ for(const [p,q] of [[-dx,a.x-x0],[dx,x1-a.x],[-dy,a.y-y0],[dy,y1-a.y]]){
+  if(Math.abs(p)<1e-9){if(q<0)return false;continue;}
+  const t=q/p;
+  if(p<0)t0=Math.max(t0,t);else t1=Math.min(t1,t);
+  if(t0>t1)return false;
+ }
+ return true;
+}
+export function eraserTargetHit(o,a,b,mode='stroke',radius=12){
+ if(mode==='stroke')return o.type==='stroke'&&eraserHit(o,a,b,radius);
+ if(mode==='shape'){
+  if(o.type!=='shape')return false;
+  if(isJoinable(o))return eraserHit(o,a,b,radius);
+  return sweptBox(shapePoint(o,a,true),shapePoint(o,b,true),o.x,o.y,o.w,o.h,radius);
+ }
+ if(mode==='text')return o.type==='text'&&sweptBox(a,b,o.x,o.y,o.w,o.h,radius);
+ return false;
+}
+
 export function shapeSVG(o){
  const {x,y,w,h}=o;
+ const turn=shapeAngle(o.angle),transform=turn&&!isJoinable(o)?` transform="rotate(${turn} ${round(x+w/2)} ${round(y+h/2)})"`:'';
+
  const dash=o.dash==='dashed'?` stroke-dasharray="${Math.max(8,o.width*4)} ${Math.max(4,o.width*3)}"`:o.dash==='dotted'?` stroke-dasharray="1 ${Math.max(5,o.width*3)}"`:'';
- const style=`data-object="${o.id}" data-shape="${o.kind}" fill="none" stroke="${o.color}" stroke-width="${o.width}" stroke-linecap="round" stroke-linejoin="round"${dash}`;
+ const style=`data-object="${o.id}" data-shape="${o.kind}" fill="none" stroke="${o.color}" stroke-width="${o.width}" stroke-linecap="round" stroke-linejoin="round"${dash}${transform}`;
  if(o.kind==='rect'||o.kind==='square')return `<rect ${style} x="${x}" y="${y}" width="${w}" height="${h}"/>`;
  if(o.kind==='roundRect')return `<rect ${style} x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w,h)*.16}"/>`;
  if(o.kind==='ellipse'||o.kind==='circle')return `<ellipse ${style} cx="${x+w/2}" cy="${y+h/2}" rx="${w/2}" ry="${h/2}"/>`;
