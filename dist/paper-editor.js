@@ -1162,7 +1162,7 @@ bind(rich,'keyup',()=>{
   }
   const guardedTextTap=e.pointerType==='touch'&&palmGuard&&tool==='text'&&e.isPrimary!==false&&!multiSelect&&page().objects.some(o=>o.type==='text'&&contains(point(e),o,2));
   if(e.pointerType==='touch'&&((palmGuard&&!guardedTextTap&&!(['select','hand'].includes(tool)&&e.isPrimary!==false))||[...pointers.values()].some(p=>p.pointerType==='pen'))){if(e.cancelable)e.preventDefault();return;}
-  if(e.target.closest('[data-word-link],[data-word-file]')&&['text','select'].includes(tool)&&!multiSelect&&!e.shiftKey)return;
+  if(e.target.closest('[data-word-link],[data-word-file]')&&['text','select','hand'].includes(tool)&&!multiSelect&&!e.shiftKey)return;
   wordSelection=null;
   if(e.pointerType==='mouse'&&e.button!==0)return;
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,pointerType:e.pointerType});
@@ -1363,7 +1363,7 @@ bind(rich,'keyup',()=>{
  }
  bind(svg,'click',e=>{
   const link=e.target.closest('[data-word-link],[data-word-file]');if(!link)return;
-  if(!['text','select'].includes(tool)||multiSelect||e.shiftKey){e.preventDefault();return;}
+  if(!['text','select','hand'].includes(tool)||multiSelect||e.shiftKey){e.preventDefault();return;}
   if(link.dataset.wordFile){
    const file=currentNote()?.files?.find(f=>f.id===link.dataset.wordFile);
    if(file)openNoteFile(file).catch(err=>say(err.message,true));else say('ไฟล์แนบนี้ถูกลบแล้ว',true);
