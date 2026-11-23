@@ -1049,7 +1049,7 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    return;
   }
   if(unsaved){say('มีงานค้าง กรุณาบันทึกหรือสำรองก่อนเขียนต่อ',true);return;}
-  if(tool==='hand'||e.pointerType==='touch'&&!finger&&['pen','highlight','eraser'].includes(tool)){gesture={kind:'pan',px:e.clientX,py:e.clientY,left:viewport.scrollLeft,top:viewport.scrollTop};return;}
+  if(tool==='hand'||e.pointerType==='touch'&&!finger&&['pen','highlight','eraser','straighten','shape'].includes(tool)){gesture={kind:'pan',px:e.clientX,py:e.clientY,left:viewport.scrollLeft,top:viewport.scrollTop};return;}
   try{writable();}catch(err){say(err.message,true);return;}
   if((tool==='select'||tool==='text')&&(e.shiftKey||multiSelect)){
    tool='select';
