@@ -38,6 +38,7 @@ export function validatePaper(value){
     if(!Object.hasOwn(shapes,o.kind)||!color(o.color)||!num(o.width,1,40))throw Error('รูปทรงไม่ถูกต้อง');
     Object.assign(out,{kind:o.kind,color:o.color,width:o.width,reverseX:o.reverseX===true,reverseY:o.reverseY===true});
     if(o.kind==='triangle'&&o.inverted===true)out.inverted=true;
+    if(o.angle!==undefined){if(!num(o.angle,0,359))throw Error('มุมหมุนรูปทรงไม่ถูกต้อง');out.angle=o.angle;}
     if(o.lineStyle!==undefined){if(!Object.hasOwn(lineStyles,o.lineStyle))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.lineStyle=o.lineStyle;}
     if(o.dash!==undefined){if(!Object.hasOwn(lineStyles,o.dash))throw Error('รูปแบบเส้นไม่ถูกต้อง');out.dash=o.dash;}
    }else if(o.type==='table'){
