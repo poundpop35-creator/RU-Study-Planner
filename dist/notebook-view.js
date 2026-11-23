@@ -129,7 +129,10 @@ export async function notebookAction(action,data,space,progress,render,toast){
   if(action==='nb-review-close'){reviewing=false;render();}
   if(action==='nb-review-next'){reviewIndex++;revealed=false;render(true);}
   if(action==='nb-reveal'){revealed=true;render(true);}
-  if(action==='nb-print')window.print();
+  if(action==='nb-print'){
+    const a4=document.querySelector('.paper-app [data-paper="print-pages"]');
+    if(a4)a4.click();else window.print();
+   }
   if(action==='nb-export'){toast('กำลังรวมโน้ตและรูปภาพ…');await exportBook(space);toast('ส่งออกโน้ตและรูปครบแล้ว');}
   if(action==='nb-import-legacy'){const existing=new Set(book.notes.map(x=>x.id));book.notes.push(...legacyNotes(progress,lessons).filter(x=>!existing.has(x.id)).map(x=>({...x,...sessionDetails(x.course,1)})));space.saveNotebook(book);render();toast('คัดลอกแล้ว บันทึกเดิมยังอยู่ครบ');}
  }catch(err){toast(err.message||'ดำเนินการไม่สำเร็จ');}
