@@ -1,7 +1,7 @@
-import {esc} from './paper-render.js?v=word-format-20261120';
+import {esc} from './paper-render.js?v=20261123-shapes-eraser-v4';
 import {NOTE_SOURCES,noteSource} from './notebook-core.js?v=word-canva-classroom-20261120';
-import {shapes,lineStyles} from './paper-shapes.js?v=notebook-shape-tools-20261120';
-import {PEN_WIDTH_PRESETS} from './paper-core.js?v=20261120-table';
+import {shapes,lineStyles} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
+import {PEN_WIDTH_PRESETS} from './paper-core.js?v=20261123-shapes-eraser-v4';
 import {shapeIcon} from './paper-shape-icons.js?v=shape-gallery-20261120';
 import {courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 export const colors=['#172033','#3155d9','#15966d','#dc4343','#8756c6','#ef9e39'];
