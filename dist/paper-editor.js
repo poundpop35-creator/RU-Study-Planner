@@ -1,3 +1,4 @@
+import {notebookHistory} from './paper-page-history.js';
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
 import {PAGE_W,PAGE_H,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS} from './paper-core.js?v=20261121-paper-format';
 import {pageSVG,objectSVG,esc} from './paper-render.js?v=20261121-paper-format';
@@ -36,7 +37,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  let lastStored=JSON.stringify(note.paper||null),pendingRemote=false,draftBase=null;
  let cachedPage=null,cachedContent='',imageVersion=0,cachedImageVersion=-1;
- const scope=space.info().scope,images=new Map(),loading=new Set(),history=new Map(),events=[],pointers=new Map();
+ const scope=space.info().scope,images=new Map(),loading=new Set(),history=notebookHistory(),events=[],pointers=new Map();
  const draftKey='ru-paper-draft:'+scope+':'+id;
  const widthKey='ru-paper-pen-width.v1:'+scope,highlightKey='ru-paper-highlight-width.v1:'+scope,pagesKey='ru-paper-pages-open.v1',textSizeKey='ru-paper-text-font-size.v2';
  const palmKey='ru-paper-palm-guard.v1',fingerKey='ru-paper-finger.v2';
@@ -51,7 +52,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const palmToggle=$('#paper-palm-guard');
  palmToggle.checked=palmGuard;root.classList.toggle('paper-palm-guard-on',palmGuard);
  const page=()=>model.pages.find(p=>p.id===pageId)||model.pages[0];
- const h=()=>{if(!history.has(pageId))history.set(pageId,pageHistory());return history.get(pageId);};
+
  const say=(text,bad=false)=>{const el=$('#paper-hint');el.textContent=text;el.classList.toggle('error',bad);};
  function setPalmGuard(value){
   palmGuard=!!value;palmToggle.checked=palmGuard;
@@ -65,12 +66,15 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  function persist(next,record=true){
   try{
    writable();const live=currentNote();if(!live)throw Error('โน้ตถูกลบจากอีกเครื่อง');
-   next=validatePaper(next);const before=copy(page());
+   next=validatePaper(next);const before=page(),oldPages=model.pages;
+   const added=next.pages.find(p=>!oldPages.some(old=>old.id===p.id));
+   const removed=oldPages.find(p=>!next.pages.some(now=>now.id===p.id));
+   const after=next.pages.find(p=>p.id===before.id);
    if(draftBase)next=mergePaper(draftBase,next,paperFor(live));
    else if(JSON.stringify(live.paper||null)!==lastStored&&live.paper)next=mergePaper(model,next,live.paper);
    const book=copy(space.notebook()),target=book.notes.find(n=>n.id===id);target.paper=next;target.updatedAt=new Date().toISOString();
    space.saveNotebook(book);model=copy(next);lastStored=JSON.stringify(next);unsaved=null;draftBase=null;try{localStorage.removeItem(draftKey);}catch{}root.classList.remove('paper-has-draft');
-   if(record){const after=model.pages.find(p=>p.id===before.id);if(after&&pageId===before.id)h().record(before,after);}
+   if(record){if(added)history.record(null,added,next.pages.findIndex(p=>p.id===added.id));else if(removed)history.record(removed,null,oldPages.indexOf(removed));else if(after)history.record(before,after,oldPages.indexOf(before));}
    if(!model.pages.some(p=>p.id===pageId))pageId=model.pages[0].id;
    say('บันทึกอัตโนมัติ · ปุ่มบันทึกงานใช้สั่งบันทึกทันที');draw();thumbs();return true;
   }catch(err){draftBase??=copy(model);unsaved=copy(next);try{localStorage.setItem(draftKey,JSON.stringify({paper:unsaved,base:draftBase}));}catch{}say(err.message+' · งานล่าสุดยังอยู่ในหน้านี้ กด “สำรองงานค้าง” ก่อนปิด',true);root.classList.add('paper-has-draft');return false;}
@@ -132,7 +136,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(currentIcon&&shapeGallery.dataset.kind!==$('#paper-shape').value){
    shapeGallery.dataset.kind=$('#paper-shape').value;shapeGallery.replaceChildren(currentIcon.cloneNode(true));
   }
-  $('[data-paper="undo"]').disabled=!h().canUndo; $('[data-paper="redo"]').disabled=!h().canRedo;
+  $('[data-paper="undo"]').disabled=!history.canUndo; $('[data-paper="redo"]').disabled=!history.canRedo;
   const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('#paper-selected-count').textContent=selected.size;
    $('#paper-table-selection').hidden=!singleTable;
    if(singleTable){const palette=tableStyle(singleTable);root.querySelectorAll('[data-table-style]').forEach(input=>{if(document.activeElement!==input)input.value=palette[input.dataset.tableStyle];});}
@@ -1208,13 +1212,13 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
    if(action==='save'){b.disabled=true;try{if(unsaved&&!persist(unsaved))return;await space.flush();say('บันทึกงานใน Supabase แล้ว');}finally{b.disabled=false;}}
    if(action==='discard-draft'){if(await confirmNoteDelete('งานค้างที่ยังไม่บันทึก (ควรกดสำรองงานค้างก่อน)')){unsaved=null;draftBase=null;localStorage.removeItem(draftKey);root.classList.remove('paper-has-draft');refresh(space);say('กลับมาที่ฉบับที่บันทึกแล้ว');}}
    if(action==='draft'){const blob=new Blob([JSON.stringify({format:'ru-paper-recovery',version:1,note:{...currentNote(),paper:unsaved||model}})],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ru-paper-recovery.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-   if(action==='undo'||action==='redo'){const next=h().step(page(),action==='undo');if(next){const doc=copy(model);doc.pages[doc.pages.findIndex(p=>p.id===pageId)]=next;persist(doc,false);selected.clear();draw();}}
+   if(action==='undo'||action==='redo'){history.apply(model.pages,action==='undo',(pages,focus)=>{if(!persist({...model,pages},false))return false;pageId=focus;selected.clear();return true;});draw();thumbs();}
    if(action==='pages'){setPagesOpen(!root.classList.contains('pages-open'));return;}
    if(action==='info')$('#paper-info').hidden=!$('#paper-info').hidden;
    if(action==='zoom-in')zoomAt(zoom*1.2);if(action==='zoom-out')zoomAt(zoom/1.2);if(action==='fit'){zoom=1;sizing();viewport.scrollLeft=0;}
    if(action==='add-page'){const next=copy(model),p=emptyPage();p.template=page().template;next.pages.push(p);if(persist(next)){if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);pageId=p.id;selected.clear();viewport.scrollTop=0;draw();thumbs();}}
    if(action==='duplicate-page'){const next=copy(model),p=copy(page());p.id=uid();p.objects.forEach(o=>o.id=uid());next.pages.splice(next.pages.findIndex(p=>p.id===pageId)+1,0,p);if(persist(next)){if(window.matchMedia('(max-width:720px)').matches)setPagesOpen(false);pageId=p.id;selected.clear();draw();thumbs();}}
-   if(action==='delete-page'){if(model.pages.length===1)throw Error('ต้องเหลืออย่างน้อยหนึ่งหน้า');const target=pageId;if(await confirmNoteDelete('หน้ากระดาษ '+(model.pages.findIndex(p=>p.id===target)+1))){const next=copy(model);next.pages=next.pages.filter(p=>p.id!==target);persist(next,false);selected.clear();draw();thumbs();}}
+   if(action==='delete-page'){if(model.pages.length===1)throw Error('ต้องเหลืออย่างน้อยหนึ่งหน้า');const target=pageId;if(await confirmNoteDelete('หน้ากระดาษ '+(model.pages.findIndex(p=>p.id===target)+1))){const next=copy(model);next.pages=next.pages.filter(p=>p.id!==target);persist(next);selected.clear();draw();thumbs();}}
    if(action==='delete-object'){$('#paper-selection-more').open=false;change(p=>{p.objects=p.objects.filter(o=>!selected.has(o.id));});selected.clear();draw();}
    if(action==='duplicate'){const ids=[];change(p=>{const objects=p.objects.filter(o=>selected.has(o.id)).map(o=>({...copy(o),id:uid(),x:o.x+24,y:o.y+24}));ids.push(...objects.map(o=>o.id));p.objects.push(...objects);});selected=new Set(ids);draw();}
    if(action==='edit-text'){const o=page().objects.find(o=>selected.has(o.id)&&o.type==='text');if(o)startText(o);}
