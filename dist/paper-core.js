@@ -103,8 +103,9 @@ export function toContinuousPaper(source){
   const shift=index*PAGE_H;
   for(const o of p.objects)objects.push({...copy(o),y:o.y+shift});
  });
- const height=Math.ceil(Math.max(PAGE_H,old.pages.length*PAGE_H,
-  ...objects.map(o=>o.y+o.h))/PAGE_H)*PAGE_H;
+ const bottom=objects.reduce((max,o)=>Math.max(max,o.y+o.h),0);
+ if(objects.length>12000)throw Error('ข้อมูลจากหลายหน้ามีวัตถุมากเกินไปสำหรับกระดาษต่อเนื่องผืนเดียว');
+ const height=Math.ceil(Math.max(PAGE_H,old.pages.length*PAGE_H,bottom)/PAGE_H)*PAGE_H;
  if(height>MAX_CANVAS_HEIGHT)throw Error('สมุดนี้ยาวเกินกว่าจะแปลงเป็นผืนเดียวโดยอัตโนมัติ');
  return validatePaper({version:2,pages:[{id:first.id,template:first.template,height,objects}]});
 }
