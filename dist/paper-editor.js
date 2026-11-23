@@ -759,6 +759,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  function showTextRibbon(){
   ribbon.hidden=activePanel!=='text'||!editing;
   textRibbonState();
+  if(!ribbon.hidden&&desktopRibbon.matches)requestAnimationFrame(clampRibbon);
  }
  // Word-style mini toolbar follows a real selection without changing the stored
  // text or its per-word format. This is shared by mouse right-click and touch.
