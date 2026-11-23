@@ -375,7 +375,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  let scribbleActive=false;
  const scribblePad=document.createElement('section');
  scribblePad.className='paper-scribble-panel';scribblePad.hidden=true;
- scribblePad.innerHTML='<header><b>✍️ เขียนในพื้นที่สีฟ้า · ข้อความไปยังกล่องเดิม</b><button type="button" data-pencil-keyboard>⌨️ แป้นพิมพ์</button><button type="button" data-pencil-finish>✓ เสร็จสิ้น</button></header><textarea class="paper-scribble-input" lang="th" inputmode="none" spellcheck="false" aria-label="พื้นที่เขียนด้วย Apple Pencil ลงกล่องข้อความที่เลือก" placeholder="ใช้ Apple Pencil เขียนภายในพื้นที่นี้ หรือเปิดแป้นพิมพ์…"></textarea>';
+ scribblePad.innerHTML='<header><b>✍️ เขียนในพื้นที่สีฟ้า · ข้อความไปยังกล่องเดิม</b><button type="button" data-pencil-edit="space">เว้นวรรค</button><button type="button" data-pencil-edit="delete">⌫ ลบ</button><button type="button" data-pencil-edit="newline" aria-label="ขึ้นบรรทัดใหม่">Enter ↵</button><button type="button" data-pencil-keyboard>⌨ เปิดคีย์บอร์ด</button><button type="button" data-pencil-finish>✓ เสร็จสิ้น</button></header><textarea class="paper-scribble-input" lang="th" inputmode="none" spellcheck="false" aria-label="พื้นที่เขียนด้วย Apple Pencil ลงกล่องข้อความที่เลือก" placeholder="ใช้ Apple Pencil เขียนภายในพื้นที่นี้ หรือเปิดแป้นพิมพ์…"></textarea>';
  viewport.append(scribblePad);
  const scribbleInput=scribblePad.querySelector('textarea');
  function closeScribblePanel(){
@@ -388,12 +388,29 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   scribblePad.hidden=false;textarea.hidden=true;
   scribbleInput.value=textarea.value;
   scribbleInput.inputMode='none';
-  scribblePad.querySelector('[data-pencil-keyboard]').textContent='⌨️ แป้นพิมพ์';
+  scribblePad.querySelector('[data-pencil-keyboard]').textContent='⌨ เปิดคีย์บอร์ด';
   fitTextBox();draw();
   scribbleInput.focus({preventScroll:true});
   const caret=scribbleInput.value.length;scribbleInput.setSelectionRange(caret,caret);
  }
  let composingScribble=false;
+ for(const button of scribblePad.querySelectorAll('[data-pencil-edit]')){
+  bind(button,'pointerdown',event=>event.preventDefault());
+  bind(button,'click',()=>{
+   if(composingScribble)return;
+   let start=scribbleInput.selectionStart;
+   const end=scribbleInput.selectionEnd,action=button.dataset.pencilEdit;
+   if(action==='delete'&&start===end&&start>0){
+    const before=scribbleInput.value.slice(0,start);
+    const previous=typeof Intl.Segmenter==='function'
+     ?Array.from(new Intl.Segmenter('th',{granularity:'grapheme'}).segment(before)).at(-1).segment
+     :Array.from(before).at(-1);
+    start-=previous.length;
+   }
+   scribbleInput.setRangeText(action==='space'?' ':action==='newline'?'\n':'',start,end,'end');
+   applyScribble();scribbleInput.focus({preventScroll:true});
+  });
+ }
  bind(scribbleInput,'compositionstart',()=>{composingScribble=true;clearTimeout(textTimer)});
  bind(scribbleInput,'compositionend',()=>{composingScribble=false;applyScribble()});
  bind(scribbleInput,'input',event=>{if(!event.isComposing&&!composingScribble)applyScribble()});
@@ -406,11 +423,13 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   fitTextBox();draw();
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),700);
  }
- bind(scribblePad.querySelector('[data-pencil-keyboard]'),'click',event=>{
-  const viaKeyboard=scribbleInput.inputMode!=='text';
-  scribbleInput.inputMode=viaKeyboard?'text':'none';
-  event.currentTarget.textContent=viaKeyboard?'✍️ กลับไปใช้ปากกา':'⌨️ แป้นพิมพ์';
-  scribbleInput.blur();scribbleInput.focus({preventScroll:true});
+ bind(scribblePad.querySelector('[data-pencil-keyboard]'),'click',()=>{
+  if(!editing||composingScribble)return;
+  const start=scribbleInput.selectionStart,end=scribbleInput.selectionEnd;
+  applyScribble();closeScribblePanel();
+  textarea.hidden=false;textarea.inputMode='text';
+  focusInlineText(editing.object);textarea.focus({preventScroll:true});
+  textarea.setSelectionRange(start,end);textRibbonState();
  });
  bind(scribblePad.querySelector('[data-pencil-finish]'),'click',()=>{
   finishText();setTool('select');say('บันทึกข้อความไว้ที่กล่องเดิมแล้ว');
@@ -648,7 +667,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.overflowWrap='normal';textMeasure.style.lineHeight='1.5';
   textMeasure.textContent=textarea.value;
   const availableWidth=Math.max(1,PAGE_W-o.x);
-  const width=Math.min(availableWidth,scribbleActive?Math.max(32,o.w):Math.max(editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+5));
+  const width=Math.min(availableWidth,Math.max(scribbleActive?o.w:32,editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+5));
   editing.paperWidth=width;
   if(editing.mobile||scribbleActive){
    // Store the natural on-paper height, not the temporary interactive target.
@@ -1294,6 +1313,21 @@ bind(rich,'keyup',()=>{richSelection=richOffsets();textRibbonState();});
   if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type==='shape'?{...o,dash:lineStyle}:o);});
   closeExtraTools();
  });
+ const boxSize=$('#paper-font-size');
+ const sizeGroup=document.createElement('span');
+ sizeGroup.setAttribute('role','group');sizeGroup.setAttribute('aria-label','ขนาดตัวอักษรทั้งกล่อง');
+ boxSize.parentElement.replaceWith(sizeGroup);
+ sizeGroup.append('ขนาดทั้งกล่อง ',boxSize);
+ for(const [step,label] of [[-1,'ลด'],[1,'เพิ่ม']]){
+  const button=document.createElement('button');button.type='button';
+  button.textContent=step<0?'−':'+';button.setAttribute('aria-label',label+'ขนาดทั้งกล่อง');
+  boxSize.insertAdjacentElement(step<0?'beforebegin':'afterend',button);
+  bind(button,'click',()=>{
+   const size=textSize(Number(boxSize.value)+step,fontSize);
+   if(size===Number(boxSize.value))return;
+   boxSize.value=String(size);boxSize.dispatchEvent(new Event('change'));
+  });
+ }
  bind($('#paper-font-size'),'change',e=>{
   const size=textSize(e.target.value,fontSize);e.target.value=String(size);fontSize=size;
   change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text'){o.size=size;o.h=Math.max(o.h,Math.ceil(size*1.5));}}));

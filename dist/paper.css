@@ -956,3 +956,5 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  .paper-app .paper-context-controls{scroll-padding-inline:16px;overscroll-behavior-x:contain}
  .paper-app .paper-shapes-grid button:active{background:#dae6ff}
 }
+
+.paper-app .paper-scribble-panel header{display:flex;flex-wrap:wrap;gap:4px}.paper-app .paper-scribble-panel header button{white-space:nowrap}@media(max-width:600px){.paper-app .paper-scribble-panel header b{flex-basis:100%}}
