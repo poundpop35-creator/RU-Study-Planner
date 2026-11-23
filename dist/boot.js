@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261123-shapes-eraser-v4'); }
+try { await import('./app.js?v=20261123-word-menu-v5'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
