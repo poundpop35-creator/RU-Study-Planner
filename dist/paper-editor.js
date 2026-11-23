@@ -21,7 +21,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  let conversionWarning='';let initial;
  try{initial=paperFor(note);}
  catch(err){throw Error('อ่านหน้ากระดาษเดิมไม่สำเร็จ: '+(err?.message||'รูปแบบข้อมูลไม่รองรับ')+' · ไม่มีการลบหรือบันทึกทับต้นฉบับ');}
- let model=initial,pageId=model.pages[0].id,tool=startInk?'pen':'text',color='#172033',defaultTextColor='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=startInk,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
+ let model=initial,pageId=model.pages[0].id,tool=startInk?'pen':window.matchMedia('(max-width:600px)').matches?'hand':'text',color='#172033',defaultTextColor='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=startInk,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
  let multiSelect=false,wordSelection=null,lineStyle='solid',eraserKind='stroke',smartEnabled=true,smartTimer=0,lastTextTap=null;
  let lastSelectionSignature='';
  let ruler={active:false,x:PAGE_W/2,y:PAGE_H/2,angle:0,length:440,height:44};
@@ -285,6 +285,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    $('#paper-shape').value=next;tool='shape';
   }else tool=next;
   closeExtraTools();setShapesOpen(false);
+  if(typeof collapsePhoneMore==='function'&&phoneQuickTools.has(tool))collapsePhoneMore();
   if(next!=='select')multiSelect=false;
   if(!['select','text'].includes(tool))selected.clear();
   syncPenWidthControls();showTextRibbon();
@@ -320,6 +321,29 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    b.setAttribute('aria-pressed',String(b.dataset.eraserKind===eraserKind));
  }
  const mainTools=$('.paper-toolset');
+ // A compact phone tool dock: five common tools are always visible.
+ // Less frequent tools can be expanded in place without duplicating buttons
+ // or changing their event handlers, notebook data, or desktop/tablet UI.
+ const phoneMore=document.createElement('button');
+ phoneMore.type='button';phoneMore.className='paper-mobile-more';
+ phoneMore.id='paper-mobile-more';phoneMore.setAttribute('aria-expanded','false');
+ phoneMore.setAttribute('aria-label','แสดงเครื่องมือเพิ่มเติม');
+ phoneMore.innerHTML='<span aria-hidden="true">⊞</span><small>เพิ่มเติม</small>';
+ mainTools.append(phoneMore);
+ const phoneQuickTools=new Set(['select','hand','pen','text','eraser']);
+ bind(phoneMore,'click',()=>{
+  const expanded=root.classList.toggle('paper-mobile-tools-expanded');
+  phoneMore.setAttribute('aria-expanded',String(expanded));
+  phoneMore.setAttribute('aria-label',expanded?'ซ่อนเครื่องมือเพิ่มเติม':'แสดงเครื่องมือเพิ่มเติม');
+  const label=phoneMore.querySelector('small');
+  if(label)label.textContent=expanded?'ย่อเมนู':'เพิ่มเติม';
+ });
+ function collapsePhoneMore(){
+  root.classList.remove('paper-mobile-tools-expanded');
+  phoneMore.setAttribute('aria-expanded','false');
+  phoneMore.setAttribute('aria-label','แสดงเครื่องมือเพิ่มเติม');
+  phoneMore.querySelector('small').textContent='เพิ่มเติม';
+ }
  // Use a contextual settings strip, not a nested options popup. Keep the
  // actual controls and IDs intact so their existing event bindings survive.
  const contextWrap=document.createElement('div');
