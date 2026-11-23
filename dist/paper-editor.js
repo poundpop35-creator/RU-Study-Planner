@@ -667,7 +667,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.overflowWrap='normal';textMeasure.style.lineHeight='1.5';
   textMeasure.textContent=textarea.value;
   const availableWidth=Math.max(1,PAGE_W-o.x);
-  const width=Math.min(availableWidth,scribbleActive?Math.max(32,o.w):Math.max(editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+5));
+  const width=Math.min(availableWidth,Math.max(scribbleActive?o.w:32,editing.align?(editing.alignWidth||o.w):32,textMeasure.offsetWidth+5));
   editing.paperWidth=width;
   if(editing.mobile||scribbleActive){
    // Store the natural on-paper height, not the temporary interactive target.
