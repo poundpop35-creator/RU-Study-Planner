@@ -147,3 +147,30 @@
 @media(prefers-reduced-motion:reduce){
  .ram-body .button,.ram-body .choice{transition:none!important;animation:none!important}
 }
+
+/* Keep the question in focus and leave the course summary compact. */
+.ram-hero {
+ background: linear-gradient(115deg, #182d62, #304d91);
+ border-radius: 16px;
+ box-shadow: none;
+ padding: 18px 24px;
+ margin-bottom: 10px;
+}
+.ram-hero h1 { margin: 0 0 4px; text-wrap: balance; }
+.ram-question-card { border: 1px solid #d9e1ef; box-shadow: 0 6px 24px #172d5910; }
+.ram-choices .choice { border-width: 1px; border-radius: 12px; box-shadow: none; }
+.ram-choices .choice span { border-radius: 9px; flex-shrink: 0; }
+.ram-navigation { border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 690px) {
+ .ram-overview { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+ .ram-stat { padding: 8px 3px; text-align: center; border: 0; border-radius: 0; box-shadow: none; }
+ .ram-stat strong { font-size: 17px; }
+ .ram-stat span { font-size: 12px; }
+ .ram-progress { border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+ .ram-progress progress { height: 5px; }
+ .ram-side { grid-row: auto; }
+ .ram-hero { padding: 15px 17px; }
+ .ram-status { background: transparent; border: 0; padding: 0 3px; }
+ .ram-status.is-error { background: #fff0f2; padding: 8px; }
+ .ram-choices { gap: 8px; }
+}
