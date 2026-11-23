@@ -1323,6 +1323,7 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
   max-height:56dvh;overflow-y:auto;
  }
  .paper-app .paper-selection-tools{
+  position:fixed!important;z-index:30!important;
   bottom:calc(105px + env(safe-area-inset-bottom))!important;
   left:7px!important;right:7px!important;
   transform:none!important;max-width:none!important;min-width:0!important;
