@@ -6,6 +6,7 @@ import {imageHandles,resizeImage,cropImage} from './paper-images.js';
 import {readAttachment,downloadAttachment} from './note-files.js';
 import {replaceLink,moveLinks} from './word-links.js';
 import {textSize,textColor,formattedTextHTML,normalizeMarks,toggleTextFormat,applyTextFormat,moveMarks} from './paper-rich-text.js?v=20261121-paper-format';
+import {applyListPrefix} from './paper-list-prefix.js?v=20261123-list-v1';
 import {chooseWordTarget} from './word-link-dialog.js';
 import {openNoteFile} from './file-viewer.js';
 import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
@@ -22,7 +23,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  try{initial=paperFor(note);}
  catch(err){throw Error('อ่านหน้ากระดาษเดิมไม่สำเร็จ: '+(err?.message||'รูปแบบข้อมูลไม่รองรับ')+' · ไม่มีการลบหรือบันทึกทับต้นฉบับ');}
  let model=initial,pageId=model.pages[0].id,tool=startInk?'pen':window.matchMedia('(max-width:600px)').matches?'hand':'text',color='#172033',defaultTextColor='#172033',width=5,highlighterSize=12,fontSize=16,bold=false,finger=startInk,selected=new Set(),zoom=1,fit=1,scale=1,gesture=null,closed=false,raf=0,editing=null,unsaved=null,loadingImages=0;
- let multiSelect=false,wordSelection=null,lineStyle='solid',eraserKind='stroke',smartEnabled=true,smartTimer=0,lastTextTap=null;
+ let multiSelect=false,wordSelection=null,lineStyle='solid',eraserKind='stroke',smartEnabled=true,smartTimer=0,lastTextTap=null,lastMouseTextTap=null;
  let lastSelectionSignature='';
  let ruler={active:false,x:PAGE_W/2,y:PAGE_H/2,angle:0,length:440,height:44};
  function cancelSmartTimer(){clearTimeout(smartTimer);smartTimer=0;}
@@ -589,9 +590,66 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  ribbon.insertAdjacentHTML('afterbegin','<button type="button" class="paper-ribbon-scroll paper-ribbon-prev" data-ribbon-scroll="-1" aria-label="เลื่อนเครื่องมือข้อความไปทางซ้าย">‹</button>');
  ribbon.insertAdjacentHTML('beforeend','<button type="button" class="paper-ribbon-scroll paper-ribbon-next" data-ribbon-scroll="1" aria-label="เลื่อนเครื่องมือข้อความไปทางขวา">›</button>');
  bind(ribbon,'click',event=>{
+  const marker=event.target.closest('[data-list-prefix]');
+  if(marker){event.preventDefault();toggleTextList(marker.dataset.listPrefix);return;}
   const button=event.target.closest('[data-ribbon-scroll]');
   if(button){event.preventDefault();ribbon.scrollBy({left:Number(button.dataset.ribbonScroll)*245,behavior:'smooth'});}
  });
+ // On desktop the Word toolbar floats above the canvas; it is independent
+ // from the horizontally clipped tool-settings strip. Tablet and phone keep
+ // the existing in-flow placement.
+ const desktopRibbon=window.matchMedia('(min-width:721px) and (pointer:fine)');
+ const dragGrip=ribbon.querySelector('.paper-ribbon-drag');
+ let ribbonDrag=null,ribbonPoint=null;
+ const savedRibbonKey='ru-paper-word-ribbon-xy-v1';
+ try{
+  const xy=JSON.parse(localStorage.getItem(savedRibbonKey)||'null');
+  if(xy&&Number.isFinite(xy.x)&&Number.isFinite(xy.y))ribbonPoint={x:xy.x,y:xy.y};
+ }catch{}
+ const clampRibbon=()=>{
+  if(!desktopRibbon.matches)return;
+  const bounds=ribbon.getBoundingClientRect();
+  const xy=ribbonPoint||{x:Math.max(12,(window.innerWidth-Math.min(790,window.innerWidth-20))/2),y:110};
+  const x=Math.max(8,Math.min(xy.x,window.innerWidth-bounds.width-8));
+  const y=Math.max(8,Math.min(xy.y,window.innerHeight-bounds.height-8));
+  ribbon.style.left=x+'px';ribbon.style.top=y+'px';
+ };
+ const hostRibbon=()=>{
+  if(desktopRibbon.matches){
+   if(ribbon.parentElement!==root)root.append(ribbon);
+   ribbon.dataset.floating='true';
+   dragGrip.hidden=false;
+   requestAnimationFrame(clampRibbon);
+  }else{
+   if(ribbon.parentElement!==contextBar)contextBar.append(ribbon);
+   delete ribbon.dataset.floating;
+   ribbon.style.left='';ribbon.style.top='';
+   dragGrip.hidden=true;
+  }
+ };
+ hostRibbon();
+ bind(desktopRibbon,'change',hostRibbon);
+ bind(window,'resize',clampRibbon);
+ bind(dragGrip,'pointerdown',event=>{
+  if(!desktopRibbon.matches||event.button!==0)return;
+  event.preventDefault();
+  ribbonDrag={id:event.pointerId,x:event.clientX,y:event.clientY,left:ribbon.offsetLeft,top:ribbon.offsetTop};
+  dragGrip.setPointerCapture(event.pointerId);
+ });
+ bind(dragGrip,'pointermove',event=>{
+  if(!ribbonDrag||ribbonDrag.id!==event.pointerId)return;
+  event.preventDefault();
+  ribbonPoint={x:ribbonDrag.left+event.clientX-ribbonDrag.x,y:ribbonDrag.top+event.clientY-ribbonDrag.y};
+  clampRibbon();
+ });
+ const finishRibbonDrag=event=>{
+  if(!ribbonDrag||ribbonDrag.id!==event.pointerId)return;
+  ribbonDrag=null;
+  ribbonPoint={x:ribbon.offsetLeft,y:ribbon.offsetTop};
+  try{localStorage.setItem(savedRibbonKey,JSON.stringify(ribbonPoint));}catch{}
+ };
+ bind(dragGrip,'pointerup',finishRibbonDrag);
+ bind(dragGrip,'pointercancel',finishRibbonDrag);
  bind($('#paper-ink-custom'),'input',event=>{
   const next=textColor(event.target.value);
   if(!next)return;
@@ -820,6 +878,34 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   fitRichBox();textRibbonState();
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),450);
  }
+ // List markers are real plain-text prefixes, not extra SVG decorations:
+ // word formatting, links, copying and old saved notes retain their offsets.
+ function toggleTextList(kind){
+  if(!editing){say('ดับเบิลคลิกข้อความที่ต้องการ แล้วเลือกสัญลักษณ์รายการ',true);return;}
+  const wasRich=editing.rich;
+  const value=wasRich?readRich():{text:textarea.value,marks:editing.marks||[]};
+  const range=wasRich?(richOffsets()||richSelection):{start:textarea.selectionStart,end:textarea.selectionEnd};
+  if(!range)return;
+  let next;
+  try{next=applyListPrefix(value.text,range.start,range.end,kind);}catch(err){say(err.message,true);return;}
+  let marks=value.marks||[],links=editing.links||[];
+  for(const op of next.operations){
+   marks=moveMarks(marks,op.before,op.after);
+   links=moveLinks(links,op.before,op.after);
+  }
+  editing.marks=marks;editing.links=links;editing.lastText=next.text;
+  if(wasRich){
+   rich.innerHTML=formattedTextHTML({text:next.text,marks},esc,false,false);
+   rich.focus();selectRichOffsets(next.start,next.end);fitRichBox();
+  }else{
+   textarea.value=next.text;
+   textarea.focus({preventScroll:true});
+   textarea.setSelectionRange(next.start,next.end);
+   fitTextBox();
+  }
+  textRibbonState();clearTimeout(textTimer);
+  textTimer=setTimeout(()=>finishText(true),450);
+ }
  function fitTextBox(){
   if(!editing)return;
   const o=editing.object;
@@ -1007,6 +1093,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(button.hasAttribute('data-word-menu-close')){closeWordMenu();return;}
   if(!range||!restoreMenuSelection()){closeWordMenu();return;}
   try{
+   if(button.dataset.wordMenuPrefix){toggleTextList(button.dataset.wordMenuPrefix);return;}
    if(button.dataset.wordMenuFormat){applyWordFormat(button.dataset.wordMenuFormat);return;}
    if(button.dataset.wordMenuAlign){applyWordFormat('align',button.dataset.wordMenuAlign);return;}
    if(button.dataset.wordMenuColor){applyWordFormat('color',button.dataset.wordMenuColor);return;}
@@ -1308,7 +1395,20 @@ bind(rich,'keyup',()=>{
   if(g?.kind==='pinch'){if(pointers.size<2)gesture=null;return;}
   gesture=null;
   if(g?.multiTap&&!g.moved&&g.alreadySelected&&e.type==='pointerup')selected.delete(g.multiTap);
-  // iOS does not reliably dispatch dblclick on SVG. Two short taps on the
+  // Mouse clicks can lose their native dblclick event when the SVG rerenders
+   // its selection outline between clicks. Detect the same object twice.
+   if(e.type==='pointerup'&&e.pointerType==='mouse'&&['select','hand'].includes(tool)
+      &&(g?.kind==='move'&&!g.preview||g?.kind==='pan')){
+    const at=point(e),hit=[...page().objects].reverse().find(o=>o.type==='text'&&contains(at,o,4/scale));
+    const previous=lastMouseTextTap,now=Date.now();
+    lastMouseTextTap=hit?{id:hit.id,time:now,x:at.x,y:at.y}:null;
+    if(hit&&previous?.id===hit.id&&now-previous.time<550&&Math.hypot(at.x-previous.x,at.y-previous.y)<15){
+     lastMouseTextTap=null;
+     if(tool==='hand')setTool('select');
+     startText(hit);return;
+    }
+   }
+   // iOS does not reliably dispatch dblclick on SVG. Two short taps on the
    // same text enter inline editing, without treating drags as taps.
    if(e.type==='pointerup'&&tool==='select'&&['touch','pen'].includes(e.pointerType)&&g?.kind==='move'&&!g.preview){
     const at=point(e),hit=[...page().objects].reverse().find(o=>o.type==='text'&&contains(at,o,4));
@@ -1371,11 +1471,25 @@ bind(rich,'keyup',()=>{
  });
  bind(svg,'pointerdown',pointerDown);bind(svg,'pointermove',pointerMove);bind(svg,'pointerup',pointerUp);bind(svg,'pointercancel',pointerUp);
  bind(svg,'lostpointercapture',e=>{if(pointers.delete(e.pointerId)){cancelSmartTimer();gesture=null;scheduleDraw();}});
- bind(svg,'dblclick',e=>{
-   if(!['select','text'].includes(tool)||editing)return;
-   const o=[...page().objects].reverse().find(o=>['text','table'].includes(o.type)&&contains(point(e),o));
-   if(o){e.preventDefault();if(o.type==='table')tableUI.open(o);else startText(o);}
-  });
+ function editFromDesktopDoubleClick(e){
+   if(editing||!['select','text','hand'].includes(tool))return false;
+   // Resolve the text by page coordinates instead of the event's SVG child,
+   // which may have been re-rendered after the first click.
+   const p=point(e);
+   const o=[...page().objects].reverse().find(item=>
+    (item.type==='text'||item.type==='table')&&contains(p,item,3/scale));
+   if(!o)return false;
+   e.preventDefault();
+   if(tool==='hand')setTool('select');
+   if(o.type==='table')tableUI.open(o);else startText(o);
+   return true;
+ }
+ bind(svg,'dblclick',e=>{editFromDesktopDoubleClick(e);});
+ bind(svg,'click',e=>{
+  // Some desktop browsers dispatch the second click but not dblclick when
+  // the selection rectangle is replaced on the first click.
+  if(e.detail>=2)editFromDesktopDoubleClick(e);
+ });
  bind(viewport,'wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();const r=viewport.getBoundingClientRect();zoomAt(zoom*Math.exp(-e.deltaY*.005),e.clientX-r.left,e.clientY-r.top);}},{passive:false});
  async function insertImages(files){
   finishText();loadingImages++;try{for(const file of files){writable();say('กำลังส่งรูปขึ้น Supabase…');const imageId=await space.uploadImage(file);if(closed)return;const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();if(closed){URL.revokeObjectURL(url);return;}images.set(imageId,url);imageVersion++;const w=Math.min(620,img.naturalWidth),height=Math.min(900,w*img.naturalHeight/img.naturalWidth),actualW=height*img.naturalWidth/img.naturalHeight;
