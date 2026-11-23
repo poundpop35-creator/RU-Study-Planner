@@ -1062,8 +1062,10 @@ bind(rich,'keyup',()=>{
  const closeCanvasMenu=()=>{canvasMenu.hidden=true;};
  function showCanvasMenu(event){
   if(!event.target.closest('#paper-sheet'))return;
-  // Text with a highlighted range uses the existing rich-text mini toolbar.
-  if(!wordMenu.hidden)return;
+  // Text with a highlighted range uses the existing rich-text mini toolbar;
+  // a new right-click elsewhere must replace it, not fall through to Safari.
+  if(!wordMenu.hidden&&event.target.closest('#paper-text-input,#paper-rich-editor'))return;
+  closeWordMenu();
   event.preventDefault();
   const at=point(event);
   contextAnchor={x:Math.max(0,Math.min(PAGE_W,at.x)),y:Math.max(0,Math.min(PAGE_H,at.y))};
