@@ -798,8 +798,10 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   textMeasure.style.width=width+'px';textMeasure.style.maxWidth=width+'px';
   textMeasure.style.whiteSpace='pre-wrap';textMeasure.style.overflowWrap='anywhere';
   editing.paperHeight=Math.min(Math.max(1,PAGE_H-o.y),Math.max(o.h||0,Math.ceil(o.size*1.5),textMeasure.offsetHeight+3));
-  // Pencil mode keeps a comfortable target but it is never the saved width.
-  const visualWidth=scribbleActive?Math.min(availableWidth,Math.max(250,width)):width;
+  // Keep a comfortable editing target on iPad/phones even when the
+  // text object itself is short. As text grows, the target expands past 250px
+  // and the saved box uses its naturally measured width.
+  const visualWidth=Math.min(availableWidth,Math.max(250,width));
   textarea.style.width=visualWidth+'px';
   textarea.style.overflowY='hidden';
   textarea.style.height='1px';
