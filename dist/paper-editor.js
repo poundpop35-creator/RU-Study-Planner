@@ -12,7 +12,7 @@ import {openNoteFile} from './file-viewer.js';
 import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape,shapeAngle,shapeContains,eraserTargetHit,isJoinable,snapLinePoint,snapMovedLine} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {recognizeHeldShape,recognizeDrawnShape,diagramSegments,hasBranchJunction,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261123-shapes-eraser-v4';
-import {mountTableEditor} from './paper-table-ui.js?v=20261121-paper-format';
+import {mountTableEditor} from './paper-table-ui.js?v=20261123-continuous-v1';
 import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
 let active=null;
 export function refreshPaper(space,id){return active?.id===id?active.refresh(space):false;}
