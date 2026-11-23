@@ -172,40 +172,37 @@ test('editing two selected dates and defaults preserves each date-specific hour 
 
 // Debt numbers live in progress.debt so they sync; every study field must stay as it was.
 const sameStudy=(a,b)=>{const {debt:_a,...x}=a,{debt:_b,...y}=b;assert.deepEqual(x,y);};
-test('debt partial payments sync with the study space without changing study data, and mistakes can be removed',()=>{
+test('debt route does not expose obsolete balances or estimated insurance when the private plan is absent',()=>{
  navigate('#home');assert.ok(html().includes('href="#debt"'));
- const before=saved();navigate('#debt');
- assert.ok(html().includes('บัญชีละ 1,000 บาท'));assert.ok(!html().includes('S เริ่มเมื่อรายการอื่นหมด'));assert.ok(html().includes('<h1>แผนจัดการหนี้</h1>'));assert.ok(html().includes('140,723.55'));
- assert.ok(!html().includes('data-action="debt-toggle"'));assert.ok(html().includes('id="debt-payment-form"'));
- assert.ok(get('#navigation').innerHTML.includes('href="#debt" aria-current="page"'));
- assert.equal(get('#cloud-status-bar').hidden,false);
- const submit=amount=>{get('#debt-creditor').value='AEON';get('#debt-payment-amount').value=amount;listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});};
- submit('5');submit('1000');assert.ok(html().includes('139,718.55'));assert.ok(html().includes('2,995'));
- const entries=JSON.parse(memory.get('debtPayments_20261025_v1'));assert.equal(entries.length,2);assert.equal(saved().debt.debtPayments_20261025_v1,memory.get('debtPayments_20261025_v1'));sameStudy(saved(),before);
- submit('50000');assert.equal(get('#debt-payment-error').hidden,false);assert.equal(get('#debt-payment-amount').value,'50000');
- assert.equal(JSON.parse(memory.get('debtPayments_20261025_v1')).length,2);
- navigate('#home');assert.equal(get('#cloud-status-bar').hidden,false);navigate('#debt');assert.ok(html().includes('139,718.55'));
- click('debt-remove',{id:entries[0].id});assert.ok(html().includes('139,723.55'));sameStudy(saved(),before);
+ navigate('#debt');assert.ok(html().includes('ยังไม่พบแผนหนี้ฉบับล่าสุด'));
+ assert.ok(!html().includes('140,723.55'));assert.ok(!html().includes('ค่าประกัน AEON'));
+ assert.ok(!html().includes('id="debt-payment-fee"'));assert.ok(get('#navigation').innerHTML.includes('href="#debt" aria-current="page"'));
 });
-
-test('debt interest payment and editable forecast rates sync without touching study data',()=>{
- navigate('#debt');const before=saved();
- assert.ok(html().includes('ดอกเบี้ยและเงินที่ต้องเตรียมเพิ่ม'));assert.ok(html().includes('S รวม 7,900 บาท ไม่มีดอกเพิ่ม'));
- get('#debt-creditor').value='LINE';get('#debt-payment-amount').value='100';get('#debt-payment-interest').value='20';
+const debtSample=['2026-11-25',1800000,100000,[
+ ['G · Wallet','G',148287,0,[148287],0,'',0,'','',25,{baseBudget:1500000,payWindow:[25,25]}],
+ ['AEON บัญชี 15,000','AEON',1500000,100000,[],1500000,'',2500,'y','aeonUpper',25],
+ ['AEON บัญชี 10,000','AEON',1000000,100000,[],1000000,'',1600,'y','aeonCard',25],
+ ['LINE BK','LINE BK',2600000,100000,[],2600000,'',2500,'y','line',25]
+ ],'Manual interest only'];
+const debtToken='p2.'+Buffer.from(JSON.stringify(debtSample)).toString('base64url');
+test('private debt plan activates, manual receipts sync, and removing a mistake restores the exact balance',()=>{
+ const before=saved();
+ navigate('#debt/'+debtToken);
+ assert.ok(html().includes('ใช้แผนนี้'));
+ click('debt-activate');navigate('#debt');
+ assert.ok(html().includes('AEON บัญชี 15,000'));assert.ok(html().includes('id="debt-payment-form"'));
+ assert.ok(html().includes('ดอกเบี้ยจริง'));assert.ok(!html().includes('id="debt-payment-fee"'));
+ assert.ok(!html().includes('ดอกประมาณ'));assert.ok(!html().includes('140,723.55'));
+ get('#debt-creditor').value='1';get('#debt-payment-amount').value='1200';get('#debt-payment-interest').value='200';
  listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});
- const entries=JSON.parse(memory.get('debtPayments_20261025_v1'));assert.equal(entries.at(-1).amountCents,8000);assert.equal(entries.at(-1).interestCents,2000);
- for(const [key,value] of Object.entries({aeonUpper:'22',aeonCard:'16',line:'18',gold:'0.99'}))get('#debt-rate-'+key).value=value;
- listeners.submit({target:{id:'debt-rate-form'},preventDefault(){}});
- assert.equal(JSON.parse(memory.get('debtInterestRates_20261025_v1')).line,18);assert.equal(JSON.parse(saved().debt.debtInterestRates_20261025_v1).line,18);assert.ok(html().includes('value="18"'));sameStudy(saved(),before);
- navigate('#debt');assert.ok(html().includes('ค่าประกัน AEON อีก 1 รอบ'));assert.ok(html().includes('id="debt-payment-fee"'));
- get('#debt-creditor').value='AEON';get('#debt-payment-amount').value='600';get('#debt-payment-interest').value='0';get('#debt-payment-fee').value='600';
- listeners.submit({target:{id:'debt-payment-form'},preventDefault(){}});
- assert.equal(JSON.parse(memory.get('debtPayments_20261025_v1')).at(-1).feeCents,60000);assert.ok(!html().includes('ค่าประกัน AEON อีก 1 รอบ'));assert.ok(html().includes('จ่ายค่าประกัน/ค่าธรรมเนียมแล้ว 600 บาท'));sameStudy(saved(),before);
- get('#debt-payment-fee').value='0';
- get('#debt-rate-line').value='-1';listeners.submit({target:{id:'debt-rate-form'},preventDefault(){}});assert.equal(get('#debt-rate-error').hidden,false);assert.equal(JSON.parse(memory.get('debtInterestRates_20261025_v1')).line,18);
+ let savedPlan=JSON.parse(saved().debt.debtPrivateSchedule_v1);
+ assert.equal(savedPlan.entries.length,1);
+ assert.equal(savedPlan.entries[0].p,100000);assert.equal(savedPlan.entries[0].i,20000);assert.equal(savedPlan.entries[0].f,0);
+ assert.ok(html().includes('14,000'));sameStudy(saved(),before);
+ const id=savedPlan.entries[0].id;click('debt-remove',{id});
+ savedPlan=JSON.parse(saved().debt.debtPrivateSchedule_v1);assert.equal(savedPlan.entries.length,0);
+ assert.ok(html().includes('15,000'));sameStudy(saved(),before);
 });
-
-
 test('reading and registration are separate routes with independent controls and shared saved progress',()=>{
  const before=saved();navigate('#plan');
  assert.ok(html().includes('<h1>แผนอ่าน</h1>'));assert.ok(html().includes('id="study-plan-date"'));
