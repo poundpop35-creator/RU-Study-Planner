@@ -1334,6 +1334,14 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  }
  .paper-app .paper-selection-tools>span{padding:0 4px}
  .paper-app .paper-selection-tools button{min-height:36px}
+ /* The extra-actions popover opens upward. Clipping this parent to a
+    scrollbox made Delete/Duplicate appear but impossible to tap. */
+ .paper-app .paper-selection-tools:has(.paper-selection-more[open]){
+  overflow:visible!important;max-height:none!important;z-index:50!important;
+ }
+ .paper-app .paper-selection-more[open]>div{
+  bottom:calc(100% + 7px);top:auto;z-index:60;
+ }
  .paper-app.paper-keyboard-visible .paper-toolbar{
   display:none!important;
  }
