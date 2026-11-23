@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261123-text-tools-v7'); }
+try { await import('./app.js?v=20261123-continuous-v1'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
