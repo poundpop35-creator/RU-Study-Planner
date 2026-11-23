@@ -449,6 +449,30 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await page.locator('#paper-shape-angle').dispatchEvent('change');
     await click('save');
     assert.equal(savedShape().angle,270,'numeric angle input changes the selected shape');
+    // Word-like notebook context menu must prevent the browser menu and
+    // choose actions based on what lies under the right-clicked location.
+    const canvasMenu=page.locator('#paper-context-menu');
+    const shapeAt=await point(340,830);
+    const appMenu=await page.locator('#paper-svg').evaluate((svg,p)=>{
+     const event=new MouseEvent('contextmenu',{bubbles:true,cancelable:true,button:2,clientX:p.x,clientY:p.y});
+     svg.dispatchEvent(event);return event.defaultPrevented;
+    },shapeAt);
+    assert.ok(appMenu,'right-clicking the paper suppresses the native browser menu');
+    assert.ok(await canvasMenu.isVisible(),'the app provides a context menu for a selected object');
+    assert.ok(await canvasMenu.locator('[data-context-action="copy"]').isVisible());
+    await canvasMenu.locator('[data-context-action="copy"]').click();
+    const blankAt=await point(650,1150);
+    await page.locator('#paper-svg').evaluate((svg,p)=>{
+     const event=new MouseEvent('contextmenu',{bubbles:true,cancelable:true,button:2,clientX:p.x,clientY:p.y});
+     svg.dispatchEvent(event);
+     if(!event.defaultPrevented)throw Error('Browser menu was not prevented over blank paper');
+    },blankAt);
+    assert.ok(await canvasMenu.locator('[data-context-action="add-text"]').isVisible(),'blank page offers an add-text action');
+    assert.ok(await canvasMenu.locator('[data-context-action="paste"]').isVisible(),'copied objects may be pasted from the app menu');
+    await canvasMenu.locator('[data-context-action="paste"]').click();
+    assert.equal(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.filter(o=>o.type==='shape').length,2);
+    await click('undo');
+    assert.equal(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.filter(o=>o.type==='shape').length,1);
    await click('ruler');
    assert.equal(await page.locator('[data-paper="ruler"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#paper-svg [data-ruler="move"]').count(),1);
@@ -607,6 +631,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(dropBlocked,'formatted HTML drops must not invoke native rich-text insertion');
    await wordRibbon.locator('[data-word-format="italic"]').click();
    await wordRibbon.locator('[data-word-format="underline"]').click();
+   // A desktop color picker steals focus: the highlighted word must be
+   // retained while choosing a new color, not silently dropped.
+   const customInk=wordRibbon.locator('#paper-word-custom-color');
+   await customInk.dispatchEvent('pointerdown',{bubbles:true,pointerType:'mouse'});
+   await customInk.evaluate(input=>{input.value='#0c8d53';input.dispatchEvent(new Event('input',{bubbles:true}));});
+   assert.ok((await page.locator('#paper-rich-editor').innerHTML()).includes('color:#0c8d53'),'desktop color picker changes selected words after it receives focus');
    await page.locator('#paper-rich-editor').dispatchEvent('contextmenu',{bubbles:true,cancelable:true,clientX:140,clientY:235});
    assert.ok(await miniToolbar.isVisible(),'right-click works on rich text after formatting');
    await miniToolbar.locator('[data-word-menu-color="#dc4343"]').click();
