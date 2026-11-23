@@ -1322,7 +1322,7 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
   overflow-y:auto;overscroll-behavior:contain;
  }
  .paper-app .paper-shapes-popup{
-  position:fixed!important;z-index:18;
+  position:fixed!important;z-index:70!important;
   top:auto!important;bottom:calc(75px + env(safe-area-inset-bottom))!important;
   left:8px!important;right:8px!important;width:auto!important;
   max-height:56dvh;overflow-y:auto;
