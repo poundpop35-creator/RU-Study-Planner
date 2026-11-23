@@ -3,6 +3,14 @@ import {validateMarks} from './paper-rich-text.js?v=20261121-paper-format';
 import {shapes,lineStyles} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {validateTableCells} from './paper-table.js?v=20261121-paper-format';
 export const PAGE_W=900,PAGE_H=1273;
+// Continuous sheets grow only as writing reaches lower areas. This generous
+// ceiling prevents oversized browser SVG dimensions; there are no manual pages.
+export const MAX_CANVAS_HEIGHT=PAGE_H*250;
+export function pageHeight(page){return Number.isInteger(page?.height)&&page.height>=PAGE_H?Math.min(MAX_CANVAS_HEIGHT,page.height):PAGE_H;}
+export function continuousContentHeight(page){
+ const content=Math.max(PAGE_H,...(page?.objects||[]).map(o=>Math.max(0,o.y+o.h)));
+ return Math.min(MAX_CANVAS_HEIGHT,Math.ceil(content/PAGE_H)*PAGE_H);
+}
 // Pen and highlighter widths are independent paper-coordinate stroke widths.
 export const PEN_WIDTH_PRESETS=[1,2,3,5,8,12];
 export const HIGHLIGHT_WIDTH_PRESETS=[4,8,12,20,28,40];
@@ -24,12 +32,22 @@ export function imageLink(value){
  return url.href;
 }
 export function validatePaper(value){
- if(!value||value.version!==1||!Array.isArray(value.pages)||!value.pages.length||value.pages.length>100)throw Error('สมุดรองรับ 1–100 หน้า');
- const ids=new Set();let points=0;
- return {version:1,pages:value.pages.map(page=>{
-  if(!idOK(page.id)||ids.has(page.id)||!PAPERS.includes(page.template)||!Array.isArray(page.objects)||page.objects.length>5000)throw Error('ข้อมูลหน้ากระดาษไม่ถูกต้อง');ids.add(page.id);
-  return {id:page.id,template:page.template,objects:page.objects.map(o=>{
-   if(!idOK(o.id)||ids.has(o.id)||!['stroke','text','image','shape','table'].includes(o.type)||!num(o.x,-PAGE_W,PAGE_W*2)||!num(o.y,-PAGE_H,PAGE_H*2)||!num(o.w,1,PAGE_W*3)||!num(o.h,1,PAGE_H*3))throw Error('วัตถุบนกระดาษไม่ถูกต้อง');ids.add(o.id);
+ if(!value||![1,2].includes(value.version)||!Array.isArray(value.pages)||!value.pages.length||value.pages.length>100||
+   (value.version===2&&value.pages.length!==1))throw Error('สมุดรองรับกระดาษต่อเนื่องหนึ่งผืน หรือกระดาษแบบหน้า 1–100 หน้า');
+ const continuous=value.version===2,ids=new Set();let points=0;
+ return {version:value.version,pages:value.pages.map(page=>{
+  if(!idOK(page.id)||ids.has(page.id)||!PAPERS.includes(page.template)||!Array.isArray(page.objects)||
+    page.objects.length>(continuous?12000:5000)||continuous&&(page.height!==undefined&&
+    (!Number.isInteger(page.height)||!num(page.height,PAGE_H,MAX_CANVAS_HEIGHT))))
+    throw Error('ข้อมูลหน้ากระดาษไม่ถูกต้อง');
+  ids.add(page.id);
+  return {id:page.id,template:page.template,...(continuous?{height:pageHeight(page)}:{}),objects:page.objects.map(o=>{
+   if(!idOK(o.id)||ids.has(o.id)||!['stroke','text','image','shape','table'].includes(o.type)||
+     !num(o.x,-PAGE_W,PAGE_W*2)||!num(o.y,-PAGE_H,continuous?MAX_CANVAS_HEIGHT:PAGE_H*2)||
+     !num(o.w,1,PAGE_W*3)||!num(o.h,1,continuous?MAX_CANVAS_HEIGHT:PAGE_H*3)||
+     continuous&&o.y+o.h>pageHeight(page)+1)
+     throw Error('วัตถุบนกระดาษไม่ถูกต้อง');
+   ids.add(o.id);
    const out={id:o.id,type:o.type,x:o.x,y:o.y,w:o.w,h:o.h};
    if(o.type==='stroke'){
     if(!['pen','highlight'].includes(o.tool)||!color(o.color)||!num(o.width,1,40)||!Array.isArray(o.points)||!o.points.length)throw Error('เส้นปากกาไม่ถูกต้อง');points+=o.points.length;if(points>120000)throw Error('ลายมือในโน้ตนี้เต็มแล้ว กรุณาสร้างโน้ตใหม่');
@@ -68,8 +86,24 @@ export function paperFor(note){
   for(let i=0;i<Math.max(1,line.length);i+=50){if(y+38>PAGE_H-64){page=makePage();pages.push(page);y=64;}page.objects.push({id:stable(),type:'text',x:64,y,w:PAGE_W-128,h:38,text:line.slice(i,i+50),size:23,color:'#172033',bold:false});y+=38;}
  }text='';};
  for(const op of note.delta?.ops||[]){if(typeof op.insert==='string')text+=op.insert;else if(op.insert?.studyImage){flush();if(y+400>PAGE_H-64){page=makePage();pages.push(page);y=64;}page.objects.push({id:stable(),type:'image',x:64,y,w:PAGE_W-128,h:400,imageId:op.insert.studyImage});y+=432;}}
- if(text.trim())flush();return validatePaper({version:1,pages});
+ if(text.trim())flush();return toContinuousPaper({version:1,pages});
 }
+// Conversion happens explicitly for saved notebooks. All text, images, inks,
+// shapes, tables, IDs and per-word links retain their original content.
+export function toContinuousPaper(source){
+ const old=validatePaper(source);
+ if(old.version===2)return old;
+ const first=old.pages[0],objects=[];
+ old.pages.forEach((p,index)=>{
+  const shift=index*PAGE_H;
+  for(const o of p.objects)objects.push({...copy(o),y:o.y+shift});
+ });
+ const height=Math.ceil(Math.max(PAGE_H,old.pages.length*PAGE_H,
+  ...objects.map(o=>o.y+o.h))/PAGE_H)*PAGE_H;
+ if(height>MAX_CANVAS_HEIGHT)throw Error('สมุดนี้ยาวเกินกว่าจะแปลงเป็นผืนเดียวโดยอัตโนมัติ');
+ return validatePaper({version:2,pages:[{id:first.id,template:first.template,height,objects}]});
+}
+
 export function strokeObject(samples,style){
  samples=samples.filter((p,i)=>!i||p[0]!==samples[i-1][0]||p[1]!==samples[i-1][1]);
  const xs=samples.map(p=>p[0]),ys=samples.map(p=>p[1]),x=Math.min(...xs),y=Math.min(...ys),w=Math.max(1,Math.max(...xs)-x),h=Math.max(1,Math.max(...ys)-y);
@@ -95,10 +129,11 @@ export function mergePaper(base,local,remote){
   if(!l){if(r&&!same(b,r))throw Error('หน้าที่ลบมีการแก้จากอีกเครื่อง กรุณาเก็บฉบับนี้ก่อนแล้วลองใหม่');rm.delete(id);continue;}
   if(!r)throw Error('หน้านี้ถูกลบจากอีกเครื่อง กรุณาสำรองงานที่กำลังทำ');
   if(l.template!==b.template){if(r.template!==b.template&&r.template!==l.template)throw Error('รูปแบบกระดาษมีข้อมูลชนกัน');r.template=l.template;}
+  if(local.version===2)r.height=Math.max(pageHeight(l),pageHeight(r));
   const bo=new Map(b.objects.map(o=>[o.id,o])),lo=new Map(l.objects.map(o=>[o.id,o])),ro=new Map(r.objects.map(o=>[o.id,o]));
   for(const [oid,before] of bo){const after=lo.get(oid),current=ro.get(oid);if(same(before,after))continue;if(!same(before,current)&&!same(after,current))throw Error('วัตถุนี้ถูกแก้พร้อมกันจากอีกเครื่อง กรุณาสำรองงานที่ค้างก่อน');if(after)ro.set(oid,copy(after));else ro.delete(oid);}
   for(const [oid,o] of lo)if(!bo.has(oid))ro.set(oid,copy(o));r.objects=[...ro.values()];
  }
  for(const [id,p] of lm)if(!bm.has(id))rm.set(id,copy(p));
- return validatePaper({version:1,pages:[...rm.values()]});
+ return validatePaper({version:local.version===2||remote.version===2?2:1,pages:[...rm.values()]});
 }
