@@ -3,15 +3,23 @@
 export function notebookHistory(limit=40){
  const undo=[],redo=[];let bytes=0;
  const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
- function record(before,after,index){
+ function record(before,after,index,whole=false){
   if(same(before,after))return;
-  const item={before:structuredClone(before),after:structuredClone(after),index};
+  const item={before:structuredClone(before),after:structuredClone(after),index,whole};
   item.bytes=JSON.stringify(item).length;bytes+=item.bytes;undo.push(item);redo.length=0;
   while(undo.length>limit||(undo.length>1&&bytes>4000000))bytes-=undo.shift().bytes;
  }
  function apply(pages,back,save){
   const from=back?undo:redo,to=back?redo:undo,item=from.at(-1);if(!item)return;
-  const expected=back?item.after:item.before,newPage=back?item.before:item.after,id=(expected||newPage).id;
+  const expected=back?item.after:item.before,newPage=back?item.before:item.after;
+  if(item.whole){
+   if(!same(pages,expected.pages))throw Error('สมุดเปลี่ยนไปแล้ว จึงไม่ย้อนทับข้อมูลใหม่');
+   if(save(structuredClone(newPage.pages),newPage.pages[0].id,newPage.version)){
+    from.pop();to.push(item);bytes+=(back?-1:1)*item.bytes;
+   }
+   return;
+  }
+  const id=(expected||newPage).id;
   const at=pages.findIndex(p=>p.id===id),actual=pages[at]||null;
   if(!same(actual,expected)){throw Error('หน้านี้เปลี่ยนไปแล้ว จึงไม่ย้อนทับข้อมูลใหม่');}
   const next=pages.slice();

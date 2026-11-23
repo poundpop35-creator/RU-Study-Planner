@@ -7,8 +7,9 @@ export const PAGE_W=900,PAGE_H=1273;
 // ceiling prevents oversized browser SVG dimensions; there are no manual pages.
 export const MAX_CANVAS_HEIGHT=PAGE_H*250;
 export function pageHeight(page){return Number.isInteger(page?.height)&&page.height>=PAGE_H?Math.min(MAX_CANVAS_HEIGHT,page.height):PAGE_H;}
+export function inkPadding(o){return o.type==="stroke"?o.width*(o.tool==="highlight"?0.5:0.725):0;}
 export function continuousContentHeight(page){
- const content=Math.max(PAGE_H,...(page?.objects||[]).map(o=>Math.max(0,o.y+o.h)));
+ const content=Math.max(PAGE_H,...(page?.objects||[]).map(o=>Math.max(0,o.y+o.h+inkPadding(o))));
  return Math.min(MAX_CANVAS_HEIGHT,Math.ceil(content/PAGE_H)*PAGE_H);
 }
 // Pen and highlighter widths are independent paper-coordinate stroke widths.
@@ -41,7 +42,15 @@ export function validatePaper(value){
     (!Number.isInteger(page.height)||!num(page.height,PAGE_H,MAX_CANVAS_HEIGHT))))
     throw Error('ข้อมูลหน้ากระดาษไม่ถูกต้อง');
   ids.add(page.id);
-  return {id:page.id,template:page.template,...(continuous?{height:pageHeight(page)}:{}),objects:page.objects.map(o=>{
+  let sections;
+  if(continuous&&page.sections!==undefined){
+   if(!Array.isArray(page.sections)||!page.sections.length||page.sections.length>100||page.sections.length*PAGE_H>pageHeight(page))throw Error('ข้อมูลพื้นหลังกระดาษไม่ถูกต้อง');
+   sections=page.sections.map(({id,template},i)=>{
+    if(!idOK(id)||!PAPERS.includes(template)||(i===0?id!==page.id:ids.has(id)))throw Error('ข้อมูลหน้าเดิมไม่ถูกต้อง');
+    ids.add(id);return {id,template};
+   });
+  }
+  return {...(sections?{sections}:{}),id:page.id,template:page.template,...(continuous?{height:pageHeight(page)}:{}),objects:page.objects.map(o=>{
    if(!idOK(o.id)||ids.has(o.id)||!['stroke','text','image','shape','table'].includes(o.type)||
      !num(o.x,-PAGE_W,PAGE_W*2)||!num(o.y,-PAGE_H,continuous?MAX_CANVAS_HEIGHT:PAGE_H*2)||
      !num(o.w,1,PAGE_W*3)||!num(o.h,1,continuous?MAX_CANVAS_HEIGHT:PAGE_H*3)||
@@ -107,7 +116,7 @@ export function toContinuousPaper(source){
  if(objects.length>12000)throw Error('ข้อมูลจากหลายหน้ามีวัตถุมากเกินไปสำหรับกระดาษต่อเนื่องผืนเดียว');
  const height=Math.ceil(Math.max(PAGE_H,old.pages.length*PAGE_H,bottom)/PAGE_H)*PAGE_H;
  if(height>MAX_CANVAS_HEIGHT)throw Error('สมุดนี้ยาวเกินกว่าจะแปลงเป็นผืนเดียวโดยอัตโนมัติ');
- return validatePaper({version:2,pages:[{id:first.id,template:first.template,height,objects}]});
+ return validatePaper({version:2,pages:[{id:first.id,template:first.template,sections:old.pages.map(({id,template})=>({id,template})),height,objects}]});
 }
 
 export function strokeObject(samples,style){
@@ -130,11 +139,20 @@ export function pageHistory(limit=40){let undo=[],redo=[];return {
 };}
 export function mergePaper(base,local,remote){
  const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b),bm=new Map(base.pages.map(p=>[p.id,p])),lm=new Map(local.pages.map(p=>[p.id,p])),rm=new Map(remote.pages.map(p=>[p.id,copy(p)]));
+ if(base.version!==local.version||base.version!==remote.version){
+  if(same(base,remote)||same(local,remote))return validatePaper(local);
+  if(same(base,local))return validatePaper(remote);
+  throw Error('รูปแบบสมุดเปลี่ยนพร้อมกับการแก้ไขจากอีกเครื่อง กรุณาสำรองงานค้าง');
+ }
  for(const [id,b] of bm){
   const l=lm.get(id),r=rm.get(id);if(same(b,l))continue;
   if(!l){if(r&&!same(b,r))throw Error('หน้าที่ลบมีการแก้จากอีกเครื่อง กรุณาเก็บฉบับนี้ก่อนแล้วลองใหม่');rm.delete(id);continue;}
   if(!r)throw Error('หน้านี้ถูกลบจากอีกเครื่อง กรุณาสำรองงานที่กำลังทำ');
   if(l.template!==b.template){if(r.template!==b.template&&r.template!==l.template)throw Error('รูปแบบกระดาษมีข้อมูลชนกัน');r.template=l.template;}
+  if(!same(l.sections,b.sections)){
+   if(!same(r.sections,b.sections)&&!same(r.sections,l.sections))throw Error('พื้นหลังกระดาษเปลี่ยนพร้อมกัน');
+   r.sections=copy(l.sections);
+  }
   if(local.version===2)r.height=Math.max(pageHeight(l),pageHeight(r));
   const bo=new Map(b.objects.map(o=>[o.id,o])),lo=new Map(l.objects.map(o=>[o.id,o])),ro=new Map(r.objects.map(o=>[o.id,o]));
   for(const [oid,before] of bo){const after=lo.get(oid),current=ro.get(oid);if(same(before,after))continue;if(!same(before,current)&&!same(after,current))throw Error('วัตถุนี้ถูกแก้พร้อมกันจากอีกเครื่อง กรุณาสำรองงานที่ค้างก่อน');if(after)ro.set(oid,copy(after));else ro.delete(oid);}
