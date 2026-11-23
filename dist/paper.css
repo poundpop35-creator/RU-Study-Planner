@@ -1480,3 +1480,6 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  }
  .paper-app .paper-selection-tools .paper-shape-rotation{width:auto!important}
 }
+
+/* Hidden floating palettes must never intercept clicks on other tools. */
+.paper-app .paper-text-ribbon[data-floating="true"][hidden]{display:none!important;pointer-events:none!important}
