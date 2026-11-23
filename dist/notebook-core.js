@@ -1,4 +1,4 @@
-import {validatePaper} from './paper-core.js?v=20261121-paper-format';
+import {validatePaper} from './paper-core.js?v=20261123-continuous-v1';
 import {validateFiles} from './note-files.js';
 import {validateCourseMaterials} from './course-materials.js?v=shared-course-20261120';
 // Store a small, validated Delta rather than trusting saved HTML.
