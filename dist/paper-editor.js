@@ -62,7 +62,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const doc=preview.document;doc.documentElement.lang='th';doc.title=note.title;
   doc.body.textContent='กำลังเตรียมหน้ากระดาษ…';
   try{
-   const pages=copy((unsaved||model).pages),assets=new Map();
+   const printable=copy(unsaved||model),pages=printable.pages,assets=new Map();
    const ids=new Set(pages.flatMap(p=>p.objects.filter(o=>o.type==='image').map(o=>o.imageId)));
    for(const imageId of ids){
     const blob=await space.image(imageId);
@@ -72,12 +72,22 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    }
    if(preview.closed)return;
    const css=doc.createElement('style');
-   css.textContent='@page{size:A4 portrait;margin:0}body{margin:0;background:#edf1f6;font-family:sans-serif}svg{display:block;width:100%;height:auto}article{background:white;max-width:210mm;margin:12px auto}button{display:block;margin:12px auto;padding:10px 22px}@media print{button{display:none}article{width:210mm;margin:0;break-after:page}article:last-child{break-after:auto}svg{height:296mm}body{background:white}}';
+   css.textContent='@page{size:A4 portrait;margin:0}*{box-sizing:border-box}body{--print-margin:0mm;margin:0;background:#edf1f6;font-family:sans-serif;color:#203050}svg{display:block;width:100%;height:100%}article{box-sizing:border-box;background:white;width:210mm;height:297mm;padding:var(--print-margin);margin:12px auto;overflow:hidden;box-shadow:0 2px 15px #22335530}.print-actions{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding:12px;background:#f8fbff;border-bottom:1px solid #c7d4e8}.print-actions button{padding:10px 22px;border:0;border-radius:9px;background:#2b50b9;color:white;font-size:14px;cursor:pointer}.print-actions label{font-size:13px;display:flex;align-items:center;gap:8px}.print-actions select{padding:7px;border-radius:8px;border:1px solid #c1cbe1}@media print{.print-actions{display:none!important}body{background:#fff}article{margin:0;box-shadow:none;break-after:page}article:last-child{break-after:auto}}';
    doc.head.append(css);doc.body.replaceChildren();
-   const print=doc.createElement('button');print.textContent='พิมพ์ / บันทึก PDF';print.onclick=()=>preview.print();doc.body.append(print);
-   pages.forEach((p,i)=>{
-    const article=doc.createElement('article');article.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+PAGE_W+' '+PAGE_H+'">'+pageSVG(p,assets,'thumb-print-'+i)+'</svg>';doc.body.append(article);
-   });
+   const actions=doc.createElement('div');actions.className='print-actions';
+   const label=doc.createElement('label');label.textContent='ระยะขอบกระดาษ';
+   const marginSelect=doc.createElement('select');
+   for(const [n,labelText] of [[0,'ชิดขอบ'],[5,'5 มม.'],[10,'10 มม.'],[15,'15 มม.']]){
+    const option=doc.createElement('option');option.value=String(n);option.textContent=labelText;marginSelect.append(option);
+   }
+   marginSelect.onchange=()=>doc.body.style.setProperty('--print-margin',marginSelect.value+'mm');
+   label.append(marginSelect);
+   const print=doc.createElement('button');print.textContent='พิมพ์ / บันทึก PDF';print.onclick=()=>preview.print();
+   actions.append(label,print);doc.body.append(actions);
+   const sheets=printableSheets(printable,assets);
+   for(const markup of sheets){
+    const article=doc.createElement('article');article.innerHTML=markup;doc.body.append(article);
+   }
   }catch{if(!preview.closed)doc.body.textContent='เตรียมหน้ากระดาษไม่สำเร็จ กรุณาปิดหน้านี้แล้วลองพิมพ์อีกครั้ง';}
  });
  const palmToggle=$('#paper-palm-guard');
