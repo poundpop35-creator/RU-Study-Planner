@@ -1,4 +1,4 @@
-import {renderDebtCards} from './debt-cards.js?v=20261123-rollover-v1';
+import {renderDebtCards} from './debt-cards.js?v=20261123-debt-mobile-scroll-v2';
 // Portfolio details arrive from the private workspace or an import link's fragment.
 // No personal plans, balances, lender names, or installment amounts belong in this module.
 import {readPayments} from './debt-payments.js?v=20261027c';
