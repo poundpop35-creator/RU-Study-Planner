@@ -31,6 +31,7 @@ export function paperPage(space,n){return `<section class="paper-app" aria-label
  </div>
  </div>
  <div class="paper-text-ribbon" id="paper-text-ribbon" role="toolbar" aria-label="หน้าแรก — จัดรูปแบบข้อความคล้าย Microsoft Word" hidden>
+  <span class="paper-ribbon-drag" role="button" tabindex="0" aria-label="ลากเพื่อย้ายแถบจัดรูปแบบข้อความ" title="ลากย้ายแถบจัดข้อความ">⠿</span>
   <div id="paper-align" role="group" aria-label="จัดแนวข้อความ">${[['left','ชิดซ้าย'],['center','กึ่งกลาง'],['right','ชิดขวา']].map(([align,label])=>`<button type="button" data-text-align="${align}" aria-pressed="false">${label}</button>`).join('')}</div>
   <strong class="paper-ribbon-title">หน้าแรก · ข้อความ</strong>
   <label class="paper-ribbon-size">ขนาด <button type="button" data-word-step="-1" aria-label="ลดขนาดตัวอักษร">−</button><input id="paper-word-size" type="number" min="10" max="96" step="1" value="16" inputmode="numeric" aria-label="ขนาดตัวอักษรที่เลือก"><button type="button" data-word-step="1" aria-label="เพิ่มขนาดตัวอักษร">＋</button></label>
@@ -51,14 +52,14 @@ export function paperPage(space,n){return `<section class="paper-app" aria-label
   <small class="paper-ribbon-help">ลากเลือกเฉพาะคำ แล้วกด B, I, U, สี หรือ ลิงก์</small>
  </div>
  <div id="paper-word-menu" class="paper-word-menu" role="toolbar" aria-label="เมนูคลิกขวาจัดรูปแบบข้อความ" hidden>
-   <div class="paper-word-menu-heading"><strong>⠿ ลากเพื่อย้ายแถบ · จัดรูปแบบข้อความ</strong><button type="button" data-word-menu-close aria-label="ปิดเมนู">×</button></div>
+   <div class="paper-word-menu-heading" title="จับตรงนี้แล้วลากย้ายเมนู"><strong aria-label="ลากย้ายเมนู">⠿</strong><button type="button" data-word-menu-close aria-label="ปิดเมนู">×</button></div>
    <div class="paper-word-menu-align" role="group" aria-label="จัดแนวเฉพาะคำที่เลือก"><button type="button" data-word-menu-align="left">ซ้าย</button><button type="button" data-word-menu-align="center">กลาง</button><button type="button" data-word-menu-align="right">ขวา</button></div>
    <div class="paper-word-menu-tools" role="group" aria-label="ตัวหนา ตัวเอียง ขีดเส้นใต้">
     <button type="button" data-word-menu-format="bold" title="ตัวหนา"><b>B</b></button>
     <button type="button" data-word-menu-format="italic" title="ตัวเอียง"><i>I</i></button>
     <button type="button" data-word-menu-format="underline" title="ขีดเส้นใต้"><u>U</u></button>
     <button type="button" data-word-menu-format="strike" title="ขีดฆ่า"><s>S</s></button>
-    <label>ขนาด <input id="paper-word-menu-size" type="number" min="10" max="96" step="1" inputmode="numeric" aria-label="ขนาดข้อความที่เลือก"></label>
+    <label>ขนาด <input id="paper-word-menu-size" type="number" min="10" max="96" step="1" inputmode="numeric" aria-label="ขนาดข้อความที่เลือก"></label><button type="button" data-word-menu-prefix="bullet" title="เพิ่มจุดนำหน้ารายการ">•</button><button type="button" data-word-menu-prefix="triangle" title="เพิ่มสามเหลี่ยมนำหน้ารายการ">▸</button>
    </div>
    <div class="paper-word-menu-colors" role="group" aria-label="สีตัวอักษร">
     <span>สี</span>
