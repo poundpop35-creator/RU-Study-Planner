@@ -38,7 +38,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    // Phone UI folds uncommon tools into a single thumb-reachable More dock.
    // Navigate the actual UI rather than force-clicking hidden buttons.
    if(mobile&&await page.locator('#paper-mobile-more').isVisible()&&
-      !(await button.isVisible())&&await button.count()){
+      !(await button.isVisible())&&await button.evaluate(el=>!!el.closest('.paper-toolset'))){
     await page.locator('#paper-mobile-more').click();
    }
    await button.evaluate(el=>{let parent=el.parentElement;while(parent){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}});
