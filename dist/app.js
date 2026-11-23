@@ -6,7 +6,7 @@ import {readingStart,afterPlan,firstChecklist,weekView,mayConfirm} from './after
 import {importPanel,resolvePlan} from './debt-import.js?v=20261111b';
 import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261123-debt-mobile-scroll-v2';
 import {saveRates,rateFields} from './debt-interest.js?v=20261027c';
-import {debtPage,debtAction} from './debt-view.js?v=20261027c';
+import {debtPage,debtAction} from './debt-view.js?v=20261123-debt-mobile-scroll-v2';
 import {documentsPage} from './documents-view.js?v=20261027c';
 import {examEvidenceTable,examEvidenceCard,readingExamFormats,registrationExam} from './exam-evidence.js?v=20261113b';
 import {sections,sectionFor,sectionTabs} from './navigation.js';
