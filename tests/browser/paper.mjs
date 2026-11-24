@@ -363,8 +363,10 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('group');await click('save');
    const grouped=row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.groupId);
    assert.equal(grouped.length,2);assert.equal(grouped[0].groupId,grouped[1].groupId);
-   await tap(600,500);await tap(120,330);
-   assert.equal(await page.locator('#paper-selected-count').innerText(),'กลุ่ม · 2');
+   await page.keyboard.press('Escape');
+   assert.ok(await page.locator('#paper-selection-tools').isHidden(),'Escape clears the group selection');
+   await tap(120,330);
+   assert.equal(await page.locator('#paper-selected-count').innerText(),'กลุ่ม · 2','one click selects both group members');
    await click('ungroup');await click('save');
    assert.ok(!row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.groupId));
    const count=()=>row.payload.notebook.notes[0].paper.pages[0].objects.length;
