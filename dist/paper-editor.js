@@ -1,3 +1,4 @@
+import {paperColors} from './paper-colors.js?v=20261124-color-presets';
 import {notebookHistory} from './paper-page-history.js';
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
 import {PAGE_W,PAGE_H,MAX_CANVAS_HEIGHT,pageHeight,continuousContentHeight,toContinuousPaper,toPagedPaper,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS,expandSelection,selectionGroupState,changeObjectGroups,cloneGroupedObjects,scaleGroupObject} from './paper-core.js?v=20261124-groups';
@@ -233,6 +234,9 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    const globalPicker=$('#paper-global-text-color');
    if(document.activeElement!==globalPicker)globalPicker.value=editing?.object?.color||visible.find(o=>selected.has(o.id)&&o.type==='text')?.color||singleTable?.textColor||defaultTextColor;
    syncPaint();
+   $('#paper-selected-text-paint').hidden=!visible.some(o=>selected.has(o.id)&&o.type==='text');
+   if(document.activeElement!==$('#paper-selected-text-color'))$('#paper-selected-text-color').value=globalPicker.value;
+   syncQuickColors();
    const shapePanel=$('#paper-shape-selection');shapePanel.hidden=!singleShape;
    if(singleShape){$('#paper-selected-shape').value=singleShape.kind;$('#paper-selected-line-style').value=singleShape.dash||singleShape.lineStyle||'solid';const angleInput=$('#paper-shape-angle');if(document.activeElement!==angleInput)angleInput.value=String(shapeAngle(singleShape.angle));}
   const linkButton=$('[data-paper="image-link"]'),openLink=$('#paper-open-link');
@@ -597,7 +601,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  palette.innerHTML='<h2>สีรูปทรง</h2><label class="paint-opacity">ความทึบทั้งรูป <input type="range" min="0" max="100"><output></output></label><button type="button" class="paint-done">เสร็จสิ้น</button>';
  root.append(palette);
  const opacity=palette.querySelector('input'),output=palette.querySelector('output');
- const colors=[['ดำ','#172033'],['น้ำเงิน','#3255be'],['ฟ้า','#81bdf2'],['เขียว','#399777'],['เหลือง','#f5cc55'],['แดง','#cf535e'],['ม่วง','#9063cb'],['ขาว','#ffffff']];
+ const colors=paperColors;
  const chosenShapes=()=>page().objects.filter(o=>selected.has(o.id)&&o.type==='shape');
  const strokeColorInput=$('#paper-selected-stroke-color'),strokeWidthInput=$('#paper-selected-stroke-width'),fillColorInput=$('#paper-selected-fill-color'),opacityInput=$('#paper-selected-opacity');
  const selectedInk=()=>page().objects.filter(o=>selected.has(o.id)&&['shape','stroke'].includes(o.type));
@@ -735,7 +739,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  let scribbleActive=false;
  const scribblePad=document.createElement('section');
  scribblePad.className='paper-scribble-panel';scribblePad.hidden=true;
- scribblePad.innerHTML='<header><b class="paper-scribble-title">✍️ เขียนในพื้นที่สีฟ้า · ข้อความไปยังกล่องเดิม</b><div class="paper-scribble-actions" role="group" aria-label="ปุ่มแก้ข้อความระหว่างเขียน"><button type="button" data-pencil-edit="backspace" aria-label="ลบตัวอักษรก่อนเคอร์เซอร์">⌫ ลบ</button><button type="button" data-pencil-edit="space">เว้นวรรค</button><button type="button" data-pencil-edit="enter">Enter ↵</button><button type="button" data-pencil-keyboard>⌨️ แป้นพิมพ์</button><button type="button" data-pencil-finish>✓ เสร็จสิ้น</button></div></header><div class="paper-scribble-formats" role="toolbar" aria-label="จัดรูปแบบตัวพิมพ์ในพื้นที่เขียน"><span class="paper-scribble-format-label">ตัวพิมพ์</span><button type="button" data-pencil-format="bold" aria-label="ตัวหนา" aria-pressed="false"><b>B</b></button><button type="button" data-pencil-format="italic" aria-label="ตัวเอียง" aria-pressed="false"><i>I</i></button><button type="button" data-pencil-format="underline" aria-label="ขีดเส้นใต้" aria-pressed="false"><u>U</u></button><span class="paper-scribble-format-label">สี</span><button type="button" data-pencil-color="#172033" class="paper-pencil-swatch" style="--pencil-ink:#172033" aria-label="สีดำ"></button><button type="button" data-pencil-color="#3155d9" class="paper-pencil-swatch" style="--pencil-ink:#3155d9" aria-label="สีน้ำเงิน"></button><button type="button" data-pencil-color="#15966d" class="paper-pencil-swatch" style="--pencil-ink:#15966d" aria-label="สีเขียว"></button><button type="button" data-pencil-color="#dc4343" class="paper-pencil-swatch" style="--pencil-ink:#dc4343" aria-label="สีแดง"></button><button type="button" data-pencil-color="#8756c6" class="paper-pencil-swatch" style="--pencil-ink:#8756c6" aria-label="สีม่วง"></button><label class="paper-pencil-custom">สีอื่น <input type="color" data-pencil-custom-color value="#172033" aria-label="เลือกสีตัวพิมพ์เพิ่มเติม"></label></div><textarea class="paper-scribble-input" lang="th" inputmode="none" spellcheck="false" aria-label="พื้นที่เขียนด้วย Apple Pencil ลงกล่องข้อความที่เลือก" placeholder="ใช้ Apple Pencil เขียนภายในพื้นที่นี้ หรือเปิดแป้นพิมพ์…"></textarea><textarea class="paper-keyboard-input" inputmode="text" lang="th" spellcheck="false" enterkeyhint="enter" aria-label="พิมพ์ข้อความด้วยแป้นพิมพ์ของ iPad" placeholder="พิมพ์ข้อความด้วยแป้นพิมพ์…" hidden></textarea>';
+ scribblePad.innerHTML='<header><b class="paper-scribble-title">✍️ เขียนในพื้นที่สีฟ้า · ข้อความไปยังกล่องเดิม</b><div class="paper-scribble-actions" role="group" aria-label="ปุ่มแก้ข้อความระหว่างเขียน"><button type="button" data-pencil-edit="backspace" aria-label="ลบตัวอักษรก่อนเคอร์เซอร์">⌫ ลบ</button><button type="button" data-pencil-edit="space">เว้นวรรค</button><button type="button" data-pencil-edit="enter">Enter ↵</button><button type="button" data-pencil-keyboard>⌨️ แป้นพิมพ์</button><button type="button" data-pencil-finish>✓ เสร็จสิ้น</button></div></header><div class="paper-scribble-formats" role="toolbar" aria-label="จัดรูปแบบตัวพิมพ์ในพื้นที่เขียน"><span class="paper-scribble-format-label">ตัวพิมพ์</span><button type="button" data-pencil-format="bold" aria-label="ตัวหนา" aria-pressed="false"><b>B</b></button><button type="button" data-pencil-format="italic" aria-label="ตัวเอียง" aria-pressed="false"><i>I</i></button><button type="button" data-pencil-format="underline" aria-label="ขีดเส้นใต้" aria-pressed="false"><u>U</u></button><span class="paper-scribble-format-label">สี</span>'+paperColors.map(([name,value])=>'<button type="button" data-pencil-color="'+value+'" class="paper-pencil-swatch" style="--pencil-ink:'+value+'" aria-label="สี'+name+'" title="สี'+name+'"></button>').join('')+'<label class="paper-pencil-custom">สีอื่น <input type="color" data-pencil-custom-color value="#172033" aria-label="เลือกสีตัวพิมพ์เพิ่มเติม"></label></div><textarea class="paper-scribble-input" lang="th" inputmode="none" spellcheck="false" aria-label="พื้นที่เขียนด้วย Apple Pencil ลงกล่องข้อความที่เลือก" placeholder="ใช้ Apple Pencil เขียนภายในพื้นที่นี้ หรือเปิดแป้นพิมพ์…"></textarea><textarea class="paper-keyboard-input" inputmode="text" lang="th" spellcheck="false" enterkeyhint="enter" aria-label="พิมพ์ข้อความด้วยแป้นพิมพ์ของ iPad" placeholder="พิมพ์ข้อความด้วยแป้นพิมพ์…" hidden></textarea>';
  viewport.append(scribblePad);
 
  const scribbleInput=scribblePad.querySelector('.paper-scribble-input');
@@ -2217,6 +2221,37 @@ bind(rich,'keyup',()=>{
   if(!ink||!['headerBg','bodyBg','borderColor','textColor','headerTextColor'].includes(key))return;
   change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='table')o[key]=ink;}));
  });
+ // Direct color chips use the same existing validated handlers as the custom inputs.
+ function addQuickColors(input,eventType){
+  const label=input.closest('label');if(!label)return;
+  const box=document.createElement('div');box.className='paper-quick-color-field';
+  label.before(box);box.append(label);label.title='เลือกสีเอง';
+  const swatches=document.createElement('div');swatches.className='paper-quick-swatches';swatches.setAttribute('role','group');swatches.setAttribute('aria-label',input.getAttribute('aria-label')+' · สีสำเร็จรูป');
+  box.prepend(swatches);
+  for(const [name,value] of paperColors){
+   const button=document.createElement('button');button.type='button';button.className='paper-quick-swatch';button.dataset.quickColor=value;button.style.setProperty('--quick-ink',value);
+   button.title=name;button.setAttribute('aria-label',input.getAttribute('aria-label')+' · '+name);button.setAttribute('aria-pressed','false');swatches.append(button);
+   bind(button,'pointerdown',e=>e.preventDefault());
+   bind(button,'click',()=>{input.value=value;input.dispatchEvent(new Event(eventType,{bubbles:true}));syncQuickColors();});
+  }
+  return box;
+ }
+ function syncQuickColors(){
+  for(const box of root.querySelectorAll('.paper-quick-color-field')){
+   const input=box.querySelector('input[type=color]');if(!input)continue;
+   const noFill=input.id==='paper-selected-fill-color'&&$('#paper-selected-no-fill').getAttribute('aria-pressed')==='true';
+   for(const button of box.querySelectorAll('[data-quick-color]'))button.setAttribute('aria-pressed',String(!noFill&&input.value.toLowerCase()===button.dataset.quickColor));
+  }
+ }
+ const selectedTextPicker=$('#paper-selected-text-color');
+ bind(selectedTextPicker,'input',()=>{const input=$('#paper-global-text-color');input.value=selectedTextPicker.value;input.dispatchEvent(new Event('input',{bubbles:true}));});
+ for(const id of ['paper-selected-stroke-color','paper-selected-fill-color'])addQuickColors($('#'+id),'change');
+ for(const id of ['paper-global-text-color','paper-selected-text-color'])addQuickColors($('#'+id),'input');
+ const tableTarget=$('#paper-table-color-target');
+ const tableColorFields=[...root.querySelectorAll('[data-table-style]')].map(input=>({key:input.dataset.tableStyle,box:addQuickColors(input,'input')}));
+ const showTableColor=()=>{for(const item of tableColorFields)item.box.hidden=item.key!==tableTarget.value;};
+ bind(tableTarget,'change',showTableColor);showTableColor();
+ for(const input of root.querySelectorAll('.paper-quick-color-field input[type=color]')){bind(input,'input',syncQuickColors);bind(input,'change',syncQuickColors);}
  bind($('#paper-word-size'),'change',e=>{
   const size=textSize(e.target.value,editing?.object?.size||fontSize);e.target.value=String(size);
   applyWordFormat('size',size);

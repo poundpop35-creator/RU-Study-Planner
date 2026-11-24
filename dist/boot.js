@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-file-tab'); }
+try { await import('./app.js?v=20261124-color-presets'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

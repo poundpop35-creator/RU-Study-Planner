@@ -562,11 +562,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.equal(savedShape().dash,'dashed','selected shape line can be changed after drawing');
     const directStroke=page.locator('#paper-selected-stroke-color');
     assert.ok(await directStroke.isVisible(),'selected stroke color is directly visible');
-    await directStroke.evaluate(el=>{el.value='#cf535e';el.dispatchEvent(new Event('change',{bubbles:true}));});
+    const redPreset=page.getByRole('button',{name:'สีเส้นที่เลือก · แดง',exact:true});assert.ok(await redPreset.isVisible());await redPreset.click();
     const directWidth=page.locator('#paper-selected-stroke-width');
     await directWidth.fill('7');await directWidth.press('Tab');
-    await click('save');assert.equal(savedShape().color,'#cf535e');assert.equal(savedShape().width,7);
+    await click('save');assert.equal(savedShape().color,'#dc4343');assert.equal(savedShape().width,7);
     assert.ok(await page.locator('#paper-selected-fill-color').isVisible(),'closed shapes show direct fill');
+    await page.getByRole('button',{name:'สีพื้นรูปทรงที่เลือก · ฟ้า',exact:true}).click();await click('save');assert.equal(savedShape().fill,'#81bdf2');
     await page.getByRole('button',{name:'สีรูปทรง',exact:true}).click();
     const palette=page.getByRole('dialog',{name:'สีรูปทรง'});
     await palette.getByRole('button',{name:'สีพื้น เหลือง',exact:true}).click();
@@ -574,7 +575,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await palette.getByRole('button',{name:'เสร็จสิ้น'}).click();
     await click('save');
     assert.equal(savedShape().fill,'#f5cc55');
-    assert.equal(savedShape().color,'#3255be');
+    assert.equal(savedShape().color,'#3155d9');
     const oldShapeWidth=savedShape().w,oldShapeHeight=savedShape().h;
     assert.equal(await page.locator('#paper-svg [data-edge]').count(),8,'selected shape has eight resize handles');
     await page.locator('#paper-svg').evaluate(svg=>{

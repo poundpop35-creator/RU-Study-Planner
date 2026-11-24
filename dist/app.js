@@ -12,7 +12,7 @@ import {examEvidenceTable,examEvidenceCard,readingExamFormats,registrationExam} 
 import {sections,sectionFor,sectionTabs} from './navigation.js';
 import {prepNotice,classroomPage} from './study-sections.js?v=inline-course-upload-20261120';
 import {createStudySpace} from './study-space.js?v=20261124-groups';
-import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261124-file-tab';
+import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261124-color-presets';
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
 import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=balanced-friday-replays-20261120';
