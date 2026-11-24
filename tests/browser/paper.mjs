@@ -273,6 +273,16 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    if(name==='desktop'){
     const selectedBar=page.locator('#paper-selection-tools');
     assert.ok(await selectedBar.isVisible(),'selected-object controls appear after selecting text');
+    assert.ok(await selectedBar.locator('#paper-text-border-toggle').isVisible(),'text border is available immediately');
+    await selectedBar.locator('#paper-text-border-toggle').click();
+    await selectedBar.getByRole('button',{name:'สีขอบกล่องข้อความ · แดง',exact:true}).click();
+    await selectedBar.locator('#paper-text-border-width').fill('3');await selectedBar.locator('#paper-text-border-width').press('Tab');
+    await selectedBar.locator('#paper-text-border-style').selectOption('dashed');
+    await click('save');
+    const bordered=()=>row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.id===text.id);
+    assert.deepEqual(bordered().border,{color:'#dc4343',width:3,style:'dashed'});
+    assert.equal(await page.locator('[data-text-border="'+text.id+'"]').getAttribute('stroke'),'#dc4343');
+    await selectedBar.locator('#paper-text-border-none').click();await click('save');assert.equal(bordered().border,undefined);
     const size=selectedBar.locator('#paper-font-size');
     await selectedBar.getByRole('button',{name:'เพิ่มขนาดตัวอักษรทั้งกล่อง'}).click();
     assert.equal(await size.inputValue(),'17');
@@ -284,7 +294,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     }
     const drag=selectedBar.locator('.paper-selection-drag');
     assert.ok(await drag.isVisible(),'selected-object controls have a draggable grip');
-    assert.ok(oldBox.height<150,'selected-object command box is compact with direct actions');
+    assert.ok(oldBox.height<300,'selected-object command box remains bounded with text and border colors');
     const handle=await drag.boundingBox();
     const sx=handle.x+handle.width/2,sy=handle.y+handle.height/2;
     await page.mouse.move(sx,sy);
@@ -562,11 +572,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.equal(savedShape().dash,'dashed','selected shape line can be changed after drawing');
     const directStroke=page.locator('#paper-selected-stroke-color');
     assert.ok(await directStroke.isVisible(),'selected stroke color is directly visible');
-    await directStroke.evaluate(el=>{el.value='#cf535e';el.dispatchEvent(new Event('change',{bubbles:true}));});
+    const redPreset=page.getByRole('button',{name:'สีเส้นที่เลือก · แดง',exact:true});assert.ok(await redPreset.isVisible());await redPreset.click();
     const directWidth=page.locator('#paper-selected-stroke-width');
     await directWidth.fill('7');await directWidth.press('Tab');
-    await click('save');assert.equal(savedShape().color,'#cf535e');assert.equal(savedShape().width,7);
+    await click('save');assert.equal(savedShape().color,'#dc4343');assert.equal(savedShape().width,7);
     assert.ok(await page.locator('#paper-selected-fill-color').isVisible(),'closed shapes show direct fill');
+    await page.getByRole('button',{name:'สีพื้นรูปทรงที่เลือก · ฟ้า',exact:true}).click();await click('save');assert.equal(savedShape().fill,'#81bdf2');
     await page.getByRole('button',{name:'สีรูปทรง',exact:true}).click();
     const palette=page.getByRole('dialog',{name:'สีรูปทรง'});
     await palette.getByRole('button',{name:'สีพื้น เหลือง',exact:true}).click();
@@ -574,7 +585,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await palette.getByRole('button',{name:'เสร็จสิ้น'}).click();
     await click('save');
     assert.equal(savedShape().fill,'#f5cc55');
-    assert.equal(savedShape().color,'#3255be');
+    assert.equal(savedShape().color,'#3155d9');
     const oldShapeWidth=savedShape().w,oldShapeHeight=savedShape().h;
     assert.equal(await page.locator('#paper-svg [data-edge]').count(),8,'selected shape has eight resize handles');
     await page.locator('#paper-svg').evaluate(svg=>{

@@ -82,6 +82,7 @@ export function validatePaper(value){
      out[key]=[...o[key]];
     }
    }else if(o.type==='text'){
+    if(o.border!==undefined){const b=o.border;if(!b||!color(b.color)||!num(b.width,1,20)||!['solid','dashed','dotted'].includes(b.style))throw Error('เส้นขอบกล่องข้อความไม่ถูกต้อง');out.border={color:b.color.toLowerCase(),width:b.width,style:b.style};}
     if(o.align!==undefined){if(!['left','center','right'].includes(o.align))throw Error('การจัดแนวข้อความไม่ถูกต้อง');out.align=o.align;}
     if(typeof o.text!=='string'||o.text.length>20000||!color(o.color)||!num(o.size,10,96))throw Error('ข้อความบนกระดาษไม่ถูกต้อง');Object.assign(out,{text:o.text,color:o.color,size:Math.round(o.size),bold:o.bold===true});if(o.links?.length)out.links=validateLinks(o.links,o.text);if(o.marks?.length)out.marks=validateMarks(o.marks,o.text);
    }else {if(typeof o.imageId!=='string'||!/^[a-f0-9-]{36}\.(png|jpg|webp|gif)$/.test(o.imageId))throw Error('รูปภาพไม่ถูกต้อง');out.imageId=o.imageId;if(o.stretch===true)out.stretch=true;if(o.link)out.link=imageLink(o.link);}
@@ -174,6 +175,7 @@ export function scaleGroupObject(o,box,f){
  if(o.type==='text'){
   const size=n=>Math.max(10,Math.min(96,Math.round(n*f)));
   next.size=size(o.size);next.h=Math.max(next.h,next.size*1.5);
+  if(o.border)next.border={...o.border,width:Math.max(1,Math.min(20,o.border.width*f))};
   if(o.marks)next.marks=o.marks.map(m=>m.size===undefined?{...m}:{...m,size:size(m.size)});
  }else if(o.type==='stroke'||o.type==='shape')next.width=Math.max(1,Math.min(40,o.width*f));
  return next;

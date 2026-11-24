@@ -1,4 +1,4 @@
-import {PAGE_W,PAGE_H,inkPadding,pageHeight,continuousContentHeight} from './paper-core.js?v=20261124-groups';
+import {PAGE_W,PAGE_H,inkPadding,pageHeight,continuousContentHeight} from './paper-core.js?v=20261124-text-border';
 import {formattedTextHTML} from './paper-rich-text.js?v=20261121-paper-format';
 import {shapeSVG} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {tableSVG} from './paper-table.js?v=20261121-paper-format';
@@ -8,7 +8,10 @@ export function objectSVG(o,images=new Map(),interactive=true){
  if(o.type==='shape')return shapeSVG(o);
  if(o.type==='table')return tableSVG(o,esc);
  if(o.type==='image')return `<image data-object="${o.id}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}" href="${esc(images.get(o.imageId)||'')}" preserveAspectRatio="${o.stretch?'none':'xMidYMid meet'}"/>`;
- if(o.type==='text')return `<foreignObject data-object="${o.id}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:'Noto Sans Thai',sans-serif;font-size:${o.size}px;line-height:1.5;font-weight:${o.bold?700:400};color:${o.color};text-align:${o.align||'left'};white-space:pre-wrap;overflow-wrap:anywhere;height:100%;overflow:hidden">${formattedTextHTML(o,esc,interactive)}</div></foreignObject>`;
+ if(o.type==='text'){
+  const b=o.border,stroke=b?`<rect data-text-border="${esc(o.id)}" x="${o.x-3}" y="${o.y-2}" width="${o.w+6}" height="${o.h+4}" rx="2" fill="none" stroke="${esc(b.color)}" stroke-width="${b.width}"${b.style==='dashed'?` stroke-dasharray="${b.width*4} ${b.width*3}"`:b.style==='dotted'?` stroke-dasharray="${b.width} ${b.width*2}" stroke-linecap="round"`:''} pointer-events="none"/>`:'';
+  return `${stroke}<foreignObject data-object="${o.id}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:'Noto Sans Thai',sans-serif;font-size:${o.size}px;line-height:1.5;font-weight:${o.bold?700:400};color:${o.color};text-align:${o.align||'left'};white-space:pre-wrap;overflow-wrap:anywhere;height:100%;overflow:hidden">${formattedTextHTML(o,esc,interactive)}</div></foreignObject>`;
+ }
  const points=o.points.map(p=>[o.x+p[0]*o.w,o.y+p[1]*o.h,p[2]]);
  if(points.length===1)return `<circle data-object="${o.id}" cx="${points[0][0]}" cy="${points[0][1]}" r="${o.width/2}" fill="${o.color}" opacity="${o.tool==='highlight'?'.3':'1'}"/>`;
  if(o.tool==='highlight')return `<path data-object="${o.id}" d="${points.map((p,i)=>(i?'L':'M')+round(p[0])+','+round(p[1])).join(' ')}" fill="none" stroke="${o.color}" stroke-width="${o.width}" stroke-linecap="round" stroke-linejoin="round" opacity=".3"/>`;
