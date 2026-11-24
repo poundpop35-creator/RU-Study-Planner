@@ -298,7 +298,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     const strip=selectedBar.locator('.paper-selection-scroll');assert.ok(await strip.evaluate(e=>e.scrollWidth>e.clientWidth),'all controls remain horizontally accessible');
     assert.equal(await strip.locator('#paper-selected-text-color').count(),1);
     assert.equal(await strip.locator('#paper-text-border-color').count(),1);
-    assert.equal(await strip.locator('#paper-selected-text-paint [data-quick-color]').count(),22);
+    assert.equal(await strip.locator('#paper-selected-text-paint [data-quick-color]').count(),14);
+    assert.equal(await strip.locator('#paper-selected-text-paint .paper-custom-color-caption').count(),2);
     await selectedBar.getByRole('button',{name:'เลื่อนเครื่องมือไปทางขวา',exact:true}).click();
     await page.waitForTimeout(350);assert.ok(await strip.evaluate(e=>e.scrollLeft>0));
     const handle=await drag.boundingBox();
@@ -586,7 +587,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await directWidth.fill('7');await directWidth.press('Tab');
     await click('save');assert.equal(savedShape().color,'#dc4343');assert.equal(savedShape().width,7);
     assert.ok(await page.locator('#paper-selected-fill-color').isVisible(),'closed shapes show direct fill');
-    await page.getByRole('button',{name:'สีพื้นรูปทรงที่เลือก · ฟ้า',exact:true}).click();await click('save');assert.equal(savedShape().fill,'#81bdf2');
+    await page.getByRole('button',{name:'สีพื้นรูปทรงที่เลือก · เขียว',exact:true}).click();await click('save');assert.equal(savedShape().fill,'#15966d');
+    await page.locator('#paper-selected-fill-color').evaluate(el=>{el.value='#81bdf2';el.dispatchEvent(new Event('change',{bubbles:true}));});await click('save');assert.equal(savedShape().fill,'#81bdf2','custom color is preserved');
     await page.getByRole('button',{name:'สีพื้นรูปทรงที่เลือก · เหลือง',exact:true}).click();
     await page.getByRole('button',{name:'สีเส้นที่เลือก · น้ำเงิน',exact:true}).click();
     await click('save');

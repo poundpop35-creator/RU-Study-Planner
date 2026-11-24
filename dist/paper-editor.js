@@ -1,4 +1,4 @@
-import {paperColors} from './paper-colors.js?v=20261124-color-presets';
+import {paperColors} from './paper-colors.js?v=20261124-seven-colors';
 import {notebookHistory} from './paper-page-history.js';
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
 import {PAGE_W,PAGE_H,MAX_CANVAS_HEIGHT,pageHeight,continuousContentHeight,toContinuousPaper,toPagedPaper,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS,expandSelection,selectionGroupState,changeObjectGroups,cloneGroupedObjects,scaleGroupObject} from './paper-core.js?v=20261124-text-border';
@@ -2213,8 +2213,11 @@ bind(rich,'keyup',()=>{
   const label=input.closest('label');if(!label)return;
   const box=document.createElement('div');box.className='paper-quick-color-field';
   label.before(box);box.append(label);label.title='เลือกสีเอง';
+  const caption=document.createElement('span');caption.className='paper-color-field-caption';caption.textContent=label.textContent.trim();
+  for(const node of [...label.childNodes])if(node.nodeType===3)node.remove();
+  box.prepend(caption);
   const swatches=document.createElement('div');swatches.className='paper-quick-swatches';swatches.setAttribute('role','group');swatches.setAttribute('aria-label',input.getAttribute('aria-label')+' · สีสำเร็จรูป');
-  box.append(swatches);
+  box.insertBefore(swatches,label);
   const custom=document.createElement('span');custom.className='paper-custom-color-caption';custom.textContent='สีอื่น';input.before(custom);input.title='เลือกสีอื่นตามต้องการ';
   for(const [name,value] of paperColors){
    const button=document.createElement('button');button.type='button';button.className='paper-quick-swatch';button.dataset.quickColor=value;button.style.setProperty('--quick-ink',value);
@@ -2309,5 +2312,5 @@ bind(rich,'keyup',()=>{
  const backup=document.createElement('button');backup.dataset.paper='draft';backup.className='paper-draft-button';backup.textContent='สำรองงานค้าง';$('.paper-bottom').append(backup);const discard=backup.cloneNode();discard.dataset.paper='discard-draft';discard.textContent='ละทิ้งงานค้าง';$('.paper-bottom').append(discard);
  try{const raw=localStorage.getItem(draftKey);if(raw){const draft=JSON.parse(raw);unsaved=validatePaper(draft.paper);draftBase=validatePaper(draft.base);root.classList.add('paper-has-draft');say('มีงานค้างจากครั้งก่อน กดสำรองงานค้างเพื่อเก็บฉบับกู้คืน',true);}}catch{}
  document.body.classList.add('paper-mode');active={id,refresh};syncPenWidthControls();setPagesOpen(root.classList.contains('pages-open'));sizing();draw();showTextRibbon();thumbs();if(conversionWarning)say(conversionWarning,true);
- return ()=>{finishText();tableUI.close();closed=true;cancelAnimationFrame(raf);events.forEach(fn=>fn());ro.disconnect();for(const url of images.values())URL.revokeObjectURL(url);document.body.classList.remove('paper-mode');if(active?.id===id)active=null;};
+ return ()=>{finishText();tableUI.close();closed=true;cancelAnimationFrame(raf);events.forEach(fn=>fn());ro.disconnect();selectionResize.disconnect();for(const url of images.values())URL.revokeObjectURL(url);document.body.classList.remove('paper-mode');if(active?.id===id)active=null;};
 }

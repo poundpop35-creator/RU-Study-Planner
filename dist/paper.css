@@ -1707,3 +1707,5 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  .paper-app .paper-selection-tools>.paper-selection-arrow{width:34px!important;min-width:34px!important;flex-basis:34px!important}
 }
 @media print{.paper-app .paper-selection-tools{display:none!important}}
+
+.paper-app .paper-color-field-caption{font-size:12px;font-weight:650;white-space:nowrap;color:#334155}.paper-app .paper-quick-color-field label{gap:3px}.paper-app .paper-selection-scroll .paper-command-cluster,.paper-app .paper-selection-scroll .paper-quick-color-field{flex-shrink:0!important}
