@@ -2,12 +2,13 @@ import {validateLinks} from './word-links.js';
 import {validateMarks} from './paper-rich-text.js?v=20261121-paper-format';
 import {shapes,lineStyles} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {validateTableCells} from './paper-table.js?v=20261121-paper-format';
+import {validTip} from './paper-pen-tips.js?v=20261124-tips';
 export const PAGE_W=900,PAGE_H=1273;
 // Continuous sheets grow only as writing reaches lower areas. This generous
 // ceiling prevents oversized browser SVG dimensions; there are no manual pages.
 export const MAX_CANVAS_HEIGHT=PAGE_H*250;
 export function pageHeight(page){return Number.isInteger(page?.height)&&page.height>=PAGE_H?Math.min(MAX_CANVAS_HEIGHT,page.height):PAGE_H;}
-export function inkPadding(o){return o.type==="stroke"?o.width*(o.tool==="highlight"?0.5:0.725):0;}
+export function inkPadding(o){return o.type==="stroke"?o.width*(o.tip?0.8:o.tool==="highlight"?0.5:0.725):0;}
 export function continuousContentHeight(page){
  const content=Math.max(PAGE_H,...(page?.objects||[]).map(o=>Math.max(0,o.y+o.h+inkPadding(o))));
  return Math.min(MAX_CANVAS_HEIGHT,Math.ceil(content/PAGE_H)*PAGE_H);
@@ -61,6 +62,8 @@ export function validatePaper(value){
    if(o.groupId!==undefined){if(!idOK(o.groupId))throw Error('รหัสกลุ่มวัตถุไม่ถูกต้อง');out.groupId=o.groupId;}
    if(o.type==='stroke'){
     if(!['pen','highlight'].includes(o.tool)||!color(o.color)||!num(o.width,1,40)||!Array.isArray(o.points)||!o.points.length)throw Error('เส้นปากกาไม่ถูกต้อง');points+=o.points.length;if(points>120000)throw Error('ลายมือในโน้ตนี้เต็มแล้ว กรุณาสร้างโน้ตใหม่');
+    if(o.tip!==undefined){if(!validTip(o.tip)||(o.tip==='chisel')!==(o.tool==='highlight'))throw Error('หัวปากกาไม่ถูกต้อง');out.tip=o.tip;}
+    if(o.opacity!==undefined){if(!num(o.opacity,.05,1))throw Error('ความทึบปากกาไม่ถูกต้อง');out.opacity=o.opacity;}
     out.tool=o.tool;out.color=o.color;out.width=o.width;out.points=o.points.map(p=>{if(!Array.isArray(p)||p.length!==3||!num(p[0],0,1)||!num(p[1],0,1)||!num(p[2],0,1))throw Error('จุดปากกาไม่ถูกต้อง');return [...p];});
    }else if(o.type==='shape'){
     if(!Object.hasOwn(shapes,o.kind)||!color(o.color)||!num(o.width,1,40))throw Error('รูปทรงไม่ถูกต้อง');

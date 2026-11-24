@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-single-row'); }
+try { await import('./app.js?v=20261124-tips'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
