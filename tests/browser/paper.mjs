@@ -182,13 +182,13 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.deepEqual(toolOrder.slice(0,2),['select','hand'],'Select and Pan are the first two neighboring notebook tools');
   const dockMore=page.locator('#paper-mobile-more');
   if(mobile){
-   assert.ok(await dockMore.isVisible(),'phone has an accessible More button, not an endlessly scrolling toolbar');
+   assert.ok(await dockMore.isHidden(),'all tools are available without opening More');
    assert.ok(await page.locator('[data-paper="hand"]').isVisible(),'Pan is immediately visible on phone');
    assert.ok(await page.locator('[data-paper="select"]').isVisible(),'Select is immediately visible on phone');
    assert.ok(await page.locator('[data-paper="pen"]').isVisible(),'Pen is immediately visible on phone');
    assert.ok(await page.locator('[data-paper="text"]').isVisible(),'Text is immediately visible on phone');
    assert.ok(await page.locator('[data-paper="eraser"]').isVisible(),'Eraser is immediately visible on phone');
-   assert.ok(await page.locator('[data-paper="shape"]').isHidden(),'advanced shapes do not crowd phone dock');
+   assert.ok(await page.locator('[data-paper="shape"]').isVisible(),'shape tool is in the scrollable dock');
    const layout=await page.evaluate(()=>{
     const bar=document.querySelector('.paper-toolbar').getBoundingClientRect();
     const paper=document.querySelector('.paper-viewport').getBoundingClientRect();
@@ -198,13 +198,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(layout.dockBelowCanvas,'phone toolbar is thumb-reachable below the paper');
    assert.ok(layout.noHorizontalOverflow,'phone layout does not overflow horizontally');
    assert.ok(layout.dockHeight>=44&&layout.dockHeight<=90,'phone dock remains compact');
-   await dockMore.click();
-   assert.equal(await dockMore.getAttribute('aria-expanded'),'true');
-   assert.ok(await page.locator('[data-paper="shape"]').isVisible(),'the More section exposes shapes');
-   assert.ok(await page.locator('[data-paper="table"]').isVisible(),'the More section exposes tables');
-   await dockMore.click();
-   assert.equal(await dockMore.getAttribute('aria-expanded'),'false');
-   assert.ok(await page.locator('[data-paper="shape"]').isHidden(),'advanced tools collapse again');
+   assert.ok(await page.locator('[data-paper="table"]').isVisible(),'table is available without opening More');
+   assert.ok(await page.locator('[data-paper="multi"]').isVisible(),'multi-select is directly available');
   }else{
    assert.ok(await dockMore.isHidden(),'iPad and desktop retain the existing full toolbar');
   }
@@ -284,12 +279,12 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await selectedBar.getByRole('button',{name:'ลดขนาดตัวอักษรทั้งกล่อง'}).click();
     assert.equal(await size.inputValue(),'16');
     const oldBox=await selectedBar.boundingBox();
-    const more=await selectedBar.locator('.paper-selection-more>summary').boundingBox();
-    assert.ok(more.y>=oldBox.y && more.y+more.height<=oldBox.y+oldBox.height,
-     'More fits vertically inside the selection palette');
+    for(const key of ['layer-front','layer-up','layer-down','layer-back','duplicate','delete-object','group','ungroup']){
+     assert.ok(await selectedBar.locator('[data-paper="'+key+'"]').isVisible(),'direct object command '+key+' is visible');
+    }
     const drag=selectedBar.locator('.paper-selection-drag');
     assert.ok(await drag.isVisible(),'selected-object controls have a draggable grip');
-    assert.ok(oldBox.height<62,'selected-object command box is a single horizontal row');
+    assert.ok(oldBox.height<150,'selected-object command box is compact with direct actions');
     const handle=await drag.boundingBox();
     const sx=handle.x+handle.width/2,sy=handle.y+handle.height/2;
     await page.mouse.move(sx,sy);
@@ -297,7 +292,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await page.mouse.move(sx+90,sy-80,{steps:6});
     await page.mouse.up();
     const movedBar=await selectedBar.boundingBox();
-    assert.ok(movedBar.x>oldBox.x+25&&movedBar.y<oldBox.y-25,
+    assert.ok(movedBar.y<oldBox.y-25,
      'selected-object palette can move freely rather than being locked to the footer');
    }
    const editAt=await point(text.x+10,text.y+8);

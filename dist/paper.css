@@ -1590,3 +1590,22 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 /* Exactly one text-format surface at a time, including touch overrides. */
 .paper-app .paper-text-ribbon[hidden],.paper-app .paper-word-menu[hidden]{display:none!important;pointer-events:none!important}
 .paper-app:has(.paper-word-menu:not([hidden])) .paper-text-ribbon{display:none!important;pointer-events:none!important}
+
+/* Direct object commands: no nested More menu or mode-dependent layer controls. */
+.paper-app .paper-selection-tools .paper-direct-actions{display:flex;flex-wrap:wrap;align-items:center;gap:4px;white-space:normal!important;max-width:100%;min-width:0;flex:0 1 auto!important}
+.paper-app .paper-direct-actions button{white-space:nowrap;flex:0 0 auto;min-height:36px;padding-inline:8px}
+.paper-app .paper-direct-actions button:disabled{opacity:.42;cursor:default}
+.paper-app .paper-selection-tools{align-content:flex-start}
+@media screen and (min-width:901px) and (pointer:fine){
+ .paper-app .paper-selection-tools{width:max-content!important;max-width:min(860px,calc(100vw - 24px))!important;flex-wrap:wrap!important}
+ .paper-app .paper-selection-tools .paper-direct-actions{flex-basis:100%!important}
+}
+@media screen and (max-width:720px){
+ .paper-app .paper-toolbar>.paper-strip-arrow{display:inline-flex!important;flex:0 0 22px;min-width:22px!important}
+ .paper-app .paper-toolset,.paper-app.paper-mobile-tools-expanded .paper-toolset{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;max-height:none!important;touch-action:pan-x!important;scrollbar-width:thin!important}
+ .paper-app .paper-toolset>button,.paper-app .paper-toolset>button:has(.paper-tool-icon){display:flex!important;flex:0 0 52px!important;width:52px!important;min-width:52px!important}
+ .paper-app .paper-toolset>button.paper-mobile-more{display:none!important}
+ .paper-app .paper-toolset>button[data-paper="multi"]{order:6}
+ .paper-app .paper-selection-tools .paper-direct-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));flex:1 0 100%!important;width:100%;gap:3px}
+ .paper-app .paper-direct-actions button{padding:0 2px;min-width:0;font-size:11px;min-height:44px}
+}

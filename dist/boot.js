@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-single-toolbar'); }
+try { await import('./app.js?v=20261124-direct-controls'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
