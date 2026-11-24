@@ -2027,6 +2027,13 @@ bind(rich,'keyup',()=>{
   if(selected.size)change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&o.type==='shape'?{...o,dash:lineStyle}:o);});
   closeExtraTools();
  });
+ for(const button of selectionTools.querySelectorAll('[data-box-size-step]'))bind(button,'click',()=>{
+  const input=$('#paper-font-size');
+  const next=textSize(Number(input.value)+Number(button.dataset.boxSizeStep),fontSize);
+  if(Number(input.value)===next)return;
+  input.value=String(next);
+  input.dispatchEvent(new Event('change',{bubbles:true}));
+ });
  bind($('#paper-font-size'),'change',e=>{
   const size=textSize(e.target.value,fontSize);e.target.value=String(size);fontSize=size;
   change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text'){o.size=size;o.h=Math.max(o.h,Math.ceil(size*1.5));}}));

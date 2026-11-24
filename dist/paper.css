@@ -1535,3 +1535,33 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 .paper-app .paper-text-ribbon{box-shadow:0 8px 28px #25355018!important;border-color:#dce2ec!important}
 .paper-app .paper-text-ribbon button{min-height:36px}
 @media(pointer:coarse){.paper-app .paper-text-ribbon button,.paper-app .paper-context-section button{min-height:44px;min-width:44px}}
+
+/* One control rhythm for the floating object palette, independent of form defaults. */
+@media screen {
+ .paper-app .paper-selection-tools { --control-size:36px; }
+ .paper-app .paper-selection-tools :is(button,summary,select,input[type=number]) {
+  box-sizing:border-box; min-height:var(--control-size); height:var(--control-size);
+  margin:0; font-size:13px; line-height:1.25;
+ }
+ .paper-app .paper-selection-tools .paper-selection-more {
+  padding:0; margin:0; border:0; background:transparent; box-shadow:none;
+ }
+ .paper-app .paper-selection-tools .paper-selection-more>summary { padding:0 10px; }
+ .paper-app .paper-box-size { display:inline-flex; align-items:center; gap:2px; }
+ .paper-app .paper-box-size>span { margin-inline:4px; font-size:12px; }
+ .paper-app .paper-box-size[hidden] { display:none; }
+ .paper-app .paper-box-size button { width:var(--control-size); padding:0; font-size:18px; }
+ .paper-app .paper-box-size #paper-font-size {
+  width:3.1em; min-width:0; padding:0 2px; text-align:center; appearance:textfield;
+ }
+ .paper-box-size #paper-font-size::-webkit-inner-spin-button { appearance:none; }
+ .paper-app .paper-selection-tools .paper-selection-drag { order:-1; align-self:center; padding:0; }
+}
+@media screen and (pointer:coarse) {
+ .paper-app .paper-selection-tools { --control-size:44px; }
+ .paper-app .paper-selection-tools button { min-width:44px; }
+ .paper-app .paper-box-size #paper-font-size { font-size:16px; }
+}
+@media screen and (min-width:901px) and (pointer:fine) {
+ .paper-app .paper-selection-tools { max-height:none!important; flex-wrap:wrap!important; }
+}

@@ -274,7 +274,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    if(name==='desktop'){
     const selectedBar=page.locator('#paper-selection-tools');
     assert.ok(await selectedBar.isVisible(),'selected-object controls appear after selecting text');
+    const size=selectedBar.locator('#paper-font-size');
+    await selectedBar.getByRole('button',{name:'เพิ่มขนาดตัวอักษรทั้งกล่อง'}).click();
+    assert.equal(await size.inputValue(),'17');
+    await selectedBar.getByRole('button',{name:'ลดขนาดตัวอักษรทั้งกล่อง'}).click();
+    assert.equal(await size.inputValue(),'16');
     const oldBox=await selectedBar.boundingBox();
+    const more=await selectedBar.locator('.paper-selection-more>summary').boundingBox();
+    assert.ok(more.y>=oldBox.y && more.y+more.height<=oldBox.y+oldBox.height,
+     'More fits vertically inside the selection palette');
     const drag=selectedBar.locator('.paper-selection-drag');
     assert.ok(await drag.isVisible(),'selected-object controls have a draggable grip');
     assert.ok(oldBox.height<62,'selected-object command box is a single horizontal row');
