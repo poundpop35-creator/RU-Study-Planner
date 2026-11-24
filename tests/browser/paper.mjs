@@ -643,7 +643,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await b.page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await b.page.locator('.paper-menu > summary').click();
   await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
-  const [download]=await Promise.all([b.page.waitForEvent('download'),fileButton.click()]);
+  const [download]=await Promise.all([b.page.waitForEvent('download'),b.page.locator('#paper-file-list [data-download]').first().click()]);
   assert.equal(download.suggestedFilename(),'lesson.pdf');const downloaded=await readFile(await download.path());assert.equal(downloaded.length,20*1024*1024);assert.equal(downloaded.subarray(0,15).toString(),'%PDF-1.4 sample');
   await click('text');await tap(120,240);
   const box=page.locator('#paper-text-input');await box.fill('politics / politics');
