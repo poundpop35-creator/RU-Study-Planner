@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-tips'); }
+try { await import('./app.js?v=20261124-question-scroll'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

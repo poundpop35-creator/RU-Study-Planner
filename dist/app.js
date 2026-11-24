@@ -1,5 +1,5 @@
 import {pol2106Tutorial} from './pol2106-tutorial.js';
-import {examReader,mountExamReader} from './exam-reader.js';
+import {examReader,mountExamReader} from './exam-reader.js?v=20261124-question-scroll';
 import {courseMaterialLabel,uploadSharedCourseFile} from './course-materials-ui.js?v=20261124-file-tab';
 import {registrationChecklist,enrollmentControl} from './registration-checklist.js?v=registration-status';
 import {readingStart,afterPlan,firstChecklist,weekView,mayConfirm} from './after-class.js?v=20261112a';
