@@ -1,5 +1,5 @@
 import {readAttachment,downloadAttachment} from './note-files.js?v=20261124-documents20';
-import {openNoteFile} from './file-viewer.js?v=20261124-documents20';
+import {openNoteFile,openNoteFileTab} from './file-viewer.js?v=20261124-file-tab';
 import {materialFor,safeCourseUrl,isCourseCode} from './course-materials.js?v=20261124-documents20';
 import {escapeHTML as escape} from './core.js?v=20261027c';
 
@@ -53,7 +53,7 @@ export async function openSharedCourseMaterials(space,course,onUpdate=()=>{},toa
   const data=materialFor(space.notebook(),course);
   modal.querySelector('[data-course-materials]').innerHTML='<h3>เอกสารที่ใช้ร่วมกัน ('+(data.files.length+data.links.length)+')</h3>'+
    (!data.files.length&&!data.links.length?'<p class="muted">ยังไม่มีเอกสารประจำวิชา แนบไฟล์หรือเพิ่มลิงก์ด้านล่างได้เลย</p>':'')+
-   data.files.map(f=>'<div class="course-material-row"><span>📄 '+escape(f.name)+'</span><div><button type="button" data-course-preview="'+f.id+'">เปิดดู</button><button type="button" data-course-download="'+f.id+'">ดาวน์โหลด</button><button type="button" data-course-remove-file="'+f.id+'" aria-label="ลบไฟล์ '+escape(f.name)+'">ลบ</button></div></div>').join('')+
+   data.files.map(f=>'<div class="course-material-row"><span>📄 '+escape(f.name)+'</span><div><button type="button" data-course-preview="'+f.id+'">เปิดดู</button><button type="button" data-course-tab="'+f.id+'">↗ เปิดแท็บใหม่</button><button type="button" data-course-download="'+f.id+'">ดาวน์โหลด</button><button type="button" data-course-remove-file="'+f.id+'" aria-label="ลบไฟล์ '+escape(f.name)+'">ลบ</button></div></div>').join('')+
    data.links.map(l=>'<div class="course-material-row"><span>🔗 '+escape(l.name)+'</span><div><a href="'+escape(l.url)+'" target="_blank" rel="noopener noreferrer">เปิดลิงก์</a><button type="button" data-course-remove-link="'+l.id+'" aria-label="ลบลิงก์ '+escape(l.name)+'">ลบ</button></div></div>').join('');
  }
  async function update(fn){
@@ -78,6 +78,7 @@ export async function openSharedCourseMaterials(space,course,onUpdate=()=>{},toa
   const data=materialFor(space.notebook(),course);
   try{
    if(b.dataset.coursePreview){const f=data.files.find(f=>f.id===b.dataset.coursePreview);if(f)await openNoteFile(f,space);}
+   else if(b.dataset.courseTab){const f=data.files.find(f=>f.id===b.dataset.courseTab);if(f)await openNoteFileTab(f,space);}
    else if(b.dataset.courseDownload){const f=data.files.find(f=>f.id===b.dataset.courseDownload);if(f)await downloadAttachment(f,space);}
    else if(b.dataset.courseRemoveFile){const f=data.files.find(f=>f.id===b.dataset.courseRemoveFile);if(f&&confirm('ลบเอกสารหลัก '+f.name+' จากวิชานี้?'))await update(old=>({...old,files:old.files.filter(x=>x.id!==f.id)}));}
    else if(b.dataset.courseRemoveLink){const l=data.links.find(x=>x.id===b.dataset.courseRemoveLink);if(l&&confirm('ลบลิงก์ '+l.name+' จากวิชานี้?'))await update(old=>({...old,links:old.links.filter(x=>x.id!==l.id)}));}

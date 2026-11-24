@@ -521,7 +521,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await sharedFiles.click();await courseDialog.locator('[data-course-preview]').first().click();
    const preview=page.locator('.paper-file-view');
    await preview.locator('iframe').waitFor();assert.equal(await preview.locator('h2').innerText(),'POL2104-syllabus.pdf');
-   await preview.locator('[data-close]').click();await courseDialog.locator('[data-course-close]').click();
+   const newTabPromise=page.context().waitForEvent('page');
+   await preview.locator('[data-open-tab]').click();
+   const documentTab=await newTabPromise;
+   await documentTab.locator('iframe').waitFor();
+   assert.equal(await documentTab.title(),'POL2104-syllabus.pdf');
+   await preview.locator('[data-close]').click();
+   assert.ok(await documentTab.locator('iframe').isVisible(),'closing in-note preview does not close independent tab');
+   assert.ok(await documentTab.getByText('ดาวน์โหลดไฟล์ต้นฉบับ').isVisible());
+   await documentTab.close();await courseDialog.locator('[data-course-close]').click();
    await page.evaluate(()=>{location.hash='#classroom';});
    await page.locator('.classroom-note-link[href="#note/'+courseNoteId+'"]').click();
    await page.locator('#paper-svg').waitFor();

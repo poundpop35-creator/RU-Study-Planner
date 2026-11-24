@@ -1,6 +1,6 @@
 import {pol2106Tutorial} from './pol2106-tutorial.js';
 import {examReader,mountExamReader} from './exam-reader.js';
-import {courseMaterialLabel,uploadSharedCourseFile} from './course-materials-ui.js?v=20261124-documents20';
+import {courseMaterialLabel,uploadSharedCourseFile} from './course-materials-ui.js?v=20261124-file-tab';
 import {registrationChecklist,enrollmentControl} from './registration-checklist.js?v=registration-status';
 import {readingStart,afterPlan,firstChecklist,weekView,mayConfirm} from './after-class.js?v=20261112a';
 import {importPanel,resolvePlan} from './debt-import.js?v=20261111b';
@@ -12,7 +12,7 @@ import {examEvidenceTable,examEvidenceCard,readingExamFormats,registrationExam} 
 import {sections,sectionFor,sectionTabs} from './navigation.js';
 import {prepNotice,classroomPage} from './study-sections.js?v=inline-course-upload-20261120';
 import {createStudySpace} from './study-space.js?v=20261124-groups';
-import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261124-direct-style';
+import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261124-file-tab';
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
 import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=balanced-friday-replays-20261120';

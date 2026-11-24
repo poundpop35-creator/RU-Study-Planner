@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-direct-style'); }
+try { await import('./app.js?v=20261124-file-tab'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
