@@ -449,10 +449,24 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  captureButton.innerHTML='<span aria-hidden="true">▣</span><small>แคปหน้าจอ</small>';
  captureButton.setAttribute('aria-label','แคปหน้าจอแล้วแทรกในสมุด');
  $('[data-paper="image"]').after(captureButton);
+ const captureHelp=document.createElement('dialog');
+ captureHelp.style.cssText='width:min(360px,90vw);padding:20px;border:1px solid #dce2ec;border-radius:16px;color:#203050';
+ captureHelp.setAttribute('aria-label','นำภาพหน้าจอเข้าโน้ต');
+ captureHelp.innerHTML='<strong>นำภาพหน้าจอเข้าโน้ต</strong><p></p><a href="#account">เปิดข้อมูลและการซิงก์</a> <button type="button">เลือกรูปหน้าจอ</button> <button type="button">ปิด</button>';
+ root.append(captureHelp);
+ const [chooseCapture,closeCapture]=captureHelp.querySelectorAll('button');
+ bind(closeCapture,'click',()=>captureHelp.close());
+ bind(chooseCapture,'click',()=>{captureHelp.close();$('#paper-image-file').click();});
+ function explainCapture(conflict){
+  captureHelp.querySelector('p').textContent=conflict?'สมุดมีข้อมูลสองฉบับ จึงยังเพิ่มรูปไม่ได้ เปิดข้อมูลและการซิงก์เพื่อตรวจฉบับที่จะเก็บ แล้วกลับมาเพิ่มรูปอีกครั้ง':'บน iPhone ที่มี Face ID ให้กดปุ่มด้านข้างและเพิ่มเสียงพร้อมกัน บันทึกภาพไปที่รูปภาพ แล้วกด “เลือกรูปหน้าจอ” หากใช้เครื่องอื่น ให้แคปด้วยปุ่มของเครื่องก่อน';
+  captureHelp.querySelector('a').hidden=!conflict;
+  chooseCapture.hidden=conflict;
+  captureHelp.showModal();
+ }
  bind(captureButton,'click',async()=>{
+  if(space.info().conflict){explainCapture(true);return;}
   if(!navigator.mediaDevices?.getDisplayMedia){
-   say('แคปหน้าจอด้วยปุ่มของเครื่อง แล้วเลือกรูปหน้าจอที่บันทึกไว้');
-   $('#paper-image-file').click();
+   explainCapture(false);
    return;
   }
   captureButton.disabled=true;
@@ -477,6 +491,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    if(!blob)throw Error('สร้างภาพหน้าจอไม่ได้ กรุณาลองอีกครั้ง');
    if(!closed&&pageId===targetPage)await insertImages([new File([blob],'ภาพหน้าจอ.png',{type:blob.type})]);
   }catch(error){
+   if(!closed&&['NotSupportedError','TypeError'].includes(error.name)){explainCapture(false);return;}
    if(!closed)say(error.name==='NotAllowedError'?'ยังไม่ได้แชร์หน้าจอ · เลือกปุ่มรูปเพื่อนำเข้าภาพที่แคปไว้ได้':error.message,true);
   }finally{
    stream?.getTracks().forEach(track=>track.stop());
