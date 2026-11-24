@@ -444,6 +444,46 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  phoneMore.setAttribute('aria-label','แสดงเครื่องมือเพิ่มเติม');
  phoneMore.innerHTML='<span aria-hidden="true">⊞</span><small>เพิ่มเติม</small>';
  mainTools.append(phoneMore);
+ const captureButton=document.createElement('button');
+ captureButton.type='button';
+ captureButton.innerHTML='<span aria-hidden="true">▣</span><small>แคปหน้าจอ</small>';
+ captureButton.setAttribute('aria-label','แคปหน้าจอแล้วแทรกในสมุด');
+ $('[data-paper="image"]').after(captureButton);
+ bind(captureButton,'click',async()=>{
+  if(!navigator.mediaDevices?.getDisplayMedia){
+   say('แคปหน้าจอด้วยปุ่มของเครื่อง แล้วเลือกรูปหน้าจอที่บันทึกไว้');
+   $('#paper-image-file').click();
+   return;
+  }
+  captureButton.disabled=true;
+  let stream;
+  const video=document.createElement('video');
+  video.muted=true;
+  video.playsInline=true;
+  const targetPage=pageId;
+  try{
+   writable();
+   stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+   video.srcObject=stream;
+   await video.play();
+   if(closed||pageId!==targetPage)return;
+   const canvas=document.createElement('canvas');
+   const ratio=Math.min(1,1920/Math.max(video.videoWidth,video.videoHeight));
+   canvas.width=Math.round(video.videoWidth*ratio);
+   canvas.height=Math.round(video.videoHeight*ratio);
+   canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+   stream.getTracks().forEach(track=>track.stop());
+   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+   if(!blob)throw Error('สร้างภาพหน้าจอไม่ได้ กรุณาลองอีกครั้ง');
+   if(!closed&&pageId===targetPage)await insertImages([new File([blob],'ภาพหน้าจอ.png',{type:blob.type})]);
+  }catch(error){
+   if(!closed)say(error.name==='NotAllowedError'?'ยังไม่ได้แชร์หน้าจอ · เลือกปุ่มรูปเพื่อนำเข้าภาพที่แคปไว้ได้':error.message,true);
+  }finally{
+   stream?.getTracks().forEach(track=>track.stop());
+   video.srcObject=null;
+   captureButton.disabled=false;
+  }
+ });
  const phoneQuickTools=new Set(['select','hand','pen','text','eraser']);
  bind(phoneMore,'click',()=>{
   const expanded=root.classList.toggle('paper-mobile-tools-expanded');
