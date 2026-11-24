@@ -422,11 +422,11 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('pen');
    if(!await page.locator('#paper-width').isVisible())await page.locator('[data-paper-size-toggle]').click();
    assert.equal(await page.locator('#paper-width-value').textContent(),'12','pen remembers its own width after switching from highlighter');
-   await page.locator('[data-pen-tip="pencil"]').click();assert.equal(await page.locator('#paper-ink-opacity').inputValue(),'72');
+   await page.locator('button[data-pen-tip="pencil"]').click();assert.equal(await page.locator('#paper-ink-opacity').inputValue(),'72');
    await page.locator('[data-paper-color="#dc4343"]').click();await page.locator('[data-paper-width="3"]').click();
-   await page.locator('[data-pen-tip="fine"]').click();assert.equal(await page.locator('#paper-width-value').textContent(),'12');
-   await page.locator('[data-pen-tip="pencil"]').click();assert.equal(await page.locator('#paper-width-value').textContent(),'3');assert.equal(await page.locator('[data-paper-color="#dc4343"]').getAttribute('aria-pressed'),'true');
-   await page.locator('[data-pen-tip="fine"]').click();
+   await page.locator('button[data-pen-tip="fine"]').click();assert.equal(await page.locator('#paper-width-value').textContent(),'12');
+   await page.locator('button[data-pen-tip="pencil"]').click();assert.equal(await page.locator('#paper-width-value').textContent(),'3');assert.equal(await page.locator('[data-paper-color="#dc4343"]').getAttribute('aria-pressed'),'true');
+   await page.locator('button[data-pen-tip="fine"]').click();
    await page.keyboard.press('Escape');
    const from=await point(100,400),to=await point(350,450);
   if(mobile){

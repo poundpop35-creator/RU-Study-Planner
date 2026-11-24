@@ -227,7 +227,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
      ?tool==='shape'&&$('#paper-shape').value===b.dataset.paper:b.dataset.paper==='pen'?inkTool():tool===b.dataset.paper));
   });
   root.querySelectorAll('[data-paper-color]').forEach(b=>b.setAttribute('aria-pressed',String(color===b.dataset.paperColor)));
-  root.querySelectorAll('[data-pen-tip]').forEach(b=>b.setAttribute('aria-pressed',String(inkTool()&&b.dataset.penTip===tip)));
+  root.querySelectorAll('button[data-pen-tip]').forEach(b=>b.setAttribute('aria-pressed',String(inkTool()&&b.dataset.penTip===tip)));
   const opacityPicker=$('#paper-ink-opacity');if(document.activeElement!==opacityPicker)opacityPicker.value=String(Math.round(inkOpacity*100));
   const inkPicker=$('#paper-ink-custom');if(document.activeElement!==inkPicker)inkPicker.value=color;
    root.querySelectorAll('[data-shape-pick]').forEach(b=>b.setAttribute('aria-pressed',
