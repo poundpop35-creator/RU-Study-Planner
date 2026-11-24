@@ -1573,3 +1573,16 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  .paper-app .paper-menu-shortcuts { order:5; flex-basis:100%; }
  .paper-app .paper-menu-shortcuts button { flex:1; min-height:44px; }
 }
+
+.paper-paint-dialog { width:min(360px,94vw); max-height:86dvh; overflow:auto; margin:auto; box-sizing:border-box; padding:18px; border:1px solid #d5deea; border-radius:16px; color:#20304a; background:white; }
+.paper-paint-dialog::backdrop { background:#17263b44; }
+.paper-paint-dialog h2 { margin:0 0 12px; font-size:19px; }
+.paper-paint-dialog fieldset { border:0; border-top:1px solid #dce3ef; margin:0 0 12px; padding:4px 0; }
+.paper-paint-dialog legend { padding-right:8px; font-weight:700; }
+.paper-paint-dialog .paint-swatches { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin:4px 0; }
+.paper-app .paint-swatches button { height:42px; border:1px solid #d4dce8; background:white; display:grid; place-items:center; }
+.paper-app .paint-swatches button::after { content:""; width:24px; height:24px; border-radius:50%; background:var(--swatch); border:1px solid #192c4533; }
+.paper-app .paint-swatches button[aria-pressed=true] { outline:2px solid #3455bc; outline-offset:-2px; }
+.paper-paint-dialog fieldset label,.paint-opacity { display:inline-flex; align-items:center; gap:8px; padding:4px; }
+.paper-paint-dialog .paint-done { display:block; width:100%; color:white; background:#3455bc; margin-top:12px; }
+@media(pointer:coarse){.paper-app .paper-paint-dialog button { min-height:44px; }}

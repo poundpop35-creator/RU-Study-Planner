@@ -527,6 +527,14 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     const savedShape=()=>row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.find(o=>o.type==='shape');
     assert.equal(savedShape().kind,'triangle','selected shape can be converted without redrawing');
     assert.equal(savedShape().dash,'dashed','selected shape line can be changed after drawing');
+    await page.getByRole('button',{name:'สีรูปทรง',exact:true}).click();
+    const palette=page.getByRole('dialog',{name:'สีรูปทรง'});
+    await palette.getByRole('button',{name:'สีพื้น เหลือง',exact:true}).click();
+    await palette.getByRole('button',{name:'สีเส้น น้ำเงิน',exact:true}).click();
+    await palette.getByRole('button',{name:'เสร็จสิ้น'}).click();
+    await click('save');
+    assert.equal(savedShape().fill,'#f5cc55');
+    assert.equal(savedShape().color,'#3255be');
     const oldShapeWidth=savedShape().w,oldShapeHeight=savedShape().h;
     assert.equal(await page.locator('#paper-svg [data-edge]').count(),8,'selected shape has eight resize handles');
     await page.locator('#paper-svg').evaluate(svg=>{
