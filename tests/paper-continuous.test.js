@@ -131,3 +131,13 @@ test('A4 frames are opt-in and tile horizontally without changing content',()=>{
  assert.equal((shown.match(/data-print-boundary=/g)||[]).length,4);
  assert.match(shown,/fill="none" stroke="#778db6"/);
 });
+
+test('switching back to A4 restores original pages and refuses to clip crossing objects',async()=>{
+ const {toPagedPaper}=await import('../dist/paper-core.js');
+ const a=emptyPage(),b=emptyPage();b.template='dots';b.objects.push(txt('second','บทเรียน',50));
+ const original=validatePaper({version:1,pages:[a,b]});
+ const sheet=toContinuousPaper(original);
+ assert.deepEqual(toPagedPaper(sheet),original);
+ sheet.pages[0].objects[0].y=PAGE_H-10;
+ assert.throws(()=>toPagedPaper(sheet),/คร่อมขอบ/);
+});

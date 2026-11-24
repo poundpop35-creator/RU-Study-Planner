@@ -172,7 +172,10 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.type==='stroke'),'pen writes with a palm already on the page');
    assert.deepEqual(errors,[]);console.log(name+': inline table PASS');continue;
   }
-  const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();const scale=r.width/900;return {x:r.x+x*scale,y:r.y+y*scale};};
+  const point=(x,y)=>page.locator('#paper-svg').evaluate((svg,[x,y])=>{
+   const p=new DOMPoint(x,y).matrixTransform(svg.getScreenCTM());
+   return {x:p.x,y:p.y};
+  },[x,y]);
   const toolbar=page.locator('.paper-toolbar');
   const toolOrder=await page.locator('.paper-toolset>button[data-paper]').evaluateAll(items=>items.map(el=>el.dataset.paper));
   assert.deepEqual(toolOrder.slice(0,2),['select','hand'],'Select and Pan are the first two neighboring notebook tools');
@@ -274,7 +277,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    if(name==='desktop'){
     const selectedBar=page.locator('#paper-selection-tools');
     assert.ok(await selectedBar.isVisible(),'selected-object controls appear after selecting text');
+    const size=selectedBar.locator('#paper-font-size');
+    await selectedBar.getByRole('button',{name:'เพิ่มขนาดตัวอักษรทั้งกล่อง'}).click();
+    assert.equal(await size.inputValue(),'17');
+    await selectedBar.getByRole('button',{name:'ลดขนาดตัวอักษรทั้งกล่อง'}).click();
+    assert.equal(await size.inputValue(),'16');
     const oldBox=await selectedBar.boundingBox();
+    const more=await selectedBar.locator('.paper-selection-more>summary').boundingBox();
+    assert.ok(more.y>=oldBox.y && more.y+more.height<=oldBox.y+oldBox.height,
+     'More fits vertically inside the selection palette');
     const drag=selectedBar.locator('.paper-selection-drag');
     assert.ok(await drag.isVisible(),'selected-object controls have a draggable grip');
     assert.ok(oldBox.height<62,'selected-object command box is a single horizontal row');
@@ -480,8 +491,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.equal(await page.getByRole('dialog').locator('[name="session"]').inputValue(),'2');
     await page.getByRole('dialog').getByRole('button',{name:'สร้างโน้ต',exact:true}).click();
    await page.locator('#paper-svg').waitFor();
-   const sharedFiles=page.getByRole('button',{name:'ไฟล์หลักวิชา POL2104 · 2 รายการ',exact:true});
-   await page.locator('.paper-menu').evaluate(el=>el.open=true);assert.ok(await sharedFiles.isVisible(),'a new note exposes its course files immediately');
+   const sharedFiles=page.getByRole('button',{name:'เอกสารหลักของวิชา',exact:true});
+   assert.equal(await sharedFiles.getAttribute('title'),'ไฟล์หลักวิชา POL2104 · 2 รายการ');assert.ok(await sharedFiles.isVisible(),'a new note exposes its course files immediately');
    await sharedFiles.click();await courseDialog.locator('[data-course-preview]').first().click();
    const preview=page.locator('.paper-file-view');
    await preview.locator('iframe').waitFor();assert.equal(await preview.locator('h2').innerText(),'POL2104-syllabus.pdf');
@@ -621,6 +632,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const activeNote=()=>row.payload.notebook.notes.find(n=>n.course==='POL2104');
   const originalText=activeNote().paper.pages[0].objects.find(o=>o.type==='text'&&o.text==='รัฐ');
   assert.ok(originalText,'create a short test word in an otherwise empty region');
+  await page.locator('#paper-svg [data-object="'+originalText.id+'"]').first().scrollIntoViewIfNeeded();
   const following=await point(Math.min(890,originalText.x+originalText.w+32),originalText.y+originalText.h/2);
   if(mobile)await page.touchscreen.tap(following.x,following.y);
   else await page.mouse.click(following.x,following.y);
