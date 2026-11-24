@@ -1709,3 +1709,12 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 @media print{.paper-app .paper-selection-tools{display:none!important}}
 
 .paper-app .paper-color-field-caption{font-size:12px;font-weight:650;white-space:nowrap;color:#334155}.paper-app .paper-quick-color-field label{gap:3px}.paper-app .paper-selection-scroll .paper-command-cluster,.paper-app .paper-selection-scroll .paper-quick-color-field{flex-shrink:0!important}
+
+.paper-app .paper-pen-tips{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;white-space:nowrap;border-right:1px solid #dce4ef;padding-right:7px}
+.paper-app .paper-pen-tips button{display:inline-flex!important;flex-direction:row!important;align-items:center;gap:4px;padding:4px 7px;border:1px solid #dce4ef;border-radius:7px;min-height:34px;font-size:11px;white-space:nowrap}
+.paper-app .paper-pen-tips button[aria-pressed=true]{background:#eaf0ff;border-color:#8fa7e7;color:#244bb2}
+.paper-app .paper-pen-tips svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.paper-app .paper-ink-opacity{flex:0 0 auto;white-space:nowrap}
+.paper-app .paper-ink-opacity input{width:44px!important;min-width:0!important;text-align:center}
+.paper-app .paper-pen-tips[hidden],.paper-app .paper-ink-opacity[hidden]{display:none!important}
+@media(pointer:coarse){.paper-app .paper-pen-tips button{min-height:42px}}

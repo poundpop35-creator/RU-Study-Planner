@@ -413,6 +413,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   assert.equal(await page.locator('[data-paper-width="12"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#paper-pen-preview').evaluate(el=>el.style.width),'12px');
   assert.equal(await page.locator('#paper-toolbar-more').evaluate(el=>el.open),false,'slider change should fold extras');
+   assert.equal(await page.locator('.paper-pen-tips [data-pen-tip]').count(),5);
    await click('highlight');
    if(!await page.locator('#paper-width').isVisible())await page.locator('[data-paper-size-toggle]').click();
    assert.equal(await page.locator('#paper-width').getAttribute('max'),'40','highlighter has independent 1–40 width range');

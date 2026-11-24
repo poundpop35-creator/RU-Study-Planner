@@ -1,8 +1,9 @@
+import {PEN_TIPS,tipSettings,validTip} from './paper-pen-tips.js?v=20261124-tips';
 import {paperColors} from './paper-colors.js?v=20261124-seven-colors';
 import {notebookHistory} from './paper-page-history.js';
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
-import {PAGE_W,PAGE_H,MAX_CANVAS_HEIGHT,pageHeight,continuousContentHeight,toContinuousPaper,toPagedPaper,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS,expandSelection,selectionGroupState,changeObjectGroups,cloneGroupedObjects,scaleGroupObject} from './paper-core.js?v=20261124-text-border';
-import {printBoundaryGuides,pageSVG,printableSheets,objectSVG,esc} from './paper-render.js?v=20261124-text-border';
+import {PAGE_W,PAGE_H,MAX_CANVAS_HEIGHT,pageHeight,continuousContentHeight,toContinuousPaper,toPagedPaper,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS,expandSelection,selectionGroupState,changeObjectGroups,cloneGroupedObjects,scaleGroupObject} from './paper-core.js?v=20261124-tips';
+import {printBoundaryGuides,pageSVG,printableSheets,objectSVG,esc} from './paper-render.js?v=20261124-tips';
 import {imageHandles,resizeImage,cropImage} from './paper-images.js';
 import {readAttachment,downloadAttachment} from './note-files.js?v=20261124-documents20';
 import {replaceLink,moveLinks} from './word-links.js';
@@ -32,7 +33,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  function cancelSmartTimer(){clearTimeout(smartTimer);smartTimer=0;}
  function scheduleSmartHold(g){
   cancelSmartTimer();g.snap=null;
-  if(!smartEnabled||g.kind!=='stroke'||g.tool!=='pen'||g.rulerEdge||g.points.length<3)return;
+  if(!smartEnabled||g.kind!=='stroke'||g.tool!=='pen'||(!g.straighten&&g.tip!=='fine')||g.rulerEdge||g.points.length<3)return;
   smartTimer=setTimeout(()=>{
    if(closed||gesture!==g)return;
    const found=g.straighten?recognizeDrawnShape(g.points):recognizeHeldShape(g.points);
@@ -49,6 +50,13 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  try{palmGuard=localStorage.getItem(palmKey)==='true';finger=!palmGuard&&localStorage.getItem(fingerKey)!=='false';}catch{}
  try{width=penWidth(localStorage.getItem(widthKey));}catch{/* unavailable device preference: keep 5 */}
  try{highlighterSize=highlightWidth(localStorage.getItem(highlightKey));}catch{/* keep 12 */}
+ const tipsKey='ru-paper-pen-tips.v1:'+scope;let tip='fine',lastPenTip='fine',inkOpacity=1;
+ let tipPrefs={fine:tipSettings('fine',{width}),chisel:tipSettings('chisel',{width:highlighterSize})};
+ try{const saved=JSON.parse(localStorage.getItem(tipsKey)||'{}');for(const key of Object.keys(PEN_TIPS))if(saved[key])tipPrefs[key]=tipSettings(key,saved[key]);}catch{}
+ const inkTool=()=>tool==='pen'||tool==='highlight';
+ function rememberTip(){if(!inkTool())return;tipPrefs[tip]=tipSettings(tip,{width:tool==='highlight'?highlighterSize:width,color,opacity:inkOpacity});try{localStorage.setItem(tipsKey,JSON.stringify(tipPrefs));}catch{}}
+ function loadTip(key){tip=key;if(key!=='chisel')lastPenTip=key;const v=tipSettings(key,tipPrefs[key]);color=v.color;inkOpacity=v.opacity;if(key==='chisel')highlighterSize=v.width;else width=v.width;}
+ if(tool==='pen')loadTip('fine');
  try{if(localStorage.getItem(pagesKey)==='1')root.classList.add('pages-open');}catch{/* default collapsed */}
  // Default new typed text to 16 pt on each note-opening session.
  const $=s=>root.querySelector(s),svg=$('#paper-svg'),sheet=$('#paper-sheet'),wrap=$('#paper-wrap'),viewport=$('#paper-viewport'),textarea=$('#paper-text-input');
@@ -159,7 +167,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   if(gesture?.kind==='stroke'){
    let layer=svg.querySelector('[data-live-ink]');
    if(!layer){layer=document.createElementNS('http://www.w3.org/2000/svg','g');layer.setAttribute('data-live-ink','');layer.setAttribute('pointer-events','none');svg.append(layer);}
-   layer.innerHTML=gesture.snap?objectSVG(gesture.snap,images):objectSVG(strokeObject(gesture.points,{tool:gesture.tool,color:gesture.color,width:gesture.width}),images);
+   layer.innerHTML=gesture.snap?objectSVG(gesture.snap,images):objectSVG(strokeObject(gesture.points,{tool:gesture.tool,color:gesture.color,width:gesture.width,...(gesture.tip?{tip:gesture.tip,opacity:gesture.opacity}:{})}),images);
    return;
   }
   if(!editing){selected=selectIds(selected);if(tool==='select'&&selected.size&&!['page','ruler'].includes(activePanel))activePanel='select';}
@@ -216,9 +224,11 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   root.querySelectorAll('[data-paper]').forEach(b=>{
    if(['pen','highlight','eraser','text','shape','select','hand','line','arrow','straighten'].includes(b.dataset.paper))
     b.setAttribute('aria-pressed',String(['line','arrow'].includes(b.dataset.paper)
-     ?tool==='shape'&&$('#paper-shape').value===b.dataset.paper:tool===b.dataset.paper));
+     ?tool==='shape'&&$('#paper-shape').value===b.dataset.paper:b.dataset.paper==='pen'?inkTool():tool===b.dataset.paper));
   });
   root.querySelectorAll('[data-paper-color]').forEach(b=>b.setAttribute('aria-pressed',String(color===b.dataset.paperColor)));
+  root.querySelectorAll('[data-pen-tip]').forEach(b=>b.setAttribute('aria-pressed',String(inkTool()&&b.dataset.penTip===tip)));
+  const opacityPicker=$('#paper-ink-opacity');if(document.activeElement!==opacityPicker)opacityPicker.value=String(Math.round(inkOpacity*100));
   const inkPicker=$('#paper-ink-custom');if(document.activeElement!==inkPicker)inkPicker.value=color;
    root.querySelectorAll('[data-shape-pick]').forEach(b=>b.setAttribute('aria-pressed',
     String(b.dataset.shapePick===$('#paper-shape').value)));
@@ -304,16 +314,16 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  }
  bind(viewport,'scroll',extendVisibleCanvas,{passive:true});
  function syncPenWidthControls(){
-  const highlight=tool==='highlight',value=highlight?highlighterSize:width;
+  const highlight=tool==='highlight',value=highlight?highlighterSize:width,settings=inkTool()?PEN_TIPS[tip]:PEN_TIPS.fine,wide=settings.max===40;
   const slider=$('#paper-width'),preview=$('#paper-pen-preview');
-  slider.max=highlight?'40':'12';
+  slider.max=String(settings.max);
   slider.value=String(value);
   slider.setAttribute('aria-label',highlight?'ปรับความหนาไฮไลท์':'ปรับความหนาปากกา');
   $('#paper-width-value').textContent=String(value);
   $('#paper-width-mobile-value').textContent=String(value);
   $('#paper-size-label').textContent=highlight?'ความหนาไฮไลท์ (1–40) · เลือกขนาดหรือเลื่อนแถบ':'ความหนาปากกา (1–12) · เลือกขนาดหรือเลื่อนแถบ';
   const toggle=$('[data-paper-size-toggle]');toggle.title=highlight?'ปรับความหนาไฮไลท์':'ปรับความหนาปากกา';
-  const presets=highlight?HIGHLIGHT_WIDTH_PRESETS:PEN_WIDTH_PRESETS;
+  const presets=settings.presets;
   root.querySelectorAll('[data-paper-width]').forEach((button,index)=>{
    const size=presets[index];button.dataset.paperWidth=String(size);
    button.setAttribute('aria-label',(highlight?'ไฮไลท์':'ปากกา')+' ขนาด '+size);
@@ -325,17 +335,18 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   preview.style.width=highlight?'22px':value+'px';
   preview.style.height=(highlight?Math.max(3,Math.min(20,value*.5)):value)+'px';
   preview.style.borderRadius=highlight?'3px':'50%';
-  preview.style.background=highlight?'#f4cd45':'#172033';
+  preview.style.background=color;
+  preview.style.opacity=String(inkTool()?inkOpacity:1);
  }
  function updatePenWidth(value){
   if(tool==='highlight'){
    highlighterSize=highlightWidth(value,highlighterSize);
    try{localStorage.setItem(highlightKey,String(highlighterSize));}catch{}
   }else{
-   width=penWidth(value,width);
+   width=inkTool()&&PEN_TIPS[tip].max===40?highlightWidth(value,width):penWidth(value,width);
    try{localStorage.setItem(widthKey,String(width));}catch{}
   }
-  syncPenWidthControls();
+  rememberTip();syncPenWidthControls();
  }
  function setPagesOpen(value){
   root.classList.toggle('pages-open',!!value);
@@ -360,12 +371,14 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    panel.style.top=Math.max(8,Math.min(anchor.bottom+6,window.innerHeight-250))+'px';
   }
  }
- function setTool(next){
+ function setTool(next,chosenTip){
+  rememberTip();
   cancelSmartTimer();closePenSizePicker();closeEraserMenu();finishText();pointers.clear();gesture=null;
   activePanel=['line','arrow','branch3'].includes(next)?'shape':next;
   if(next==='line'||next==='arrow'||next==='branch3'){
    $('#paper-shape').value=next;tool='shape';
   }else tool=next;
+  if(inkTool())loadTip(next==='highlight'?'chisel':validTip(chosenTip)&&chosenTip!=='chisel'?chosenTip:lastPenTip);
   closeExtraTools();setShapesOpen(false);
   if(typeof collapsePhoneMore==='function'&&phoneQuickTools.has(tool))collapsePhoneMore();
   if(next!=='select')multiSelect=false;
@@ -684,7 +697,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const showInk=['pen','highlight','shape','straighten'].includes(activePanel);
   inkOptions.hidden=!showInk;
   inputStrip.hidden=!['pen','highlight','eraser','straighten','shape'].includes(activePanel);
-  $('.paper-geometry-check').hidden=!['pen','straighten'].includes(activePanel);
+  $('.paper-geometry-check').hidden=activePanel!=='straighten'&&(activePanel!=='pen'||tip!=='fine');
+  tipBar.hidden=!inkTool();inkOpacityWrap.hidden=!inkTool();
   shapeOptions.hidden=activePanel!=='shape';
   textOptions.hidden=activePanel!=='text'||!!editing;boldPreset.hidden=!!editing;
   modeSelect.value=String(model.version);
@@ -860,7 +874,20 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const inkBar=document.createElement('div');
  inkBar.className='paper-ink-bar';inkBar.setAttribute('role','toolbar');
  inkBar.setAttribute('aria-label','สีปากกาและขนาดเส้น');inkBar.hidden=true;
- inkBar.append($('.paper-colors'),$('.paper-pen-sizes'));
+ const tipBar=document.createElement('div');tipBar.className='paper-pen-tips';tipBar.setAttribute('role','group');tipBar.setAttribute('aria-label','เลือกหัวปากกา');
+ // Reuse the old highlighter action in the new pen-tip row, without a second main tool.
+ const highlighterButton=$('[data-paper="highlight"]');
+ for(const [key,config] of Object.entries(PEN_TIPS)){
+  const b=key==='chisel'?highlighterButton:document.createElement('button');b.type='button';b.dataset.penTip=key;
+  b.setAttribute('aria-label',config.label);b.title=config.label;
+  b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+config.icon+'"/></svg><span>'+config.label+'</span>';tipBar.append(b);
+  bind(b,'click',e=>{e.stopPropagation();setTool(key==='chisel'?'highlight':'pen',key);});
+ }
+ inkBar.append(tipBar,$('.paper-colors'),$('.paper-pen-sizes'));
+ const inkOpacityWrap=document.createElement('label');inkOpacityWrap.className='paper-ink-opacity';
+ inkOpacityWrap.innerHTML='ทึบ <input id="paper-ink-opacity" type="number" min="5" max="100" step="5" value="100" aria-label="ความทึบหมึก"> %';
+ inkBar.append(inkOpacityWrap);
+ bind(inkOpacityWrap.querySelector('input'),'change',e=>{const n=Number(e.target.value);if(e.target.value&&Number.isFinite(n))inkOpacity=Math.max(.05,Math.min(1,n/100));rememberTip();draw();});
  const inkCustom=document.createElement('label');
  inkCustom.className='paper-ink-custom';
  inkCustom.innerHTML='สีอื่น <input type="color" id="paper-ink-custom" value="#172033" aria-label="กำหนดสีปากกาหรือไฮไลต์เอง">';
@@ -935,7 +962,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  bind($('#paper-ink-custom'),'input',event=>{
   const next=textColor(event.target.value);
   if(!next)return;
-  color=next;draw();say('เลือกสีปากกา '+next+' แล้ว · เริ่มเขียนได้เลย');
+  color=next;rememberTip();draw();say('เลือกสีปากกา '+next+' แล้ว · เริ่มเขียนได้เลย');
  });
 
  // Detect native on-screen keyboard viewport shrink and keep secondary UI
@@ -1691,8 +1718,8 @@ bind(rich,'keyup',()=>{
    return;
   }
   if(tool==='eraser'){gesture={kind:'erase',eraseMode:eraserKind,last:p,before:copy(page().objects),preview:copy(page().objects)};sweepErase(gesture,p);scheduleDraw();return;}
-  const snapped=tool==='pen'?rulerSnap(p,ruler):null,initial=snapped||p;
-  gesture={kind:'stroke',tool:tool==='straighten'?'pen':tool,straighten:tool==='straighten',color:tool==='highlight'&&color==='#172033'?'#f4cd45':color,width:tool==='highlight'?highlighterSize:width,
+  const snapped=tool==='pen'&&tip==='fine'?rulerSnap(p,ruler):null,initial=snapped||p;
+  gesture={kind:'stroke',tool:tool==='straighten'?'pen':tool,straighten:tool==='straighten',color,width:tool==='highlight'?highlighterSize:width,...(inkTool()?{tip,opacity:inkOpacity}:{}),
    points:[[initial.x,initial.y,e.pointerType==='pen'&&e.pressure>0?e.pressure:.5]],
    rulerEdge:snapped?.edge||0,pointer:e.pointerId};
   scheduleDraw();
@@ -1827,7 +1854,7 @@ bind(rich,'keyup',()=>{
    }
    if(branches)change(p=>p.objects.push(...branches));
    else if(result)change(p=>p.objects.push(result));
-   else if(g.points.length>1){const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width});change(p=>p.objects.push(stroke));}
+   else if(g.points.length>1){const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width,...(g.tip?{tip:g.tip,opacity:g.opacity}:{})});change(p=>p.objects.push(stroke));}
   }
   else if(g?.kind==='shape'&&e.type==='pointerup'){
    const end=point(e);
@@ -1993,7 +2020,7 @@ bind(rich,'keyup',()=>{
     setShapesOpen(false);draw();return;
    }
     if(b.dataset.paperColor){
-     color=b.dataset.paperColor;
+     color=b.dataset.paperColor;rememberTip();
      if(selected.size&&activePanel==='select')change(p=>{p.objects=p.objects.map(o=>selected.has(o.id)&&['stroke','shape'].includes(o.type)?{...o,color}:o);});
      draw();return;
     }
