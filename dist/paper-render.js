@@ -1,4 +1,4 @@
-import {PAGE_W,PAGE_H,inkPadding,pageHeight,continuousContentHeight} from './paper-core.js?v=20261124-notebook-v2';
+import {PAGE_W,PAGE_H,inkPadding,pageHeight,continuousContentHeight} from './paper-core.js?v=20261124-groups';
 import {formattedTextHTML} from './paper-rich-text.js?v=20261121-paper-format';
 import {shapeSVG} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {tableSVG} from './paper-table.js?v=20261121-paper-format';
