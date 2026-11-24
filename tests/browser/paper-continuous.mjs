@@ -59,10 +59,15 @@ try{
    await page.waitForFunction(()=>document.body.classList.contains('paper-mode'));
    assert.equal(await page.locator('.paper-app').getAttribute('data-paper-continuous'),'true','blank new note uses continuous mode');
    assert.ok(await page.locator('.paper-pages').isHidden(),'continuous mode has no page switcher');
-   assert.ok(await page.locator('#paper-page-label').innerText().then(t=>t.includes('กระดาษต่อเนื่อง')));
+   assert.ok(await page.locator('#paper-page-label').innerText().then(t=>t.includes('กระดาษอิสระ')));
    const guide=page.locator('#paper-svg [data-print-boundary="1"]');
+   assert.equal(await guide.count(),0,'guides start hidden');
+   const toggle=page.getByRole('button',{name:'กรอบ A4',exact:true,includeHidden:true});
+   if(mobile && !await toggle.isVisible())await page.locator('#paper-mobile-more').click();
+   await toggle.click();
+   if(mobile && await page.locator('#paper-mobile-more').getAttribute('aria-expanded')==='true')await page.locator('#paper-mobile-more').click();
    assert.ok(await guide.count(),'dashed A4 guide appears after the first sheet');
-   assert.equal(await guide.locator('line').getAttribute('stroke-dasharray'),'11 8');
+   assert.equal(await guide.locator('rect').getAttribute('stroke-dasharray'),'11 8');
 
    // Scroll creates visible blank space without writing new pages to Supabase.
    const initial=await page.locator('#paper-svg').getAttribute('viewBox');
@@ -81,7 +86,7 @@ try{
    // Synthetic PointerEvents cannot acquire native pointer capture.
    const placement=await page.locator('#paper-viewport').evaluate(viewport=>{
     const svg=viewport.querySelector('#paper-svg');
-    const scale=svg.getBoundingClientRect().width/900;
+    const scale=svg.getBoundingClientRect().width/svg.viewBox.baseVal.width;
     viewport.scrollTop=Math.max(0,1450*scale-175);
     const rect=svg.getBoundingClientRect(),v=viewport.getBoundingClientRect();
     const x=rect.left+155*scale,y=rect.top+1450*scale;
