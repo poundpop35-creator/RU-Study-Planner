@@ -693,7 +693,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    stack.value=chosen.length===1?chosen[0].id:'';order.hidden=!chosen.length;
   }
   rulerOptions.hidden=activePanel!=='ruler'||!ruler.active;
-  ribbon.hidden=activePanel!=='text'||!editing;
+  ribbon.hidden=activePanel!=='text'||!editing||!wordMenu.hidden;
   inkBar.hidden=!showInk;
   contextWrap.hidden=[inkOptions,shapeOptions,textOptions,pageOptions,selectOptions,rulerOptions,ribbon].every(el=>el.hidden);
   $('#paper-shape-options').hidden=true;
@@ -972,7 +972,11 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const top=Math.max(b.top+8,Math.min(y,b.top+b.height-h-8));
   wordMenu.style.left=left+'px';wordMenu.style.top=top+'px';menuPosition={x:left,y:top};
  }
- function closeWordMenu(){wordMenu.hidden=true;wordMenuSelection=null;}
+ function closeWordMenu(){
+  wordMenu.hidden=true;wordMenuSelection=null;
+  ribbon.hidden=activePanel!=='text'||!editing;
+  if(!ribbon.hidden&&desktopRibbon.matches)requestAnimationFrame(clampRibbon);
+ }
  function richOffsets(){
   const sel=window.getSelection();
   if(!sel?.rangeCount||!rich.contains(sel.anchorNode)||!rich.contains(sel.focusNode))return null;
@@ -1034,7 +1038,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   ribbon.querySelector('.paper-ribbon-help').textContent=editing?'เลือกคำเพื่อจัดรูปแบบเฉพาะคำ · ไม่เลือก = ทั้งกล่อง':'แตะข้อความเพื่อแก้ · ใช้ ✍ เขียน→ตัวพิมพ์ สำหรับ Apple Pencil';
  }
  function showTextRibbon(){
-  ribbon.hidden=activePanel!=='text'||!editing;
+  ribbon.hidden=activePanel!=='text'||!editing||!wordMenu.hidden;
   textRibbonState();
   if(!ribbon.hidden&&desktopRibbon.matches)requestAnimationFrame(clampRibbon);
  }
@@ -1072,7 +1076,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    b.setAttribute('aria-pressed',String(b.dataset.wordMenuColor.toLowerCase()===ink));
   $('#paper-word-menu-custom').value=ink;
   $('#paper-word-menu-size').value=String(active?.size||editing.object.size);
-  wordMenu.hidden=false;
+  wordMenu.hidden=false;ribbon.hidden=true;
   const el=editing.rich?rich:textarea,rect=el.getBoundingClientRect();
   const box=wordMenu.getBoundingClientRect(),visual=window.visualViewport;
   const visualLeft=visual?.offsetLeft||0,visualTop=visual?.offsetTop||0;
@@ -1352,12 +1356,12 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   richSelection=richOffsets();fitRichBox();textRibbonState();
   clearTimeout(textTimer);textTimer=setTimeout(()=>finishText(true),1200);
  });
-  // Mouse selection opens the floating Word mini toolbar; right-click opens
- // the same menu. On iPad a long-press selection can be completed by touchend.
+  // Normal selection uses the existing text ribbon. Only an explicit right-click
+ // switches to the alternative menu, and never displays both toolbars.
  for(const editor of [textarea,rich]){
   bind(editor,'contextmenu',e=>{if(showWordMenu(e))e.preventDefault();});
-  bind(editor,'mouseup',e=>{if(e.button===0&&!e.sourceCapabilities?.firesTouchEvents)showWordMenu(e);});
-  bind(editor,'touchend',()=>{rememberWord();});
+  bind(editor,'mouseup',e=>{if(e.button===0){closeWordMenu();rememberWord();}});
+  bind(editor,'touchend',()=>{closeWordMenu();rememberWord();});
  }
  bind(wordMenu,'pointerdown',e=>{
   if(editing){rememberWord();formattingControlActive=true;}
@@ -1381,7 +1385,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const button=e.target.closest('button');
   if(!button)return;
   const range=wordMenuSelection;
-  if(button.hasAttribute('data-word-menu-close')){closeWordMenu();return;}
+  if(button.hasAttribute('data-word-menu-close')){restoreMenuSelection();closeWordMenu();textRibbonState();return;}
+  if(button.hasAttribute('data-word-menu-done')){finishText();return;}
   if(!range||!restoreMenuSelection()){closeWordMenu();return;}
   try{
    if(button.dataset.wordMenuPrefix){toggleTextList(button.dataset.wordMenuPrefix);return;}

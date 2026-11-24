@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-groups'); }
+try { await import('./app.js?v=20261124-single-toolbar'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

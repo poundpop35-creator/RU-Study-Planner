@@ -68,6 +68,7 @@ export function paperPage(space,n){return `<section class="paper-app" aria-label
    </div>
    <div class="paper-word-menu-actions">
     <button type="button" data-word-menu-copy>คัดลอก</button>
+    <button type="button" data-word-menu-done>✓ เสร็จสิ้น</button>
     <button type="button" data-word-menu-link>🔗 ลิงก์ / ไฟล์เฉพาะคำ</button>
    </div>
  </div>
