@@ -23,6 +23,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     if(req.method()==='POST'){if(delaySave)await delaySave;const input=req.postDataJSON();if(input.expected_revision!==row.revision)return route.fulfill({status:409,json:{error:'conflict',code:'40001'}});row={revision:row.revision+1,updated_at:new Date().toISOString(),payload:input.new_payload};}
     return route.fulfill({json:row});
    }
+   if(path.startsWith('/document/')){if(req.method()==='POST'){images.set(path,req.postDataBuffer());return route.fulfill({json:{ok:true}});}return route.fulfill({contentType:'application/octet-stream',body:images.get(path)});}
    if(path.startsWith('/image/')){if(req.method()==='POST'){images.set(path,req.postDataBuffer());return route.fulfill({json:{ok:true}});}return route.fulfill({contentType:'image/png',body:images.get(path)||png});}
    return route.fulfill({status:404});
   });
@@ -425,7 +426,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   }
   const beforeCropWidth=picture().w;await click('crop');const crop=page.getByRole('dialog');await crop.getByRole('button',{name:'ปรับขอบซ้าย',exact:true}).press('ArrowRight');await crop.getByRole('button',{name:'เสร็จสิ้น'}).click();
   await wait(()=>images.size===2);await wait(()=>page.locator('#paper-svg image').getAttribute('width').then(w=>Number(w)<beforeCropWidth));await click('save');assert.notEqual(picture().imageId,original.imageId);
-  await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 sample')});
+  await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.concat([Buffer.from('%PDF-1.4 sample'),Buffer.alloc(20*1024*1024-15)])});
   await wait(()=>row.payload.notebook.notes[0].files?.[0]?.name==='lesson.pdf');await page.locator('#paper-files form button').click();
   await click('page-settings');await page.locator('#paper-template').selectOption('dots');await click('save');
   await page.screenshot({path:'test-results/paper-'+name+'.png'});

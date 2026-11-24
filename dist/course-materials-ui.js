@@ -1,6 +1,6 @@
-import {readAttachment,downloadAttachment} from './note-files.js';
-import {openNoteFile} from './file-viewer.js';
-import {materialFor,safeCourseUrl,isCourseCode} from './course-materials.js?v=shared-course-20261120';
+import {readAttachment,downloadAttachment} from './note-files.js?v=20261124-documents20';
+import {openNoteFile} from './file-viewer.js?v=20261124-documents20';
+import {materialFor,safeCourseUrl,isCourseCode} from './course-materials.js?v=20261124-documents20';
 import {escapeHTML as escape} from './core.js?v=20261027c';
 
 export function courseMaterialCount(book,course){
@@ -27,11 +27,11 @@ export function courseMaterialList(book,course){
 export async function uploadSharedCourseFile(space,course,file,onUpdate=()=>{},toast=()=>{}){
  if(!isCourseCode(course))throw Error('เลือกรายวิชาที่ถูกต้องก่อนแนบไฟล์หลัก');
  if(!space.info().canEdit)throw Error('ยังไม่สามารถบันทึกได้ โปรดตรวจการเชื่อมต่อพื้นที่ส่วนตัว');
- const attachment=await readAttachment(file);
+ const attachment=await readAttachment(file,space);
  const book=structuredClone(space.notebook()),items=materialFor(book,course);
  if(items.files.length>=12)throw Error('แนบเอกสารหลักได้ไม่เกิน 12 ไฟล์ต่อวิชา');
  book.courseMaterials={...(book.courseMaterials||{}),[course]:{...items,files:[...items.files,attachment]}};
- book.version=6;
+ book.version=Math.max(book.version,6);
  space.saveNotebook(book);
  onUpdate();
  await space.flush();
@@ -44,7 +44,7 @@ export async function openSharedCourseMaterials(space,course,onUpdate=()=>{},toa
  const modal=document.createElement('dialog');modal.className='paper-sheet-dialog course-materials-dialog';
  modal.innerHTML='<header><div><h2>📚 เอกสารหลัก · '+escape(course)+'</h2><p>ใช้ร่วมกันได้จากทุกโน้ตของวิชานี้ ไม่ต้องแนบซ้ำ</p></div><button type="button" data-course-close aria-label="ปิด">✕</button></header>'+
   '<div class="course-material-body"><div data-course-materials></div><label class="course-material-upload">＋ แนบ PDF / Word / PowerPoint<input type="file" data-course-upload accept=".pdf,.doc,.docx,.ppt,.pptx" hidden></label>'+
-  '<p class="course-material-note">ไฟล์ละไม่เกิน 2 MB และยอดข้อมูลรวมต้องไม่เกินพื้นที่ที่ระบบรองรับ · หากไฟล์ขนาดใหญ่ให้ใช้ลิงก์เอกสารแทน</p>'+
+  '<p class="course-material-note">ไฟล์ละไม่เกิน 20 MB · เก็บเอกสารแยกจากข้อมูลสมุดจด</p>'+
   '<form data-course-link-form><label>ชื่อลิงก์<input name="title" maxlength="160" placeholder="เช่น สไลด์อาจารย์ ครั้งที่ 1" required></label><label>ลิงก์ไฟล์บนเว็บ<input name="url" type="url" placeholder="https://..." required></label><button type="submit">＋ เพิ่มลิงก์</button></form>'+
   '<p class="course-material-status" role="status"></p></div>';
  const status=modal.querySelector('.course-material-status');
@@ -63,7 +63,7 @@ export async function openSharedCourseMaterials(space,course,onUpdate=()=>{},toa
   try{
    const book=structuredClone(space.notebook()),before=materialFor(book,course);
    book.courseMaterials={...(book.courseMaterials||{}),[course]:fn(before)};
-   book.version=6;
+   book.version=Math.max(book.version,6);
    space.saveNotebook(book);
    refresh();onUpdate();
    status.textContent='กำลังบันทึกเอกสารลง Supabase…';
@@ -77,8 +77,8 @@ export async function openSharedCourseMaterials(space,course,onUpdate=()=>{},toa
   if(b.hasAttribute('data-course-close')){modal.close();return;}
   const data=materialFor(space.notebook(),course);
   try{
-   if(b.dataset.coursePreview){const f=data.files.find(f=>f.id===b.dataset.coursePreview);if(f)await openNoteFile(f);}
-   else if(b.dataset.courseDownload){const f=data.files.find(f=>f.id===b.dataset.courseDownload);if(f)downloadAttachment(f);}
+   if(b.dataset.coursePreview){const f=data.files.find(f=>f.id===b.dataset.coursePreview);if(f)await openNoteFile(f,space);}
+   else if(b.dataset.courseDownload){const f=data.files.find(f=>f.id===b.dataset.courseDownload);if(f)await downloadAttachment(f,space);}
    else if(b.dataset.courseRemoveFile){const f=data.files.find(f=>f.id===b.dataset.courseRemoveFile);if(f&&confirm('ลบเอกสารหลัก '+f.name+' จากวิชานี้?'))await update(old=>({...old,files:old.files.filter(x=>x.id!==f.id)}));}
    else if(b.dataset.courseRemoveLink){const l=data.links.find(x=>x.id===b.dataset.courseRemoveLink);if(l&&confirm('ลบลิงก์ '+l.name+' จากวิชานี้?'))await update(old=>({...old,links:old.links.filter(x=>x.id!==l.id)}));}
   }catch(e){status.textContent=e.message;}
@@ -86,7 +86,7 @@ export async function openSharedCourseMaterials(space,course,onUpdate=()=>{},toa
  modal.querySelector('[data-course-upload]').addEventListener('change',async event=>{
   const file=event.target.files?.[0];if(!file)return;
   event.target.disabled=true;
-  try{const f=await readAttachment(file);await update(old=>({...old,files:[...old.files,f]}));}
+  try{status.textContent='กำลังอัปโหลดเอกสาร…';const f=await readAttachment(file,space);await update(old=>({...old,files:[...old.files,f]}));}
   catch(e){status.textContent=e.message;}
   finally{event.target.value='';event.target.disabled=false;}
  });

@@ -1,9 +1,9 @@
 import {webAddress} from './word-links.js';
-import {readAttachment} from './note-files.js';
-export async function chooseWordTarget(label,existing,files){
+import {readAttachment} from './note-files.js?v=20261124-documents20';
+export async function chooseWordTarget(label,existing,files,space){
  const dialog=document.createElement('dialog');
  dialog.className='paper-sheet-dialog';
- dialog.innerHTML='<form><h2>เชื่อมคำกับเว็บหรือไฟล์</h2><blockquote></blockquote><label>ปลายทาง<select name="kind"><option value="url">เว็บไซต์</option><option value="file">ไฟล์ในโน้ตนี้</option><option value="upload">แนบไฟล์ใหม่</option></select></label><label data-kind="url">ลิงก์เว็บไซต์<input name="address" placeholder="https://"></label><label data-kind="file">เลือกไฟล์<select name="existingFile"></select></label><label data-kind="upload">PDF, Word หรือ PowerPoint (ไม่เกิน 2 MB)<input type="file" name="upload" accept=".pdf,.doc,.docx,.ppt,.pptx"></label><p role="status"></p><div class="paper-dialog-actions"><button type="submit">บันทึกลิงก์</button><button type="button" data-remove>ลบลิงก์</button><button type="button" data-cancel>ยกเลิก</button></div></form>';
+ dialog.innerHTML='<form><h2>เชื่อมคำกับเว็บหรือไฟล์</h2><blockquote></blockquote><label>ปลายทาง<select name="kind"><option value="url">เว็บไซต์</option><option value="file">ไฟล์ในโน้ตนี้</option><option value="upload">แนบไฟล์ใหม่</option></select></label><label data-kind="url">ลิงก์เว็บไซต์<input name="address" placeholder="https://"></label><label data-kind="file">เลือกไฟล์<select name="existingFile"></select></label><label data-kind="upload">PDF, Word หรือ PowerPoint (ไม่เกิน 20 MB)<input type="file" name="upload" accept=".pdf,.doc,.docx,.ppt,.pptx"></label><p role="status"></p><div class="paper-dialog-actions"><button type="submit">บันทึกลิงก์</button><button type="button" data-remove>ลบลิงก์</button><button type="button" data-cancel>ยกเลิก</button></div></form>';
  const form=dialog.querySelector('form'),fields=form.elements,status=dialog.querySelector('[role=status]');
  dialog.querySelector('blockquote').textContent=label;
  for(const file of files)fields.existingFile.add(new Option(file.name,file.id));
@@ -20,7 +20,7 @@ export async function chooseWordTarget(label,existing,files){
   try{
    if(fields.kind.value==='url')result={target:{url:webAddress(fields.address.value)}};
    else if(fields.kind.value==='file'){if(!fields.existingFile.value)throw Error('เลือกไฟล์ก่อน');result={target:{fileId:fields.existingFile.value}};}
-   else{const file=fields.upload.files[0];if(!file)throw Error('เลือกไฟล์ก่อน');const attachment=await readAttachment(file);if(!dialog.open)return;result={target:{fileId:attachment.id},attachment};}
+   else{const file=fields.upload.files[0];if(!file)throw Error('เลือกไฟล์ก่อน');status.textContent='กำลังอัปโหลดเอกสาร…';const attachment=await readAttachment(file,space);if(!dialog.open)return;result={target:{fileId:attachment.id},attachment};}
    dialog.close();
   }catch(err){status.textContent=err.message;}finally{submit.disabled=false;}
  };

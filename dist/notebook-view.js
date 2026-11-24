@@ -1,16 +1,17 @@
-import {planRestore,confirmRestore} from './notebook-backup.js?v=20261124-notebook-v2';
-import {paperPage} from './paper-view.js?v=20261124-notebook-v2';
-import {mountPaper,refreshPaper} from './paper-editor.js?v=20261124-notebook-v2';
+import {planRestore,confirmRestore} from './notebook-backup.js?v=20261124-documents20';
+import {paperPage} from './paper-view.js?v=20261124-documents20';
+import {mountPaper,refreshPaper} from './paper-editor.js?v=20261124-documents20';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
 import {courses} from './data.js?v=20261027c';
 import {lessons} from './lessons.js?v=20261027c';
 import {escapeHTML as e,isEnrolled} from './core.js?v=20261027c';
-import {newNote,findNotes,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261124-notebook-v2';
-import {materialFor,isCourseCode} from './course-materials.js?v=shared-course-20261120';
-import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=inline-course-upload-20261120';
-import {openNoteFile} from './file-viewer.js';
+import {newNote,findNotes,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261124-documents20';
+import {materialFor,isCourseCode} from './course-materials.js?v=20261124-documents20';
+import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=20261124-documents20';
+import {openNoteFile} from './file-viewer.js?v=20261124-documents20';
+import {storedDocuments,documentData,attachmentBlob} from './note-files.js?v=20261124-documents20';
 let quickInkId=null;
 let query='',course='',source='',archived=false,reviewing=false,reviewIndex=0,revealed=false,unmount=()=>{};
 const stamps=x=>new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(x));
@@ -40,7 +41,7 @@ async function chooseReplayDate(note){
 export function noteCards(items){return items.length?`<div class="notebook-grid">${items.map(n=>`<article class="note-card"><div class="note-card-top">${n.course?`<span class="badge">${e(n.course)}</span>`:''}${n.pinned?'<span>★ ปักหมุด</span>':''}</div><span class="note-origin ${noteSource(n)}">${NOTE_SOURCES[noteSource(n)]}</span><h2><a class="note-card-link" title="${e(n.title)}" href="#note/${n.id}">${e(n.title)}</a></h2><small>แก้ไข ${stamps(n.updatedAt)} · ${n.paper?n.paper.pages.length+' หน้า · ':''}${referencedImages({notes:[n]}).length} รูป</small><button type="button" class="note-card-edit ${n.replayStudiedAt?'replay-done':'replay-pending'}" style="min-height:44px" aria-haspopup="dialog" data-action="nb-replay-studied" data-id="${n.id}">${n.replayStudiedAt?'☑ ติวย้อนหลังแล้ว · '+studyDateLabel(n.replayStudiedAt):'☐ ยังไม่ติวย้อนหลัง'}</button><button class="note-card-edit" data-action="nb-classify" data-id="${n.id}" aria-label="เปลี่ยนประเภท ${e(n.title)}">แก้วิชา / ครั้งที่</button></article>`).join('')}</div>`:'<section class="panel empty"><h2>พื้นที่สำหรับความเข้าใจของคุณ</h2><p>สร้างโน้ตจากคำบรรยาย ตำรา หรือเรื่องที่ยังสงสัยได้เลย</p><button class="button primary" data-action="nb-new">สร้างโน้ตหน้าแรก</button></section>';}
 export function destroyEditor(){unmount();unmount=()=>{};}
 function download(name,data,type='application/json'){const u=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
-async function exportBook(space){const notebook=structuredClone(space.notebook()),images={};for(const id of referencedImages(notebook)){const b=await space.image(id);images[id]=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b);});}download('ru-study-notebook-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({format:'ru-study-notebook',version:2,notebook,images}));}
+async function exportBook(space){const notebook=structuredClone(space.notebook()),images={};for(const id of referencedImages(notebook)){const b=await space.image(id);images[id]=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b);});}const documents={};for(const file of storedDocuments(notebook))documents[file.id]=await documentData(await attachmentBlob(file,space));download('ru-study-notebook-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({format:'ru-study-notebook',version:2,notebook,images,documents}));}
 export function noteCourseChoices(progress,enrolled){
  return courses.filter(c=>isEnrolled(progress,c)===enrolled);
 }
@@ -78,7 +79,7 @@ export async function notebookAction(action,data,space,progress,render,toast){
   if(action==='nb-course-open-file'){
    const file=materialFor(book,data.course).files.find(f=>f.id===data.fileId);
    if(!file)throw Error('ไม่พบเอกสารที่เลือก');
-   await openNoteFile(file);return;
+   await openNoteFile(file,space);return;
   }
   if(action==='nb-course-materials'){
    await openSharedCourseMaterials(space,data.course,()=>render(true),toast);return;
@@ -133,7 +134,7 @@ export async function notebookAction(action,data,space,progress,render,toast){
     const a4=document.querySelector('.paper-app [data-paper="print-pages"]');
     if(a4)a4.click();else window.print();
    }
-  if(action==='nb-export'){toast('กำลังรวมโน้ตและรูปภาพ…');await exportBook(space);toast('ส่งออกโน้ตและรูปครบแล้ว');}
+  if(action==='nb-export'){toast('กำลังรวมโน้ต รูปภาพ และเอกสาร…');await exportBook(space);toast('ส่งออกโน้ต รูป และเอกสารครบแล้ว');}
   if(action==='nb-import-legacy'){const existing=new Set(book.notes.map(x=>x.id));book.notes.push(...legacyNotes(progress,lessons).filter(x=>!existing.has(x.id)).map(x=>({...x,...sessionDetails(x.course,1)})));space.saveNotebook(book);render();toast('คัดลอกแล้ว บันทึกเดิมยังอยู่ครบ');}
  }catch(err){toast(err.message||'ดำเนินการไม่สำเร็จ');}
 }
@@ -141,7 +142,7 @@ export function notebookSearch(space,value){query=value;document.getElementById(
 export function notebookFilter(value,key='course'){if(key==='source'){if(value===''||Object.hasOwn(NOTE_SOURCES,value))source=value;}else course=value;}
 export async function importNotebook(file,space){if(file.size>100*1024*1024)throw Error('ไฟล์สำรองเกิน 100 MB');const data=JSON.parse(await file.text());const baseline=JSON.stringify(space.notebook()),plan=planRestore(data,space.notebook());
  if(!await confirmRestore(plan)||(!plan.added&&!plan.addedMaterials))return;
- await space.restoreNotebook(plan,baseline,data.images||{});}
+ await space.restoreNotebook(plan,baseline,data.images||{},data.documents||{});}
 
 export function notePage(space,id){
  const n=space.notebook().notes.find(x=>x.id===id);

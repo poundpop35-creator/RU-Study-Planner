@@ -1,4 +1,4 @@
-import {validateNotebook,referencedImages} from './notebook-core.js?v=20261124-notebook-v2';
+import {validateNotebook,referencedImages} from './notebook-core.js?v=20261124-documents20';
 export function planRestore(data,current){
  let raw;
  if(data.format==='ru-study-notebook')raw=data.version===2?data.notebook:data.version===1?data.snapshot?.notebook:null;

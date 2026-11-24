@@ -3,13 +3,13 @@ import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
 import {PAGE_W,PAGE_H,MAX_CANVAS_HEIGHT,pageHeight,continuousContentHeight,toContinuousPaper,toPagedPaper,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS} from './paper-core.js?v=20261124-notebook-v2';
 import {printBoundaryGuides,pageSVG,printableSheets,objectSVG,esc} from './paper-render.js?v=20261124-notebook-v2';
 import {imageHandles,resizeImage,cropImage} from './paper-images.js';
-import {readAttachment,downloadAttachment} from './note-files.js';
+import {readAttachment,downloadAttachment} from './note-files.js?v=20261124-documents20';
 import {replaceLink,moveLinks} from './word-links.js';
 import {textSize,textColor,formattedTextHTML,normalizeMarks,toggleTextFormat,applyTextFormat,moveMarks} from './paper-rich-text.js?v=20261121-paper-format';
 import {applyListPrefix} from './paper-list-prefix.js?v=20261123-list-v1';
-import {chooseWordTarget} from './word-link-dialog.js';
-import {openNoteFile} from './file-viewer.js';
-import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
+import {chooseWordTarget} from './word-link-dialog.js?v=20261124-documents20';
+import {openNoteFile} from './file-viewer.js?v=20261124-documents20';
+import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=20261124-documents20';
 import {makeShape,resizeShape,shapeAngle,shapeContains,eraserTargetHit,isJoinable,snapLinePoint,snapMovedLine} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {recognizeHeldShape,recognizeDrawnShape,diagramSegments,hasBranchJunction,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261123-shapes-eraser-v4';
 import {mountTableEditor} from './paper-table-ui.js?v=20261124-notebook-v2';
@@ -1246,7 +1246,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   const findTarget=()=>page().objects.find(o=>o.id===range.id&&o.text===range.text);
   const object=findTarget();if(!object)return;
   const old=object.links?.find(link=>link.start<range.end&&link.end>range.start);
-  const result=await chooseWordTarget(range.text.slice(range.start,range.end),old,currentNote().files||[]);
+  const result=await chooseWordTarget(range.text.slice(range.start,range.end),old,currentNote().files||[],space);
   if(!result||closed)return;
   if(!findTarget()||pageId!==range.pageId)throw Error('ข้อความเปลี่ยนแล้ว กรุณาเลือกคำอีกครั้ง');
   if(result.attachment)updateFiles(files=>[...files,result.attachment]);
@@ -1756,7 +1756,7 @@ bind(rich,'keyup',()=>{
   if(!['text','select','hand'].includes(tool)||multiSelect||e.shiftKey){e.preventDefault();return;}
   if(link.dataset.wordFile){
    const file=currentNote()?.files?.find(f=>f.id===link.dataset.wordFile);
-   if(file)openNoteFile(file).catch(err=>say(err.message,true));else say('ไฟล์แนบนี้ถูกลบแล้ว',true);
+   if(file)openNoteFile(file,space).catch(err=>say(err.message,true));else say('ไฟล์แนบนี้ถูกลบแล้ว',true);
   }
  });
  bind(svg,'pointerdown',pointerDown);bind(svg,'pointermove',pointerMove);bind(svg,'pointerup',pointerUp);bind(svg,'pointercancel',pointerUp);
@@ -1806,12 +1806,12 @@ bind(rich,'keyup',()=>{
  bind($('#paper-doc-file'),'change',async e=>{
   const input=e.target,file=input.files[0];if(!file)return;
   input.disabled=true;const status=$('#paper-file-status');
-  try{const item=await readAttachment(file);if(closed)return;updateFiles(files=>[...files,item]);await space.flush();status.textContent='บันทึกไฟล์แนบแล้ว';}
+  try{status.textContent='กำลังอัปโหลดเอกสาร…';const item=await readAttachment(file,space);if(closed)return;updateFiles(files=>[...files,item]);await space.flush();status.textContent='บันทึกไฟล์แนบแล้ว';}
   catch(err){status.textContent=err.message;}finally{input.value='';input.disabled=false;}
  });
  bind($('#paper-file-list'),'click',async e=>{
   const {download,remove}=e.target.dataset,file=currentNote()?.files?.find(f=>f.id===(download||remove));if(!file)return;
-  try{if(download)downloadAttachment(file);else {
+  try{if(download)await downloadAttachment(file,space);else {
    const dialog=$('#paper-files');dialog.close();
    const confirmed=await confirmNoteDelete(file.name,'ไฟล์แนบ');
    if(closed)return;

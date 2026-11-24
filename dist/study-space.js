@@ -1,10 +1,11 @@
-import {createSharedClient,legacyKeys,migrateLegacy} from './shared-space.js?v=20261124-notebook-v2';
+import {createSharedClient,legacyKeys,migrateLegacy} from './shared-space.js?v=20261124-documents20';
 import {accountClient,lookupAccount,sessionKey} from './notebook-account.js';
-import {createPersonalClient,personalKey} from './personal-client.js?v=20261116-account';
+import {createPersonalClient,personalKey} from './personal-client.js?v=20261124-documents20';
 import {supabaseConfig as config} from './supabase-config.js?v=20261027c';
 import {freshState,validateState} from './core.js?v=balanced-friday-replays-20261120';
-import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261124-notebook-v2';
+import {freshNotebook,validateEnvelope,validateNotebook,referencedImages} from './notebook-core.js?v=20261124-documents20';
 import {getImage,putImage,newImageId} from './image-store.js?v=20261027c';
+import {attachmentPath,storedDocuments,documentFromBackup,validateFiles} from './note-files.js?v=20261124-documents20';
 export const workspaceKey=id=>'ru-study-workspace.v1:'+id;
 const scriptLoads=new Map();
 export function loadScript(src){if(!scriptLoads.has(src))scriptLoads.set(src,new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>{scriptLoads.delete(src);reject(Error('โหลดเครื่องมือไม่สำเร็จ กรุณาลองอีกครั้ง'));};document.head.append(s);}));return scriptLoads.get(src);}
@@ -108,6 +109,7 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
    }else await api.image(id);
    checkCurrent();
   }
+  for(const file of storedDocuments(next.notebook)){await api.document(file);checkCurrent();}
   payload=next;changed();onProgress(payload.progress);onChange();await api.flush();
  }
  const api={
@@ -190,7 +192,21 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
    catch(err){setStatus('ส่งรูปเข้า Supabase ไม่สำเร็จ · '+message(err),'error');throw err;}
   },
   async image(id){requireAccount();const ticket=epoch,uid=user.id;let blob;try{blob=await imageStore.get(scope,id);}catch{}if(!blob){const {data,error}=await client.storage.from('ru-study-notes').download(uid+'/'+id);if(error)throw error;if(ticket!==epoch)throw Error('บัญชีเปลี่ยน');blob=data;try{await imageStore.put(scope,id,blob);}catch{}}return blob;},
-  async restoreNotebook(plan,baseline,images){
+  async uploadDocument(file,blob){
+   requireAccount();const ticket=epoch;const [item]=validateFiles([file]);
+   if(item.storage!=='document'||blob.size!==item.size||!client.documents)throw Error('ไฟล์เอกสารไม่ถูกต้อง');
+   const {error}=await client.documents.upload(attachmentPath(item),blob);if(error)throw error;
+   if(ticket!==epoch||disposed)throw Error('พื้นที่เปลี่ยน กรุณาแนบไฟล์อีกครั้ง');
+  },
+  async document(file){
+   requireAccount();const ticket=epoch;const [item]=validateFiles([file]);
+   if(item.storage!=='document'||!client.documents)throw Error('ไม่พบพื้นที่เก็บเอกสาร');
+   const {data,error}=await client.documents.download(attachmentPath(item));if(error)throw error;
+   if(ticket!==epoch||disposed)throw Error('พื้นที่เปลี่ยน กรุณาเปิดไฟล์อีกครั้ง');
+   if(data.size!==item.size)throw Error('ขนาดเอกสารไม่ตรงกับข้อมูลที่บันทึก');
+   return data;
+  },
+  async restoreNotebook(plan,baseline,images,documents={}){
    await api.flush();requireAccount();
    const uid=user.id,ticket=epoch;
    const guard=()=>{requireAccount();if(ticket!==epoch||conflict||baseline!==JSON.stringify(payload.notebook))throw Error('สมุดจดเปลี่ยนแล้ว กรุณาตรวจรายการอีกครั้ง');};
@@ -202,6 +218,13 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
     if(typeof value!=='string'||value.length>7100000||!/^data:image\/(png|jpeg|webp|gif);base64,/.test(value))throw Error('รูปในสำเนาไม่ถูกต้อง');
     const blob=await (await fetch(value)).blob();newImageId(blob);guard();
     await upload(id,blob,uid);guard();uploaded.add(id);
+   }
+   const previous=new Set(storedDocuments(payload.notebook).map(f=>f.id));
+   for(const file of storedDocuments(plan.next)){
+    if(previous.has(file.id))continue;
+    if(Object.hasOwn(documents,file.id))await api.uploadDocument(file,documentFromBackup(file,documents[file.id]));
+    else await api.document(file);
+    guard();
    }
    guard();api.saveNotebook(plan.next);onChange();await api.flush();
   },
