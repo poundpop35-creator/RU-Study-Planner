@@ -1,13 +1,13 @@
-import {planRestore,confirmRestore} from './notebook-backup.js?v=20261124-documents20';
-import {paperPage} from './paper-view.js?v=20261124-documents20';
-import {mountPaper,refreshPaper} from './paper-editor.js?v=20261124-documents20';
+import {planRestore,confirmRestore} from './notebook-backup.js?v=20261124-groups';
+import {paperPage} from './paper-view.js?v=20261124-groups';
+import {mountPaper,refreshPaper} from './paper-editor.js?v=20261124-groups';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
 import {courses} from './data.js?v=20261027c';
 import {lessons} from './lessons.js?v=20261027c';
 import {escapeHTML as e,isEnrolled} from './core.js?v=20261027c';
-import {newNote,findNotes,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261124-documents20';
+import {newNote,findNotes,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261124-groups';
 import {materialFor,isCourseCode} from './course-materials.js?v=20261124-documents20';
 import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=20261124-documents20';
 import {openNoteFile} from './file-viewer.js?v=20261124-documents20';

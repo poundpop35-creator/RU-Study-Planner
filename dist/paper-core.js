@@ -58,6 +58,7 @@ export function validatePaper(value){
      throw Error('วัตถุบนกระดาษไม่ถูกต้อง');
    ids.add(o.id);
    const out={id:o.id,type:o.type,x:o.x,y:o.y,w:o.w,h:o.h};
+   if(o.groupId!==undefined){if(!idOK(o.groupId))throw Error('รหัสกลุ่มวัตถุไม่ถูกต้อง');out.groupId=o.groupId;}
    if(o.type==='stroke'){
     if(!['pen','highlight'].includes(o.tool)||!color(o.color)||!num(o.width,1,40)||!Array.isArray(o.points)||!o.points.length)throw Error('เส้นปากกาไม่ถูกต้อง');points+=o.points.length;if(points>120000)throw Error('ลายมือในโน้ตนี้เต็มแล้ว กรุณาสร้างโน้ตใหม่');
     out.tool=o.tool;out.color=o.color;out.width=o.width;out.points=o.points.map(p=>{if(!Array.isArray(p)||p.length!==3||!num(p[0],0,1)||!num(p[1],0,1)||!num(p[2],0,1))throw Error('จุดปากกาไม่ถูกต้อง');return [...p];});
@@ -125,6 +126,7 @@ export function toPagedPaper(source){
  const old=validatePaper(source);
  if(old.version===1)return old;
  const sheet=old.pages[0],sections=sheet.sections||[];
+ const rowsByGroup=new Map();for(const o of sheet.objects)if(o.groupId){const row=Math.max(0,Math.floor(o.y/PAGE_H));if(rowsByGroup.has(o.groupId)&&rowsByGroup.get(o.groupId)!==row)throw Error('กลุ่มวัตถุคร่อมหน้า A4 กรุณายกเลิกกลุ่มหรือจัดให้อยู่หน้าเดียวกัน');rowsByGroup.set(o.groupId,row);}
  const pages=Array.from({length:Math.max(1,sections.length)},(_,i)=>({
   id:sections[i]?.id||sheet.id,template:sections[i]?.template||sheet.template,objects:[]
  }));
@@ -142,6 +144,39 @@ export function strokeObject(samples,style){
  samples=samples.filter((p,i)=>!i||p[0]!==samples[i-1][0]||p[1]!==samples[i-1][1]);
  const xs=samples.map(p=>p[0]),ys=samples.map(p=>p[1]),x=Math.min(...xs),y=Math.min(...ys),w=Math.max(1,Math.max(...xs)-x),h=Math.max(1,Math.max(...ys)-y);
  return {id:uid(),type:'stroke',x,y,w,h,...style,points:samples.map(p=>[Math.round((p[0]-x)/w*10000)/10000,Math.round((p[1]-y)/h*10000)/10000,Math.round(p[2]*100)/100])};
+}
+// Groups are flat, page-local membership; all original objects remain editable.
+export function expandSelection(objects,ids){
+ const wanted=new Set(ids),groups=new Set(objects.filter(o=>wanted.has(o.id)&&o.groupId).map(o=>o.groupId));
+ return new Set(objects.filter(o=>wanted.has(o.id)||groups.has(o.groupId)).map(o=>o.id));
+}
+export function selectionGroupState(objects,ids){
+ const chosen=objects.filter(o=>ids.has(o.id)),groups=new Set(chosen.map(o=>o.groupId).filter(Boolean));
+ const single=chosen.length>1&&groups.size===1&&chosen.every(o=>o.groupId)&&objects.filter(o=>o.groupId===chosen[0].groupId).length===chosen.length;
+ return {canGroup:chosen.length>1&&!single,canUngroup:groups.size>0,single:!!single};
+}
+export function changeObjectGroups(objects,ids,groupId){
+ const expanded=expandSelection(objects,ids);
+ return objects.map(o=>{
+  if(!expanded.has(o.id))return o;
+  const next={...o};if(groupId)next.groupId=groupId;else delete next.groupId;return next;
+ });
+}
+export function cloneGroupedObjects(objects,dx=0,dy=0){
+ const groups=new Map();return objects.map(o=>{
+  const next={...copy(o),id:uid(),x:o.x+dx,y:o.y+dy};
+  if(o.groupId){if(!groups.has(o.groupId))groups.set(o.groupId,uid());next.groupId=groups.get(o.groupId);}
+  return next;
+ });
+}
+export function scaleGroupObject(o,box,f){
+ const next={...o,x:box.x+(o.x-box.x)*f,y:box.y+(o.y-box.y)*f,w:Math.max(1,o.w*f),h:Math.max(1,o.h*f)};
+ if(o.type==='text'){
+  const size=n=>Math.max(10,Math.min(96,Math.round(n*f)));
+  next.size=size(o.size);next.h=Math.max(next.h,next.size*1.5);
+  if(o.marks)next.marks=o.marks.map(m=>m.size===undefined?{...m}:{...m,size:size(m.size)});
+ }else if(o.type==='stroke'||o.type==='shape')next.width=Math.max(1,Math.min(40,o.width*f));
+ return next;
 }
 export function bounds(objects){if(!objects.length)return null;const x=Math.min(...objects.map(o=>o.x)),y=Math.min(...objects.map(o=>o.y));return {x,y,w:Math.max(...objects.map(o=>o.x+o.w))-x,h:Math.max(...objects.map(o=>o.y+o.h))-y};}
 export function contains(p,b,pad=0){return p.x>=b.x-pad&&p.x<=b.x+b.w+pad&&p.y>=b.y-pad&&p.y<=b.y+b.h+pad;}
