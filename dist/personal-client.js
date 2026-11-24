@@ -13,8 +13,8 @@ export function createPersonalClient({storage,accountKey,location=globalThis.loc
  if(!remembered)history?.replaceState?.(null,'',(location?.pathname||'/')+(location?.search||'')+'#space='+key);
  const base=(location?.origin||'')+(location?.pathname||'/');
  const access=()=>({url:base+'#space='+key,remembered});
- async function request(path,{body,method='GET',type='application/json',binary=false}={}){
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+ async function request(path,{body,method='GET',type='application/json',binary=false,timeout=15000}={}){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
   try{
    const response=await fetcher(config.url+'/functions/v1/personal-study'+path,{method,headers:{apikey:config.publishableKey,'x-study-key':key,...(body!==undefined?{'Content-Type':type}:{})},body:body===undefined?undefined:type==='application/json'?JSON.stringify(body):body,signal:controller.signal});
    if(!response.ok){const detail=await response.json().catch(()=>({}));return {error:{message:detail.error||'เชื่อมต่อ Supabase ไม่สำเร็จ',code:detail.code,statusCode:String(response.status)}};}
@@ -30,6 +30,10 @@ export function createPersonalClient({storage,accountKey,location=globalThis.loc
   },
   from(){return {select:()=>({eq:()=>({maybeSingle:()=>request('/workspace')})})};},
   rpc(_name,body){return request('/workspace',{method:'POST',body});},
+  documents:{
+   upload(path,body){return request('/document/'+path,{method:'POST',body,type:'application/octet-stream',timeout:120000});},
+   download(path){return request('/document/'+path,{binary:true,timeout:120000});}
+  },
   storage:{from:()=>({
    upload(path,body){return request('/image/'+path.split('/').pop(),{method:'POST',body,type:body.type});},
    download(path){return request('/image/'+path.split('/').pop(),{binary:true});}

@@ -1,4 +1,4 @@
-import {downloadAttachment} from './note-files.js';
+import {downloadAttachment,attachmentBlob} from './note-files.js?v=20261124-documents20';
 
 // Read only Word document XML or PowerPoint slides, with bounded inflation.
 async function officeParts(bytes,word){
@@ -30,15 +30,16 @@ async function officeParts(bytes,word){
  if(!parts.length)throw Error();return parts.sort((a,b)=>a.number-b.number);
 }
 
-export async function openNoteFile(file){
+export async function openNoteFile(file,space){
+ const blob=await attachmentBlob(file,space);
  const dialog=document.createElement('dialog');dialog.className='paper-sheet-dialog paper-file-view';
  dialog.innerHTML='<header><h2></h2><button type="button" data-close>ปิด</button></header><div class="file-content"></div><button type="button" data-download>ดาวน์โหลดไฟล์ต้นฉบับ</button>';
  const content=dialog.querySelector('.file-content');
  dialog.querySelector('h2').textContent=file.name;dialog.querySelector('[data-close]').onclick=()=>dialog.close();
- dialog.querySelector('[data-download]').onclick=()=>downloadAttachment(file);
+ dialog.querySelector('[data-download]').onclick=()=>downloadAttachment(file,space).catch(err=>{content.textContent=err.message;});
  let url;dialog.onclose=()=>{dialog.remove();if(url)URL.revokeObjectURL(url);};
  document.body.append(dialog);dialog.showModal();
- const bytes=Uint8Array.from(atob(file.data),c=>c.charCodeAt(0)),ext=file.name.split('.').pop().toLowerCase();
+ const bytes=new Uint8Array(await blob.arrayBuffer()),ext=file.name.split('.').pop().toLowerCase();
  try{
   if(ext==='pdf'&&new TextDecoder().decode(bytes.subarray(0,5))==='%PDF-'){
    url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));const frame=document.createElement('iframe');

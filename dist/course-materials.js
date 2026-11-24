@@ -1,4 +1,4 @@
-import {validateFiles} from './note-files.js';
+import {validateFiles} from './note-files.js?v=20261124-documents20';
 
 export const isCourseCode=value=>typeof value==='string'&&/^POL\d{4}$/.test(value);
 

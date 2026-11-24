@@ -50,6 +50,22 @@ export function createHandler(admin){return async req=>{
    const {data,error}=await table().update({payload:new_payload,revision:expected_revision+1,updated_at:new Date().toISOString()}).eq('id',space.id).eq('revision',expected_revision).select('revision,updated_at').maybeSingle();
    if(error)throw error;if(!data)return json({error:'มีข้อมูลใหม่จากอีกเครื่อง',code:'40001'},409);return json(data);
   }
+  if(route.startsWith('/document/')){
+   const id=route.slice(10);
+   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(pdf|doc|docx|ppt|pptx)$/.test(id))return json({error:'ชื่อเอกสารไม่ถูกต้อง'},400);
+   const bucket=admin.storage.from('ru-study-personal-documents'),path=space.id+'/'+id;
+   if(req.method==='POST'){
+    if(req.headers.get('content-type')!=='application/octet-stream')return json({error:'ชนิดข้อมูลไม่ถูกต้อง'},415);
+    const bytes=await limitedBody(req,20971520);if(!bytes.length)return json({error:'ไฟล์เอกสารว่าง'},400);
+    const {error}=await bucket.upload(path,bytes,{contentType:'application/octet-stream',upsert:false});
+    if(error&&!['409','Duplicate'].includes(String(error.statusCode||error.error))&&!/already exists|duplicate/i.test(error.message||''))throw error;
+    return json({ok:true});
+   }
+   if(req.method==='GET'){
+    const {data,error}=await bucket.download(path);if(error)return json({error:'ไม่พบเอกสารในพื้นที่เรียนนี้'},404);
+    return new Response(data,{headers:{...cors,'Content-Type':'application/octet-stream','Content-Disposition':'attachment'}});
+   }
+  }
   if(route.startsWith('/image/')){
    const id=route.slice(7);if(!imagePattern.test(id))return json({error:'ชื่อรูปไม่ถูกต้อง'},400);
    const bucket=admin.storage.from('ru-study-personal-notes'),path=space.id+'/'+id;
