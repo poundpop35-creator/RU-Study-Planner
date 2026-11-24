@@ -159,7 +159,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    layer.innerHTML=gesture.snap?objectSVG(gesture.snap,images):objectSVG(strokeObject(gesture.points,{tool:gesture.tool,color:gesture.color,width:gesture.width}),images);
    return;
   }
-  if(!editing){selected=selectIds(selected);if(tool==='select'&&selected.size)activePanel='select';}
+  if(!editing){selected=selectIds(selected);if(tool==='select'&&selected.size&&activePanel==='text')activePanel='select';}
   const signature=[...selected].sort().join('|');
   if(signature!==lastSelectionSignature){lastSelectionSignature=signature;}
   const p=page();if(model.version===2&&cachedPage!==p){const end=p.objects.reduce((v,o)=>Math.max(v,o.x+o.w),0);virtualWidth=Math.min(PAGE_W*250,Math.max(virtualWidth,(Math.ceil(end/PAGE_W)+1)*PAGE_W));sizing();}if(model.version===2&&virtualHeight<Math.min(MAX_CANVAS_HEIGHT,pageHeight(p)+PAGE_H)){
