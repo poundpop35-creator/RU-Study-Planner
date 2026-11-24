@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-keyboard'); }
+try { await import('./app.js?v=20261124-direct-style'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

@@ -1609,3 +1609,35 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
  .paper-app .paper-selection-tools .paper-direct-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));flex:1 0 100%!important;width:100%;gap:3px}
  .paper-app .paper-direct-actions button{padding:0 2px;min-width:0;font-size:11px;min-height:44px}
 }
+
+/* Compact, labeled object tools. Stroke and fill are directly editable, not hidden in a dialog. */
+.paper-app .paper-selection-tools{--control-size:34px;gap:5px!important;padding:6px 8px!important;justify-content:flex-start!important;align-items:center!important}
+.paper-app .paper-selection-tools .paper-direct-actions{display:flex;align-items:center;flex-wrap:wrap;gap:5px;flex:1 1 auto!important;flex-basis:auto!important;max-width:100%;min-width:0;white-space:normal!important}
+.paper-app .paper-command-cluster{display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap;min-width:0;padding-right:5px;border-right:1px solid #e3e8f0}
+.paper-app .paper-command-cluster:last-child{border:0;padding-right:0}
+.paper-app .paper-cluster-label{font-size:11px;color:#64748b;font-weight:650;padding:0 3px}
+.paper-app .paper-direct-actions button{padding-inline:6px;font-size:12px;border:1px solid #e0e6ef;background:#f8fafc;border-radius:7px}
+.paper-app .paper-direct-actions button:disabled{opacity:.42}
+.paper-app .paper-selected-paint{display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:4px 0;max-width:100%;white-space:normal!important}
+.paper-app .paper-selected-paint[hidden],.paper-app .paper-fill-tools[hidden],.paper-app .paper-paint-field[hidden]{display:none!important}
+.paper-app .paper-fill-tools,.paper-app .paper-paint-field{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:12px;font-weight:650;color:#334155}
+.paper-app .paper-paint-field input[type=color]{box-sizing:border-box;width:35px!important;min-width:35px!important;height:34px!important;min-height:34px!important;padding:3px!important;border:1px solid #cbd5e1;border-radius:7px;background:white;cursor:pointer}
+.paper-app .paper-paint-field input[type=number]{width:3.4em!important;min-width:0!important;padding:0 3px;text-align:center}
+.paper-app .paper-selection-tools .paper-shape-selection,.paper-app .paper-selection-tools .paper-shape-rotation{flex-wrap:wrap!important;max-width:100%;min-width:0;white-space:normal!important}
+.paper-app .paper-selection-tools .paper-shape-selection[hidden]{display:none!important}
+@media screen and (min-width:901px) and (pointer:fine){
+ .paper-app .paper-selection-tools{max-width:min(790px,calc(100vw - 24px))!important;width:max-content!important;max-height:calc(100dvh - 24px)!important;overflow:auto!important}
+ .paper-app .paper-selection-tools .paper-selected-paint{flex-basis:100%!important;border-top:1px solid #e8edf3}
+ .paper-app .paper-selection-tools .paper-shape-selection{flex:0 1 auto!important}
+}
+@media screen and (pointer:coarse){
+ .paper-app .paper-selection-tools{--control-size:44px}
+ .paper-app .paper-paint-field input[type=color]{width:44px!important;height:44px!important}
+}
+@media screen and (max-width:720px){
+ .paper-app .paper-selection-tools .paper-direct-actions{display:flex;flex-basis:100%!important}
+ .paper-app .paper-selection-tools .paper-selected-paint{flex-basis:100%!important}
+ .paper-app .paper-command-cluster{padding-right:2px}
+ .paper-app .paper-cluster-label{font-size:10px}
+ .paper-app .paper-selection-tools{max-height:min(37dvh,280px);overflow:auto!important}
+}
