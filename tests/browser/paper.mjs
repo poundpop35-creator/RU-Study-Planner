@@ -357,6 +357,25 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.equal(await page.locator('#paper-selected-count').innerText(),'กลุ่ม · 2');
    await click('ungroup');await click('save');
    assert.ok(!row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.groupId));
+   const count=()=>row.payload.notebook.notes[0].paper.pages[0].objects.length;
+   const initialCount=count();
+   await page.keyboard.press('Control+a');
+   assert.equal(await page.locator('#paper-selected-count').innerText(),String(initialCount));
+   await page.evaluate(()=>{
+    const data=new DataTransfer();
+    document.dispatchEvent(new ClipboardEvent('copy',{bubbles:true,cancelable:true,clipboardData:data}));
+    document.dispatchEvent(new ClipboardEvent('paste',{bubbles:true,cancelable:true,clipboardData:data}));
+   });
+   await click('save');assert.equal(count(),initialCount*2,'copy and paste selected objects');
+   await page.keyboard.press('Control+z');await click('save');assert.equal(count(),initialCount,'keyboard undo removes pasted objects');
+   await page.keyboard.press('Control+y');await click('save');assert.equal(count(),initialCount*2,'keyboard redo restores pasted objects');
+   await page.keyboard.press('Control+z');await click('save');assert.equal(count(),initialCount);
+   await page.evaluate(()=>{
+    const data=new DataTransfer();data.setData('text/plain','ข้อความจากคลิปบอร์ด');
+    document.dispatchEvent(new ClipboardEvent('paste',{bubbles:true,cancelable:true,clipboardData:data}));
+   });
+   await click('save');assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.text==='ข้อความจากคลิปบอร์ด'));
+   await page.keyboard.press('Control+z');await click('save');assert.equal(count(),initialCount);
   }
   assert.ok(await page.locator('#paper-toolbar-more').evaluate(el=>!el.open),'extra tools should start folded');
   assert.ok(await page.locator('#paper-width').isHidden(),'pen size cannot obstruct the page while menu is folded');
