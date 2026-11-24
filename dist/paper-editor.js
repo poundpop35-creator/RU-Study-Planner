@@ -1,8 +1,8 @@
 import {paperColors} from './paper-colors.js?v=20261124-color-presets';
 import {notebookHistory} from './paper-page-history.js';
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
-import {PAGE_W,PAGE_H,MAX_CANVAS_HEIGHT,pageHeight,continuousContentHeight,toContinuousPaper,toPagedPaper,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS,expandSelection,selectionGroupState,changeObjectGroups,cloneGroupedObjects,scaleGroupObject} from './paper-core.js?v=20261124-groups';
-import {printBoundaryGuides,pageSVG,printableSheets,objectSVG,esc} from './paper-render.js?v=20261124-groups';
+import {PAGE_W,PAGE_H,MAX_CANVAS_HEIGHT,pageHeight,continuousContentHeight,toContinuousPaper,toPagedPaper,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS,expandSelection,selectionGroupState,changeObjectGroups,cloneGroupedObjects,scaleGroupObject} from './paper-core.js?v=20261124-text-border';
+import {printBoundaryGuides,pageSVG,printableSheets,objectSVG,esc} from './paper-render.js?v=20261124-text-border';
 import {imageHandles,resizeImage,cropImage} from './paper-images.js';
 import {readAttachment,downloadAttachment} from './note-files.js?v=20261124-documents20';
 import {replaceLink,moveLinks} from './word-links.js';
@@ -236,7 +236,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    syncPaint();
    $('#paper-selected-text-paint').hidden=!visible.some(o=>selected.has(o.id)&&o.type==='text');
    if(document.activeElement!==$('#paper-selected-text-color'))$('#paper-selected-text-color').value=globalPicker.value;
-   syncQuickColors();
+   syncTextBorder();syncQuickColors();
    const shapePanel=$('#paper-shape-selection');shapePanel.hidden=!singleShape;
    if(singleShape){$('#paper-selected-shape').value=singleShape.kind;$('#paper-selected-line-style').value=singleShape.dash||singleShape.lineStyle||'solid';const angleInput=$('#paper-shape-angle');if(document.activeElement!==angleInput)angleInput.value=String(shapeAngle(singleShape.angle));}
   const linkButton=$('[data-paper="image-link"]'),openLink=$('#paper-open-link');
@@ -2227,7 +2227,7 @@ bind(rich,'keyup',()=>{
   const box=document.createElement('div');box.className='paper-quick-color-field';
   label.before(box);box.append(label);label.title='เลือกสีเอง';
   const swatches=document.createElement('div');swatches.className='paper-quick-swatches';swatches.setAttribute('role','group');swatches.setAttribute('aria-label',input.getAttribute('aria-label')+' · สีสำเร็จรูป');
-  box.prepend(swatches);
+  box.append(swatches);
   for(const [name,value] of paperColors){
    const button=document.createElement('button');button.type='button';button.className='paper-quick-swatch';button.dataset.quickColor=value;button.style.setProperty('--quick-ink',value);
    button.title=name;button.setAttribute('aria-label',input.getAttribute('aria-label')+' · '+name);button.setAttribute('aria-pressed','false');swatches.append(button);
@@ -2239,13 +2239,36 @@ bind(rich,'keyup',()=>{
  function syncQuickColors(){
   for(const box of root.querySelectorAll('.paper-quick-color-field')){
    const input=box.querySelector('input[type=color]');if(!input)continue;
-   const noFill=input.id==='paper-selected-fill-color'&&$('#paper-selected-no-fill').getAttribute('aria-pressed')==='true';
+   const noFill=(input.id==='paper-selected-fill-color'&&$('#paper-selected-no-fill').getAttribute('aria-pressed')==='true')||(input.id==='paper-text-border-color'&&!textTargets().some(o=>o.border));
    for(const button of box.querySelectorAll('[data-quick-color]'))button.setAttribute('aria-pressed',String(!noFill&&input.value.toLowerCase()===button.dataset.quickColor));
   }
  }
  const selectedTextPicker=$('#paper-selected-text-color');
+ const borderColor=$('#paper-text-border-color'),borderWidth=$('#paper-text-border-width'),borderStyle=$('#paper-text-border-style'),borderToggle=$('#paper-text-border-toggle');
+ const textTargets=()=>page().objects.filter(o=>selected.has(o.id)&&o.type==='text');
+ const defaultBorder=()=>({color:'#172033',width:1,style:'solid'});
+ function syncTextBorder(){
+  const targets=textTargets(),b=targets.find(o=>o.border)?.border||defaultBorder();
+  if(document.activeElement!==borderColor)borderColor.value=b.color;
+  if(document.activeElement!==borderWidth)borderWidth.value=b.width;
+  if(document.activeElement!==borderStyle)borderStyle.value=b.style;
+  borderToggle.setAttribute('aria-pressed',String(!!targets.length&&targets.every(o=>o.border)));
+  $('#paper-text-border-none').disabled=!targets.some(o=>o.border);
+ }
+ function setTextBorder(patch){
+  change(p=>p.objects.forEach(o=>{
+   if(o.type!=='text'||!selected.has(o.id))return;
+   if(patch===null)delete o.border;
+   else o.border={...(o.border||defaultBorder()),...patch};
+  }));
+ }
+ bind(borderToggle,'click',()=>setTextBorder(textTargets().every(o=>o.border)?null:{}));
+ bind($('#paper-text-border-none'),'click',()=>setTextBorder(null));
+ bind(borderColor,'change',()=>setTextBorder({color:borderColor.value}));
+ bind(borderWidth,'change',()=>{const n=Number(borderWidth.value);if(borderWidth.value&&Number.isFinite(n))setTextBorder({width:Math.max(1,Math.min(20,n))});else syncTextBorder();});
+ bind(borderStyle,'change',()=>setTextBorder({style:borderStyle.value}));
  bind(selectedTextPicker,'input',()=>{const input=$('#paper-global-text-color');input.value=selectedTextPicker.value;input.dispatchEvent(new Event('input',{bubbles:true}));});
- for(const id of ['paper-selected-stroke-color','paper-selected-fill-color'])addQuickColors($('#'+id),'change');
+ for(const id of ['paper-selected-stroke-color','paper-selected-fill-color','paper-text-border-color'])addQuickColors($('#'+id),'change');
  for(const id of ['paper-global-text-color','paper-selected-text-color'])addQuickColors($('#'+id),'input');
  const tableTarget=$('#paper-table-color-target');
  const tableColorFields=[...root.querySelectorAll('[data-table-style]')].map(input=>({key:input.dataset.tableStyle,box:addQuickColors(input,'input')}));

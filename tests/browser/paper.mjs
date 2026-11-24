@@ -273,6 +273,16 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    if(name==='desktop'){
     const selectedBar=page.locator('#paper-selection-tools');
     assert.ok(await selectedBar.isVisible(),'selected-object controls appear after selecting text');
+    assert.ok(await selectedBar.locator('#paper-text-border-toggle').isVisible(),'text border is available immediately');
+    await selectedBar.locator('#paper-text-border-toggle').click();
+    await selectedBar.getByRole('button',{name:'สีขอบกล่องข้อความ · แดง',exact:true}).click();
+    await selectedBar.locator('#paper-text-border-width').fill('3');await selectedBar.locator('#paper-text-border-width').press('Tab');
+    await selectedBar.locator('#paper-text-border-style').selectOption('dashed');
+    await click('save');
+    const bordered=()=>row.payload.notebook.notes[0].paper.pages[0].objects.find(o=>o.id===text.id);
+    assert.deepEqual(bordered().border,{color:'#dc4343',width:3,style:'dashed'});
+    assert.equal(await page.locator('[data-text-border="'+text.id+'"]').getAttribute('stroke'),'#dc4343');
+    await selectedBar.locator('#paper-text-border-none').click();await click('save');assert.equal(bordered().border,undefined);
     const size=selectedBar.locator('#paper-font-size');
     await selectedBar.getByRole('button',{name:'เพิ่มขนาดตัวอักษรทั้งกล่อง'}).click();
     assert.equal(await size.inputValue(),'17');
@@ -284,7 +294,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     }
     const drag=selectedBar.locator('.paper-selection-drag');
     assert.ok(await drag.isVisible(),'selected-object controls have a draggable grip');
-    assert.ok(oldBox.height<150,'selected-object command box is compact with direct actions');
+    assert.ok(oldBox.height<300,'selected-object command box remains bounded with text and border colors');
     const handle=await drag.boundingBox();
     const sx=handle.x+handle.width/2,sy=handle.y+handle.height/2;
     await page.mouse.move(sx,sy);

@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-color-presets'); }
+try { await import('./app.js?v=20261124-text-border'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
