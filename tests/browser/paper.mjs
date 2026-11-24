@@ -353,6 +353,16 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'2');
   await tap(120,330);assert.equal(await page.locator('#paper-selected-count').innerText(),'1');
   if(mobile)await click('multi');else await page.keyboard.up('Shift');
+  if(!mobile){
+   await page.keyboard.down('Shift');await tap(120,330);await page.keyboard.up('Shift');
+   await click('group');await click('save');
+   const grouped=row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.groupId);
+   assert.equal(grouped.length,2);assert.equal(grouped[0].groupId,grouped[1].groupId);
+   await tap(600,500);await tap(120,330);
+   assert.equal(await page.locator('#paper-selected-count').innerText(),'กลุ่ม · 2');
+   await click('ungroup');await click('save');
+   assert.ok(!row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.groupId));
+  }
   assert.ok(await page.locator('#paper-toolbar-more').evaluate(el=>!el.open),'extra tools should start folded');
   assert.ok(await page.locator('#paper-width').isHidden(),'pen size cannot obstruct the page while menu is folded');
   await click('pen');
