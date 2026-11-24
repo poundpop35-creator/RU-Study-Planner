@@ -1,4 +1,4 @@
-import {PAGE_W,PAGE_H,inkPadding,pageHeight,continuousContentHeight} from './paper-core.js?v=20261123-continuous-v1';
+import {PAGE_W,PAGE_H,inkPadding,pageHeight,continuousContentHeight} from './paper-core.js?v=20261124-notebook-v2';
 import {formattedTextHTML} from './paper-rich-text.js?v=20261121-paper-format';
 import {shapeSVG} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {tableSVG} from './paper-table.js?v=20261121-paper-format';
@@ -16,19 +16,17 @@ export function objectSVG(o,images=new Map(),interactive=true){
  return `<path data-object="${o.id}" d="${[...left,...right.reverse()].map((p,i)=>(i?'L':'M')+round(p[0])+','+round(p[1])).join(' ')} Z" fill="${o.color}"/>`;
 }
 export function paperBackground(template,id,height=PAGE_H,width=PAGE_W){const pattern=template==='ruled'?'<path d="M0 35.5 H900" stroke="#dce6ef"/>':template==='grid'?'<path d="M30 0 H0 V30" fill="none" stroke="#e0e8ef"/>':'<circle cx="2" cy="2" r="1.2" fill="#cbd6df"/>';const step=template==='ruled'?36:template==='grid'?30:24;return `<defs><pattern id="${id}" width="${template==='ruled'?900:step}" height="${step}" patternUnits="userSpaceOnUse">${pattern}</pattern></defs><rect width="${width}" height="${height}" fill="#fff"/>${template==='plain'?'':`<rect width="${width}" height="${height}" fill="url(#${id})"/>`}`;}
-export function printBoundaryGuides(height){
- let lines='';
- for(let page=1;page*PAGE_H<height;page++){
-  const y=page*PAGE_H;
-  lines+='<g aria-hidden="true" pointer-events="none" data-print-boundary="'+page+'">'+
-   '<line x1="0" y1="'+y+'" x2="'+PAGE_W+'" y2="'+y+'" stroke="#778db6" stroke-width="2" stroke-dasharray="11 8" opacity=".75"/>'+
-   '<rect x="782" y="'+(y-24)+'" width="118" height="21" rx="5" fill="#eaf0fc" opacity=".93"/>'+
-   '<text x="889" y="'+(y-9)+'" fill="#375a96" text-anchor="end" font-size="12" font-family="Noto Sans Thai,sans-serif">A4 · หน้า '+(page+1)+'</text></g>';
+export function printBoundaryGuides(height,width=PAGE_W){
+ let guides='',number=0;
+ const columns=Math.ceil(width/PAGE_W),rows=Math.ceil(height/PAGE_H);
+ for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){
+  const x=col*PAGE_W,y=row*PAGE_H;
+  guides+=`<g aria-hidden="true" pointer-events="none" data-print-boundary="${++number}"><rect x="${x+1}" y="${y+1}" width="${PAGE_W-2}" height="${PAGE_H-2}" fill="none" stroke="#778db6" stroke-width="2" stroke-dasharray="11 8"/><text x="${x+18}" y="${y+24}" fill="#526682" font-size="14">A4 · หน้า ${number}</text></g>`;
  }
- return lines;
+ return guides;
 }
-export function pageSVG(page,images,id='paper-lines',height=pageHeight(page),width=PAGE_W){
- const guides=height>PAGE_H&&!id.startsWith('thumb-')?printBoundaryGuides(height):'';
+export function pageSVG(page,images,id='paper-lines',height=pageHeight(page),width=PAGE_W,showGuides=false){
+ const guides=showGuides&&!id.startsWith('thumb-')?printBoundaryGuides(height,width):'';
  const bands=(page.sections||[]).map((section,i)=>section.template===page.template?'':`<g transform="translate(0,${i*PAGE_H})">${paperBackground(section.template,id+'-section-'+i,PAGE_H,width)}</g>`).join('');
  return paperBackground(page.template,id,height,width)+bands+guides+page.objects.map(o=>objectSVG(o,images,!id.startsWith('thumb-'))).join('');
 }

@@ -1,7 +1,7 @@
 import {notebookHistory} from './paper-page-history.js';
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
-import {PAGE_W,PAGE_H,MAX_CANVAS_HEIGHT,pageHeight,continuousContentHeight,toContinuousPaper,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS} from './paper-core.js?v=20261123-continuous-v1';
-import {pageSVG,printableSheets,objectSVG,esc} from './paper-render.js?v=20261123-continuous-v1';
+import {PAGE_W,PAGE_H,MAX_CANVAS_HEIGHT,pageHeight,continuousContentHeight,toContinuousPaper,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS} from './paper-core.js?v=20261124-notebook-v2';
+import {printBoundaryGuides,pageSVG,printableSheets,objectSVG,esc} from './paper-render.js?v=20261124-notebook-v2';
 import {imageHandles,resizeImage,cropImage} from './paper-images.js';
 import {readAttachment,downloadAttachment} from './note-files.js';
 import {replaceLink,moveLinks} from './word-links.js';
@@ -12,7 +12,7 @@ import {openNoteFile} from './file-viewer.js';
 import {openSharedCourseMaterials,courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 import {makeShape,resizeShape,shapeAngle,shapeContains,eraserTargetHit,isJoinable,snapLinePoint,snapMovedLine} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {recognizeHeldShape,recognizeDrawnShape,diagramSegments,hasBranchJunction,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261123-shapes-eraser-v4';
-import {mountTableEditor} from './paper-table-ui.js?v=20261123-continuous-v1';
+import {mountTableEditor} from './paper-table-ui.js?v=20261124-notebook-v2';
 import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
 let active=null;
 export function refreshPaper(space,id){return active?.id===id?active.refresh(space):false;}
@@ -186,13 +186,14 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    const singleShape=selected.size===1&&visible.find(o=>selected.has(o.id)&&o.type==="shape");
    const singleTable=selected.size===1&&visible.find(o=>selected.has(o.id)&&o.type==='table');
   if(box&&!editing)content+=`<rect x="${box.x-6}" y="${box.y-6}" width="${box.w+12}" height="${box.h+12}" fill="none" stroke="#3155d9" stroke-width="2" stroke-dasharray="7 5"/>${singleImage||singleShape?imageHandles(box,scale):`<rect data-resize="true" x="${box.x+box.w-9}" y="${box.y+box.h-9}" width="18" height="18" rx="4" fill="#3155d9"/>`}`;
+  if(showA4)content+=printBoundaryGuides(renderHeight,canvasWidth());
   content+=rulerSVG(ruler);
   if(gesture?.kind==='lasso')content+=`<path d="${gesture.points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ')}" fill="#3155d910" stroke="#3155d9" stroke-width="2" stroke-dasharray="6 4"/>`;
   svg.innerHTML=content;tableUI.sync(!multiSelect&&['select','text'].includes(tool)&&!gesture&&singleTable);svg.dataset.tool=tool;root.dataset.paperTool=tool;
   updateContextToolBar();
   const continuous=model.version===2;
   root.dataset.paperContinuous=continuous?'true':'false';
-  $('#paper-page-label').textContent=continuous?'กระดาษต่อเนื่อง · เส้นประ = ขอบเขต A4 ตอนพิมพ์':`หน้า ${model.pages.findIndex(p=>p.id===pageId)+1} / ${model.pages.length}`;
+  $('#paper-page-label').textContent=continuous?(showA4?'กระดาษอิสระ · แสดงกรอบ A4':'กระดาษอิสระ'):`หน้า ${model.pages.findIndex(p=>p.id===pageId)+1} / ${model.pages.length}`;
   for(const button of root.querySelectorAll('[data-paper="continuous"]')){
    button.hidden=continuous;
   }
@@ -495,6 +496,12 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  boldPreset.setAttribute('aria-label','พิมพ์กล่องใหม่เป็นตัวหนา');boldPreset.setAttribute('aria-pressed',String(bold));
  textOptions.prepend(boldPreset);
  bind(boldPreset,'click',()=>{bold=!bold;boldPreset.setAttribute('aria-pressed',String(bold));});
+ let showA4=false;
+ try{showA4=localStorage.getItem('ru-paper-a4-guides')==='true';}catch{}
+ const a4Toggle=document.createElement('button');a4Toggle.type='button';
+ a4Toggle.textContent='กรอบ A4';a4Toggle.setAttribute('aria-pressed',String(showA4));
+ a4Toggle.title='เปิดหรือปิดกรอบกระดาษ A4 สำหรับจัดพิมพ์';mainTools.append(a4Toggle);
+ bind(a4Toggle,'click',()=>{showA4=!showA4;a4Toggle.setAttribute('aria-pressed',String(showA4));try{localStorage.setItem('ru-paper-a4-guides',String(showA4));}catch{}draw();});
  pageOptions.append($('.paper-template-tool'));
  selectOptions.append($('[data-paper="multi"]'));
  const stack=document.createElement('select');stack.setAttribute('aria-label','เลือกเลเยอร์วัตถุ');selectOptions.append(stack);
@@ -503,6 +510,10 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const paint=document.createElement('span');selectOptions.append(paint);
  paint.innerHTML='<label>สีพื้น <input type="color" value="#789bd3"></label><button type="button">ไม่มีสีพื้น</button><label>ความทึบ <input type="range" min="0" max="100" value="100"></label><output></output>';
  const [fill,alpha]=paint.querySelectorAll('input');
+ paint.className='paper-shape-paint';
+ fill.setAttribute('aria-label','สีพื้นรูปทรง');alpha.setAttribute('aria-label','ความทึบรูปทรง');
+ const outline=document.createElement('label');outline.innerHTML='สีเส้น <input type="color" aria-label="สีเส้นขอบรูปทรง">';paint.prepend(outline);
+ bind(outline.querySelector('input'),'change',e=>paintSelected(o=>o.color=e.target.value));
  const paintSelected=fn=>change(p=>p.objects.filter(o=>selected.has(o.id)&&o.type==='shape').forEach(fn));
  bind(fill,'change',()=>paintSelected(o=>o.fill=fill.value));bind(paint.querySelector('button'),'click',()=>paintSelected(o=>delete o.fill));
  bind(alpha,'input',()=>paint.lastElementChild.textContent=alpha.value+'%');
@@ -513,6 +524,13 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   bind(btn,'click',()=>change(p=>{const group=p.objects.filter(o=>selected.has(o.id)),rest=p.objects.filter(o=>!selected.has(o.id));p.objects=front?[...rest,...group]:[...group,...rest];}));
  }
 
+ for(const [direction,label] of [[-1,'ลงหนึ่งชั้น'],[1,'ขึ้นหนึ่งชั้น']]){
+  const button=document.createElement('button');button.type='button';button.textContent=label;order.append(button);
+  bind(button,'click',()=>change(p=>{
+   const indices=p.objects.map((o,i)=>i);if(direction>0)indices.reverse();
+   for(const i of indices){const j=i+direction;if(j>=0&&j<p.objects.length&&selected.has(p.objects[i].id)&&!selected.has(p.objects[j].id))[p.objects[i],p.objects[j]]=[p.objects[j],p.objects[i]];}
+  }));
+ }
  rulerOptions.append($('#paper-ruler-angles'));
  $('#paper-ruler-angles').insertAdjacentHTML('beforeend','<label class="paper-angle-input">องศา <input id="paper-ruler-angle" type="number" min="0" max="359" step="1" value="0" aria-label="องศาไม้บรรทัด"></label>');
  bind($('#paper-ruler-angle'),'change',event=>{
@@ -548,7 +566,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    const key=JSON.stringify(objects.map(o=>[o.id,o.text?.slice(0,24)]));
    if(key!==stackKey){stackKey=key;stack.replaceChildren(new Option('เลเยอร์ · หน้าสุดก่อน',''),...objects.slice().reverse().map((o,i)=>new Option((objects.length-i)+' · '+({shape:'รูปทรง',text:o.text?.slice(0,24)||'ข้อความ',image:'รูปภาพ',stroke:'ลายมือ',table:'ตาราง'}[o.type]),o.id)));}
    stack.value=chosen.length===1?chosen[0].id:'';order.hidden=!chosen.length;paint.hidden=!shape;
-   if(shape){fill.value=shape.fill||'#789bd3';alpha.value=Math.round((shape.opacity??1)*100);paint.lastElementChild.textContent=alpha.value+'%';}
+   if(shape){outline.querySelector('input').value=shape.color;fill.value=shape.fill||'#789bd3';alpha.value=Math.round((shape.opacity??1)*100);paint.lastElementChild.textContent=alpha.value+'%';}
   }
   rulerOptions.hidden=activePanel!=='ruler'||!ruler.active;
   ribbon.hidden=activePanel!=='text'||!editing;
@@ -889,7 +907,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   $('#paper-word-size').value=active?.size||editing?.object?.size||fontSize;
   ribbon.querySelector('[data-paper="word-link"]').disabled=!editing;
   ribbon.querySelector('[data-paper="finish-text"]').hidden=!editing;
-  ribbon.querySelector('.paper-ribbon-help').textContent=editing?'เลือกคำเพื่อจัดกึ่งกลาง เปลี่ยนสี/ขนาด หรือกด B I U':'แตะข้อความเพื่อแก้ · ใช้ ✍ เขียน→ตัวพิมพ์ สำหรับ Apple Pencil';
+  ribbon.querySelector('.paper-ribbon-help').textContent=editing?'เลือกคำเพื่อจัดรูปแบบเฉพาะคำ · ไม่เลือก = ทั้งกล่อง':'แตะข้อความเพื่อแก้ · ใช้ ✍ เขียน→ตัวพิมพ์ สำหรับ Apple Pencil';
  }
  function showTextRibbon(){
   ribbon.hidden=activePanel!=='text'||!editing;
@@ -990,9 +1008,19 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    }else{say('คลิกข้อความบนกระดาษ แล้วลากเลือกคำที่ต้องการก่อน',true);return;}
    draw();showTextRibbon();return;
   }
-  const selectedBefore=selectedOffsets();
+  let selectedBefore=selectedOffsets();
   if(!selectedBefore||selectedBefore.start===selectedBefore.end){
-   say('ลากเลือกเฉพาะคำที่ต้องการก่อนเปลี่ยนรูปแบบหรือสี',true);return;
+   const text=editing.rich?readRich().text:textarea.value;
+   if(text.length){selectedBefore={start:0,end:text.length};formattingSelection=selectedBefore;}
+   else{
+    const o=editing.object;
+    if(kind==='color')o.color=textColor(value,o.color);
+    else if(kind==='size')o.size=textSize(value,o.size);
+    else if(kind==='bold')o.bold=!o.bold;
+    else {say('พิมพ์ข้อความก่อน แล้วเลือกคำเพื่อใช้รูปแบบนี้');return;}
+    Object.assign(textarea.style,{color:o.color,fontSize:o.size+'px',fontWeight:o.bold?'700':'400'});
+    textarea.focus({preventScroll:true});fitTextBox();textRibbonState();return;
+   }
   }
   // When a native color picker takes focus, the browser may collapse the
   // visible range. Restore the range before switching textarea → rich editor.
@@ -1860,7 +1888,7 @@ bind(rich,'keyup',()=>{
      pageId=next.pages[0].id;selected.clear();
      virtualHeight=Math.min(MAX_CANVAS_HEIGHT,pageHeight(next.pages[0])+PAGE_H);
      setPagesOpen(false);sizing();draw();thumbs();
-     say('ใช้กระดาษต่อเนื่องแล้ว · เลื่อนลงได้เรื่อย ๆ · เส้นประช่วยแบ่งหน้า A4 ตอนพิมพ์');
+     say('ใช้กระดาษต่อเนื่องแล้ว · เลื่อนลงได้เรื่อย ๆ · เปิดกรอบ A4 เพื่อช่วยจัดพิมพ์');
     }
     return;
    }

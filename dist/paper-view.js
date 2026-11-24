@@ -1,7 +1,7 @@
-import {esc} from './paper-render.js?v=20261123-continuous-v1';
-import {NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261123-continuous-v1';
+import {esc} from './paper-render.js?v=20261124-notebook-v2';
+import {NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261124-notebook-v2';
 import {shapes,lineStyles} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
-import {PEN_WIDTH_PRESETS} from './paper-core.js?v=20261123-continuous-v1';
+import {PEN_WIDTH_PRESETS} from './paper-core.js?v=20261124-notebook-v2';
 import {shapeIcon} from './paper-shape-icons.js?v=shape-gallery-20261120';
 import {courseMaterialLabel} from './course-materials-ui.js?v=shared-course-20261120';
 export const colors=['#172033','#3155d9','#15966d','#dc4343','#8756c6','#ef9e39'];

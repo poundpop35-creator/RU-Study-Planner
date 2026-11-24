@@ -1,6 +1,6 @@
 import {createPersonalClient,personalKey} from './personal-client.js?v=20261116-account';
 import {freshState,validateState} from './core.js?v=registration-status';
-import {validateEnvelope,referencedImages} from './notebook-core.js?v=20261123-continuous-v1';
+import {validateEnvelope,referencedImages} from './notebook-core.js?v=20261124-notebook-v2';
 
 // Intentionally PUBLIC: the owner requested one editable workspace for all visitors.
 // This is a workspace capability, not a Supabase service-role or administrative key.

@@ -51,10 +51,10 @@ test('dashed screen boundaries repeat at each A4 break but are excluded from pri
  ]};
  const model=validatePaper({version:2,pages:[page]});
  const guides=printBoundaryGuides(3*PAGE_H);
- assert.equal((guides.match(/data-print-boundary=/g)||[]).length,2);
+ assert.equal((guides.match(/data-print-boundary=/g)||[]).length,3);
  assert.match(guides,/stroke-dasharray="11 8"/);
  assert.match(guides,/A4 · หน้า 2/);
- const display=pageSVG(model.pages[0],new Map(),'paper-lines',3*PAGE_H);
+ const display=pageSVG(model.pages[0],new Map(),'paper-lines',3*PAGE_H,PAGE_W,true);
  assert.match(display,/data-print-boundary="1"/);
  const printed=printableSheets(model);
  assert.equal(printed.length,3,'A4 generated automatically by occupied content');
@@ -122,4 +122,12 @@ test('wide notes preserve translucent shapes behind text on reload, merge and A4
  assert.deepEqual(merged.pages[0].objects.map(o=>o.id),['badge','label']);
  const printed=printableSheets(merged).at(-1);
  assert.match(printed,/translate\(-2700,/);assert.match(printed,/fill="#aabbcc" opacity="0.4"/);assert.match(printed,/เปลี่ยนชื่อ/);
+});
+
+test('A4 frames are opt-in and tile horizontally without changing content',()=>{
+ const p=emptyPage();
+ assert.doesNotMatch(pageSVG(p,new Map(),'paper-lines',PAGE_H*2,PAGE_W*2),/data-print-boundary/);
+ const shown=pageSVG(p,new Map(),'paper-lines',PAGE_H*2,PAGE_W*2,true);
+ assert.equal((shown.match(/data-print-boundary=/g)||[]).length,4);
+ assert.match(shown,/fill="none" stroke="#778db6"/);
 });

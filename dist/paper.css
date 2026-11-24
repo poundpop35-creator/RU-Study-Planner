@@ -1517,3 +1517,21 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
   max-width:45%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
  }
 }
+
+/* Calm, accessible notebook controls; the canvas stays the focus. */
+.paper-app{--paper-accent:#425bd5;background:#f4f6fa}
+.paper-app .paper-header{background:#fff;border-bottom:1px solid #e7ebf2}
+.paper-app .paper-toolbar,.paper-app .paper-context-wrap{background:#fff;border-color:#e7ebf2}
+.paper-app button{transition:background .15s,box-shadow .15s;border-radius:10px}
+.paper-app button:focus-visible,.paper-app input:focus-visible,.paper-app select:focus-visible{outline:2px solid #425bd5;outline-offset:2px}
+.paper-app button[aria-pressed="true"]{background:#edf0ff;color:#304bbd;border-color:#a9b6f0}
+.paper-app .paper-context-section{gap:10px;align-items:center}
+.paper-app .paper-context-select select{min-height:38px;max-width:240px;border:1px solid #dce2ec;border-radius:9px;padding:6px 10px;background:#fff;font-size:14px}
+.paper-app .paper-context-select>span,.paper-app .paper-shape-paint,.paper-app .paper-shape-paint label{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.paper-app .paper-context-select>span[hidden]{display:none}
+.paper-app .paper-shape-paint{padding:0 10px;border-inline:1px solid #e7ebf2;font-size:14px}
+.paper-app .paper-shape-paint input[type="range"]{width:90px;accent-color:#425bd5}
+.paper-app .paper-shape-paint input[type="color"]{width:34px;height:34px;border:1px solid #dce2ec;border-radius:8px;padding:3px;background:white}
+.paper-app .paper-text-ribbon{box-shadow:0 8px 28px #25355018!important;border-color:#dce2ec!important}
+.paper-app .paper-text-ribbon button{min-height:36px}
+@media(pointer:coarse){.paper-app .paper-text-ribbon button,.paper-app .paper-context-section button{min-height:44px;min-width:44px}}
