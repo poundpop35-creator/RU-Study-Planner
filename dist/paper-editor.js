@@ -14,7 +14,8 @@ import {makeShape,resizeShape,shapeAngle,shapeContains,eraserTargetHit,isJoinabl
 import {recognizeHeldShape,recognizeDrawnShape,diagramSegments,hasBranchJunction,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261123-shapes-eraser-v4';
 import {mountTableEditor} from './paper-table-ui.js?v=20261124-notebook-v2';
 import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
-let active=null;
+let active=null,objectClipboard=null;
+const objectMime='application/x-ru-notebook-selection';
 export function refreshPaper(space,id){return active?.id===id?active.refresh(space):false;}
 export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const root=document.querySelector('.paper-app');if(!root)return ()=>{};
@@ -122,7 +123,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const selectIds=ids=>expandSelection(page().objects,ids);
  const currentNote=()=>space.notebook().notes.find(n=>n.id===id);
  const writable=()=>{const i=space.info();if(i.scope!==scope||!i.canEdit)throw Error('ยังเชื่อมต่อพื้นที่จดไม่ได้ กรุณารอหรือลองเชื่อมต่อใหม่');if(i.conflict)throw Error('มีการแก้พร้อมกัน เปิด “ข้อมูลและการซิงก์” เพื่อเลือกฉบับก่อน');};
- function persist(next,record=true){
+ function persist(next,record=true,attachments=[]){
   try{
    writable();const live=currentNote();if(!live)throw Error('โน้ตถูกลบจากอีกเครื่อง');
    next=validatePaper(next);const previous=model,before=page(),oldPages=model.pages;
@@ -132,6 +133,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    if(draftBase)next=mergePaper(draftBase,next,paperFor(live));
    else if(JSON.stringify(live.paper||null)!==lastStored&&live.paper)next=mergePaper(model,next,live.paper);
    const book=copy(space.notebook()),target=book.notes.find(n=>n.id===id);target.paper=next;target.updatedAt=new Date().toISOString();
+   if(attachments.length){const existing=new Set((target.files||[]).map(f=>f.id));target.files=[...(target.files||[]),...attachments.filter(f=>!existing.has(f.id))];}
    space.saveNotebook(book);model=copy(next);lastStored=JSON.stringify(next);unsaved=null;draftBase=null;try{localStorage.removeItem(draftKey);}catch{}root.classList.remove('paper-has-draft');
    if(previous.version!==next.version && record)history.record(previous,next,0,true);
    else if(record){if(added)history.record(null,added,next.pages.findIndex(p=>p.id===added.id));else if(removed)history.record(removed,null,oldPages.indexOf(removed));else if(after)history.record(before,after,oldPages.indexOf(before));}
@@ -140,7 +142,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    say('บันทึกอัตโนมัติ · ปุ่มบันทึกงานใช้สั่งบันทึกทันที');draw();thumbs();return true;
   }catch(err){draftBase??=copy(model);unsaved=copy(next);try{localStorage.setItem(draftKey,JSON.stringify({paper:unsaved,base:draftBase}));}catch{}say(err.message+' · งานล่าสุดยังอยู่ในหน้านี้ กด “สำรองงานค้าง” ก่อนปิด',true);root.classList.add('paper-has-draft');return false;}
  }
- function change(fn){
+ function change(fn,attachments=[]){
   const next=copy(unsaved||model),p=next.pages.find(p=>p.id===pageId);
   fn(p,next);
   if(next.version===2){
@@ -148,7 +150,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    if(actual>MAX_CANVAS_HEIGHT)throw Error('กระดาษยาวถึงขีดจำกัดทางเทคนิคแล้ว กรุณาแยกเป็นสมุดใหม่');
    p.height=Math.max(pageHeight(p),continuousContentHeight(p));
   }
-  return persist(next);
+  return persist(next,true,attachments);
  }
  function scheduleDraw(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw();});}
  function draw(){
@@ -1465,7 +1467,65 @@ bind(rich,'keyup',()=>{
  // In-app Word-style right-click menu. This is local to the notebook canvas,
  // so browser menus elsewhere in the application are not affected.
  const canvasMenu=$('#paper-context-menu');
- let contextAnchor={x:100,y:100},objectClipboard=[];
+ let contextAnchor={x:100,y:100},pasteCount=0;
+ const clipboardHere=()=>objectClipboard?.scope===scope&&objectClipboard.objects.length>0;
+ const inTextField=target=>!!target?.closest?.('input,textarea,select,[contenteditable=true]');
+ const modalOpen=()=>!!document.querySelector('dialog[open]');
+ const keyboardAllowed=e=>root.isConnected&&!e.defaultPrevented&&!editing&&!inTextField(e.target)&&!modalOpen();
+ function copyObjects(){
+  const objects=copy(page().objects.filter(o=>selected.has(o.id)));if(!objects.length)return null;
+  const ids=new Set(objects.flatMap(o=>(o.links||[]).map(l=>l.fileId).filter(Boolean)));
+  const files=copy((currentNote()?.files||[]).filter(f=>ids.has(f.id)));
+  const token=uid(),plain=objects.every(o=>o.type==='text')?objects.map(o=>o.text).join('\n'):'[RU Study Planner · '+objects.length+' วัตถุ · '+token+']';
+  objectClipboard={scope,objects,files,token,plain,source:id,pageId};pasteCount=0;
+  say('คัดลอก '+objects.length+' วัตถุแล้ว · Ctrl+V เพื่อวาง');return objectClipboard;
+ }
+ function pasteObjects(anchor){
+  if(!clipboardHere())return false;
+  writable();const clip=objectClipboard,box=bounds(clip.objects);if(!box)return false;
+  const offset=24*(pasteCount+1),at=anchor||(clip.source===id&&clip.pageId===pageId?{x:box.x+offset,y:box.y+offset}:{x:viewport.scrollLeft/scale+45,y:viewport.scrollTop/scale+45});
+  if(box.w>canvasWidth()||box.h>canvasLimit())throw Error('กลุ่มใหญ่เกินพื้นที่กระดาษนี้');
+  const dx=Math.max(-box.x,Math.min(canvasWidth()-box.x-box.w,at.x-box.x));
+  const dy=Math.max(-box.y,Math.min(canvasLimit()-box.y-box.h,at.y-box.y));
+  const pasted=cloneGroupedObjects(clip.objects,dx,dy);
+  if(change(p=>p.objects.push(...pasted),clip.files)){pasteCount++;selected=new Set(pasted.map(o=>o.id));setTool('select');draw();say('วาง '+pasted.length+' วัตถุแล้ว');return true;}
+  return false;
+ }
+ function pasteText(value){
+  if(!value.trim())return;
+  if(value.length>20000)throw Error('ข้อความยาวเกิน 20,000 ตัวอักษร กรุณาแบ่งวาง');
+  const x=Math.min(canvasWidth()-32,Math.max(0,viewport.scrollLeft/scale+45));
+  const y=Math.max(0,viewport.scrollTop/scale+45),w=Math.min(550,canvasWidth()-x);
+  const rows=value.split('\n').reduce((n,line)=>n+Math.max(1,Math.ceil(line.length/Math.max(1,Math.floor(w/(fontSize*.65))))),0);
+  const h=Math.max(fontSize*1.5,Math.ceil(rows*fontSize*1.5));
+  if(y+h>canvasLimit())throw Error('ข้อความยาวเกินพื้นที่กระดาษ');
+  const item={id:uid(),type:'text',x,y,w,h,text:value,size:fontSize,color:defaultTextColor,bold:false};
+  if(change(p=>p.objects.push(item))){selected=new Set([item.id]);setTool('select');draw();}
+ }
+ function writeObjectClipboard(event,cut=false){
+  if(!keyboardAllowed(event)||!selected.size||!event.clipboardData)return;
+  try{
+   const clip=copyObjects();if(!clip)return;
+   event.clipboardData.setData('text/plain',clip.plain);
+   try{event.clipboardData.setData(objectMime,clip.token);}catch{}
+   event.preventDefault();
+   if(cut&&change(p=>{p.objects=p.objects.filter(o=>!selected.has(o.id));})){selected.clear();draw();say('ตัดวัตถุแล้ว · Ctrl+V เพื่อวาง');}
+  }catch(err){say(err.message,true);}
+ }
+ bind(document,'copy',e=>writeObjectClipboard(e));
+ bind(document,'cut',e=>writeObjectClipboard(e,true));
+ bind(document,'paste',e=>{
+  if(!root.isConnected||modalOpen()||!e.clipboardData)return;
+  const data=e.clipboardData,files=[...data.files].filter(f=>/^image\/(png|jpeg|webp|gif)$/.test(f.type));
+  if(!files.length)for(const item of data.items||[]){if(item.kind==='file'&&/^image\/(png|jpeg|webp|gif)$/.test(item.type)){const f=item.getAsFile();if(f)files.push(f);}}
+  if(files.length&&(!inTextField(e.target)||e.target===textarea||e.target===rich)){e.preventDefault();insertImages(files);return;}
+  if(!keyboardAllowed(e))return;
+  const plain=data.getData('text/plain'),token=data.getData(objectMime);
+  try{
+   if(clipboardHere()&&(token===objectClipboard.token||(!token&&plain===objectClipboard.plain))){e.preventDefault();pasteObjects();return;}
+   if(plain){e.preventDefault();pasteText(plain);}
+  }catch(err){say(err.message,true);}
+ });
  const closeCanvasMenu=()=>{canvasMenu.hidden=true;};
  function showCanvasMenu(event){
   if(!event.target.closest('#paper-sheet'))return;
@@ -1494,7 +1554,7 @@ bind(rich,'keyup',()=>{
   const shape=any&&page().objects.some(o=>selected.has(o.id)&&o.type==='shape');
   const onlyText=any&&selected.size===1&&page().objects.some(o=>selected.has(o.id)&&o.type==='text');
   const visible={
-   'edit-text':onlyText,'copy':any,'paste':!!objectClipboard.length,
+   'edit-text':onlyText,'copy':any,'paste':clipboardHere(),
    duplicate:any,'layer-front':any,'layer-up':any,'layer-down':any,'layer-back':any,group:selectionGroupState(page().objects,selected).canGroup,ungroup:selectionGroupState(page().objects,selected).canUngroup,'rotate-left':shape,'rotate-right':shape,delete:any,
    'add-text':!any,'select-tool':true,'pen-tool':true,undo:true,redo:true
   };
@@ -1806,7 +1866,7 @@ bind(rich,'keyup',()=>{
  }
  bind($('#paper-image-file'),'change',e=>{insertImages([...e.target.files]);e.target.value='';});
  bind(svg,'dragover',e=>e.preventDefault());bind(svg,'drop',e=>{e.preventDefault();insertImages([...e.dataTransfer.files]);});
- bind(root,'paste',e=>{const files=[...(e.clipboardData?.files||[])];if(files.length){e.preventDefault();insertImages(files);}});
+
  function fileList(){
   const files=currentNote()?.files||[];
   $('#paper-file-list').innerHTML=files.map(f=>`<li><button data-download="${f.id}">${esc(f.name)}</button> <button data-remove="${f.id}" aria-label="ลบ ${esc(f.name)}">ลบ</button></li>`).join('');
@@ -1840,18 +1900,9 @@ bind(rich,'keyup',()=>{
    if(b.dataset.contextAction){
     const cmd=b.dataset.contextAction;closeCanvasMenu();
     if(cmd==='copy'){
-     objectClipboard=copy(page().objects.filter(o=>selected.has(o.id)));
-     say('คัดลอก '+objectClipboard.length+' วัตถุแล้ว · คลิกขวาที่ตำแหน่งที่จะวาง');return;
+     const clip=copyObjects();if(clip&&navigator.clipboard?.writeText)navigator.clipboard.writeText(clip.plain).catch(()=>{});return;
     }
-    if(cmd==='paste'&&objectClipboard.length){
-     const box=bounds(objectClipboard);
-     if(!box)return;
-     const dx=Math.max(-box.x,Math.min(canvasWidth()-box.x-box.w,contextAnchor.x-box.x));
-     const dy=Math.max(-box.y,Math.min(canvasLimit()-box.y-box.h,contextAnchor.y-box.y));
-     const pasted=cloneGroupedObjects(objectClipboard,dx,dy);
-     if(change(p=>p.objects.push(...pasted))){selected=new Set(pasted.map(o=>o.id));setTool('select');draw();}
-     return;
-    }
+    if(cmd==='paste'){pasteObjects(contextAnchor);return;}
     if(cmd.startsWith('layer-')){reorderSelection(cmd);return;}
     if(cmd==='group'||cmd==='ungroup'){root.querySelector('[data-paper="'+cmd+'"]').click();return;}
     if(cmd==='duplicate'||cmd==='delete'){root.querySelector('[data-paper="'+(cmd==='duplicate'?'duplicate':'delete-object')+'"]')?.click();return;}
@@ -1943,6 +1994,7 @@ bind(rich,'keyup',()=>{
    const action=b.dataset.paper;if(!action)return;
    const noteMenu=b.closest("details.paper-menu");
    if(noteMenu)noteMenu.open=false;
+   if(action==='shortcuts'){$('#paper-shortcuts').showModal();return;}
    if(action==='finish-text'){finishText();return;}
    if(action==='scribble-text'){
     const targetId=editing?.id||page().objects.find(o=>selected.has(o.id)&&o.type==='text')?.id;
@@ -2147,7 +2199,24 @@ bind(rich,'keyup',()=>{
   try{localStorage.setItem(textSizeKey,String(fontSize));}catch{}
  });
  for(const [selector,key] of [['#paper-title','title'],['#paper-course','course'],['#paper-source','source'],['#paper-tags','tags'],['#paper-question','question'],['#paper-answer','answer']])bind($(selector),'change',e=>{try{writable();const book=copy(space.notebook()),n=book.notes.find(n=>n.id===id);n[key]=key==='course'?e.target.value.trim().toUpperCase():e.target.value;if(key==='course'&&n[key]&&!/^POL\d{4}$/.test(n[key]))throw Error('กรอกรหัสวิชา เช่น POL1101');n.updatedAt=new Date().toISOString();space.saveNotebook(book);if(key==='course')refreshCourseButton();}catch(err){say(err.message,true);}});
- bind(document,'keydown',e=>{if(!root.isConnected||/INPUT|TEXTAREA/.test(e.target.tagName)||e.target.isContentEditable)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='g'&&selected.size){e.preventDefault();$('[data-paper="'+(e.shiftKey?'ungroup':'group')+'"]').click();return;}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();$(`[data-paper="${e.shiftKey?'redo':'undo'}"]`).click();}if((e.key==='Delete'||e.key==='Backspace')&&selected.size){e.preventDefault();$('[data-paper="delete-object"]').click();}});
+ bind(document,'keydown',e=>{
+  if(!root.isConnected||e.defaultPrevented||modalOpen()||e.isComposing)return;
+  const key=e.code?.startsWith('Key')?e.code.slice(3).toLowerCase():e.key.toLowerCase(),mod=e.ctrlKey||e.metaKey;
+  if(mod&&key==='s'){e.preventDefault();$('[data-paper="save"]').click();return;}
+  if(!keyboardAllowed(e))return; // native editing shortcuts remain active inside text and form controls
+  if(mod&&key==='a'){e.preventDefault();setTool('select');selected=new Set(page().objects.map(o=>o.id));draw();return;}
+  if(mod&&key==='d'&&selected.size){e.preventDefault();$('[data-paper="duplicate"]').click();return;}
+  if(mod&&key==='g'&&selected.size){e.preventDefault();$('[data-paper="'+(e.shiftKey?'ungroup':'group')+'"]').click();return;}
+  if(mod&&(key==='z'||key==='y')){e.preventDefault();$('[data-paper="'+(key==='y'||e.shiftKey?'redo':'undo')+'"]').click();return;}
+  if(e.key==='Escape'){selected.clear();draw();return;}
+  if((e.key==='Delete'||e.key==='Backspace')&&selected.size){e.preventDefault();$('[data-paper="delete-object"]').click();return;}
+  if(!mod&&!e.altKey&&selected.size&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){
+   e.preventDefault();const step=e.shiftKey?10:1,box=bounds(page().objects.filter(o=>selected.has(o.id)));if(!box)return;
+   const dx=Math.max(-box.x,Math.min(canvasWidth()-box.x-box.w,({ArrowLeft:-step,ArrowRight:step})[e.key]||0));
+   const dy=Math.max(-box.y,Math.min(canvasLimit()-box.y-box.h,({ArrowUp:-step,ArrowDown:step})[e.key]||0));
+   if(dx||dy)change(p=>p.objects.forEach(o=>{if(selected.has(o.id)){o.x+=dx;o.y+=dy;}}));
+  }
+ });
  bind(window,'beforeunload',e=>{if(unsaved||editing||gesture?.kind==='stroke'||loadingImages){e.preventDefault();e.returnValue='';}});
  const ro=new ResizeObserver(()=>sizing());ro.observe(viewport);
  function refreshCourseButton(){

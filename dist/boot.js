@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-direct-controls'); }
+try { await import('./app.js?v=20261124-keyboard'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
