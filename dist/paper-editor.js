@@ -162,7 +162,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    layer.innerHTML=gesture.snap?objectSVG(gesture.snap,images):objectSVG(strokeObject(gesture.points,{tool:gesture.tool,color:gesture.color,width:gesture.width}),images);
    return;
   }
-  if(!editing){selected=selectIds(selected);if(tool==='select'&&selected.size&&activePanel==='text')activePanel='select';}
+  if(!editing){selected=selectIds(selected);if(tool==='select'&&selected.size&&!['page','ruler'].includes(activePanel))activePanel='select';}
   const signature=[...selected].sort().join('|');
   if(signature!==lastSelectionSignature){lastSelectionSignature=signature;}
   const p=page();if(model.version===2&&cachedPage!==p){const end=p.objects.reduce((v,o)=>Math.max(v,o.x+o.w),0);virtualWidth=Math.min(PAGE_W*250,Math.max(virtualWidth,(Math.ceil(end/PAGE_W)+1)*PAGE_W));sizing();}if(model.version===2&&virtualHeight<Math.min(MAX_CANVAS_HEIGHT,pageHeight(p)+PAGE_H)){
@@ -228,9 +228,9 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    shapeGallery.dataset.kind=$('#paper-shape').value;shapeGallery.replaceChildren(currentIcon.cloneNode(true));
   }
   $('[data-paper="undo"]').disabled=!history.canUndo; $('[data-paper="redo"]').disabled=!history.canRedo;
-  const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('#paper-selected-count').textContent=groupState.single?'กลุ่ม · '+selected.size:selected.size; $('[data-paper="group"]').disabled=!groupState.canGroup;$('[data-paper="ungroup"]').disabled=!groupState.canUngroup;if(!tools.hidden&&selectedDesktop.matches)requestAnimationFrame(placeSelectedTools);
+  const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('[data-paper="object-paste"]').disabled=!clipboardHere();$('#paper-selected-count').textContent=groupState.single?'กลุ่ม · '+selected.size:selected.size; $('[data-paper="group"]').disabled=!groupState.canGroup;$('[data-paper="ungroup"]').disabled=!groupState.canUngroup;if(!tools.hidden&&selectedDesktop.matches)requestAnimationFrame(placeSelectedTools);
    $('#paper-table-selection').hidden=!singleTable;
-   if(singleTable){const palette=tableStyle(singleTable);root.querySelectorAll('[data-table-style]').forEach(input=>{if(document.activeElement!==input)input.value=palette[input.dataset.tableStyle];});}
+   if(singleTable){$('[data-paper="table-remove-row"]').disabled=singleTable.cells.length<=1;$('[data-paper="table-remove-col"]').disabled=singleTable.cells[0].length<=1;const palette=tableStyle(singleTable);root.querySelectorAll('[data-table-style]').forEach(input=>{if(document.activeElement!==input)input.value=palette[input.dataset.tableStyle];});}
    const globalPicker=$('#paper-global-text-color');
    if(document.activeElement!==globalPicker)globalPicker.value=editing?.object?.color||visible.find(o=>selected.has(o.id)&&o.type==='text')?.color||singleTable?.textColor||defaultTextColor;
    syncPaint();
@@ -244,7 +244,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   openLink.hidden=!singleImage?.link;
   if(singleImage?.link)openLink.href=singleImage.link;else openLink.removeAttribute('href');
   $('[data-paper="crop"]').hidden=!singleImage;
-  const texts=p.objects.filter(o=>selected.has(o.id)&&o.type==='text');$('[data-paper="edit-text"]').hidden=texts.length!==1;$('#paper-font-size').parentElement.hidden=!texts.length;$('[data-paper="bold"]').hidden=!texts.length;
+  const texts=p.objects.filter(o=>selected.has(o.id)&&o.type==='text');$('[data-paper="bold"]').setAttribute('aria-pressed',String(!!texts.length&&texts.every(o=>o.bold)));$('[data-paper="edit-text"]').hidden=texts.length!==1;$('#paper-font-size').parentElement.hidden=!texts.length;$('[data-paper="bold"]').hidden=!texts.length;
   const alignGroup=$('#paper-align');
   const alignHost=editing?ribbon:tools;
   if(alignGroup.parentElement!==alignHost)alignHost.prepend(alignGroup);
@@ -588,20 +588,12 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   }catch(error){say(error.message,true);}
   modeSelect.value=String(model.version);
  });
+ selectOptions.append($('[data-paper="select-all"]'));
+ const pasteEmpty=document.createElement('button');pasteEmpty.id='paper-paste-empty';pasteEmpty.type='button';pasteEmpty.textContent='วางวัตถุ';pasteEmpty.title='Ctrl+V';selectOptions.append(pasteEmpty);bind(pasteEmpty,'click',()=>clipboardCommand('paste'));
  const multiButton=$('[data-paper="multi"]');multiButton.innerHTML='<span aria-hidden="true">▣</span><small>เลือกหลายชิ้น</small>';mainTools.insertBefore(multiButton,phoneMore);
  const stack=document.createElement('select');stack.setAttribute('aria-label','เลือกเลเยอร์วัตถุ');selectOptions.append(stack);
  let stackKey='';
  bind(stack,'change',()=>{selected=new Set(stack.value?[stack.value]:[]);draw();});
- const paintButton=document.createElement('button');
- paintButton.type='button';paintButton.textContent='จานสี';paintButton.setAttribute('aria-label','สีรูปทรง');paintButton.title='จานสีและตัวเลือกสีรูปทรง';
- paintButton.setAttribute('aria-haspopup','dialog');
- $('#paper-selected-paint').append(paintButton);
- const palette=document.createElement('dialog');
- palette.className='paper-paint-dialog';palette.setAttribute('aria-label','สีรูปทรง');
- palette.innerHTML='<h2>สีรูปทรง</h2><label class="paint-opacity">ความทึบทั้งรูป <input type="range" min="0" max="100"><output></output></label><button type="button" class="paint-done">เสร็จสิ้น</button>';
- root.append(palette);
- const opacity=palette.querySelector('input'),output=palette.querySelector('output');
- const colors=paperColors;
  const chosenShapes=()=>page().objects.filter(o=>selected.has(o.id)&&o.type==='shape');
  const strokeColorInput=$('#paper-selected-stroke-color'),strokeWidthInput=$('#paper-selected-stroke-width'),fillColorInput=$('#paper-selected-fill-color'),opacityInput=$('#paper-selected-opacity');
  const selectedInk=()=>page().objects.filter(o=>selected.has(o.id)&&['shape','stroke'].includes(o.type));
@@ -618,37 +610,11 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  bind(fillColorInput,'change',()=>applySelectedPaint('fill',fillColorInput.value));
  bind($('#paper-selected-no-fill'),'click',()=>applySelectedPaint('fill',null));
  bind(opacityInput,'change',()=>{const n=Number(opacityInput.value);if(Number.isFinite(n)&&opacityInput.value!=='')applySelectedPaint('opacity',Math.max(0,Math.min(100,n))/100);else syncPaint();});
- const paintRows=[];
- for(const [key,label] of [['fill','สีพื้น'],['color','สีเส้น']]){
-  const row=document.createElement('fieldset');
-  row.innerHTML='<legend>'+label+'</legend><div class="paint-swatches"></div>';
-  const swatches=row.querySelector('div');
-  const apply=value=>{
-   change(p=>p.objects.filter(o=>selected.has(o.id)&&o.type==='shape'&&(key!=='fill'||!isJoinable(o))).forEach(o=>{
-    if(value)o[key]=value;else delete o.fill;
-   }));
-  };
-  for(const [name,value] of colors){
-   const button=document.createElement('button');button.type='button';
-   button.setAttribute('aria-label',label+' '+name);button.title=name;button.dataset.value=value;
-   button.style.setProperty('--swatch',value);swatches.append(button);
-   bind(button,'click',()=>apply(value));
-  }
-  if(key==='fill'){
-   const none=document.createElement('button');none.type='button';none.textContent='ไม่มีสีพื้น';none.dataset.value='';
-   row.append(none);bind(none,'click',()=>apply(''));
-  }
-  const custom=document.createElement('label');custom.textContent='เลือกสีอื่น';
-  const picker=document.createElement('input');picker.type='color';picker.setAttribute('aria-label',label+' กำหนดเอง');
-  custom.append(picker);row.append(custom);bind(picker,'change',()=>apply(picker.value));
-  palette.insertBefore(row,opacity.parentElement);paintRows.push({row,key,picker});
- }
  function syncPaint(){
   const shapes=chosenShapes(),ink=selectedInk(),fillable=shapes.filter(o=>!isJoinable(o));
   $('#paper-selected-paint').hidden=!ink.length;
   $('#paper-selected-fill-tools').hidden=!fillable.length;
   $('#paper-selected-opacity-wrap').hidden=!shapes.length;
-  paintButton.hidden=!shapes.length;
   const syncInput=(input,value)=>{if(document.activeElement!==input)input.value=String(value);};
   if(ink.length){
    syncInput(strokeColorInput,ink[0].color);
@@ -658,23 +624,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   }
   if(fillable.length){syncInput(fillColorInput,fillable[0].fill||'#ffffff');$('#paper-selected-no-fill').setAttribute('aria-pressed',String(fillable.every(o=>!o.fill)));}
   if(shapes.length)syncInput(opacityInput,Math.round((shapes[0].opacity??1)*100));
-  if(!shapes.length){if(palette.open)palette.close();return;}
-  if(!palette.open)return;
-  for(const {row,key,picker} of paintRows){
-   const targets=key==='fill'?shapes.filter(o=>!isJoinable(o)):shapes;
-   row.hidden=!targets.length;if(!targets.length)continue;
-   if(document.activeElement!==picker)picker.value=targets[0][key]||'#ffffff';
-   for(const button of row.querySelectorAll('[data-value]')){
-    button.setAttribute('aria-pressed',String(targets.every(o=>(o[key]||'').toLowerCase()===button.dataset.value)));
-   }
-  }
-  opacity.value=Math.round((shapes[0].opacity??1)*100);
-  output.textContent=shapes.every(o=>(o.opacity??1)===(shapes[0].opacity??1))?opacity.value+'%':'หลายค่า';
  }
- bind(paintButton,'click',()=>{palette.showModal();syncPaint();});
- bind(palette.querySelector('.paint-done'),'click',()=>palette.close());
- bind(opacity,'input',()=>output.textContent=opacity.value+'%');
- bind(opacity,'change',()=>change(p=>p.objects.filter(o=>selected.has(o.id)&&o.type==='shape').forEach(o=>o.opacity=Number(opacity.value)/100)));
  function reorderSelection(action){
   if(!selected.size)return;
   change(p=>{
@@ -715,10 +665,11 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   inputStrip.hidden=!['pen','highlight','eraser','straighten','shape'].includes(activePanel);
   $('.paper-geometry-check').hidden=!['pen','straighten'].includes(activePanel);
   shapeOptions.hidden=activePanel!=='shape';
-  textOptions.hidden=activePanel!=='text';boldPreset.hidden=!!editing;
+  textOptions.hidden=activePanel!=='text'||!!editing;boldPreset.hidden=!!editing;
   modeSelect.value=String(model.version);
   pageOptions.hidden=activePanel!=='page';
   selectOptions.hidden=activePanel!=='select';
+  pasteEmpty.hidden=!!selected.size;pasteEmpty.disabled=!clipboardHere();
   if(!selectOptions.hidden){
    const objects=page().objects,chosen=objects.filter(o=>selected.has(o.id));
    const key=JSON.stringify(objects.map(o=>[o.id,o.text?.slice(0,24)]));
@@ -1509,7 +1460,17 @@ bind(rich,'keyup',()=>{
   const files=copy((currentNote()?.files||[]).filter(f=>ids.has(f.id)));
   const token=uid(),plain=objects.every(o=>o.type==='text')?objects.map(o=>o.text).join('\n'):'[RU Study Planner · '+objects.length+' วัตถุ · '+token+']';
   objectClipboard={scope,objects,files,token,plain,source:id,pageId};pasteCount=0;
+  $('[data-paper="object-paste"]').disabled=false;$('#paper-paste-empty').disabled=false;
   say('คัดลอก '+objects.length+' วัตถุแล้ว · Ctrl+V เพื่อวาง');return objectClipboard;
+ }
+ function selectAllObjects(){
+  setTool('select');selected=new Set(page().objects.map(o=>o.id));draw();
+ }
+ function clipboardCommand(action){
+  if(action==='paste'){pasteObjects();return;}
+  const clip=copyObjects();if(!clip)return;
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(clip.plain).catch(()=>{});
+  if(action==='cut'&&change(p=>{p.objects=p.objects.filter(o=>!selected.has(o.id));})){selected.clear();draw();say('ตัดวัตถุแล้ว');}
  }
  function pasteObjects(anchor){
   if(!clipboardHere())return false;
@@ -1584,10 +1545,11 @@ bind(rich,'keyup',()=>{
   const any=selected.size>0;
   const shape=any&&page().objects.some(o=>selected.has(o.id)&&o.type==='shape');
   const onlyText=any&&selected.size===1&&page().objects.some(o=>selected.has(o.id)&&o.type==='text');
+  const onlyImage=selected.size===1&&target?.type==='image',onlyTable=selected.size===1&&target?.type==='table';
   const visible={
-   'edit-text':onlyText,'copy':any,'paste':clipboardHere(),
+   'edit-text':onlyText,'table-edit':onlyTable,'crop':onlyImage,'image-link':onlyImage,'copy':any,'cut':any,'paste':clipboardHere(),'select-all':page().objects.length>0,'text-border':onlyText,
    duplicate:any,'layer-front':any,'layer-up':any,'layer-down':any,'layer-back':any,group:selectionGroupState(page().objects,selected).canGroup,ungroup:selectionGroupState(page().objects,selected).canUngroup,'rotate-left':shape,'rotate-right':shape,delete:any,
-   'add-text':!any,'select-tool':true,'pen-tool':true,undo:true,redo:true
+   'add-text':!any,'add-image':!any,'add-table':!any,'select-tool':tool!=='select','pen-tool':tool!=='pen',undo:true,redo:true
   };
   for(const button of canvasMenu.querySelectorAll('[data-context-action]')){
    button.hidden=!visible[button.dataset.contextAction];
@@ -1850,7 +1812,7 @@ bind(rich,'keyup',()=>{
    const end=point(e);
    if(Math.hypot(end.x-g.start.x,end.y-g.start.y)>2){
     const shape=makeShape(g.id,g.shape,g.start,g.join?snapLinePoint(end,page().objects,10/scale):end,g.color,g.width,g.lineStyle);
-    if(change(p=>p.objects.push(shape))){tool='select';selected=new Set([shape.id]);$('#paper-geometry-menu').open=false;setShapesOpen(false);showTextRibbon();}
+    if(change(p=>p.objects.push(shape))){tool='select';activePanel='select';selected=new Set([shape.id]);$('#paper-geometry-menu').open=false;setShapesOpen(false);showTextRibbon();}
    }
   }
   else if(g?.preview&&e.type!=='pointercancel')change(p=>{p.objects=g.preview;});
@@ -1892,7 +1854,7 @@ bind(rich,'keyup',()=>{
    const visibleTop=continuous()?viewport.scrollTop/Math.max(scale,.01):0;
    const imageY=Math.min(canvasLimit()-height,Math.max(80,visibleTop+70));
    ensureCanvasHeight(imageY+height);
-   const o={id:uid(),type:'image',x:(PAGE_W-actualW)/2,y:imageY,w:actualW,h:height,imageId};if(change(p=>p.objects.push(o))){selected=new Set([o.id]);tool='select';collapsePhoneMore();draw();}}
+   const o={id:uid(),type:'image',x:(PAGE_W-actualW)/2,y:imageY,w:actualW,h:height,imageId};if(change(p=>p.objects.push(o))){selected=new Set([o.id]);tool='select';activePanel='select';collapsePhoneMore();draw();}}
   }catch(err){say(err.message,true);}finally{loadingImages--;}
  }
  bind($('#paper-image-file'),'change',e=>{insertImages([...e.target.files]);e.target.value='';});
@@ -1930,10 +1892,11 @@ bind(rich,'keyup',()=>{
   try{
    if(b.dataset.contextAction){
     const cmd=b.dataset.contextAction;closeCanvasMenu();
-    if(cmd==='copy'){
-     const clip=copyObjects();if(clip&&navigator.clipboard?.writeText)navigator.clipboard.writeText(clip.plain).catch(()=>{});return;
-    }
+    if(cmd==='copy'||cmd==='cut'){clipboardCommand(cmd);return;}
     if(cmd==='paste'){pasteObjects(contextAnchor);return;}
+    if(cmd==='select-all'){selectAllObjects();return;}
+    if(cmd==='text-border'){$('#paper-text-border-toggle').click();return;}
+    if(['table-edit','crop','image-link','add-image','add-table'].includes(cmd)){const action=({'add-image':'image','add-table':'table'})[cmd]||cmd;$('[data-paper="'+action+'"]').click();return;}
     if(cmd.startsWith('layer-')){reorderSelection(cmd);return;}
     if(cmd==='group'||cmd==='ungroup'){root.querySelector('[data-paper="'+cmd+'"]').click();return;}
     if(cmd==='duplicate'||cmd==='delete'){root.querySelector('[data-paper="'+(cmd==='duplicate'?'duplicate':'delete-object')+'"]')?.click();return;}
@@ -2025,6 +1988,8 @@ bind(rich,'keyup',()=>{
    const action=b.dataset.paper;if(!action)return;
    const noteMenu=b.closest("details.paper-menu");
    if(noteMenu)noteMenu.open=false;
+   if(['object-copy','object-cut','object-paste'].includes(action)){clipboardCommand(action.slice(7));return;}
+   if(action==='select-all'){selectAllObjects();return;}
    if(action==='shortcuts'){$('#paper-shortcuts').showModal();return;}
    if(action==='finish-text'){finishText();return;}
    if(action==='scribble-text'){
@@ -2057,6 +2022,7 @@ bind(rich,'keyup',()=>{
    if(['table-add-row','table-remove-row','table-add-col','table-remove-col'].includes(action)){
     const item=page().objects.find(o=>selected.size===1&&selected.has(o.id)&&o.type==='table');if(!item)return;
     const r=item.cells.length,c=item.cells[0].length;
+    if(action==='table-remove-row'&&r<=1||action==='table-remove-col'&&c<=1)return;
     const rows=r+(action==='table-add-row'?1:action==='table-remove-row'?-1:0);
     const cols=c+(action==='table-add-col'?1:action==='table-remove-col'?-1:0);
     if(change(p=>{const i=p.objects.findIndex(o=>o.id===item.id);p.objects[i]=tableWithCells(p.objects[i],tableGrid(item.cells,rows,cols));}))
@@ -2139,7 +2105,7 @@ bind(rich,'keyup',()=>{
    if(action==='delete-object'){change(p=>{p.objects=p.objects.filter(o=>!selected.has(o.id));});selected.clear();draw();}
    if(action==='duplicate'){const ids=[];change(p=>{const objects=cloneGroupedObjects(p.objects.filter(o=>selected.has(o.id)),24,24);ids.push(...objects.map(o=>o.id));p.objects.push(...objects);});selected=new Set(ids);draw();}
    if(action==='edit-text'){const o=page().objects.find(o=>selected.has(o.id)&&o.type==='text');if(o)startText(o);}
-   if(action==='bold'){bold=!bold;change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text')o.bold=bold;}));}
+   if(action==='bold'){const texts=page().objects.filter(o=>selected.has(o.id)&&o.type==='text');const next=!texts.every(o=>o.bold);change(p=>p.objects.forEach(o=>{if(selected.has(o.id)&&o.type==='text'){o.bold=next;if(o.marks)o.marks=o.marks.map(m=>{const n={...m};delete n.bold;return n;});}}));}
    if(action==='legacy'){if(unsaved)throw Error('กรุณาบันทึกหรือสำรองงานค้างก่อนเปิดต้นฉบับ');onLegacy();}
   }catch(err){say(err.message,true);}
  });
@@ -2213,7 +2179,7 @@ bind(rich,'keyup',()=>{
  bind($('#paper-global-text-color'),'input',e=>{
   const ink=textColor(e.target.value);if(!ink)return;
   if(editing){if(currentWordSelection())applyWordFormat('color',ink);else {editing.object.color=ink;textarea.style.color=rich.style.color=ink;finishText(true);}}
-  else if(selected.size)change(p=>p.objects.forEach(o=>{if(selected.has(o.id)){if(o.type==='text')o.color=ink;else if(o.type==='table')o.textColor=ink;}}));
+  else if(selected.size)change(p=>p.objects.forEach(o=>{if(selected.has(o.id)){if(o.type==='text'){o.color=ink;if(o.marks)o.marks=o.marks.map(m=>{const next={...m};delete next.color;return next;});}else if(o.type==='table')o.textColor=ink;}}));
   else{defaultTextColor=ink;say('ตั้งสีตัวอักษรสำหรับกล่องข้อความใหม่แล้ว');}
  });
  for(const input of root.querySelectorAll('[data-table-style]'))bind(input,'input',e=>{
@@ -2289,7 +2255,7 @@ bind(rich,'keyup',()=>{
   const key=e.code?.startsWith('Key')?e.code.slice(3).toLowerCase():e.key.toLowerCase(),mod=e.ctrlKey||e.metaKey;
   if(mod&&key==='s'){e.preventDefault();$('[data-paper="save"]').click();return;}
   if(!keyboardAllowed(e))return; // native editing shortcuts remain active inside text and form controls
-  if(mod&&key==='a'){e.preventDefault();setTool('select');selected=new Set(page().objects.map(o=>o.id));draw();return;}
+  if(mod&&key==='a'){e.preventDefault();selectAllObjects();return;}
   if(mod&&key==='d'&&selected.size){e.preventDefault();$('[data-paper="duplicate"]').click();return;}
   if(mod&&key==='g'&&selected.size){e.preventDefault();$('[data-paper="'+(e.shiftKey?'ungroup':'group')+'"]').click();return;}
   if(mod&&(key==='z'||key==='y')){e.preventDefault();$('[data-paper="'+(key==='y'||e.shiftKey?'redo':'undo')+'"]').click();return;}

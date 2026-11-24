@@ -23,7 +23,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     if(req.method()==='POST'){if(delaySave)await delaySave;const input=req.postDataJSON();if(input.expected_revision!==row.revision)return route.fulfill({status:409,json:{error:'conflict',code:'40001'}});row={revision:row.revision+1,updated_at:new Date().toISOString(),payload:input.new_payload};}
     return route.fulfill({json:row});
    }
-   if(path.startsWith('/document/')){if(req.method()==='POST'){images.set(path,req.postDataBuffer());return route.fulfill({json:{ok:true}});}return route.fulfill({contentType:'application/octet-stream',body:images.get(path)});}
+   if(path.startsWith('/document/')){if(req.method()==='POST'){const bytes=req.postDataBuffer();if(!Buffer.isBuffer(bytes))return route.fulfill({status:422,json:{error:'test browser did not expose upload bytes'}});images.set(path,bytes);return route.fulfill({json:{ok:true}});}const bytes=images.get(path);return Buffer.isBuffer(bytes)?route.fulfill({contentType:'application/octet-stream',body:bytes}):route.fulfill({status:404,json:{error:'missing test document'}});}
    if(path.startsWith('/image/')){if(req.method()==='POST'){images.set(path,req.postDataBuffer());return route.fulfill({json:{ok:true}});}return route.fulfill({contentType:'image/png',body:images.get(path)||png});}
    return route.fulfill({status:404});
   });
@@ -363,8 +363,10 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('group');await click('save');
    const grouped=row.payload.notebook.notes[0].paper.pages[0].objects.filter(o=>o.groupId);
    assert.equal(grouped.length,2);assert.equal(grouped[0].groupId,grouped[1].groupId);
-   await tap(600,500);await tap(120,330);
-   assert.equal(await page.locator('#paper-selected-count').innerText(),'กลุ่ม · 2');
+   await page.keyboard.press('Escape');
+   assert.ok(await page.locator('#paper-selection-tools').isHidden(),'Escape clears the group selection');
+   await tap(120,330);
+   assert.equal(await page.locator('#paper-selected-count').innerText(),'กลุ่ม · 2','one click selects both group members');
    await click('ungroup');await click('save');
    assert.ok(!row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.groupId));
    const count=()=>row.payload.notebook.notes[0].paper.pages[0].objects.length;
@@ -460,7 +462,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   }
   const beforeCropWidth=picture().w;await click('crop');const crop=page.getByRole('dialog');await crop.getByRole('button',{name:'ปรับขอบซ้าย',exact:true}).press('ArrowRight');await crop.getByRole('button',{name:'เสร็จสิ้น'}).click();
   await wait(()=>images.size===2);await wait(()=>page.locator('#paper-svg image').getAttribute('width').then(w=>Number(w)<beforeCropWidth));await click('save');assert.notEqual(picture().imageId,original.imageId);
-  await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.concat([Buffer.from('%PDF-1.4 sample'),Buffer.alloc(20*1024*1024-15)])});
+  await click('files');await page.locator('#paper-doc-file').setInputFiles({name:'lesson.pdf',mimeType:'application/pdf',buffer:Buffer.concat([Buffer.from('%PDF-1.4 sample'),Buffer.alloc((mobile?1024*1024:20*1024*1024)-15)])});
   await wait(()=>row.payload.notebook.notes[0].files?.[0]?.name==='lesson.pdf');await page.locator('#paper-files form button').click();
   await click('page-settings');await page.locator('#paper-template').selectOption('dots');await click('save');
   await page.screenshot({path:'test-results/paper-'+name+'.png'});
@@ -563,6 +565,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('save');
    assert.ok(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.some(o=>o.kind==='hexagon'&&o.dash==='dotted'));
     assert.ok(await page.locator('[data-open-shapes="selected"]').isVisible(),'selected shape supports icon gallery');
+    assert.ok(await page.locator('.paper-context-shape').isHidden(),'drawing settings must close once the shape is selected');
     await page.locator('[data-open-shapes="selected"]').click();
     await page.locator('[data-shape-pick="triangle"]').click();
     await page.locator('#paper-selected-line-style').selectOption('dashed');
@@ -578,11 +581,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     await click('save');assert.equal(savedShape().color,'#dc4343');assert.equal(savedShape().width,7);
     assert.ok(await page.locator('#paper-selected-fill-color').isVisible(),'closed shapes show direct fill');
     await page.getByRole('button',{name:'สีพื้นรูปทรงที่เลือก · ฟ้า',exact:true}).click();await click('save');assert.equal(savedShape().fill,'#81bdf2');
-    await page.getByRole('button',{name:'สีรูปทรง',exact:true}).click();
-    const palette=page.getByRole('dialog',{name:'สีรูปทรง'});
-    await palette.getByRole('button',{name:'สีพื้น เหลือง',exact:true}).click();
-    await palette.getByRole('button',{name:'สีเส้น น้ำเงิน',exact:true}).click();
-    await palette.getByRole('button',{name:'เสร็จสิ้น'}).click();
+    await page.getByRole('button',{name:'สีพื้นรูปทรงที่เลือก · เหลือง',exact:true}).click();
+    await page.getByRole('button',{name:'สีเส้นที่เลือก · น้ำเงิน',exact:true}).click();
     await click('save');
     assert.equal(savedShape().fill,'#f5cc55');
     assert.equal(savedShape().color,'#3155d9');
@@ -620,6 +620,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.ok(appMenu,'right-clicking the paper suppresses the native browser menu');
     assert.ok(await canvasMenu.isVisible(),'the app provides a context menu for a selected object');
     assert.ok(await canvasMenu.locator('[data-context-action="copy"]').isVisible());
+    assert.ok(await canvasMenu.locator('[data-context-action="cut"]').isVisible());
+    assert.ok(await canvasMenu.locator('[data-context-action="select-all"]').isVisible());
     await canvasMenu.locator('[data-context-action="copy"]').click();
     const blankAt=await point(650,1150);
     await page.locator('#paper-svg').evaluate((svg,p)=>{
@@ -655,7 +657,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   await b.page.locator('.paper-menu > summary').click();
   await b.page.locator('[data-paper="files"]').click();const fileButton=b.page.locator('#paper-file-list').getByText('lesson.pdf');await fileButton.waitFor();
   const [download]=await Promise.all([b.page.waitForEvent('download'),b.page.locator('#paper-file-list [data-download]').first().click()]);
-  assert.equal(download.suggestedFilename(),'lesson.pdf');const downloaded=await readFile(await download.path());assert.equal(downloaded.length,20*1024*1024);assert.equal(downloaded.subarray(0,15).toString(),'%PDF-1.4 sample');
+  assert.equal(download.suggestedFilename(),'lesson.pdf');const downloaded=await readFile(await download.path());assert.equal(downloaded.length,mobile?1024*1024:20*1024*1024);assert.equal(downloaded.subarray(0,15).toString(),'%PDF-1.4 sample');
   await click('text');await tap(120,240);
   const box=page.locator('#paper-text-input');await box.fill('politics / politics');
   await box.evaluate(el=>el.setSelectionRange(11,19));await click('word-link');

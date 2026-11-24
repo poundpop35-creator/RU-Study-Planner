@@ -1,6 +1,6 @@
 import {planRestore,confirmRestore} from './notebook-backup.js?v=20261124-text-border';
-import {paperPage} from './paper-view.js?v=20261124-text-border';
-import {mountPaper,refreshPaper} from './paper-editor.js?v=20261124-text-border';
+import {paperPage} from './paper-view.js?v=20261124-toolbar-audit';
+import {mountPaper,refreshPaper} from './paper-editor.js?v=20261124-toolbar-audit';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
