@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-toolbar-audit'); }
+try { await import('./app.js?v=20261124-single-row'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

@@ -4,7 +4,7 @@ import {shapes,lineStyles} from './paper-shapes.js?v=20261123-shapes-eraser-v4';
 import {PEN_WIDTH_PRESETS} from './paper-core.js?v=20261124-text-border';
 import {shapeIcon} from './paper-shape-icons.js?v=shape-gallery-20261120';
 import {courseMaterialLabel} from './course-materials-ui.js?v=20261124-documents20';
-import {colorValues,paperColors} from './paper-colors.js?v=20261124-color-presets';
+import {colorValues,paperColors} from './paper-colors.js?v=20261124-seven-colors';
 export const colors=colorValues;
 const colorName=value=>paperColors.find(([,color])=>color===value)?.[0]||value;
 const icons={
