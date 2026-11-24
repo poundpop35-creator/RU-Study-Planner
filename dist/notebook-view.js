@@ -1,6 +1,6 @@
 import {planRestore,confirmRestore} from './notebook-backup.js?v=20261124-groups';
 import {paperPage} from './paper-view.js?v=20261124-direct-style';
-import {mountPaper,refreshPaper} from './paper-editor.js?v=20261124-direct-style';
+import {mountPaper,refreshPaper} from './paper-editor.js?v=20261124-file-tab';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
@@ -9,8 +9,8 @@ import {lessons} from './lessons.js?v=20261027c';
 import {escapeHTML as e,isEnrolled} from './core.js?v=20261027c';
 import {newNote,findNotes,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261124-groups';
 import {materialFor,isCourseCode} from './course-materials.js?v=20261124-documents20';
-import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=20261124-documents20';
-import {openNoteFile} from './file-viewer.js?v=20261124-documents20';
+import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=20261124-file-tab';
+import {openNoteFile} from './file-viewer.js?v=20261124-file-tab';
 import {storedDocuments,documentData,attachmentBlob} from './note-files.js?v=20261124-documents20';
 let quickInkId=null;
 let query='',course='',source='',archived=false,reviewing=false,reviewIndex=0,revealed=false,unmount=()=>{};
