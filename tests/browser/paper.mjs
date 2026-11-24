@@ -491,8 +491,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.equal(await page.getByRole('dialog').locator('[name="session"]').inputValue(),'2');
     await page.getByRole('dialog').getByRole('button',{name:'สร้างโน้ต',exact:true}).click();
    await page.locator('#paper-svg').waitFor();
-   const sharedFiles=page.getByRole('button',{name:'ไฟล์หลักวิชา POL2104 · 2 รายการ',exact:true});
-   await page.locator('.paper-menu').evaluate(el=>el.open=true);assert.ok(await sharedFiles.isVisible(),'a new note exposes its course files immediately');
+   const sharedFiles=page.getByRole('button',{name:'เอกสารหลักของวิชา',exact:true});
+   assert.equal(await sharedFiles.getAttribute('title'),'ไฟล์หลักวิชา POL2104 · 2 รายการ');assert.ok(await sharedFiles.isVisible(),'a new note exposes its course files immediately');
    await sharedFiles.click();await courseDialog.locator('[data-course-preview]').first().click();
    const preview=page.locator('.paper-file-view');
    await preview.locator('iframe').waitFor();assert.equal(await preview.locator('h2').innerText(),'POL2104-syllabus.pdf');
