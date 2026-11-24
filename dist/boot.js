@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-text-border'); }
+try { await import('./app.js?v=20261124-toolbar-audit'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

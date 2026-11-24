@@ -563,6 +563,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    await click('save');
    assert.ok(row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.some(o=>o.kind==='hexagon'&&o.dash==='dotted'));
     assert.ok(await page.locator('[data-open-shapes="selected"]').isVisible(),'selected shape supports icon gallery');
+    assert.ok(await page.locator('.paper-context-shape').isHidden(),'drawing settings must close once the shape is selected');
     await page.locator('[data-open-shapes="selected"]').click();
     await page.locator('[data-shape-pick="triangle"]').click();
     await page.locator('#paper-selected-line-style').selectOption('dashed');
@@ -620,6 +621,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     assert.ok(appMenu,'right-clicking the paper suppresses the native browser menu');
     assert.ok(await canvasMenu.isVisible(),'the app provides a context menu for a selected object');
     assert.ok(await canvasMenu.locator('[data-context-action="copy"]').isVisible());
+    assert.ok(await canvasMenu.locator('[data-context-action="cut"]').isVisible());
+    assert.ok(await canvasMenu.locator('[data-context-action="select-all"]').isVisible());
     await canvasMenu.locator('[data-context-action="copy"]').click();
     const blankAt=await point(650,1150);
     await page.locator('#paper-svg').evaluate((svg,p)=>{
