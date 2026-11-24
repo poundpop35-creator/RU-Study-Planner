@@ -321,8 +321,8 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   slider.setAttribute('aria-label',highlight?'ปรับความหนาไฮไลท์':'ปรับความหนาปากกา');
   $('#paper-width-value').textContent=String(value);
   $('#paper-width-mobile-value').textContent=String(value);
-  $('#paper-size-label').textContent=highlight?'ความหนาไฮไลท์ (1–40) · เลือกขนาดหรือเลื่อนแถบ':'ความหนาปากกา (1–12) · เลือกขนาดหรือเลื่อนแถบ';
-  const toggle=$('[data-paper-size-toggle]');toggle.title=highlight?'ปรับความหนาไฮไลท์':'ปรับความหนาปากกา';
+  $('#paper-size-label').textContent='ความหนา'+settings.label+' (1–'+settings.max+') · เลือกขนาดหรือเลื่อนแถบ';
+  const toggle=$('[data-paper-size-toggle]');toggle.title='ปรับความหนา'+settings.label;
   const presets=settings.presets;
   root.querySelectorAll('[data-paper-width]').forEach((button,index)=>{
    const size=presets[index];button.dataset.paperWidth=String(size);
@@ -344,7 +344,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    try{localStorage.setItem(highlightKey,String(highlighterSize));}catch{}
   }else{
    width=inkTool()&&PEN_TIPS[tip].max===40?highlightWidth(value,width):penWidth(value,width);
-   try{localStorage.setItem(widthKey,String(width));}catch{}
+   if(!inkTool()||tip==='fine')try{localStorage.setItem(widthKey,String(width));}catch{}
   }
   rememberTip();syncPenWidthControls();
  }
@@ -379,6 +379,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    $('#paper-shape').value=next;tool='shape';
   }else tool=next;
   if(inkTool())loadTip(next==='highlight'?'chisel':validTip(chosenTip)&&chosenTip!=='chisel'?chosenTip:lastPenTip);
+  else if(['shape','straighten'].includes(tool))width=penWidth(width,tipSettings('fine',tipPrefs.fine).width);
   closeExtraTools();setShapesOpen(false);
   if(typeof collapsePhoneMore==='function'&&phoneQuickTools.has(tool))collapsePhoneMore();
   if(next!=='select')multiSelect=false;
@@ -1854,7 +1855,7 @@ bind(rich,'keyup',()=>{
    }
    if(branches)change(p=>p.objects.push(...branches));
    else if(result)change(p=>p.objects.push(result));
-   else if(g.points.length>1){const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width,...(g.tip?{tip:g.tip,opacity:g.opacity}:{})});change(p=>p.objects.push(stroke));}
+   else if(g.points.length>1||g.tip){const stroke=strokeObject(g.points,{tool:g.tool,color:g.color,width:g.width,...(g.tip?{tip:g.tip,opacity:g.opacity}:{})});change(p=>p.objects.push(stroke));}
   }
   else if(g?.kind==='shape'&&e.type==='pointerup'){
    const end=point(e);

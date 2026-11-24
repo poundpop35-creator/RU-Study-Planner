@@ -21,7 +21,7 @@ const polygon=ps=>path(ps)+' Z';
 function chiselPath(points,w){
  const a=Math.PI/9,ux=Math.sin(a)*w/2,uy=Math.cos(a)*w/2,vx=Math.cos(a)*w*.15,vy=-Math.sin(a)*w*.15;
  const corners=([x,y])=>[[x+ux+vx,y+uy+vy],[x-ux+vx,y-uy+vy],[x-ux-vx,y-uy-vy],[x+ux-vx,y+uy-vy]];
- const stamps=points.map(corners);let d=stamps.map(polygon).join(' ');
+ const stamps=points.map(p=>corners(p).reverse());let d=stamps.map(polygon).join(' ');
  for(let i=1;i<stamps.length;i++){const p=stamps[i-1],q=stamps[i];for(let j=0;j<4;j++){const k=(j+1)%4;const face=[p[j],p[k],q[k],q[j]];const area=face.reduce((s,v,n)=>s+v[0]*face[(n+1)%4][1]-v[1]*face[(n+1)%4][0],0);if(area<0)face.reverse();d+=' '+polygon(face);}}
  return d;
 }
