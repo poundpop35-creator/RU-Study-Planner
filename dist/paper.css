@@ -1586,3 +1586,7 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 .paper-paint-dialog fieldset label,.paint-opacity { display:inline-flex; align-items:center; gap:8px; padding:4px; }
 .paper-paint-dialog .paint-done { display:block; width:100%; color:white; background:#3455bc; margin-top:12px; }
 @media(pointer:coarse){.paper-app .paper-paint-dialog button { min-height:44px; }}
+
+/* Exactly one text-format surface at a time, including touch overrides. */
+.paper-app .paper-text-ribbon[hidden],.paper-app .paper-word-menu[hidden]{display:none!important;pointer-events:none!important}
+.paper-app:has(.paper-word-menu:not([hidden])) .paper-text-ribbon{display:none!important;pointer-events:none!important}

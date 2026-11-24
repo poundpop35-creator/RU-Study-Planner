@@ -733,13 +733,15 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await wordInput.isVisible(),'fresh notebook text box should open on stylus input');
    await wordInput.fill('Word text with link');
    await wordInput.evaluate(el=>el.setSelectionRange(0,4));
+   await wordInput.dispatchEvent('mouseup',{bubbles:true,button:0});
+   const wordRibbon=page.locator('#paper-text-ribbon');
+   assert.ok(await wordRibbon.isVisible(),'ordinary text selection uses the single formatting ribbon');
+   assert.ok(await page.locator('#paper-word-menu').isHidden(),'ordinary selection must not open a duplicate toolbar');
    await wordInput.dispatchEvent('contextmenu',{bubbles:true,cancelable:true,clientX:120,clientY:200});
    const miniToolbar=page.locator('#paper-word-menu');
    assert.ok(await miniToolbar.isVisible(),'right-click must open the Word selection mini toolbar');
    assert.ok(await miniToolbar.locator('[data-word-menu-link]').isVisible(),'mini toolbar must expose link/file for the selected word');
-   const wordRibbon=page.locator('#paper-text-ribbon');
-   assert.ok(await wordRibbon.isVisible(),'contextual formatting toolbar must be visible while typing');
-   assert.ok(await wordRibbon.locator('[data-paper="word-link"]').isVisible(),'per-word link/file action must be visible without opening extra settings');
+   assert.ok(await wordRibbon.isHidden(),'right-click menu replaces rather than duplicates the ribbon');
    await miniToolbar.locator('[data-word-menu-format="bold"]').click();
    assert.ok(await page.locator('#paper-rich-editor').isVisible(),'mini toolbar formats only the selected word and enters rich editing');
    const dropBlocked=await page.locator('#paper-rich-editor').evaluate(editor=>{
@@ -751,6 +753,9 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     return event.defaultPrevented&&editor.innerHTML===before;
    });
    assert.ok(dropBlocked,'formatted HTML drops must not invoke native rich-text insertion');
+   await miniToolbar.locator('[data-word-menu-close]').click();
+   assert.ok(await miniToolbar.isHidden());assert.ok(await wordRibbon.isVisible(),'closing context menu restores the single ribbon');
+   assert.ok(await wordRibbon.locator('[data-paper="word-link"]').isVisible());
    await wordRibbon.locator('[data-word-format="italic"]').click();
    await wordRibbon.locator('[data-word-format="underline"]').click();
    // A desktop color picker steals focus: the highlighted word must be
@@ -763,6 +768,8 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(await miniToolbar.isVisible(),'right-click works on rich text after formatting');
    await miniToolbar.locator('[data-word-menu-color="#dc4343"]').click();
    assert.ok((await page.locator('#paper-rich-editor').innerHTML()).includes('color:#dc4343'),'mini toolbar changes only the selected word color');
+   assert.ok(await wordRibbon.isHidden());
+   await miniToolbar.locator('[data-word-menu-close]').click();
    await page.locator('#paper-word-size').fill('19');
    await page.locator('#paper-word-size').press('Tab');
    assert.ok((await page.locator('#paper-rich-editor').innerHTML()).includes('font-size:19px'),'exact size is visible while editing');
