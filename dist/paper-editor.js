@@ -589,9 +589,9 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  let stackKey='';
  bind(stack,'change',()=>{selected=new Set(stack.value?[stack.value]:[]);draw();});
  const paintButton=document.createElement('button');
- paintButton.type='button';paintButton.textContent='สีรูปทรง';
+ paintButton.type='button';paintButton.textContent='จานสี';paintButton.setAttribute('aria-label','สีรูปทรง');paintButton.title='จานสีและตัวเลือกสีรูปทรง';
  paintButton.setAttribute('aria-haspopup','dialog');
- $('#paper-shape-selection').before(paintButton);
+ $('#paper-selected-paint').append(paintButton);
  const palette=document.createElement('dialog');
  palette.className='paper-paint-dialog';palette.setAttribute('aria-label','สีรูปทรง');
  palette.innerHTML='<h2>สีรูปทรง</h2><label class="paint-opacity">ความทึบทั้งรูป <input type="range" min="0" max="100"><output></output></label><button type="button" class="paint-done">เสร็จสิ้น</button>';
@@ -599,6 +599,21 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const opacity=palette.querySelector('input'),output=palette.querySelector('output');
  const colors=[['ดำ','#172033'],['น้ำเงิน','#3255be'],['ฟ้า','#81bdf2'],['เขียว','#399777'],['เหลือง','#f5cc55'],['แดง','#cf535e'],['ม่วง','#9063cb'],['ขาว','#ffffff']];
  const chosenShapes=()=>page().objects.filter(o=>selected.has(o.id)&&o.type==='shape');
+ const strokeColorInput=$('#paper-selected-stroke-color'),strokeWidthInput=$('#paper-selected-stroke-width'),fillColorInput=$('#paper-selected-fill-color'),opacityInput=$('#paper-selected-opacity');
+ const selectedInk=()=>page().objects.filter(o=>selected.has(o.id)&&['shape','stroke'].includes(o.type));
+ const applySelectedPaint=(key,value)=>{
+  if(!selected.size)return;
+  change(p=>p.objects.forEach(o=>{
+   if(!selected.has(o.id))return;
+   if(key==='color'||key==='width'){if(['shape','stroke'].includes(o.type))o[key]=value;}
+   else if(o.type==='shape'&&(key!=='fill'||!isJoinable(o))){if(value===null)delete o[key];else o[key]=value;}
+  }));
+ };
+ bind(strokeColorInput,'change',()=>applySelectedPaint('color',strokeColorInput.value));
+ bind(strokeWidthInput,'change',()=>{const n=Number(strokeWidthInput.value);if(Number.isFinite(n)&&strokeWidthInput.value!=='')applySelectedPaint('width',Math.max(1,Math.min(40,n)));else syncPaint();});
+ bind(fillColorInput,'change',()=>applySelectedPaint('fill',fillColorInput.value));
+ bind($('#paper-selected-no-fill'),'click',()=>applySelectedPaint('fill',null));
+ bind(opacityInput,'change',()=>{const n=Number(opacityInput.value);if(Number.isFinite(n)&&opacityInput.value!=='')applySelectedPaint('opacity',Math.max(0,Math.min(100,n))/100);else syncPaint();});
  const paintRows=[];
  for(const [key,label] of [['fill','สีพื้น'],['color','สีเส้น']]){
   const row=document.createElement('fieldset');
@@ -625,14 +640,26 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   palette.insertBefore(row,opacity.parentElement);paintRows.push({row,key,picker});
  }
  function syncPaint(){
-  const shapes=chosenShapes();
+  const shapes=chosenShapes(),ink=selectedInk(),fillable=shapes.filter(o=>!isJoinable(o));
+  $('#paper-selected-paint').hidden=!ink.length;
+  $('#paper-selected-fill-tools').hidden=!fillable.length;
+  $('#paper-selected-opacity-wrap').hidden=!shapes.length;
   paintButton.hidden=!shapes.length;
+  const syncInput=(input,value)=>{if(document.activeElement!==input)input.value=String(value);};
+  if(ink.length){
+   syncInput(strokeColorInput,ink[0].color);
+   syncInput(strokeWidthInput,Math.round(ink[0].width*100)/100);
+   strokeColorInput.title=ink.every(o=>o.color===ink[0].color)?'เปลี่ยนสีเส้น':'หลายสี · เลือกเพื่อเปลี่ยนทั้งหมด';
+   strokeWidthInput.title=ink.every(o=>o.width===ink[0].width)?'ความหนาเส้น':'หลายความหนา · กรอกเพื่อเปลี่ยนทั้งหมด';
+  }
+  if(fillable.length){syncInput(fillColorInput,fillable[0].fill||'#ffffff');$('#paper-selected-no-fill').setAttribute('aria-pressed',String(fillable.every(o=>!o.fill)));}
+  if(shapes.length)syncInput(opacityInput,Math.round((shapes[0].opacity??1)*100));
   if(!shapes.length){if(palette.open)palette.close();return;}
   if(!palette.open)return;
   for(const {row,key,picker} of paintRows){
    const targets=key==='fill'?shapes.filter(o=>!isJoinable(o)):shapes;
    row.hidden=!targets.length;if(!targets.length)continue;
-   picker.value=targets[0][key]||'#ffffff';
+   if(document.activeElement!==picker)picker.value=targets[0][key]||'#ffffff';
    for(const button of row.querySelectorAll('[data-value]')){
     button.setAttribute('aria-pressed',String(targets.every(o=>(o[key]||'').toLowerCase()===button.dataset.value)));
    }

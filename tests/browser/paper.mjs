@@ -552,6 +552,13 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     const savedShape=()=>row.payload.notebook.notes.find(n=>n.course==='POL2104').paper.pages[0].objects.find(o=>o.type==='shape');
     assert.equal(savedShape().kind,'triangle','selected shape can be converted without redrawing');
     assert.equal(savedShape().dash,'dashed','selected shape line can be changed after drawing');
+    const directStroke=page.locator('#paper-selected-stroke-color');
+    assert.ok(await directStroke.isVisible(),'selected stroke color is directly visible');
+    await directStroke.evaluate(el=>{el.value='#cf535e';el.dispatchEvent(new Event('change',{bubbles:true}));});
+    const directWidth=page.locator('#paper-selected-stroke-width');
+    await directWidth.fill('7');await directWidth.press('Tab');
+    await click('save');assert.equal(savedShape().color,'#cf535e');assert.equal(savedShape().width,7);
+    assert.ok(await page.locator('#paper-selected-fill-color').isVisible(),'closed shapes show direct fill');
     await page.getByRole('button',{name:'สีรูปทรง',exact:true}).click();
     const palette=page.getByRole('dialog',{name:'สีรูปทรง'});
     await palette.getByRole('button',{name:'สีพื้น เหลือง',exact:true}).click();
