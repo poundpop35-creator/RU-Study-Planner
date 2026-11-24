@@ -164,7 +164,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   }
   if(!editing){selected=selectIds(selected);if(tool==='select'&&selected.size&&!['page','ruler'].includes(activePanel))activePanel='select';}
   const signature=[...selected].sort().join('|');
-  if(signature!==lastSelectionSignature){lastSelectionSignature=signature;}
+  if(signature!==lastSelectionSignature){lastSelectionSignature=signature;selectionScroll.scrollLeft=0;}
   const p=page();if(model.version===2&&cachedPage!==p){const end=p.objects.reduce((v,o)=>Math.max(v,o.x+o.w),0);virtualWidth=Math.min(PAGE_W*250,Math.max(virtualWidth,(Math.ceil(end/PAGE_W)+1)*PAGE_W));sizing();}if(model.version===2&&virtualHeight<Math.min(MAX_CANVAS_HEIGHT,pageHeight(p)+PAGE_H)){
    virtualHeight=Math.min(MAX_CANVAS_HEIGHT,pageHeight(p)+PAGE_H);sizing();
   }
@@ -228,7 +228,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    shapeGallery.dataset.kind=$('#paper-shape').value;shapeGallery.replaceChildren(currentIcon.cloneNode(true));
   }
   $('[data-paper="undo"]').disabled=!history.canUndo; $('[data-paper="redo"]').disabled=!history.canRedo;
-  const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('[data-paper="object-paste"]').disabled=!clipboardHere();$('#paper-selected-count').textContent=groupState.single?'กลุ่ม · '+selected.size:selected.size; $('[data-paper="group"]').disabled=!groupState.canGroup;$('[data-paper="ungroup"]').disabled=!groupState.canUngroup;if(!tools.hidden&&selectedDesktop.matches)requestAnimationFrame(placeSelectedTools);
+  const tools=$('#paper-selection-tools');tools.hidden=!selected.size||!!editing;$('[data-paper="object-paste"]').disabled=!clipboardHere();$('#paper-selected-count').textContent=groupState.single?'กลุ่ม · '+selected.size:selected.size; $('[data-paper="group"]').disabled=!groupState.canGroup;$('[data-paper="ungroup"]').disabled=!groupState.canUngroup;if(!tools.hidden)requestAnimationFrame(()=>{placeSelectedTools();updateSelectionScroll();});
    $('#paper-table-selection').hidden=!singleTable;
    if(singleTable){$('[data-paper="table-remove-row"]').disabled=singleTable.cells.length<=1;$('[data-paper="table-remove-col"]').disabled=singleTable.cells[0].length<=1;const palette=tableStyle(singleTable);root.querySelectorAll('[data-table-style]').forEach(input=>{if(document.activeElement!==input)input.value=palette[input.dataset.tableStyle];});}
    const globalPicker=$('#paper-global-text-color');
@@ -246,7 +246,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   $('[data-paper="crop"]').hidden=!singleImage;
   const texts=p.objects.filter(o=>selected.has(o.id)&&o.type==='text');$('[data-paper="bold"]').setAttribute('aria-pressed',String(!!texts.length&&texts.every(o=>o.bold)));$('[data-paper="edit-text"]').hidden=texts.length!==1;$('#paper-font-size').parentElement.hidden=!texts.length;$('[data-paper="bold"]').hidden=!texts.length;
   const alignGroup=$('#paper-align');
-  const alignHost=editing?ribbon:tools;
+  const alignHost=editing?ribbon:selectionScroll;
   if(alignGroup.parentElement!==alignHost)alignHost.prepend(alignGroup);
   alignGroup.hidden=!editing&&!texts.length;
   if(!editing)for(const button of alignGroup.children)button.setAttribute('aria-pressed',String(texts.length>0&&texts.every(t=>(t.align||'left')===button.dataset.textAlign)));
@@ -387,6 +387,27 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const ribbon=$('#paper-text-ribbon'),wordMenu=$('#paper-word-menu'),rich=document.createElement('div');
  const selectionTools=$('#paper-selection-tools');
  const selectionGrip=selectionTools.querySelector('.paper-selection-drag');
+ const selectionScroll=document.createElement('div');selectionScroll.className='paper-selection-scroll';
+ selectionScroll.setAttribute('aria-label','เครื่องมือวัตถุ · เลื่อนซ้ายขวา');selectionScroll.setAttribute('role','group');
+ for(const node of [...selectionTools.children])if(node!==selectionGrip)selectionScroll.append(node);
+ const selectionArrow=(direction)=>{
+  const b=document.createElement('button');b.type='button';b.className='paper-selection-arrow';
+  b.textContent=direction<0?'‹':'›';b.setAttribute('aria-label',direction<0?'เลื่อนเครื่องมือไปทางซ้าย':'เลื่อนเครื่องมือไปทางขวา');
+  b.title=b.getAttribute('aria-label');bind(b,'click',()=>selectionScroll.scrollBy({left:direction*Math.max(150,selectionScroll.clientWidth*.7),behavior:'smooth'}));return b;
+ };
+ const selectionPrev=selectionArrow(-1),selectionNext=selectionArrow(1);
+ selectionTools.append(selectionPrev,selectionScroll,selectionNext);
+ function updateSelectionScroll(){
+  const max=Math.max(0,selectionScroll.scrollWidth-selectionScroll.clientWidth);
+  selectionPrev.disabled=selectionScroll.scrollLeft<=2;selectionNext.disabled=selectionScroll.scrollLeft>=max-2;
+ }
+ bind(selectionScroll,'scroll',updateSelectionScroll);
+ bind(selectionScroll,'wheel',e=>{
+  if(!e.ctrlKey&&!e.metaKey&&Math.abs(e.deltaY)>Math.abs(e.deltaX)&&selectionScroll.scrollWidth>selectionScroll.clientWidth){
+   e.preventDefault();selectionScroll.scrollLeft+=e.deltaY*(e.deltaMode===1?16:1);
+  }
+ },{passive:false});
+ const selectionResize=new ResizeObserver(updateSelectionScroll);selectionResize.observe(selectionScroll);
  const selectedDesktop=window.matchMedia('(min-width:901px) and (pointer:fine)');
  const selectedPositionKey='ru-paper-object-toolbar-xy-v1';
  let selectionPosition=null,selectionDrag=null;
@@ -2194,6 +2215,7 @@ bind(rich,'keyup',()=>{
   label.before(box);box.append(label);label.title='เลือกสีเอง';
   const swatches=document.createElement('div');swatches.className='paper-quick-swatches';swatches.setAttribute('role','group');swatches.setAttribute('aria-label',input.getAttribute('aria-label')+' · สีสำเร็จรูป');
   box.append(swatches);
+  const custom=document.createElement('span');custom.className='paper-custom-color-caption';custom.textContent='สีอื่น';input.before(custom);input.title='เลือกสีอื่นตามต้องการ';
   for(const [name,value] of paperColors){
    const button=document.createElement('button');button.type='button';button.className='paper-quick-swatch';button.dataset.quickColor=value;button.style.setProperty('--quick-ink',value);
    button.title=name;button.setAttribute('aria-label',input.getAttribute('aria-label')+' · '+name);button.setAttribute('aria-pressed','false');swatches.append(button);

@@ -294,7 +294,13 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
     }
     const drag=selectedBar.locator('.paper-selection-drag');
     assert.ok(await drag.isVisible(),'selected-object controls have a draggable grip');
-    assert.ok(oldBox.height<300,'selected-object command box remains bounded with text and border colors');
+    assert.ok(oldBox.height<=56,'selected-object toolbar stays on a single row');
+    const strip=selectedBar.locator('.paper-selection-scroll');assert.ok(await strip.evaluate(e=>e.scrollWidth>e.clientWidth),'all controls remain horizontally accessible');
+    assert.equal(await strip.locator('#paper-selected-text-color').count(),1);
+    assert.equal(await strip.locator('#paper-text-border-color').count(),1);
+    assert.equal(await strip.locator('#paper-selected-text-paint [data-quick-color]').count(),22);
+    await selectedBar.getByRole('button',{name:'เลื่อนเครื่องมือไปทางขวา',exact:true}).click();
+    await page.waitForTimeout(350);assert.ok(await strip.evaluate(e=>e.scrollLeft>0));
     const handle=await drag.boundingBox();
     const sx=handle.x+handle.width/2,sy=handle.y+handle.height/2;
     await page.mouse.move(sx,sy);
