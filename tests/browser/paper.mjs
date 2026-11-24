@@ -172,7 +172,10 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    assert.ok(row.payload.notebook.notes[0].paper.pages[0].objects.some(o=>o.type==='stroke'),'pen writes with a palm already on the page');
    assert.deepEqual(errors,[]);console.log(name+': inline table PASS');continue;
   }
-  const point=async(x,y)=>{const r=await page.locator('#paper-svg').boundingBox();const scale=r.width/900;return {x:r.x+x*scale,y:r.y+y*scale};};
+  const point=(x,y)=>page.locator('#paper-svg').evaluate((svg,[x,y])=>{
+   const p=new DOMPoint(x,y).matrixTransform(svg.getScreenCTM());
+   return {x:p.x,y:p.y};
+  },[x,y]);
   const toolbar=page.locator('.paper-toolbar');
   const toolOrder=await page.locator('.paper-toolset>button[data-paper]').evaluateAll(items=>items.map(el=>el.dataset.paper));
   assert.deepEqual(toolOrder.slice(0,2),['select','hand'],'Select and Pan are the first two neighboring notebook tools');
@@ -629,6 +632,7 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
   const activeNote=()=>row.payload.notebook.notes.find(n=>n.course==='POL2104');
   const originalText=activeNote().paper.pages[0].objects.find(o=>o.type==='text'&&o.text==='รัฐ');
   assert.ok(originalText,'create a short test word in an otherwise empty region');
+  await page.locator('#paper-svg [data-object="'+originalText.id+'"]').first().scrollIntoViewIfNeeded();
   const following=await point(Math.min(890,originalText.x+originalText.w+32),originalText.y+originalText.h/2);
   if(mobile)await page.touchscreen.tap(following.x,following.y);
   else await page.mouse.click(following.x,following.y);
