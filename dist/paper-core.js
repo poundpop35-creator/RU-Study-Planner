@@ -121,6 +121,23 @@ export function toContinuousPaper(source){
  return validatePaper({version:2,pages:[{id:first.id,template:first.template,sections:old.pages.map(({id,template})=>({id,template})),height,objects}]});
 }
 
+export function toPagedPaper(source){
+ const old=validatePaper(source);
+ if(old.version===1)return old;
+ const sheet=old.pages[0],sections=sheet.sections||[];
+ const pages=Array.from({length:Math.max(1,sections.length)},(_,i)=>({
+  id:sections[i]?.id||sheet.id,template:sections[i]?.template||sheet.template,objects:[]
+ }));
+ for(const obj of sheet.objects){
+  const row=Math.max(0,Math.floor(obj.y/PAGE_H)),y=obj.y-row*PAGE_H;
+  if(row>=100||obj.x<0||obj.x+obj.w>PAGE_W||y<0||y+obj.h>PAGE_H)
+   throw Error('มีวัตถุอยู่นอกหน้าหรือคร่อมขอบ A4 เปิดกรอบ A4 แล้วจัดวัตถุให้อยู่ในหน้าก่อนเปลี่ยน');
+  while(pages.length<=row)pages.push({...emptyPage(),template:sheet.template});
+  pages[row].objects.push({...obj,y});
+ }
+ return validatePaper({version:1,pages});
+}
+
 export function strokeObject(samples,style){
  samples=samples.filter((p,i)=>!i||p[0]!==samples[i-1][0]||p[1]!==samples[i-1][1]);
  const xs=samples.map(p=>p[0]),ys=samples.map(p=>p[1]),x=Math.min(...xs),y=Math.min(...ys),w=Math.max(1,Math.max(...xs)-x),h=Math.max(1,Math.max(...ys)-y);

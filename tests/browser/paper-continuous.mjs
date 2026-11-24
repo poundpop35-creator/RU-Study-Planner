@@ -140,6 +140,13 @@ try{
     assert.ok(await page.locator('.paper-pages').isHidden());
     assert.ok(await page.locator('#paper-svg [data-print-boundary="1"]').count());
    }
+   assert.ok(await page.getByRole('button',{name:'เอกสารหลักของวิชา',exact:true}).isVisible());
+   await page.getByRole('button',{name:'เลือกกระดาษ',exact:true}).click();
+   const modeChoice=page.locator('#paper-mode-choice');
+   await modeChoice.selectOption('1');
+   await wait(()=>page.locator('.paper-app').getAttribute('data-paper-continuous').then(v=>v==='false'));
+   await modeChoice.selectOption('2');
+   await wait(()=>page.locator('.paper-app').getAttribute('data-paper-continuous').then(v=>v==='true'));
    assert.deepEqual(errors,[],'no JS exceptions');
    await page.screenshot({path:'test-results/notebook-continuous-'+(mobile?'iphone':'desktop')+'.png',fullPage:false});
    console.log(name+': infinite scroll, dashed A4 boundaries, writing and print PASS');
