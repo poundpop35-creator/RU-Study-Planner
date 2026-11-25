@@ -70,7 +70,7 @@ for delete to authenticated using ((select auth.uid())=owner_id);
 -- No direct UPDATE grant: server RPC below performs revision-safe writes.
 
 create policy "collab members readable by note members" on public.ru_collab_members
-for select to authenticated using (ru_private.ru_collab_role(note_id) in ('owner','editor'));
+for select to authenticated using (ru_private.ru_collab_role(note_id) is not null);
 create policy "collab owner may add non-owner members" on public.ru_collab_members
 for insert to authenticated with check (
   ru_private.ru_collab_role(note_id)='owner'
@@ -83,8 +83,8 @@ create policy "collab owner can revoke, users may leave" on public.ru_collab_mem
 for delete to authenticated using (
   ru_private.ru_collab_role(note_id)='owner' or user_id=(select auth.uid()));
 
-create policy "collab versions readable by members" on public.ru_collab_versions
-for select to authenticated using (ru_private.ru_collab_role(note_id) is not null);
+create policy "collab versions readable by owner or editors" on public.ru_collab_versions
+for select to authenticated using (ru_private.ru_collab_role(note_id) in ('owner','editor'));
 
 revoke all on public.ru_collab_notes,public.ru_collab_members,public.ru_collab_versions from public,anon,authenticated;
 grant select,insert,delete on public.ru_collab_notes to authenticated;
@@ -193,24 +193,12 @@ for delete to authenticated using (
 -- Broadcast only signals a revision (never transmits private document contents).
 create policy "collab realtime read" on realtime.messages
 for select to authenticated using (
-  realtime.topic() ~ '^ru-collab:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} and
+  realtime.topic() ~ '^ru-collab:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' and
   extension in ('broadcast','presence') and
   ru_private.ru_collab_role(split_part(realtime.topic(),':',2)::uuid) is not null);
 create policy "collab realtime write" on realtime.messages
 for insert to authenticated with check (
-  realtime.topic() ~ '^ru-collab:[0-9a-f-]{36}$' and
-  (extension='presence' and
-   ru_private.ru_collab_role(split_part(realtime.topic(),':',2)::uuid) is not null
-   or extension='broadcast' and
-   ru_private.ru_collab_role(split_part(realtime.topic(),':',2)::uuid) in ('owner','editor')));
-
-commit;
- and
-  extension in ('broadcast','presence') and
-  ru_private.ru_collab_role(split_part(realtime.topic(),':',2)::uuid) is not null);
-create policy "collab realtime write" on realtime.messages
-for insert to authenticated with check (
-  realtime.topic() ~ '^ru-collab:[0-9a-f-]{36}$' and
+  realtime.topic() ~ '^ru-collab:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' and
   (extension='presence' and
    ru_private.ru_collab_role(split_part(realtime.topic(),':',2)::uuid) is not null
    or extension='broadcast' and
