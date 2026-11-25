@@ -1,3 +1,4 @@
+import {isCourseNotebook} from './course-notebook.js?v=20261125-auto-coursebooks';
 import {courses} from './data.js?v=20261027c';
 import {escapeHTML as e} from './core.js?v=20261027c';
 import {courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=shared-course-20261120';
@@ -7,12 +8,12 @@ export function prepNotice(){
 }
 export function classroomPage(space){
  const book=space?.notebook?.()||{notes:[]},active=courses.filter(c=>c.enrolled);
- const count=active.reduce((sum,c)=>sum+book.notes.filter(n=>n.course===c.id&&!n.archived).length,0);
+ const count=active.reduce((sum,c)=>sum+book.notes.filter(n=>n.course===c.id&&!n.archived&&!isCourseNotebook(n)).length,0);
  return `
  <div class="page-heading"><div><h1>ห้องเรียนและสมุดจด</h1><p>โน้ตที่เคยจดอยู่ที่นี่ด้วย ไม่ต้องสร้างหรือคัดลอกใหม่ · เอกสารหลักของวิชาเปิดร่วมกันได้ทุกครั้ง</p></div></div>
  <div class="classroom-overview panel"><b>สมุดจดที่มีแล้ว ${count} รายการ</b><a class="button secondary" href="#notes">เปิดสมุดจดทั้งหมด</a></div>
  <div class="classroom-grid">${active.map(c=>{
-  const notes=book.notes.filter(n=>n.course===c.id&&!n.archived).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+  const notes=book.notes.filter(n=>n.course===c.id&&!n.archived&&!isCourseNotebook(n)).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
   const files=courseMaterialCount(book,c.id);
   return `<article class="panel classroom-course"><span class="cc-code">${c.id}</span><h2>${e(c.title)}</h2>
    <p class="classroom-state">${notes.length?notes.length+' โน้ตที่บันทึกไว้แล้ว':'ยังไม่มีโน้ตวิชานี้'} · ${files} เอกสารหลัก</p>
@@ -25,6 +26,7 @@ export function classroomPage(space){
      <input type="file" data-course-upload-direct="${c.id}" accept=".pdf,.doc,.docx,.ppt,.pptx" hidden aria-label="แนบไฟล์เรียนหลักวิชา ${c.id}">
     </label>
     <button class="button secondary" data-action="nb-course-materials" data-course="${c.id}">📚 เอกสารหลักวิชา</button>
+    <button class="button secondary" data-action="nb-coursebook" data-course="${c.id}">เปิดสมุดรวม →</button>
     <button class="button primary" data-action="nb-new" data-course="${c.id}" data-source="classroom">＋ จดครั้งใหม่</button>
    </div>
   </article>`;
