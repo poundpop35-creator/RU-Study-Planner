@@ -7,7 +7,7 @@ import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
 import {courses} from './data.js?v=20261027c';
 import {lessons} from './lessons.js?v=20261027c';
 import {escapeHTML as e,isEnrolled} from './core.js?v=20261027c';
-import {newNote,findNotes,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261124-tips';
+import {newNote,findNotes,sortNotebookNotes,noteSession,legacyNotes,referencedImages,NOTE_SOURCES,noteSource} from './notebook-core.js?v=20261124-tips';
 import {materialFor,isCourseCode} from './course-materials.js?v=20261124-documents20';
 import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=20261124-file-tab';
 import {openNoteFile} from './file-viewer.js?v=20261124-file-tab';
@@ -38,7 +38,32 @@ async function chooseReplayDate(note){
  document.body.append(d);const closed=new Promise(resolve=>d.onclose=resolve);d.showModal();await closed;
  const day=d.returnValue==='save'?d.querySelector('input').value:d.returnValue==='clear'?'':null;d.remove();return day;
 }
-export function noteCards(items){return items.length?`<div class="notebook-grid">${items.map(n=>`<article class="note-card"><div class="note-card-top">${n.course?`<span class="badge">${e(n.course)}</span>`:''}${n.pinned?'<span>★ ปักหมุด</span>':''}</div><span class="note-origin ${noteSource(n)}">${NOTE_SOURCES[noteSource(n)]}</span><h2><a class="note-card-link" title="${e(n.title)}" href="#note/${n.id}">${e(n.title)}</a></h2><small>แก้ไข ${stamps(n.updatedAt)} · ${n.paper?n.paper.pages.length+' หน้า · ':''}${referencedImages({notes:[n]}).length} รูป</small><button type="button" class="note-card-edit ${n.replayStudiedAt?'replay-done':'replay-pending'}" style="min-height:44px" aria-haspopup="dialog" data-action="nb-replay-studied" data-id="${n.id}">${n.replayStudiedAt?'☑ ติวย้อนหลังแล้ว · '+studyDateLabel(n.replayStudiedAt):'☐ ยังไม่ติวย้อนหลัง'}</button><button class="note-card-edit" data-action="nb-classify" data-id="${n.id}" aria-label="เปลี่ยนประเภท ${e(n.title)}">แก้วิชา / ครั้งที่</button></article>`).join('')}</div>`:'<section class="panel empty"><h2>พื้นที่สำหรับความเข้าใจของคุณ</h2><p>สร้างโน้ตจากคำบรรยาย ตำรา หรือเรื่องที่ยังสงสัยได้เลย</p><button class="button primary" data-action="nb-new">สร้างโน้ตหน้าแรก</button></section>';}
+const sessionTone=n=>noteSession(n)?(noteSession(n)-1)%6+1:0;
+function notebookCard(n){
+ const session=noteSession(n),tone=sessionTone(n);
+ return '<article class="note-card note-session-tone-'+tone+'"><div class="note-card-top">'
+  +(n.course?'<span class="badge">'+e(n.course)+'</span>':'')
+  +(session?'<span class="note-session-badge">ครั้งที่ '+session+'</span>':'<span class="note-session-badge is-unassigned">ยังไม่ระบุครั้ง</span>')
+  +(n.pinned?'<span>★ ปักหมุด</span>':'')
+  +'</div><span class="note-origin '+noteSource(n)+'">'+NOTE_SOURCES[noteSource(n)]+'</span>'
+  +'<h2><a class="note-card-link" title="'+e(n.title)+'" href="#note/'+n.id+'">'+e(n.title)+'</a></h2>'
+  +'<small>แก้ไข '+stamps(n.updatedAt)+' · '+(n.paper?n.paper.pages.length+' หน้า · ':'')+referencedImages({notes:[n]}).length+' รูป</small>'
+  +'<button type="button" class="note-card-edit '+(n.replayStudiedAt?'replay-done':'replay-pending')+'" style="min-height:44px" aria-haspopup="dialog" data-action="nb-replay-studied" data-id="'+n.id+'">'+(n.replayStudiedAt?'☑ ติวย้อนหลังแล้ว · '+studyDateLabel(n.replayStudiedAt):'☐ ยังไม่ติวย้อนหลัง')+'</button>'
+  +'<button class="note-card-edit" data-action="nb-classify" data-id="'+n.id+'" aria-label="เปลี่ยนประเภท '+e(n.title)+'">แก้วิชา / ครั้งที่</button></article>';
+}
+export function noteCards(items){
+ if(!items.length)return '<section class="panel empty"><h2>พื้นที่สำหรับความเข้าใจของคุณ</h2><p>สร้างโน้ตจากคำบรรยาย ตำรา หรือเรื่องที่ยังสงสัยได้เลย</p><button class="button primary" data-action="nb-new">สร้างโน้ตหน้าแรก</button></section>';
+ const groups=new Map();
+ for(const n of sortNotebookNotes(items)){
+  const key=n.course||'';
+  if(!groups.has(key))groups.set(key,[]);
+  groups.get(key).push(n);
+ }
+ return [...groups].map(([id,notes])=>{
+  const courseInfo=courses.find(item=>item.id===id),name=id?e(id)+(courseInfo?' · '+e(courseInfo.title):''):'ไม่ระบุรายวิชา';
+  return '<section class="notebook-course-group" aria-label="'+name+'"><div class="notebook-course-heading"><div><span class="notebook-course-label">รายวิชา</span><h2>'+name+'</h2><p>เรียงครั้งล่าสุดไว้ก่อน</p></div><span class="notebook-course-count">'+notes.length+' โน้ต</span></div><div class="notebook-grid">'+notes.map(notebookCard).join('')+'</div></section>';
+ }).join('');
+}
 export function destroyEditor(){unmount();unmount=()=>{};}
 function download(name,data,type='application/json'){const u=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
 async function exportBook(space){const notebook=structuredClone(space.notebook()),images={};for(const id of referencedImages(notebook)){const b=await space.image(id);images[id]=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b);});}const documents={};for(const file of storedDocuments(notebook))documents[file.id]=await documentData(await attachmentBlob(file,space));download('ru-study-notebook-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({format:'ru-study-notebook',version:2,notebook,images,documents}));}
