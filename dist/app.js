@@ -13,7 +13,7 @@ import {sections,sectionFor,sectionTabs} from './navigation.js';
 import {prepNotice,classroomPage} from './study-sections.js?v=inline-course-upload-20261120';
 import {createStudySpace} from './study-space.js?v=20261124-tips';
 import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261125-collab';
-import {collabPage,collabNotePage,collabActiveSpace,collabNavigate,collabShareSource,collabAction,collabAuth,collabLeave} from './collab.js?v=20261125-collab';
+import {collabPage,collabNotePage,collabActiveSpace,collabNavigate,collabShareSource,collabAction,collabAuth,collabLeave} from './collab.js?v=20261125-collab-qa';
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
 import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=balanced-friday-replays-20261120';
@@ -226,7 +226,7 @@ function render(keepScroll=false){
  main.innerHTML=inReader?examReader():sectionTabs(currentView)+({home,debt:()=>{adoptLocalDebt();if(!info.hydrated&&info.phase==='loading')return '<section class="panel" role="status">กำลังโหลดแผนหนี้และประวัติการจ่ายของพื้นที่นี้…</section>';if(!info.hydrated||!info.canEdit)return '<section class="panel" role="status">ยังโหลดแผนหนี้จากพื้นที่ออนไลน์ไม่เสร็จ กรุณาตรวจสถานะการเชื่อมต่อและลองเปิดใหม่</section>';const latest=updatedPage(debtStore,currentId,info.canEdit);return latest??('<section class="panel" role="alert"><h2>ยังไม่พบแผนหนี้ฉบับล่าสุด</h2><p>ไม่แสดงแผนเก่าและยอดค้างเก่าที่อาจผิด กรุณาตรวจพื้นที่ซิงก์ หรือนำเข้าแผนฉบับใหม่</p></section>'+importPanel());},practice:examPage,documents:()=>documentsPage(currentId),courses:courseLibrary,classroom:()=>classroomPage(studySpace),course:()=>coursePage(currentId),prep:examPage,lesson:()=>lessonPage(currentId),review,plan,registration,calendar:()=>calendarPage(state,info.canEdit),menu:menuPage,exams:examPage,notes,note:()=>notePage(studySpace,currentId),collab:collabPage,'collab-note':()=>collabNotePage(currentId),account:()=>accountPage(studySpace),resources:()=>resourcesPage(state),about,settings,awards}[currentView]||missing)();
  if(inReader)closeExamReader=mountExamReader(main.querySelector('#exam-reader'));
  fresh=null;
- if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=info.status;if(el.classList?.contains('paper-cloud'))el.dataset.phase=info.phase;});
+ if(typeof document.querySelectorAll==='function'){const statusInfo=currentView==='collab-note'&&collabActiveSpace(currentId)?collabActiveSpace(currentId).info():info;document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=statusInfo.status;if(el.classList?.contains('paper-cloud'))el.dataset.phase=statusInfo.phase;});}
  document.title=`${currentView==='lesson'?(lessonById(currentId)?.title||'บทเรียน'):document.querySelector('#breadcrumb').textContent} · RU Study Planner`;
  if(info.canEdit&&currentView==='note'&&typeof window.location!=='undefined')mountEditor(studySpace,currentId);
  if(currentView==='collab-note'&&collabActiveSpace(currentId))mountEditor(collabActiveSpace(currentId),currentId);
