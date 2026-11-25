@@ -16,6 +16,7 @@ import {makeShape,resizeShape,shapeAngle,shapeContains,eraserTargetHit,isJoinabl
 import {recognizeHeldShape,recognizeDrawnShape,diagramSegments,hasBranchJunction,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261123-shapes-eraser-v4';
 import {mountTableEditor} from './paper-table-ui.js?v=20261124-notebook-v2';
 import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
+import {isCourseNotebook,sessionSections,appendSession,contentBottom} from './course-notebook.js';
 let active=null,objectClipboard=null;
 const objectMime='application/x-ru-notebook-selection';
 export function refreshPaper(space,id){return active?.id===id?active.refresh(space):false;}
@@ -264,6 +265,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
   $('#paper-font-size').value=Math.round(texts[0]?.size||fontSize);
   $('#paper-default-text-size').value=fontSize;
   loadImages();
+  updateCourseSections();
  }
  function thumbs(){
   if(model.version===2){$('#paper-page-list').replaceChildren();return;}
@@ -274,6 +276,81 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    catch(err){thumb='<text x="20" y="80" font-size="26">รูปตัวอย่างไม่พร้อม</text>';}
    return `<button class="paper-thumb ${p.id===pageId?'active':''}" data-paper-page="${p.id}" aria-label="หน้า ${i+1}" aria-current="${p.id===pageId?'page':'false'}"><svg viewBox="0 0 ${PAGE_W} ${PAGE_H}" aria-hidden="true">${thumb}</svg><span>${i+1}</span></button>`;
   }).join('');
+ }
+ // Course notebook navigation is local view state only. The reference pane never mounts a second editor.
+ let sectionBar=null,sectionSelect=null,reference=null,refSelect=null,refScroll=null,returnPoint=null,sectionSignature='',refSignature='';
+ if(isCourseNotebook(note)){
+  sectionBar=document.createElement('div');sectionBar.className='course-section-bar';
+  sectionBar.innerHTML='<label>ครั้งเรียน <select aria-label="สารบัญครั้งเรียน"></select></label><button type="button" data-section-add>＋ ครั้งเรียน</button><button type="button" data-section-return disabled>กลับจุดจด</button><button type="button" data-section-compare aria-pressed="false">ดูครั้งก่อน</button>';
+  $('.paper-workspace').before(sectionBar);sectionSelect=sectionBar.querySelector('select');
+  reference=document.createElement('aside');reference.className='course-section-reference';reference.hidden=true;
+  reference.innerHTML='<div class="course-reference-header"><strong>ทบทวน (อ่านอย่างเดียว)</strong><button type="button" aria-label="ปิดการทบทวน">×</button><select aria-label="เลือกครั้งเรียนที่ต้องการทบทวน"></select></div><div class="course-reference-scroll"></div>';
+  $('.paper-workspace').prepend(reference);refSelect=reference.querySelector('select');refScroll=reference.querySelector('.course-reference-scroll');
+  const savePosition=()=>({left:viewport.scrollLeft/scale,top:viewport.scrollTop/scale});
+  function jumpToSection(sectionId){
+   finishText();if(editing||unsaved||gesture)return say('กรุณาจบการแก้ไขหรือบันทึกงานก่อนเปลี่ยนตำแหน่ง',true);
+   const o=sessionSections(model).find(o=>o.id===sectionId);if(!o)return;
+   if(!returnPoint)returnPoint=savePosition();
+   sectionBar.querySelector('[data-section-return]').disabled=false;
+   viewport.scrollTop=Math.max(0,(o.y-24)*scale);viewport.scrollLeft=0;selected.clear();draw();
+  }
+  bind(sectionSelect,'change',()=>jumpToSection(sectionSelect.value));
+  bind(sectionBar.querySelector('[data-section-return]'),'click',()=>{
+   finishText();if(!returnPoint||editing||unsaved||gesture)return;
+   viewport.scrollLeft=returnPoint.left*scale;viewport.scrollTop=returnPoint.top*scale;returnPoint=null;
+   sectionBar.querySelector('[data-section-return]').disabled=true;
+  });
+  async function addSection(){
+   try{
+    finishText();writable();if(editing||unsaved||gesture)throw Error('กรุณาบันทึกงานก่อนเพิ่มครั้งเรียน');
+    if(!continuous())throw Error('กรุณาเปลี่ยนกลับเป็นกระดาษต่อเนื่องก่อน');
+    const max=Math.max(0,...sessionSections(model).map(o=>Number(o.text.match(/^ครั้งที่\s*(\d+)/)?.[1]||0)));
+    const d=document.createElement('dialog');d.className='paper-sheet-dialog';
+    d.innerHTML='<form method="dialog"><h2>เพิ่มครั้งเรียน</h2><label>ชื่อหัวข้อ<input required maxlength="160" name="label"></label><div class="paper-dialog-actions"><button value="save">เพิ่มต่อท้าย</button><button value="cancel" formnovalidate>ยกเลิก</button></div></form>';
+    d.querySelector('input').value='ครั้งที่ '+(max+1);
+    root.append(d);let label;
+    try{await new Promise(resolve=>{d.onclose=resolve;d.showModal();});if(d.returnValue!=='save')return;label=d.querySelector('input').value;}finally{d.remove();}
+    if(closed)return;writable();if(unsaved||editing||gesture)throw Error('สมุดเปลี่ยนแล้ว กรุณาลองใหม่');
+    const live=currentNote();if(!live||JSON.stringify(live.paper||null)!==lastStored)throw Error('สมุดเปลี่ยนจากอีกเครื่อง กรุณาลองใหม่');
+    const result=appendSession(model,label);
+    if(persist(result.paper)){returnPoint=null;sectionBar.querySelector('[data-section-return]').disabled=true;const o=sessionSections(model).find(o=>o.id===result.sectionId);viewport.scrollTop=Math.max(0,(o.y-24)*scale);sectionSelect.value=o.id;await space.flush();say('เพิ่มครั้งเรียนและบันทึกแล้ว');}
+   }catch(err){say(err.message,true);}
+  }
+  bind(sectionBar.querySelector('[data-section-add]'),'click',addSection);
+  const compare=sectionBar.querySelector('[data-section-compare]');
+  function toggleReference(open){
+   reference.hidden=!open;compare.setAttribute('aria-pressed',String(open));refSignature='';
+   const old=savePosition();sizing();viewport.scrollTop=old.top*scale;viewport.scrollLeft=old.left*scale;
+   updateCourseSections();
+  }
+  bind(compare,'click',()=>toggleReference(reference.hidden));
+  bind(reference.querySelector('button'),'click',()=>toggleReference(false));
+  bind(refSelect,'change',()=>{refSignature='';refScroll.scrollTop=0;updateCourseSections();});
+ }
+ function updateCourseSections(){
+  if(!sectionBar)return;
+  const sections=sessionSections(model),active=continuous();
+  sectionBar.querySelector('[data-section-add]').disabled=!active;
+  sectionBar.querySelector('[data-section-compare]').disabled=!active||!sections.length;
+  const signature=JSON.stringify(sections.map(o=>[o.id,o.text,o.y]));
+  if(signature!==sectionSignature){
+   sectionSignature=signature;
+   for(const select of [sectionSelect,refSelect]){
+    const prev=select.value;select.replaceChildren(new Option(select===sectionSelect?'ไปยังครั้งเรียน…':'เลือกครั้งเรียน…',''),...sections.map(o=>new Option(o.text,o.id)));
+    select.value=sections.some(o=>o.id===prev)?prev:(select===refSelect?sections[0]?.id||'':'');
+   }
+  }
+  if(reference.hidden)return;
+  const section=sections.find(o=>o.id===refSelect.value);
+  if(!section){refScroll.textContent='ยังไม่มีหัวข้อครั้งเรียน';return;}
+  const index=sections.indexOf(section),start=Math.max(0,section.y-16);
+  const end=sections[index+1]?.y??Math.max(section.y+section.h+48,contentBottom(page().objects)+32);
+  const height=Math.max(120,end-start),objects=page().objects.filter(o=>o.y+o.h>=start&&o.y<end);
+  const width=Math.max(PAGE_W,...objects.map(o=>o.x+o.w+16));
+  const nextSignature=JSON.stringify([section.id,start,height,width,objects,imageVersion]);
+  if(nextSignature===refSignature)return;
+  refSignature=nextSignature;
+  refScroll.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ตัวอย่างครั้งเรียน" viewBox="0 '+start+' '+width+' '+height+'" style="width:100%;height:auto;display:block;background:white">'+objects.map(o=>objectSVG(o,images,false)).join('')+'</svg>';
  }
  const missingImages=new Set(),retryImages=document.createElement('button');
  retryImages.type='button';retryImages.hidden=true;retryImages.textContent='โหลดรูปอีกครั้ง';

@@ -1,6 +1,6 @@
 import {planRestore,confirmRestore} from './notebook-backup.js?v=20261124-tips';
 import {paperPage} from './paper-view.js?v=20261124-tips';
-import {mountPaper,refreshPaper} from './paper-editor.js?v=20261124-tips';
+import {mountPaper,refreshPaper} from './paper-editor.js?v=20261125-coursebook';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export {refreshPaper};
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
@@ -12,6 +12,7 @@ import {materialFor,isCourseCode} from './course-materials.js?v=20261124-documen
 import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=20261124-file-tab';
 import {openNoteFile} from './file-viewer.js?v=20261124-file-tab';
 import {storedDocuments,documentData,attachmentBlob} from './note-files.js?v=20261124-documents20';
+import {isCourseNotebook,combineCourseNotes} from './course-notebook.js';
 let quickInkId=null;
 let query='',course='',source='',archived=false,reviewing=false,reviewIndex=0,revealed=false,unmount=()=>{};
 const stamps=x=>new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(x));
@@ -43,7 +44,7 @@ function notebookCard(n){
  const session=noteSession(n),tone=sessionTone(n);
  return '<article class="note-card note-session-tone-'+tone+'"><div class="note-card-top">'
   +(n.course?'<span class="badge">'+e(n.course)+'</span>':'')
-  +(session?'<span class="note-session-badge">ครั้งที่ '+session+'</span>':'<span class="note-session-badge is-unassigned">ยังไม่ระบุครั้ง</span>')
+  +(isCourseNotebook(n)?'<span class="note-session-badge">สมุดรวมทั้งวิชา</span>':session?'<span class="note-session-badge">ครั้งที่ '+session+'</span>':'<span class="note-session-badge is-unassigned">ยังไม่ระบุครั้ง</span>')
   +(n.pinned?'<span>★ ปักหมุด</span>':'')
   +'</div><span class="note-origin '+noteSource(n)+'">'+NOTE_SOURCES[noteSource(n)]+'</span>'
   +'<h2><a class="note-card-link" title="'+e(n.title)+'" href="#note/'+n.id+'">'+e(n.title)+'</a></h2>'
@@ -61,7 +62,8 @@ export function noteCards(items){
  }
  return [...groups].map(([id,notes])=>{
   const courseInfo=courses.find(item=>item.id===id),name=id?e(id)+(courseInfo?' · '+e(courseInfo.title):''):'ไม่ระบุรายวิชา';
-  return '<section class="notebook-course-group" aria-label="'+name+'"><div class="notebook-course-heading"><div><span class="notebook-course-label">รายวิชา</span><h2>'+name+'</h2><p>เรียงครั้งล่าสุดไว้ก่อน</p></div><span class="notebook-course-count">'+notes.length+' โน้ต</span></div><div class="notebook-grid">'+notes.map(notebookCard).join('')+'</div></section>';
+  const combined=notes.find(isCourseNotebook);const openButton=id?'<button class="button secondary" data-action="nb-coursebook" data-course="'+e(id)+'">'+(combined?'เปิดสมุดต่อเนื่อง':'สร้างสมุดต่อเนื่อง / รวมโน้ต')+'</button>':'';
+  return '<section class="notebook-course-group" aria-label="'+name+'"><div class="notebook-course-heading"><div><span class="notebook-course-label">รายวิชา</span><h2>'+name+'</h2><p>เรียงครั้งล่าสุดไว้ก่อน</p>'+openButton+'</div><span class="notebook-course-count">'+notes.length+' โน้ต</span></div><div class="notebook-grid">'+notes.map(notebookCard).join('')+'</div></section>';
  }).join('');
 }
 export function destroyEditor(){unmount();unmount=()=>{};}
@@ -91,10 +93,30 @@ async function noteDetails(chosenCourse,chosenSource,note,progress,book){
  const details=sessionDetails(f.course.value,Number(f.session.value));d.remove();
  return d.returnValue==='save'&&details?{...details,source:f.source.value}:null;
 }
+async function chooseCourseBookNotes(book,course){
+ const choices=book.notes.filter(n=>n.course===course&&!n.archived&&!isCourseNotebook(n)).sort((a,b)=>(noteSession(a)||1000)-(noteSession(b)||1000));
+ const d=document.createElement('dialog');d.className='paper-sheet-dialog';
+ d.innerHTML='<form method="dialog"><h2>สร้างสมุดต่อเนื่อง '+e(course)+'</h2><p>เลือกโน้ตที่จะคัดลอก เรียงตามครั้งเรียน ต้นฉบับไม่ถูกลบหรือเปลี่ยนแปลง หลังสร้างให้จดต่อในสมุดรวม (ไม่ซิงก์กลับไปยังโน้ตแยก)</p><div style="max-height:45vh;overflow:auto">'+choices.map(n=>'<label style="display:flex;align-items:center;gap:8px"><input type="checkbox" name="note" value="'+e(n.id)+'" '+(noteSource(n)==='classroom'?'checked':'')+'><span>'+e(n.title)+'</span></label>').join('')+'</div><div class="paper-dialog-actions"><button value="save">สร้างสมุดรวม</button><button value="cancel">ยกเลิก</button></div></form>';
+ document.body.append(d);try{await new Promise(resolve=>{d.onclose=resolve;d.showModal();});return d.returnValue==='save'?[...d.querySelectorAll('input:checked')].map(input=>input.value):null;}finally{d.remove();}
+}
 export async function notebookAction(action,data,space,progress,render,toast){
  if(!space.info().canEdit){toast('กำลังเชื่อมต่อสมุดจดกับ Supabase กรุณาลองอีกครั้ง');return;}
  const book=['nb-pin','nb-archive','nb-import-legacy'].includes(action)?structuredClone(space.notebook()):space.notebook(),n=book.notes.find(x=>x.id===data.id);
  try{
+  if(action==='nb-coursebook'){
+   const course=data.course;
+   const existing=book.notes.find(n=>n.course===course&&!n.archived&&isCourseNotebook(n));
+   if(existing){location.hash='#note/'+existing.id;return;}
+   if(space.info().conflict||space.info().locked)throw Error('แก้ไขการซิงก์ก่อนสร้างสมุดรวม');
+   const baseline=JSON.stringify(book),scope=space.info().scope;
+   const picked=await chooseCourseBookNotes(book,course);if(picked===null)return;
+   await space.flush();
+   if(scope!==space.info().scope||baseline!==JSON.stringify(space.notebook()))throw Error('ข้อมูลเปลี่ยนแล้ว กรุณาเลือกโน้ตอีกครั้ง');
+   const result=combineCourseNotes(space.notebook(),course,picked);
+   space.saveNotebook(result.book);
+   await space.flush();
+   location.hash='#note/'+result.id;toast('สร้างสมุดต่อเนื่องแล้ว ต้นฉบับยังอยู่ครบ');return;
+  }
   if(action==='nb-filter-course'){
    if(!isCourseCode(data.course))throw Error('รหัสวิชาไม่ถูกต้อง');
    course=data.course;source='';archived=false;reviewing=false;
