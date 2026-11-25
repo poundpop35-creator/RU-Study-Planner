@@ -2328,7 +2328,7 @@ bind(rich,'keyup',()=>{
   if(button){button.textContent='เอกสารหลักของวิชา';button.title=courseMaterialLabel(space.notebook(),currentNote()?.course);}
  }
  function refresh(nextSpace){
-  if(closed||nextSpace.info().scope!==scope||!nextSpace.info().canEdit)return false;
+  if(closed||nextSpace.info().scope!==scope||(!nextSpace.info().canEdit&&!nextSpace.info().readOnly))return false;
   const live=currentNote();if(!live)return false;
   refreshCourseButton();
   if($('#paper-files').open)fileList();

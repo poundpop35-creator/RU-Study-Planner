@@ -1,0 +1,41 @@
+
+.collab-head,.collab-toolbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;margin:18px 0;padding:18px 20px;border:1px solid #c4d2ea;border-radius:16px;background:#edf4ff}
+.collab-head h1{font-size:clamp(19px,2.5vw,27px);line-height:1.4;margin:5px 0;color:#172f63}
+.collab-head p{font-size:13px;color:#324d70;margin:5px 0 0}
+.collab-head-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.collab-head-actions .button{min-height:44px}
+.collab-members{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 15px}
+.collab-member{display:inline-flex;align-items:center;background:#e9f1ff;color:#1e40af;border-radius:999px;padding:5px 10px;border:1px solid #b3c8f1;font-size:12px;font-weight:650}
+.collab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:14px;margin:14px 0 30px}
+.collab-note-card{background:#fff;border:1px solid #bfcee4;border-top:4px solid #2456d2;border-radius:14px;padding:18px;min-width:0;box-shadow:0 4px 16px #1720330b}
+.collab-note-card strong{display:block;font-size:17px;overflow-wrap:anywhere;line-height:1.55}
+.collab-note-card p{margin:10px 0 16px;font-size:13px;color:#526177}
+.collab-note-card .button-row{align-items:center;flex-wrap:wrap}
+.collab-toolbar>span{font-size:13px;color:#294577;overflow-wrap:anywhere}
+.collab-toolbar .button-row{flex-wrap:wrap}
+.collab-login{max-width:550px;margin:18px auto;padding:20px}
+.collab-login form{display:grid;gap:15px}
+.collab-login form label{display:grid;gap:5px;font-size:14px;font-weight:650}
+.collab-login form input{width:100%;min-height:48px;padding:10px 13px;border:1px solid #95a8c7;border-radius:9px;font:inherit;font-size:16px}
+.collab-login .button-row{display:flex;flex-wrap:wrap;gap:8px}
+.collab-login .button{min-height:46px}
+.collab-viewer .paper-app [data-paper]:not([data-paper="print-pages"]),.collab-viewer .paper-app input,.collab-viewer .paper-app textarea,.collab-viewer .paper-app select{pointer-events:none!important}
+.collab-viewer .paper-app #paper-svg{pointer-events:none!important}
+.collab-viewer .paper-app .paper-toolbar,.collab-viewer .paper-app .paper-toolset,.collab-viewer .paper-app .paper-bottom{display:none!important}
+@media(max-width:640px){.collab-head,.collab-toolbar{padding:13px;gap:12px}.collab-head-actions,.collab-toolbar .button-row{width:100%;display:grid;grid-template-columns:1fr 1fr}.collab-head-actions .button,.collab-toolbar .button{width:100%;padding:9px 7px;font-size:13px}.collab-grid{grid-template-columns:1fr}}
+
+
+.collab-invite-dialog{width:min(94vw,460px);border:1px solid #b7c8e6;border-radius:18px;padding:23px;background:#fff;color:#172033;box-shadow:0 15px 70px #10204444}
+.collab-invite-dialog::backdrop{background:#0f172a99}
+.collab-invite-dialog h2{font-size:22px;margin:0 0 7px}
+.collab-invite-dialog p{font-size:14px;color:#52617a;margin:0 0 17px}
+.collab-invite-dialog label{display:grid;gap:6px;font-size:14px;font-weight:650;margin:12px 0}
+.collab-invite-dialog input,.collab-invite-dialog select{width:100%;font:inherit;font-size:16px;min-height:47px;padding:9px 11px;border:1px solid #9daeca;border-radius:9px;background:#fff;color:#172033}
+.collab-invite-dialog .button-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.collab-invite-dialog .button{flex:1;min-height:46px}
+
+.collab-members{align-items:center}.collab-member{gap:7px;flex-wrap:wrap}
+.collab-member button{border:1px solid #c6d7ed;background:#fff;border-radius:7px;min-height:32px;font:inherit;font-size:12px;font-weight:650;color:#274189;cursor:pointer;padding:4px 7px}
+.collab-member button:hover{background:#f1f5ff}
+.collab-member button:last-child{color:#9f223c;border-color:#e4c5cc}
+@media(max-width:640px){.collab-member{max-width:100%}.collab-member span{overflow-wrap:anywhere}}
