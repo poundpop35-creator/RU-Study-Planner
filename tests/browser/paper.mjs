@@ -923,19 +923,19 @@ for(const [name,type,mobile] of [['desktop',chromium,false],['tablet',chromium,f
    localStorage.setItem('pol2106-private-v1',JSON.stringify(bank));
    location.hash='#practice/POL2106';
   });
-  const reader=page.locator('#exam-reader');await reader.locator('#stem').waitFor();
+  const examReader=page.locator('#exam-reader');await examReader.locator('#stem').waitFor();
   const questionAtTop=()=>page.evaluate(()=>{
    const card=document.querySelector('.reader-question').getBoundingClientRect(),bar=document.querySelector('.topbar').getBoundingClientRect();
    return card.top>=bar.bottom-2&&card.top<=bar.bottom+35;
   });
   const assertQuestionTop=async()=>{await wait(questionAtTop);assert.ok(await questionAtTop(),'new question starts below sticky header');};
-  await reader.locator('#next').click();
+  await examReader.locator('#next').click();
   assert.equal(await page.locator('#counter').innerText(),'ข้อ 2 / 100');
   await assertQuestionTop();
-  await reader.locator('#prev').click();assert.equal(await reader.locator('#counter').innerText(),'ข้อ 1 / 100');await assertQuestionTop();
-  await reader.locator('#num').selectOption('19');assert.equal(await reader.locator('#counter').innerText(),'ข้อ 20 / 100');await assertQuestionTop();
-  await reader.locator('#sets').selectOption('1');assert.equal(await reader.locator('#counter').innerText(),'ข้อ 1 / 100');await assertQuestionTop();
-  await reader.locator('#random').click();await assertQuestionTop();
+  await examReader.locator('#prev').click();assert.equal(await examReader.locator('#counter').innerText(),'ข้อ 1 / 100');await assertQuestionTop();
+  await examReader.locator('#num').selectOption('19');assert.equal(await examReader.locator('#counter').innerText(),'ข้อ 20 / 100');await assertQuestionTop();
+  await examReader.locator('#sets').selectOption('1');assert.equal(await examReader.locator('#counter').innerText(),'ข้อ 1 / 100');await assertQuestionTop();
+  await examReader.locator('#random').click();await assertQuestionTop();
   assert.equal(await page.locator('#choices .choice').count(),5);
   assert.ok(await page.locator('#bottom-nav').isVisible()||await page.locator('#navigation').isVisible());
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
