@@ -4,6 +4,7 @@ import {notebookHistory} from './paper-page-history.js';
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';
 import {PAGE_W,PAGE_H,MAX_CANVAS_HEIGHT,pageHeight,continuousContentHeight,toContinuousPaper,toPagedPaper,emptyPage,uid,paperFor,imageLink,validatePaper,strokeObject,bounds,contains,inPolygon,strokeHit,pageHistory,copy,mergePaper,penWidth,highlightWidth,PEN_WIDTH_PRESETS,HIGHLIGHT_WIDTH_PRESETS,expandSelection,selectionGroupState,changeObjectGroups,cloneGroupedObjects,scaleGroupObject} from './paper-core.js?v=20261124-tips';
 import {printBoundaryGuides,pageSVG,printableSheets,objectSVG,esc} from './paper-render.js?v=20261124-tips';
+import {singlePrintSheet} from './paper-single-print.js?v=20261125-singlepdf';
 import {imageHandles,resizeImage,cropImage} from './paper-images.js';
 import {readAttachment,downloadAttachment} from './note-files.js?v=20261124-documents20';
 import {replaceLink,moveLinks} from './word-links.js';
@@ -16,11 +17,11 @@ import {makeShape,resizeShape,shapeAngle,shapeContains,eraserTargetHit,isJoinabl
 import {recognizeHeldShape,recognizeDrawnShape,diagramSegments,hasBranchJunction,rulerProject,rulerSnap,rulerSVG} from './paper-geometry.js?v=20261123-shapes-eraser-v4';
 import {mountTableEditor} from './paper-table-ui.js?v=20261124-notebook-v2';
 import {tableWithCells,tableGrid,tableStyle} from './paper-table.js?v=20261121-paper-format';
-import {isCourseNotebook,sessionSections,appendSession,contentBottom} from './course-notebook.js';
+import {isCourseNotebook,sessionSections,appendSession,contentBottom,assertLinkedHeadings,protectsNote} from './course-notebook.js?v=20261125-canonicalpdf';
 let active=null,objectClipboard=null;
 const objectMime='application/x-ru-notebook-selection';
 export function refreshPaper(space,id){return active?.id===id?active.refresh(space):false;}
-export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
+export function mountPaper(space,id,{onLegacy=()=>{},startInk=false,startSection=''}={}){
  const root=document.querySelector('.paper-app');if(!root)return ()=>{};
  let note=space.notebook().notes.find(n=>n.id===id);if(!note)return ()=>{};
  let conversionWarning='';let initial;
@@ -63,7 +64,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const $=s=>root.querySelector(s),svg=$('#paper-svg'),sheet=$('#paper-sheet'),wrap=$('#paper-wrap'),viewport=$('#paper-viewport'),textarea=$('#paper-text-input');
  const bind=(el,type,fn,opts)=>{el.addEventListener(type,fn,opts);events.push(()=>el.removeEventListener(type,fn,opts));};
  const printButton=document.createElement('button');
- printButton.type='button';printButton.textContent='พิมพ์ทุกหน้า / PDF';printButton.dataset.paper='print-pages';
+ printButton.type='button';printButton.textContent='พิมพ์ / PDF หน้าเดียว';printButton.dataset.paper='print-pages';
  $('.paper-context-actions').append(printButton);
  bind(printButton,'click',async()=>{
   if(composingScribble){say('รอให้แปลงลายมือเสร็จก่อนพิมพ์',true);return;}
@@ -83,23 +84,46 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
     img.src=url;await img.decode();assets.set(imageId,url);
    }
    if(preview.closed)return;
-   const css=doc.createElement('style');
-   css.textContent='@page{size:A4 portrait;margin:0}*{box-sizing:border-box}body{--print-margin:0mm;margin:0;background:#edf1f6;font-family:sans-serif;color:#203050}svg{display:block;width:100%;height:100%}article{box-sizing:border-box;background:white;width:210mm;height:297mm;padding:var(--print-margin);margin:12px auto;overflow:hidden;box-shadow:0 2px 15px #22335530}.print-actions{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding:12px;background:#f8fbff;border-bottom:1px solid #c7d4e8}.print-actions button{padding:10px 22px;border:0;border-radius:9px;background:#2b50b9;color:white;font-size:14px;cursor:pointer}.print-actions label{font-size:13px;display:flex;align-items:center;gap:8px}.print-actions select{padding:7px;border-radius:8px;border:1px solid #c1cbe1}@media print{.print-actions{display:none!important}body{background:#fff}article{margin:0;box-shadow:none;break-after:page}article:last-child{break-after:auto}}';
-   doc.head.append(css);doc.body.replaceChildren();
+   const font=document.querySelector('link[rel="stylesheet"][href*="fonts.googleapis.com/css2"]');
+   if(font){const link=doc.createElement('link');link.rel='stylesheet';link.href=font.href;doc.head.append(link);}
+   const css=doc.createElement('style'),pageCSS=doc.createElement('style');
+   css.textContent='*{box-sizing:border-box}body{--print-margin:0mm;margin:0;background:#edf1f6;font-family:"Noto Sans Thai",sans-serif;color:#203050}svg{display:block;width:100%;height:100%}article{background:white;margin:12px auto;overflow:hidden;box-shadow:0 2px 15px #22335530}article.a4{width:210mm;height:297mm;padding:var(--print-margin)}article.single{width:min(calc(100% - 24px),1100px);height:auto}article.single svg{width:100%;height:auto}.print-actions{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:12px;background:#f8fbff;border-bottom:1px solid #c7d4e8}.print-actions button{padding:10px 22px;border:0;border-radius:9px;background:#2b50b9;color:white;font-size:14px;cursor:pointer}.print-actions label{font-size:13px;display:flex;align-items:center;gap:8px}.print-actions select{padding:7px;border-radius:8px;border:1px solid #c1cbe1}.print-info{flex-basis:100%;text-align:center;font-size:12px;color:#526079;margin:0}@media print{.print-actions{display:none!important}html,body{margin:0!important;padding:0!important;background:white;print-color-adjust:exact;-webkit-print-color-adjust:exact}article{margin:0;box-shadow:none}article.a4{break-after:page}article.a4:last-child{break-after:auto}article.single{break-after:auto;break-inside:avoid}article.single svg{width:100%;height:100%}}';
+   doc.head.append(css,pageCSS);doc.body.replaceChildren();
    const actions=doc.createElement('div');actions.className='print-actions';
+   const modeLabel=doc.createElement('label');modeLabel.textContent='รูปแบบ PDF';
+   const mode=doc.createElement('select');mode.setAttribute('aria-label','รูปแบบ PDF');
+   for(const [v,labelText] of [['single','หน้าเดียว · กระดาษต่อเนื่อง'],['a4','แยกหน้า A4']]){
+    const option=doc.createElement('option');option.value=v;option.textContent=labelText;mode.append(option);
+   }
+   mode.value='single';modeLabel.append(mode);
    const label=doc.createElement('label');label.textContent='ระยะขอบกระดาษ';
    const marginSelect=doc.createElement('select');
    for(const [n,labelText] of [[0,'ชิดขอบ'],[5,'5 มม.'],[10,'10 มม.'],[15,'15 มม.']]){
     const option=doc.createElement('option');option.value=String(n);option.textContent=labelText;marginSelect.append(option);
    }
-   marginSelect.onchange=()=>doc.body.style.setProperty('--print-margin',marginSelect.value+'mm');
    label.append(marginSelect);
-   const print=doc.createElement('button');print.textContent='พิมพ์ / บันทึก PDF';print.onclick=()=>preview.print();
-   actions.append(label,print);doc.body.append(actions);
-   const sheets=printableSheets(printable,assets);
-   for(const markup of sheets){
-    const article=doc.createElement('article');article.innerHTML=markup;doc.body.append(article);
+   const print=doc.createElement('button');print.textContent='พิมพ์ / บันทึก PDF';
+   print.onclick=async()=>{print.disabled=true;try{await Promise.race([doc.fonts?.ready||Promise.resolve(),new Promise(resolve=>setTimeout(resolve,3000))]);if(!preview.closed)preview.print();}finally{print.disabled=false;}};
+   const info=doc.createElement('p');info.className='print-info';
+   actions.append(modeLabel,label,print,info);doc.body.append(actions);
+   const pagesRoot=doc.createElement('main');doc.body.append(pagesRoot);
+   function renderPrint(){
+    const margin=Number(marginSelect.value);doc.body.style.setProperty('--print-margin',margin+'mm');
+    pagesRoot.replaceChildren();
+    if(mode.value==='single'){
+     const r=singlePrintSheet(printable,assets,margin);
+     pageCSS.textContent='@page{size:'+r.pageWidth+'px '+r.pageHeight+'px;margin:0}@media print{article.single{width:'+(r.pageWidth-.5)+'px;height:'+(r.pageHeight-.5)+'px}}';
+     const article=doc.createElement('article');article.className='single';article.innerHTML=r.markup;pagesRoot.append(article);
+     info.textContent='หน้าเดียว · '+Math.round(r.pageWidth*25.4/96)+' × '+Math.round(r.pageHeight*25.4/96)+' มม. · เลือกบันทึก PDF ปิดหัว/ท้ายกระดาษ · โปรแกรมพิมพ์ต้องรองรับขนาดกระดาษกำหนดเอง';
+    }else{
+     pageCSS.textContent='@page{size:A4 portrait;margin:0}';
+     for(const markup of printableSheets(printable,assets)){
+      const article=doc.createElement('article');article.className='a4';article.innerHTML=markup;pagesRoot.append(article);
+     }
+     info.textContent='A4 · '+pagesRoot.children.length+' หน้า';
+    }
    }
+   mode.onchange=marginSelect.onchange=renderPrint;renderPrint();
   }catch{if(!preview.closed)doc.body.textContent='เตรียมหน้ากระดาษไม่สำเร็จ กรุณาปิดหน้านี้แล้วลองพิมพ์อีกครั้ง';}
  });
  const palmToggle=$('#paper-palm-guard');
@@ -134,6 +158,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  const currentNote=()=>space.notebook().notes.find(n=>n.id===id);
  const writable=()=>{const i=space.info();if(i.scope!==scope||!i.canEdit)throw Error('ยังเชื่อมต่อพื้นที่จดไม่ได้ กรุณารอหรือลองเชื่อมต่อใหม่');if(i.conflict)throw Error('มีการแก้พร้อมกัน เปิด “ข้อมูลและการซิงก์” เพื่อเลือกฉบับก่อน');};
  function persist(next,record=true,attachments=[]){
+  try{assertLinkedHeadings(model,next);}catch(err){say(err.message,true);return false;}
   try{
    writable();const live=currentNote();if(!live)throw Error('โน้ตถูกลบจากอีกเครื่อง');
    next=validatePaper(next);const previous=model,before=page(),oldPages=model.pages;
@@ -142,6 +167,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
    const after=next.pages.find(p=>p.id===before.id);
    if(draftBase)next=mergePaper(draftBase,next,paperFor(live));
    else if(JSON.stringify(live.paper||null)!==lastStored&&live.paper)next=mergePaper(model,next,live.paper);
+   assertLinkedHeadings(live.paper,next);
    const book=copy(space.notebook()),target=book.notes.find(n=>n.id===id);target.paper=next;target.updatedAt=new Date().toISOString();
    if(attachments.length){const existing=new Set((target.files||[]).map(f=>f.id));target.files=[...(target.files||[]),...attachments.filter(f=>!existing.has(f.id))];}
    space.saveNotebook(book);model=copy(next);lastStored=JSON.stringify(next);unsaved=null;draftBase=null;try{localStorage.removeItem(draftKey);}catch{}root.classList.remove('paper-has-draft');
@@ -155,6 +181,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false}={}){
  function change(fn,attachments=[]){
   const next=copy(unsaved||model),p=next.pages.find(p=>p.id===pageId);
   fn(p,next);
+  try{assertLinkedHeadings(model,next);}catch(err){say(err.message,true);draw();return false;}
   if(next.version===2){
    const actual=p.objects.reduce((max,o)=>Math.max(max,o.y+o.h),0);
    if(actual>MAX_CANVAS_HEIGHT)throw Error('กระดาษยาวถึงขีดจำกัดทางเทคนิคแล้ว กรุณาแยกเป็นสมุดใหม่');
@@ -2379,7 +2406,7 @@ bind(rich,'keyup',()=>{
   fontSize=textSize(e.target.value,fontSize);e.target.value=String(fontSize);
   try{localStorage.setItem(textSizeKey,String(fontSize));}catch{}
  });
- for(const [selector,key] of [['#paper-title','title'],['#paper-course','course'],['#paper-source','source'],['#paper-tags','tags'],['#paper-question','question'],['#paper-answer','answer']])bind($(selector),'change',e=>{try{writable();const book=copy(space.notebook()),n=book.notes.find(n=>n.id===id);n[key]=key==='course'?e.target.value.trim().toUpperCase():e.target.value;if(key==='course'&&n[key]&&!/^POL\d{4}$/.test(n[key]))throw Error('กรอกรหัสวิชา เช่น POL1101');n.updatedAt=new Date().toISOString();space.saveNotebook(book);if(key==='course')refreshCourseButton();}catch(err){say(err.message,true);}});
+ for(const [selector,key] of [['#paper-title','title'],['#paper-course','course'],['#paper-source','source'],['#paper-tags','tags'],['#paper-question','question'],['#paper-answer','answer']])bind($(selector),'change',e=>{try{writable();const book=copy(space.notebook()),n=book.notes.find(n=>n.id===id);if(['course','source'].includes(key)&&protectsNote(book,n)){e.target.value=n[key];throw Error('สมุดหลักที่เชื่อมโน้ตแล้วไม่สามารถเปลี่ยนวิชาหรือประเภท');}n[key]=key==='course'?e.target.value.trim().toUpperCase():e.target.value;if(key==='course'&&n[key]&&!/^POL\d{4}$/.test(n[key]))throw Error('กรอกรหัสวิชา เช่น POL1101');n.updatedAt=new Date().toISOString();space.saveNotebook(book);if(key==='course')refreshCourseButton();}catch(err){say(err.message,true);}});
  bind(document,'keydown',e=>{
   if(!root.isConnected||e.defaultPrevented||modalOpen()||e.isComposing)return;
   const key=e.code?.startsWith('Key')?e.code.slice(3).toLowerCase():e.key.toLowerCase(),mod=e.ctrlKey||e.metaKey;
@@ -2416,6 +2443,6 @@ bind(rich,'keyup',()=>{
  }
  const backup=document.createElement('button');backup.dataset.paper='draft';backup.className='paper-draft-button';backup.textContent='สำรองงานค้าง';$('.paper-bottom').append(backup);const discard=backup.cloneNode();discard.dataset.paper='discard-draft';discard.textContent='ละทิ้งงานค้าง';$('.paper-bottom').append(discard);
  try{const raw=localStorage.getItem(draftKey);if(raw){const draft=JSON.parse(raw);unsaved=validatePaper(draft.paper);draftBase=validatePaper(draft.base);root.classList.add('paper-has-draft');say('มีงานค้างจากครั้งก่อน กดสำรองงานค้างเพื่อเก็บฉบับกู้คืน',true);}}catch{}
- document.body.classList.add('paper-mode');active={id,refresh};syncPenWidthControls();setPagesOpen(root.classList.contains('pages-open'));sizing();draw();showTextRibbon();thumbs();if(conversionWarning)say(conversionWarning,true);
+ document.body.classList.add('paper-mode');active={id,refresh};syncPenWidthControls();setPagesOpen(root.classList.contains('pages-open'));sizing();draw();showTextRibbon();thumbs();if(startSection&&sectionSelect){const section=sessionSections(model).find(o=>o.id===startSection);if(section){sectionSelect.value=section.id;viewport.scrollTop=Math.max(0,(section.y-24)*scale);viewport.scrollLeft=0;}}if(conversionWarning)say(conversionWarning,true);
  return ()=>{finishText();tableUI.close();closed=true;cancelAnimationFrame(raf);events.forEach(fn=>fn());ro.disconnect();selectionResize.disconnect();for(const url of images.values())URL.revokeObjectURL(url);document.body.classList.remove('paper-mode');if(active?.id===id)active=null;};
 }

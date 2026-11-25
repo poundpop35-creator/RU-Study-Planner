@@ -1,3 +1,4 @@
+import {protectsNote} from './course-notebook.js?v=20261125-canonicalpdf';
 import {createSharedClient,legacyKeys,migrateLegacy} from './shared-space.js?v=20261124-tips';
 import {accountClient,lookupAccount,sessionKey} from './notebook-account.js';
 import {createPersonalClient,personalKey} from './personal-client.js?v=20261124-documents20';
@@ -175,7 +176,7 @@ export function createStudySpace({storage,progress,onProgress=()=>{},onChange=()
    };
    // Finish any in-flight autosave and load current data before removing one note.
    await flush();requireAccount();
-   const next=clone(payload.notebook);next.notes=next.notes.filter(note=>note.id!==id);
+   const next=clone(payload.notebook);if(protectsNote(next,next.notes.find(n=>n.id===id)))throw Error('โน้ตเชื่อมกับสมุดหลักอยู่ จึงไม่ลบเพื่อรักษาข้อมูล');next.notes=next.notes.filter(note=>note.id!==id);
    api.saveNotebook(next);await flush();
   },
   async importGuest(){
