@@ -105,7 +105,7 @@ async function flush(a){
 }
 function makeSpace(a){
  return {
-  info:()=>({scope:'ru-collab:'+a.id,user,canEdit:a.role!=='viewer'&&!a.conflict,readOnly:a.role==='viewer',status:a.status,phase:a.conflict?'conflict':a.dirty?'pending':'saved',dirty:a.dirty,busy:!!a.saving,conflict:a.conflict,locked:a.role==='viewer'}),
+  info:()=>({scope:'ru-collab:'+a.id+':'+user.id,user,canEdit:a.role!=='viewer'&&!a.conflict,readOnly:a.role==='viewer',status:a.status,phase:a.conflict?'conflict':a.dirty?'pending':'saved',dirty:a.dirty,busy:!!a.saving,conflict:a.conflict,locked:a.role==='viewer'}),
   notebook:()=>({version:10,notes:[a.note]}),
   saveNotebook(book){
    if(a.role==='viewer')throw Error('บัญชีนี้มีสิทธิ์ดูอย่างเดียว');
