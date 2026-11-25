@@ -70,7 +70,7 @@ for delete to authenticated using ((select auth.uid())=owner_id);
 -- No direct UPDATE grant: server RPC below performs revision-safe writes.
 
 create policy "collab members readable by note members" on public.ru_collab_members
-for select to authenticated using (ru_private.ru_collab_role(note_id) is not null);
+for select to authenticated using (ru_private.ru_collab_role(note_id) in ('owner','editor'));
 create policy "collab owner may add non-owner members" on public.ru_collab_members
 for insert to authenticated with check (
   ru_private.ru_collab_role(note_id)='owner'
