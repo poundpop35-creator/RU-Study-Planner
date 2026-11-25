@@ -15,7 +15,7 @@ test('preview, activation, partial payment, reload, and repeated activation are 
  assert.equal(updatedPage(store,'',true),null);assert.match(updatedPage(store,token,true),/ใช้แผนนี้/);
  assert.equal(map.size,0);assert.equal(updateAction('activate',store,{token}),'');assert.equal(updateAction('add',store,{creditor:'1',amount:'20'}),'');
  assert.equal(updateAction('activate',store,{token}),'');assert.equal(JSON.parse(map.get(snapshotKey)).entries.length,1);assert.ok(updateAction('add',store,{creditor:'1',amount:'999999'}));
- const recovered=validateState({version:1,debt:Object.fromEntries(map)}).debt;assert.match(updatedPage({getItem:k=>recovered[k]},'',true),/One-off · เหลือ 300 บาท/);
+ const recovered=validateState({version:1,debt:Object.fromEntries(map)}).debt;assert.match(updatedPage({getItem:k=>recovered[k]},'',true),/One-off · เหลืองวดนี้ 300 บาท/);
 });
 test('a late-month pay window holds early bills first, flags any gap, and uses the reserve only once',()=>{
  const cfg=['2030-01-02',20000,1000,[['A','',37000,0,[17000,20000],0,'',0,'','',8,{payWindow:[25,30]}],['B','',12000,0,[2000,2000,8000],0,'',0,'','',26]],''];
@@ -44,4 +44,24 @@ test('mobile monthly debt tables expose a horizontal scroll region without chang
  assert.match(html,/class="debt-scroll-hint">← เลื่อนตารางซ้าย–ขวา/);
  assert.match(html,/<\/tbody><\/table><\/div><p class="debt-hint">/);
  assert.match(html,/<th scope="col">เป้า<\/th><th scope="col">จ่ายแล้ว<\/th><th scope="col">ขาด<\/th>/);
+});
+
+test('rollover actually accelerates flexible debt, without spending the current-month surplus or prepaying fixed bills',()=>{
+ const cfg=['2030-01-25',1800000,10000,[['Fixed','',300000,0,[150000,150000],0,'',0,'','',25,{baseBudget:1500000,payWindow:[25,25]}],['Flexible','',4600000,100000,[],0,'',2500,'y','',25]],''];
+ const p=decode('p2.'+Buffer.from(JSON.stringify(cfg)).toString('base64url')),{rows}=forecast(p,[]);
+ assert.equal(rows[0].a[1],100000);assert.equal(rows[0].carryOut,1250000);
+ assert.equal(rows[1].a[0],150000);assert.ok(rows[1].extra[1]>0);
+ assert.ok(rows.length<46);assert.ok(rows.every(r=>r.transferTotal<=p.budget));
+ assert.ok(rows.every(r=>r.extra.every(n=>n%10000===0||n<10000)));
+ assert.equal(rows.reduce((n,r)=>n+r.total,0),4900000);
+});
+test('full installment action records exact balance, not rounded transfer, and prevents repeat or skipping',()=>{
+ const map=new Map(),store={getItem:k=>map.get(k),setItem:(k,v)=>map.set(k,v)};
+ assert.equal(updateAction('activate',store,{token}),'');
+ assert.notEqual(updateAction('full',store,{creditor:'0',month:'1',cents:'25000'}),'');
+ assert.equal(updateAction('full',store,{creditor:'0',month:'0',cents:'10000'}),'');
+ assert.notEqual(updateAction('full',store,{creditor:'0',month:'0',cents:'10000'}),'');
+ assert.equal(JSON.parse(map.get(snapshotKey)).entries[0].p,10000);
+ assert.match(updatedPage(store,'',true),/id="debt-payment-month"/);
+ assert.match(updatedPage(store,'',true),/จ่ายเต็มงวด/);
 });

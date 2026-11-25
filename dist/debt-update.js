@@ -1,4 +1,4 @@
-import {renderDebtCards} from './debt-cards.js?v=20261123-debt-mobile-scroll-v2';
+import {renderDebtCards} from './debt-cards.js?v=20261125-monthly-payment';
 // Portfolio details arrive from the private workspace or an import link's fragment.
 // No personal plans, balances, lender names, or installment amounts belong in this module.
 import {readPayments} from './debt-payments.js?v=20261027c';
@@ -41,8 +41,8 @@ function earlyInstallments(ac,m,start,left){
 }
 
 const roundCash=c=>Math.ceil(c/100)*100;
-// Exact required installments only. Never allocate leftover cents/tens to a debt.
-// Any unused monthly cash rolls into the next month, subject to the hard payment cap.
+// Pay required installments first. Unused current-month cash rolls forward;
+// only previously carried cash is eligible for extra principal in 100-baht steps.
 function forecastMinimumsWithRollover(p,accounts){
  const left=accounts.map(x=>x.bal),arrears=accounts.map(()=>0),rows=[];
  let reserve=0;
@@ -61,9 +61,21 @@ function forecastMinimumsWithRollover(p,accounts){
    if(cashOut+cash>cap){arrears[i]=due;shortfall+=cash;return;}
    a[i]=due;left[i]-=due;arrears[i]=0;cashOut+=cash;
   });
+  const mandatoryCash=cashOut,extra=accounts.map(()=>0);
+  let available=Math.max(0,Math.min(cap-cashOut,carryIn-Math.max(0,mandatoryCash-deposit)));
+  // Never consume the current month's unused budget just to hit a target.
+  // Do not prepay fixed future installments; only revolving or unscheduled principal.
+  if(!shortfall)accounts.forEach((v,i)=>{
+   const future=sum(v.bills.slice(m+1)),eligible=Math.max(0,left[i]-future);
+   if(!eligible||(!v.min&&!v.carry))return;
+   const chunks=Math.floor(available/10000)*10000;
+   const pay=eligible<10000&&roundCash(eligible)<=available?eligible:Math.min(Math.floor(eligible/10000)*10000,chunks);
+   if(!pay)return;
+   const cash=roundCash(pay);a[i]+=pay;extra[i]+=pay;left[i]-=pay;cashOut+=cash;available-=cash;
+  });
   reserve=carryIn+deposit-cashOut;
   rows.push({month:month(p.date,m),a,opening,interest:0,early:[],shortfall,
-   cashCeiling:cap,setAside:reserve,carryOut:reserve,carryIn,total:sum(a),
+   cashCeiling:cap,setAside:reserve,carryOut:reserve,carryIn,extra,total:sum(a),
    transferTotal:cashOut,fromBudget:cashOut-Math.min(carryIn,cashOut),emergency});
  }
  return {ac:accounts,rows};
@@ -112,15 +124,28 @@ const read=(store,token)=>{
  const paid=ac.map((_,i)=>sum(s.entries.filter(e=>e.k===i&&!e.inBaseline).map(e=>e.p)));if(paid.some((v,i)=>v>ac[i].bal))fail();
  return {s,p,ac,rows,paid,old:previous.entries,saved:!!raw};
 };
+export function firstUnpaidDue(rows,paid,k){
+ let credit=paid[k]||0;
+ for(let m=0;m<rows.length;m++){const target=rows[m].a[k]||0,done=Math.min(target,credit);credit-=done;if(target>done)return {m,target,done,left:target-done};}
+ return null;
+}
 export function updateAction(action,store,d){
- try{const c=read(store,d.token);if(!c)fail();const {s,saved,ac,paid}=c;
+ try{const c=read(store,d.token);if(!c)fail();const {s,saved,ac,paid,rows}=c;
   if(action==='activate'){if(saved&&s.token!==d.token)throw Error('มีแผนอื่นที่บันทึกอยู่แล้ว');if(saved)return '';}
   else if(!saved)fail();
   else if(action==='remove'){if(!s.entries.some(e=>e.id===d.id))fail();s.entries=s.entries.filter(e=>e.id!==d.id);}
+  else if(action==='full'){
+   const k=Number(d.creditor),m=Number(d.month);
+   if(!int(k,ac.length-1)||!int(m,rows.length-1)||ac[k].period)throw Error('กรุณาบันทึกยอดโอนและดอกเบี้ยจริงในแบบฟอร์ม');
+   const due=firstUnpaidDue(rows,paid,k);
+   if(!due||due.m!==m||String(d.cents)!==String(due.left))throw Error('ยอดงวดเปลี่ยนแล้ว กรุณาตรวจยอดใหม่ก่อนบันทึก');
+   s.entries.push({id:crypto.randomUUID(),at:new Date().toISOString(),k,p:due.left,i:0,f:0});
+  }
   else if(action==='add'){
    if(String(d.creditor??'').trim()==='')throw Error('เลือกเจ้าหนี้ก่อนบันทึก');
    const k=Number(d.creditor),all=num(d.amount),i=num(d.interest||0),f=0,p=all-i;
    if(!int(k,ac.length-1)||!all||p<0||p>ac[k].bal-paid[k])throw Error('ตรวจยอดจ่าย: ส่วนลดหนี้ต้องไม่เกินยอดคงเหลือ');
+   if(d.month!==undefined&&d.month!==''&&firstUnpaidDue(rows,paid,k)?.m!==Number(d.month))throw Error('กรุณาเลือกงวดแรกที่ยังค้างของเจ้าหนี้นี้');
    if(i&&!ac[k].period)throw Error('รายการนี้เป็นยอดผ่อนตามบิลแล้ว ไม่ต้องคิดดอกเบี้ยซ้ำ');
    s.entries.push({id:crypto.randomUUID(),at:new Date().toISOString(),k,p,i,f});
   }else fail();

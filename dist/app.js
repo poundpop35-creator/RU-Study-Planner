@@ -3,8 +3,8 @@ import {examReader,mountExamReader} from './exam-reader.js?v=20261124-question-s
 import {courseMaterialLabel,uploadSharedCourseFile} from './course-materials-ui.js?v=20261124-file-tab';
 import {registrationChecklist,enrollmentControl} from './registration-checklist.js?v=registration-status';
 import {readingStart,afterPlan,firstChecklist,weekView,mayConfirm} from './after-class.js?v=20261112a';
-import {importPanel,resolvePlan} from './debt-import.js?v=20261111b';
-import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261123-debt-mobile-scroll-v2';
+import {importPanel,resolvePlan} from './debt-import.js?v=20261125-monthly-payment';
+import {updatedPage,updateAction,snapshotKey} from './debt-update.js?v=20261125-monthly-payment';
 import {saveRates,rateFields} from './debt-interest.js?v=20261027c';
 import {debtPage,debtAction} from './debt-view.js?v=20261123-debt-mobile-scroll-v2';
 import {documentsPage} from './documents-view.js?v=20261027c';
@@ -243,6 +243,27 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
  if(action==='term'){b.setAttribute?.('aria-pressed',String(b.getAttribute?.('aria-pressed')!=='true'));return;}
  if(action==='terms-all'){const list=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('#section-terms .term')]:[],open=list.some(t=>t.getAttribute('aria-pressed')!=='true');list.forEach(t=>t.setAttribute('aria-pressed',String(open)));b.textContent=open?'ปิดคำอธิบายทั้งหมด':'เปิดดูทั้งหมด';return;}
  if(action==='debt-activate'&&currentView==='debt'){const error=updateAction('activate',debtStore,{token:currentId});if(!error)location.hash='debt';toast(error||'บันทึกแผนหนี้แล้ว');render(true);return;}
+ if(['debt-full-due','debt-fill-due','debt-prefill-due'].includes(action)){
+  if(currentView!=='debt'||!studySpace.info().canEdit||!debtStore.getItem(snapshotKey))return;
+  if(action==='debt-full-due'){
+   const amount=(Number(b.dataset.cents)/100).toLocaleString('th-TH',{maximumFractionDigits:2});
+   if(!confirm('ยืนยันว่าจ่าย '+b.dataset.label+' เต็มงวดแล้ว '+amount+' บาท? ระบบจะบันทึกยอดจริง ไม่ได้โอนเงินให้'))return;
+   const error=updateAction('full',debtStore,b.dataset);render(true);toast(error||'บันทึกจ่ายเต็มงวดแล้ว');return;
+  }
+  const form=document.querySelector('#debt-payment-form'),month=document.querySelector('#debt-payment-month'),creditor=document.querySelector('#debt-creditor');
+  if(!form||!month||!creditor)return;
+  if(action==='debt-fill-due'){
+   month.value=b.dataset.month;syncDebtPaymentOptions();
+   const target=[...creditor.options].find(o=>!o.disabled&&o.value===b.dataset.creditor&&o.dataset.month===month.value);if(!target)return;
+   creditor.selectedIndex=target.index;
+  }
+  const option=creditor.selectedOptions[0];if(!option?.dataset.due||option.disabled)return;
+  document.querySelector('#debt-payment-amount').value=String(Number(option.dataset.due)/100);
+  document.querySelector('#debt-payment-interest').value='0';syncDebtPaymentOptions(false);
+  form.scrollIntoView({block:'center',behavior:'instant'});
+  if(option.dataset.interest==='1')toast('ใส่ยอดโอนรวมและดอกเบี้ยจริงก่อนบันทึก');
+  return;
+ }
  if(action==='debt-remove'){if(currentView!=='debt'||!confirm('ลบรายการจ่ายนี้? ยอดสะสมและเงินต้นคงเหลือจะคำนวณใหม่'))return;const error=debtStore.getItem(snapshotKey)?updateAction('remove',debtStore,b.dataset):debtAction(action,b.dataset,debtStore);const keepOpen=document.querySelector('#debt-history')?.open;render(true);if(keepOpen)document.querySelector('#debt-history')?.setAttribute?.('open','');toast(error||'ลบรายการจ่ายแล้ว');return;}
  if(action.startsWith('account-')){accountAction(action,studySpace,render,toast);return;}
  if(action.startsWith('nb-')&&!studySpace.info().canEdit){toast(studySpace.info().status);return;}
@@ -314,6 +335,17 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
  if(action==='recover-session'&&confirm('ใช้ข้อมูลรอบนี้แทนข้อมูลเดิมที่อ่านไม่ได้? ควรส่งออกข้อมูลรอบนี้ก่อน')){locked=false;save();render(true);}
  reward(before,rect);
 });
+function syncDebtPaymentOptions(reset=true){
+ const month=document.querySelector('#debt-payment-month'),creditor=document.querySelector('#debt-creditor');
+ if(!month||!creditor)return;
+ const previous=creditor.selectedOptions[0];
+ for(const o of creditor.options){if(!o.dataset.month)continue;o.hidden=o.dataset.month!==month.value;o.disabled=o.hidden||o.dataset.eligible!=='1';}
+ if(reset&&(!previous||previous.disabled||previous.hidden))creditor.selectedIndex=0;
+ const o=creditor.selectedOptions[0],valid=!!o?.dataset.due&&!o.disabled;
+ const button=document.querySelector('[data-action="debt-prefill-due"]'),hint=document.querySelector('#debt-selected-due');
+ button.disabled=!valid;button.textContent=valid?'ใส่ยอดเต็มงวด '+(Number(o.dataset.due)/100).toLocaleString('th-TH',{maximumFractionDigits:2})+' บาท':'ใส่ยอดเต็มงวด';
+ hint.textContent=valid?'ยอดค้างของงวดที่เลือก (ยังไม่รวมดอกจริง)':'เลือกเจ้าหนี้ที่มีงวดค้างเก่าสุด';
+}
 document.addEventListener('submit',async event=>{
  if(currentView!=='debt')return;
  if(event.target.id==='debt-import-form'){
@@ -336,13 +368,14 @@ document.addEventListener('submit',async event=>{
  if(event.target.id!=='debt-payment-form')return;
  event.preventDefault();
  const creditor=document.querySelector('#debt-creditor').value,amount=document.querySelector('#debt-payment-amount').value;
- const interest=document.querySelector('#debt-payment-interest')?.value||'0';
- const error=debtStore.getItem(snapshotKey)?updateAction('add',debtStore,{creditor,amount,interest}):debtAction('debt-add',{creditor,amount,interest,fee},debtStore);
+ const interest=document.querySelector('#debt-payment-interest')?.value||'0',fee=document.querySelector('#debt-payment-fee')?.value||'0',month=document.querySelector('#debt-payment-month')?.value;
+ const error=debtStore.getItem(snapshotKey)?updateAction('add',debtStore,{creditor,amount,interest,month}):debtAction('debt-add',{creditor,amount,interest,fee},debtStore);
  if(error){const warning=document.querySelector('#debt-payment-error');warning.textContent=error;warning.hidden=false;return;}
- render(true);document.querySelector('#debt-creditor').value=creditor;document.querySelector('#debt-payment-amount').focus({preventScroll:true});toast('บันทึกยอดจ่ายสะสมแล้ว');
+ render(true);toast('บันทึกยอดจ่ายสะสมแล้ว');
 });
 document.addEventListener('input',event=>{const el=event.target;if(el.id==='registration-search'){regQuery=el.value;document.querySelector('#registration-search-results').innerHTML=regResults();return;}if(!studySpace.info().canEdit&&el.id!=='lesson-search')return;if(el.id==='notebook-search'){notebookSearch(studySpace,el.value);return;}if(el.id==='lesson-search'){searchQuery=el.value;document.querySelector('#library-results').innerHTML=libraryResults();}if(el.id==='lesson-note'){state.notes[el.dataset.lesson]=el.value;const ok=save();document.querySelector('#note-status').textContent=ok?studySpace.info().status:'ยังไม่บันทึกใน Supabase กรุณาลองอีกครั้ง';}});
 document.addEventListener('change',async event=>{const el=event.target;
+ if(el.id==='debt-payment-month'||el.id==='debt-creditor'){syncDebtPaymentOptions();return;}
  if(el.dataset?.courseUploadDirect){
   const file=el.files?.[0],course=el.dataset.courseUploadDirect;
   if(!file)return;
