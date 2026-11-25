@@ -9,7 +9,7 @@ import {saveRates,rateFields} from './debt-interest.js?v=20261027c';
 import {debtPage,debtAction} from './debt-view.js?v=20261123-debt-mobile-scroll-v2';
 import {documentsPage} from './documents-view.js?v=20261027c';
 import {examEvidenceTable,examEvidenceCard,readingExamFormats,registrationExam} from './exam-evidence.js?v=20261113b';
-import {sections,sectionFor,sectionTabs} from './navigation.js';
+import {sections,sectionFor,sectionTabs} from './navigation.js?v=20261125-collab';
 import {prepNotice,classroomPage} from './study-sections.js?v=inline-course-upload-20261120';
 import {createStudySpace} from './study-space.js?v=20261124-tips';
 import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261125-collab';
@@ -212,7 +212,7 @@ function updateNav(){
  document.querySelector('#bottom-nav').innerHTML=places.map(([key,i,label])=>`<a class="${place===key?'active':''}" href="#${key}" ${place===key?'aria-current="page"':''}>${icon(i,22)}<span>${label}</span></a>`).join('');
  document.querySelector('#top-stats').innerHTML=`<a class="top-chip" href="#awards" aria-label="เรียนต่อเนื่อง ${s} วัน · เลเวล ${lv.level} ${e(lv.title)} ${xp} XP"><span aria-hidden="true">🔥</span><b>${s}</b><i aria-hidden="true"></i><span aria-hidden="true">${lv.icon}</span><b>Lv.${lv.level}</b></a>`;
  document.querySelector('#side-level').innerHTML=`<span class="sl-icon" aria-hidden="true">${lv.icon}</span><span class="sl-body"><b>Lv.${lv.level} ${e(lv.title)}</b>${meter(lv.percent,'ความคืบหน้าสู่เลเวลถัดไป')}<small>${xp.toLocaleString('th-TH')} XP${lv.next===null?' · สูงสุดแล้ว':` · อีก ${lv.toNext.toLocaleString('th-TH')} XP`}</small></span>`;
- document.querySelector('#breadcrumb').textContent=currentView==='lesson'?`${currentId.split('-')[0]} / ติวก่อนเรียน`:currentView==='prep'?`${currentId} / แนวข้อสอบ`:(section?.pages.find(([key])=>key===currentView)?.[1]||{course:'ติวก่อนเรียนรายวิชา',about:'แหล่งเรียนรู้',settings:'ตั้งค่า',note:'สมุดจด',menu:'เมนูทั้งหมด'}[currentView]||'ห้องเรียน');
+ document.querySelector('#breadcrumb').textContent=currentView==='lesson'?`${currentId.split('-')[0]} / ติวก่อนเรียน`:currentView==='prep'?`${currentId} / แนวข้อสอบ`:(section?.pages.find(([key])=>key===currentView)?.[1]||{course:'ติวก่อนเรียนรายวิชา',about:'แหล่งเรียนรู้',settings:'ตั้งค่า',note:'สมุดจด','collab-note':'สมุดร่วมกัน',menu:'เมนูทั้งหมด'}[currentView]||'ห้องเรียน');
 }
 // Thin bar at the top of a lesson that fills as the learner scrolls through it.
 function readProgress(){const root=document.documentElement,bar=document.getElementById('read-progress');if(!bar?.style||!root.scrollHeight)return;const max=root.scrollHeight-(globalThis.innerHeight||0);bar.style.setProperty('--read',currentView==='lesson'&&max>0?Math.min(1,Math.max(0,(globalThis.scrollY||0)/max)).toFixed(3):'0');}
