@@ -175,7 +175,7 @@ async function openShared(id){
  await joinChannel(a);return a;
 }
 async function loadIndex(){
- const r=await (await client()).from('ru_collab_notes').select('id,owner_id,snapshot,updated_at').order('updated_at',{ascending:false}).limit(200);
+ const r=await (await client()).from('ru_collab_notes').select('id,owner_id,title,course,updated_at').order('updated_at',{ascending:false}).limit(200);
  if(r.error)throw r.error;items=r.data||[];
 }
 export async function collabNavigate(view,id,onRender){
@@ -210,7 +210,7 @@ export function collabPage(){
  if(error)return heading+'<section class="panel" role="alert"><h2>ระบบแชร์ยังไม่พร้อม</h2><p>'+e(error)+'</p><p>ต้องเปิดตารางและสิทธิ์ของระบบสมุดร่วมกันใน Supabase โปรเจ็กต์ของแอปก่อน</p><button class="button secondary" data-action="collab-retry">ลองอีกครั้ง</button></section>';
  if(!user)return heading+'<section class="panel collab-login"><h2>เข้าสู่ระบบเพื่อใช้สมุดร่วมกัน</h2><p>ต้องใช้บัญชี Supabase Auth ที่ยืนยันอีเมลแล้ว ระบบนี้แยกจากสมุดส่วนตัวเดิม</p><form id="collab-auth-form"><label>อีเมล<input name="email" type="email" autocomplete="email" required></label><label>รหัสผ่าน<input name="password" type="password" minlength="6" autocomplete="current-password" required></label><div class="button-row"><button class="button primary" type="submit" name="mode" value="login">เข้าสู่ระบบ</button><button class="button secondary" type="submit" name="mode" value="signup">สมัครบัญชี</button></div></form></section>';
  const source=shareSource?'<button class="button primary" data-action="collab-share-current">นำหน้าโน้ตที่เลือกมาแชร์</button>':'';
- const cards=items.map(n=>'<article class="collab-note-card"><strong>'+e(n.snapshot?.title||'สมุดร่วมกัน')+'</strong><p>'+e(n.snapshot?.course||'')+' · แก้ไข '+e(dateString(n.updated_at))+'</p><div class="button-row"><a class="button secondary" href="#collab-note/'+n.id+'">เปิดสมุด</a><span class="note-origin">'+(n.owner_id===user.id?'เจ้าของ':'ร่วมงาน')+'</span></div></article>').join('');
+ const cards=items.map(n=>'<article class="collab-note-card"><strong>'+e(n.title||'สมุดร่วมกัน')+'</strong><p>'+e(n.course||'')+' · แก้ไข '+e(dateString(n.updated_at))+'</p><div class="button-row"><a class="button secondary" href="#collab-note/'+n.id+'">เปิดสมุด</a><span class="note-origin">'+(n.owner_id===user.id?'เจ้าของ':'ร่วมงาน')+'</span></div></article>').join('');
  return heading+'<div class="collab-toolbar"><span>เข้าสู่ระบบ: '+e(user.email||'')+'</span><div class="button-row">'+source+'<button class="button primary" data-action="collab-create">＋ สร้างสมุดร่วมกัน</button><button class="button secondary" data-action="collab-logout">ออกจากระบบแชร์</button></div></div><div class="collab-grid">'+(cards||'<section class="panel">ยังไม่มีสมุดที่แชร์ เริ่มสร้างสมุดแรกได้เลย</section>')+'</div>';
 }
 export function collabShareSource(id){shareSource=id;}
