@@ -11,6 +11,8 @@ create table if not exists public.ru_collab_notes (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references auth.users(id) on delete cascade,
   snapshot jsonb not null,
+  title text generated always as (left(coalesce(snapshot->>'title','สมุดร่วมกัน'),160)) stored,
+  course text generated always as (left(coalesce(snapshot->>'course',''),16)) stored,
   revision bigint not null default 1 check (revision > 0),
   updated_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
