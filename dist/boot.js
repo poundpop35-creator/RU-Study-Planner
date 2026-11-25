@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261125-singlepdf'); }
+try { await import('./app.js?v=20261125-canonicalpdf'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
