@@ -55,6 +55,12 @@ test('25th-only plan: exact minimums, no 20.82 AEON padding, leftover rolls into
  assert.equal(rows[0].carryOut,3100);assert.equal(rows[1].carryIn,3100);
  assert.equal(rows[1].transferTotal,1237000);assert.equal(rows[1].carryOut,266100);
  assert.ok(rows.every(r=>r.transferTotal<=1800000&&r.interest===0));
- assert.ok(rows.slice(0,12).every(r=>[7,8,9,10].every(i=>r.a[i]<=100000)));
+ // Minimums are unchanged in the first two months; only prior-month reserve
+ // funds subsequent extra payments, in 100-baht increments.
+ assert.ok(rows.slice(0,2).every(r=>[7,8,9,10].every(i=>r.a[i]<=100000)));
+ assert.ok(rows.slice(2).some(r=>r.extra.some(n=>n>0)));
+ assert.ok(rows.length<46);
+ assert.ok(rows.every(r=>r.extra.every(n=>n%10000===0||n<10000)));
+ assert.ok(rows.every(r=>r.extra.reduce((a,n)=>a+n,0)<=r.carryIn));
  assert.equal(rows.reduce((a,r)=>a+r.total,0),items.reduce((a,x)=>a+x[2],0));
 });
