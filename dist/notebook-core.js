@@ -45,6 +45,18 @@ export function validateNotebook(v){
  })};
 }
 export function newNote({id=crypto.randomUUID(),course='',lesson='',source=lesson?'prep':'general',session,title='โน้ตใหม่',text=''}={}){return {id,title,course,lesson,...(session?{session}:{}),source:noteSource({source,lesson}),tags:'',delta:cleanDelta({ops:[{insert:text+'\n'}]}),pinned:false,archived:false,updatedAt:new Date().toISOString(),question:'',answer:''};}
-export function findNotes(book,{query='',course='',source='',archived=false}={}){const q=query.trim().toLocaleLowerCase();return book.notes.filter(n=>n.archived===archived&&(!course||n.course===course)&&(!source||noteSource(n)===source)&&(!q||[n.title,n.tags,noteText(n),n.question,n.answer].join(' ').toLocaleLowerCase().includes(q))).sort((a,b)=>Number(b.pinned)-Number(a.pinned)||b.updatedAt.localeCompare(a.updatedAt));}
+export function noteSession(n){
+ if(Number.isSafeInteger(n?.session)&&n.session>=1&&n.session<=999)return n.session;
+ const matched=String(n?.title||'').match(/ครั้งที่\s*(\d{1,3})(?!\d)/);
+ const session=Number(matched?.[1]||0);
+ return session>=1&&session<=999?session:0;
+}
+export function sortNotebookNotes(items){
+ return [...items].sort((a,b)=>(a.course||'\uffff').localeCompare(b.course||'\uffff','en',{numeric:true})||noteSession(b)-noteSession(a)||Number(Boolean(b.pinned))-Number(Boolean(a.pinned))||String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))||String(a.id||'').localeCompare(String(b.id||'')));
+}
+export function findNotes(book,{query='',course='',source='',archived=false}={}){
+ const q=query.trim().toLocaleLowerCase();
+ return sortNotebookNotes(book.notes.filter(n=>n.archived===archived&&(!course||n.course===course)&&(!source||noteSource(n)===source)&&(!q||[n.title,n.tags,noteText(n),n.question,n.answer].join(' ').toLocaleLowerCase().includes(q))));
+}
 export function legacyNotes(progress,lessons){return Object.entries(progress.notes||{}).filter(([,text])=>text.trim()).map(([id,text])=>newNote({id:'legacy-'+id,lesson:id,course:id.split('-')[0],title:lessons.find(l=>l.id===id)?.title||id,text}));}
 export function validateEnvelope(v,validateProgress){if(!plain(v)||v.version!==1)throw Error('ข้อมูลพื้นที่เรียนไม่ถูกต้อง');const result={version:1,progress:validateProgress(v.progress),notebook:validateNotebook(v.notebook)};if(v.migrations!==undefined){if(!Array.isArray(v.migrations)||v.migrations.length>2000||v.migrations.some(x=>typeof x!=='string'||!/^[a-f0-9]{64}$/.test(x)))throw Error('ข้อมูลการย้ายพื้นที่ไม่ถูกต้อง');result.migrations=[...new Set(v.migrations)];}return result;}

@@ -1039,3 +1039,27 @@ html[data-view=debt] .top-stats{display:none}
 
 .note-card-edit.replay-done,.note-card-edit.replay-done:hover{background:#dcfce7;color:#166534;border:1px solid #86efac;font-weight:750}
 .note-card-edit.replay-pending,.note-card-edit.replay-pending:hover{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-weight:750}
+
+
+/* Notebook library: natural course order, newest class session first, distinct session tones. */
+.notebook-course-group{margin:24px 0 32px;min-width:0}
+.notebook-course-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px;margin-bottom:14px;border:1px solid #d0dcf4;border-left:5px solid #274ed2;border-radius:14px;background:#f1f5ff}
+.notebook-course-heading h2{font-size:clamp(17px,2vw,21px);line-height:1.45;margin:3px 0;color:#172f63}
+.notebook-course-heading p{font-size:13px;margin:2px 0 0;color:#4b607d}
+.notebook-course-label{font-size:12px;font-weight:750;color:#3455a5}
+.notebook-course-count{flex:none;font-size:13px;font-weight:700;padding:6px 11px;border-radius:999px;color:#274189;background:#fff;border:1px solid #c8d7f5}
+.notebook-course-group .notebook-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:16px}
+.note-session-tone-1{--note-tone:#2563eb;--note-soft:#eaf2ff;--note-ink:#1e40af}
+.note-session-tone-2{--note-tone:#0e9488;--note-soft:#e0f6f1;--note-ink:#115e59}
+.note-session-tone-3{--note-tone:#a15bd0;--note-soft:#f2eafd;--note-ink:#6b21a8}
+.note-session-tone-4{--note-tone:#d27b20;--note-soft:#fff1da;--note-ink:#92400e}
+.note-session-tone-5{--note-tone:#db5275;--note-soft:#ffedf2;--note-ink:#9d174d}
+.note-session-tone-6{--note-tone:#64748b;--note-soft:#edf2f7;--note-ink:#334155}
+.note-session-tone-0{--note-tone:#64748b;--note-soft:#f1f5f9;--note-ink:#475569}
+.note-card[class*="note-session-tone-"]{border-top-color:var(--note-tone,#2563eb)}
+.note-card[class*="note-session-tone-"]:hover{border-color:var(--note-tone,#2563eb)}
+.note-session-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 10px;background:var(--note-soft);color:var(--note-ink);border:1px solid var(--note-tone);font-size:12px;font-weight:800;white-space:nowrap}
+.note-session-badge.is-unassigned{border-color:#cbd5e1}
+.note-card-top{justify-content:flex-start}
+.note-card-top>span:last-child:not(:first-child){margin-left:auto}
+@media(max-width:600px){.notebook-course-heading{padding:12px;align-items:flex-start}.notebook-course-count{font-size:12px}.notebook-course-group .notebook-grid{grid-template-columns:minmax(0,1fr)}}

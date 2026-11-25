@@ -30,7 +30,7 @@ test('unsafe HTML, URLs, embeds and formatting cannot become executable note con
 });
 test('search, pinning, archive and legacy copy do not discard original lesson notes',()=>{
  const a=newNote({id:'a',title:'หนึ่ง',course:'POL1101',text:'รัฐบาล'}),b=newNote({id:'b',title:'สอง'}),c=newNote({id:'c',title:'เก่า'});b.pinned=true;c.archived=true;
- const book={version:1,notes:[a,b,c]};assert.deepEqual(findNotes(book).map(n=>n.id),['b','a']);assert.deepEqual(findNotes(book,{query:'รัฐบาล'}).map(n=>n.id),['a']);assert.deepEqual(findNotes(book,{archived:true}).map(n=>n.id),['c']);
+ const book={version:1,notes:[a,b,c]};assert.deepEqual(findNotes(book).map(n=>n.id),['a','b']);assert.deepEqual(findNotes(book,{query:'รัฐบาล'}).map(n=>n.id),['a']);assert.deepEqual(findNotes(book,{archived:true}).map(n=>n.id),['c']);
  const p=freshState();p.notes['POL1101-1']='ต้นฉบับ';assert.equal(legacyNotes(p,[])[0].id,'legacy-POL1101-1');assert.equal(p.notes['POL1101-1'],'ต้นฉบับ');
 });
 test('online notebook waits for a connected space and cannot silently create device-only data',()=>{
@@ -141,4 +141,37 @@ test('course picker follows registration overrides and builds session titles fro
  assert.equal(sessionDetails('POL1101',2).title,'POL1101 การเมืองการปกครองไทย · ครั้งที่ 2');
  assert.equal(sessionDetails('POL1101',0),null);
  assert.equal(validateNotebook({version:1,notes:[newNote(sessionDetails('POL1101',2))]}).notes[0].session,2);
+});
+
+
+test('notebook library sorts by numeric course code, highest session, then newest edit, without mutating stored notes',async()=>{
+ const {noteCards}=await import('../dist/notebook-view.js');
+ const notes=[
+  newNote({id:'newer-edit',course:'POL2301',session:1,title:'POL2301 · ครั้งที่ 1'}),
+  newNote({id:'early-1',course:'POL1101',session:1,title:'POL1101 · ครั้งที่ 1'}),
+  newNote({id:'early-3',course:'POL1101',session:3,title:'POL1101 · ครั้งที่ 3'}),
+  newNote({id:'early-2',course:'POL1101',session:2,title:'POL1101 · ครั้งที่ 2'}),
+  newNote({id:'late-2',course:'POL2107',session:2,title:'POL2107 · ครั้งที่ 2'}),
+  newNote({id:'late-4',course:'POL2107',session:4,title:'POL2107 · ครั้งที่ 4'}),
+ ];
+ notes[1].updatedAt='2026-11-25T12:00:00Z';
+ notes[2].updatedAt='2026-11-20T12:00:00Z';
+ const before=JSON.stringify(notes);
+ const ordered=findNotes({notes},{});
+ assert.deepEqual(ordered.map(n=>n.id),['early-3','early-2','early-1','late-4','late-2','newer-edit']);
+ assert.equal(JSON.stringify(notes),before,'view sorting should never modify saved notebook order');
+ const html=noteCards(ordered);
+ assert.ok(html.indexOf('POL1101 ·')<html.indexOf('POL2107 ·'));
+ assert.ok(html.indexOf('ครั้งที่ 3')<html.indexOf('ครั้งที่ 2'));
+ assert.match(html,/note-session-tone-3/);
+ assert.match(html,/notebook-course-heading/);
+});
+
+test('legacy session titles remain sortable and an unclassified note falls last',async()=>{
+ const {noteSession}=await import('../dist/notebook-core.js');
+ const a=newNote({id:'class-7',course:'POL2303',title:'POL2303 บทเรียน · ครั้งที่ 7'});
+ const b=newNote({id:'class-2',course:'POL2303',session:2,title:'POL2303 บทเรียน · ครั้งที่ 2'});
+ const c=newNote({id:'unknown',course:'POL2303',title:'โน้ตทั่วไป'});
+ assert.equal(noteSession(a),7);
+ assert.deepEqual(findNotes({notes:[b,c,a]}).map(n=>n.id),['class-7','class-2','unknown']);
 });
