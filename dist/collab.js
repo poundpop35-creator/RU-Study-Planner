@@ -272,7 +272,7 @@ export async function collabAction(action,data,personalSpace,render,toast){
   }
   if(action==='collab-history'){
    if(!active)throw Error('ยังไม่พบสมุด');
-   const r=await (await client()).from('ru_collab_versions').select('revision,snapshot,updated_at').eq('note_id',active.id).order('revision',{ascending:false}).limit(20);
+   const r=await (await client()).from('ru_collab_versions').select('revision,updated_at').eq('note_id',active.id).order('revision',{ascending:false}).limit(20);
    if(r.error)throw r.error;
    if(!r.data?.length){toast('ยังไม่มีประวัติการแก้ไขก่อนหน้านี้');return;}
    const lines=r.data.map(v=>v.revision+' · '+dateString(v.updated_at)).join('\n');
@@ -281,7 +281,9 @@ export async function collabAction(action,data,personalSpace,render,toast){
    if(active.role==='viewer')throw Error('สิทธิ์ดูอย่างเดียว ไม่สามารถย้อนฉบับ');
    const picked=r.data.find(v=>String(v.revision)===choice.trim());if(!picked)throw Error('ไม่พบฉบับที่เลือก');
    if(!confirm('ยืนยันนำฉบับ '+choice+' กลับมาแทนฉบับล่าสุด? ระบบจะเก็บฉบับก่อนหน้าไว้อีกครั้ง'))return;
-   active.space.saveNotebook({notes:[checked(picked.snapshot)]});await active.space.flush();render();toast('กู้คืนฉบับ '+choice+' แล้ว');return;
+   const revision=await (await client()).from('ru_collab_versions').select('snapshot').eq('note_id',active.id).eq('revision',picked.revision).single();
+   if(revision.error||!revision.data?.snapshot)throw revision.error||Error('ไม่สามารถโหลดฉบับก่อนหน้าได้');
+   active.space.saveNotebook({notes:[checked(revision.data.snapshot)]});await active.space.flush();render();toast('กู้คืนฉบับ '+choice+' แล้ว');return;
   }
   if(action==='collab-resolve'){
    if(!active||!active.conflict)throw Error('ยังไม่มีข้อมูลชนกัน');
