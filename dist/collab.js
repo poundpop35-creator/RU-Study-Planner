@@ -188,7 +188,7 @@ export async function collabNavigate(view,id,onRender){
  finally{loading=false;show();}
 }
 export function collabActiveSpace(id){return active?.id===id?active.space:null;}
-export function collabLeave(){if(active?.dirty)storeDraft(active);disconnect();}
+export function collabLeave(){if(active?.dirty){storeDraft(active);void flush(active).catch(()=>{});}disconnect();}
 export function collabNotePage(id){
  if(loading)return '<section class="panel" role="status">กำลังเปิดสมุดร่วมกัน…</section>';
  if(error)return '<section class="panel" role="alert"><h2>เปิดสมุดร่วมกันไม่ได้</h2><p>'+e(error)+'</p><a href="#collab">กลับรายการสมุด</a></section>';
@@ -196,7 +196,7 @@ export function collabNotePage(id){
  if(!a||a.id!==id)return '<section class="panel">ยังไม่พบสมุดที่เลือก <a href="#collab">กลับรายการ</a></section>';
  const viewer=a.role==='viewer';
  const online='<span id="collab-online">กำลังเชื่อมต่อผู้ร่วมงาน</span>';
- const head='<header class="collab-head"><div><a href="#collab" class="text-link">← สมุดร่วมกัน</a><h1>'+e(a.note.title)+'</h1><p>'+online+' · '+(viewer?'ดูอย่างเดียว':a.role==='owner'?'เจ้าของ':'แก้ไขได้')+' · <span id="collab-save-status">'+e(a.status)+'</span></p></div><div class="collab-head-actions">'+(a.role==='owner'?'<button class="button secondary" data-action="collab-invite-open">เชิญผู้ร่วมงาน</button>':'')+'<button class="button secondary" data-action="collab-copy-link">คัดลอกลิงก์</button><button class="button secondary" data-action="collab-history">ประวัติ</button><button class="button secondary" data-action="collab-backup">สำรองงาน</button>'+(viewer?'':'<button class="button primary" data-action="collab-save">บันทึกงาน</button>')+'</div></header>';
+ const head='<header class="collab-head"><div><a href="#collab" class="text-link">← สมุดร่วมกัน</a><h1>'+e(a.note.title)+'</h1><p>'+online+' · '+(viewer?'ดูอย่างเดียว':a.role==='owner'?'เจ้าของ':'แก้ไขได้')+' · <span id="collab-save-status">'+e(a.status)+'</span></p></div><div class="collab-head-actions">'+(a.role==='owner'?'<button class="button secondary" data-action="collab-invite-open">เชิญผู้ร่วมงาน</button>':'')+'<button class="button secondary" data-action="collab-copy-link">คัดลอกลิงก์</button>'+(viewer?'':'<button class="button secondary" data-action="collab-history">ประวัติ</button>')+'<button class="button secondary" data-action="collab-backup">สำรองงาน</button>'+(viewer?'':'<button class="button primary" data-action="collab-save">บันทึกงาน</button>')+'</div></header>';
  const members=a.members.map(m=>'<div class="collab-member"><span>'+e(m.display_name||m.user_id.slice(0,8))+' · '+(m.role==='editor'?'แก้ไขได้':'ดูอย่างเดียว')+'</span>'+(a.role==='owner'?'<button type="button" data-action="collab-member-role" data-user="'+m.user_id+'">'+(m.role==='editor'?'เปลี่ยนเป็นดู':'ให้แก้ไข')+'</button><button type="button" data-action="collab-member-remove" data-user="'+m.user_id+'">นำออก</button>':'')+'</div>').join('');
  return head+'<div class="collab-members">'+members+'</div><div class="'+(viewer?'collab-viewer':'collab-editor')+'">'+notePage(a.space,a.id,true)+'</div>';
 }
