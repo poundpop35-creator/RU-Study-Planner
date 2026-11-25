@@ -70,6 +70,7 @@ async function refreshRemote(a){
   if(a.dirty)schedule(a);
   refreshPaper(a.space,a.id);updateNotice(a.note);
  }catch(err){
+  a.base=clone(remote);a.revision=row.revision;
   a.conflict=true;a.status='มีการแก้ไขชนกัน · กดสำรองงานค้างก่อน';
   storeDraft(a);updateNotice(a.note);
  }
