@@ -101,7 +101,7 @@ declare
   v_old jsonb;
 begin
   if (select auth.uid()) is null or
-    ru_private.ru_collab_role(p_note_id) not in ('owner','editor') then
+    coalesce(ru_private.ru_collab_role(p_note_id),'') not in ('owner','editor') then
     raise exception 'ไม่มีสิทธิ์แก้ไขสมุดนี้' using errcode='42501';
   end if;
   if p_snapshot is null or jsonb_typeof(p_snapshot)<>'object'
@@ -132,7 +132,7 @@ create or replace function public.ru_collab_invite(
 as $$
 declare v_id uuid;
 begin
-  if (select auth.uid()) is null or ru_private.ru_collab_role(p_note_id)<>'owner'
+  if (select auth.uid()) is null or coalesce(ru_private.ru_collab_role(p_note_id),'')<>'owner'
     then raise exception 'เฉพาะเจ้าของสมุดเท่านั้นที่เชิญได้' using errcode='42501'; end if;
   if p_role not in ('editor','viewer') or length(trim(p_email))<3
     then raise exception 'ข้อมูลคำเชิญไม่ถูกต้อง' using errcode='22023'; end if;
