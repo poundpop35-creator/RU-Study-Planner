@@ -41,7 +41,8 @@ async function client(){
 function updateNotice(note){
  if(!note||!active||note.id!==active.id)return;
  const online=document.getElementById('collab-online');
- if(online)online.textContent=active.online?'กำลังออนไลน์ '+active.online+' คน':'กำลังเชื่อมต่อผู้ร่วมงาน';
+ if(online)online.textContent=active.present?.length?'กำลังเปิด: '+active.present.slice(0,3).join(', ')+(active.present.length>3?' และอีก '+(active.present.length-3)+' คน':''):'กำลังเชื่อมต่อผู้ร่วมงาน';
+ const title=document.querySelector('.collab-head h1');if(title)title.textContent=active.note.title;
  const saving=document.getElementById('collab-save-status');
  if(saving)saving.textContent=active.status;
 }
@@ -146,7 +147,7 @@ async function joinChannel(a){
  a.channel=channel;
  channel.on('broadcast',{event:'change'},()=>{void refreshRemote(a).catch(err=>{a.status=message(err);updateNotice(a.note);});});
  channel.on('presence',{event:'sync'},()=>{
-  a.online=Object.values(channel.presenceState()).reduce((sum,v)=>sum+v.length,0);updateNotice(a.note);
+  a.present=[...new Set(Object.values(channel.presenceState()).flat().map(v=>v.display||'ผู้ร่วมงาน'))];a.online=a.present.length;updateNotice(a.note);
  });
  channel.subscribe(status=>{
   if(status==='SUBSCRIBED')void channel.track({user:user.id,display:(user.email||'ผู้ร่วมงาน').split('@')[0].slice(0,40)});
@@ -162,7 +163,7 @@ async function openShared(id){
  const role=row.owner_id===user.id?'owner':members.data?.find(x=>x.user_id===user.id)?.role;
  if(!role)throw Error('ไม่มีสิทธิ์เปิดสมุดนี้');
  const a={id,owner:row.owner_id,revision:row.revision,base:checked(row.snapshot),note:checked(row.snapshot),role,
-  members:members.data||[],edits:0,dirty:false,conflict:false,saving:null,timer:null,poll:null,channel:null,online:0,status:'บันทึกใน Supabase แล้ว'};
+  members:members.data||[],edits:0,dirty:false,conflict:false,saving:null,timer:null,poll:null,channel:null,online:0,present:[],status:'บันทึกใน Supabase แล้ว'};
  a.space=makeSpace(a);active=a;
  try{
   const saved=JSON.parse(localStorage.getItem(draftKey(a))||'null');
@@ -308,7 +309,7 @@ export async function collabAction(action,data,personalSpace,render,toast){
    dialog.remove();
    if(result!=='invite'||!email)return;
    const r=await (await client()).rpc('ru_collab_invite',{p_note_id:active.id,p_email:email,p_role:role});
-   if(r.error)throw r.error;toast('เพิ่มผู้ร่วมงานแล้ว ส่งลิงก์ URL หน้านี้ให้ผู้รับเปิดได้เลย');return;
+   if(r.error)throw r.error;const members=await (await client()).from('ru_collab_members').select('user_id,role,display_name').eq('note_id',active.id);if(!members.error){active.members=members.data||[];render();}toast('เพิ่มผู้ร่วมงานแล้ว ส่งลิงก์ URL หน้านี้ให้ผู้รับเปิดได้เลย');return;
   }
  }catch(err){toast(message(err));if(active){active.status=message(err);updateNotice(active.note);}}
 }
