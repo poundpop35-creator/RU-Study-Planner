@@ -7,7 +7,7 @@ import {newImageId} from './image-store.js?v=20261027c';
 import {storedDocuments,attachmentPath} from './note-files.js?v=20261124-documents20';
 import {escapeHTML as e} from './core.js?v=20261027c';
 
-let db=null,user=null,items=[],active=null,loading=false,error='',notify=()=>{},shareSource=null,authReady=false;
+let db=null,user=null,items=[],active=null,loading=false,error='',notify=()=>{},shareSource=null,authReady=false,onlineListener=null;
 const assetBucket='ru-collab-assets';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const same=(a,b)=>JSON.stringify(a??null)===JSON.stringify(b??null);
@@ -74,9 +74,9 @@ async function refreshRemote(a){
   storeDraft(a);updateNotice(a.note);
  }
 }
-function schedule(a){
+function schedule(a,delay=1400){
  clearTimeout(a.timer);
- a.timer=setTimeout(()=>{void flush(a).catch(()=>{});},1400);
+ a.timer=setTimeout(()=>{void flush(a).catch(()=>{});},delay);
 }
 async function flush(a){
  if(active!==a||!a.dirty||a.conflict)return;
@@ -88,7 +88,7 @@ async function flush(a){
    const result=await (await client()).rpc('ru_collab_save',{p_note_id:a.id,p_expected_revision:a.revision,p_snapshot:next});
    if(result.error){
     if(result.error.code==='40001'){await refreshRemote(a);if(a.conflict)throw Error(a.status);continue;}
-    a.status='ยังไม่บันทึกออนไลน์: '+message(result.error);storeDraft(a);updateNotice(a.note);throw result.error;
+    a.status='ยังไม่บันทึกออนไลน์: '+message(result.error);storeDraft(a);updateNotice(a.note);schedule(a,8000);throw result.error;
    }
    a.revision=Number(result.data);a.base=clone(next);
    a.dirty=a.edits!==edit;
@@ -137,6 +137,7 @@ function disconnect(){
  if(!active)return;
  clearTimeout(active.timer);clearInterval(active.poll);
  if(active.channel)db?.removeChannel?.(active.channel);
+ if(onlineListener){window.removeEventListener('online',onlineListener);onlineListener=null;}
  active=null;
 }
 async function joinChannel(a){
@@ -151,6 +152,7 @@ async function joinChannel(a){
   else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){a.status='เชื่อมต่อการแสดงผู้ร่วมงานไม่สำเร็จ · ยังตรวจการแก้ไขเป็นระยะ';updateNotice(a.note);}
  });
  a.poll=setInterval(()=>{void refreshRemote(a).catch(()=>{});},5000);
+ onlineListener=()=>{if(active===a&&a.dirty&&!a.conflict)schedule(a,200);};window.addEventListener('online',onlineListener);
 }
 async function openShared(id){
  disconnect();const row=await fetchNote(id);
@@ -196,9 +198,9 @@ export function collabNotePage(id){
  if(!a||a.id!==id)return '<section class="panel">ยังไม่พบสมุดที่เลือก <a href="#collab">กลับรายการ</a></section>';
  const viewer=a.role==='viewer';
  const online='<span id="collab-online">กำลังเชื่อมต่อผู้ร่วมงาน</span>';
- const head='<header class="collab-head"><div><a href="#collab" class="text-link">← สมุดร่วมกัน</a><h1>'+e(a.note.title)+'</h1><p>'+online+' · '+(viewer?'ดูอย่างเดียว':a.role==='owner'?'เจ้าของ':'แก้ไขได้')+' · <span id="collab-save-status">'+e(a.status)+'</span></p></div><div class="collab-head-actions">'+(a.role==='owner'?'<button class="button secondary" data-action="collab-invite-open">เชิญผู้ร่วมงาน</button>':'')+'<button class="button secondary" data-action="collab-copy-link">คัดลอกลิงก์</button>'+(viewer?'':'<button class="button secondary" data-action="collab-history">ประวัติ</button>')+'<button class="button secondary" data-action="collab-backup">สำรองงาน</button>'+(viewer?'':'<button class="button primary" data-action="collab-save">บันทึกงาน</button>')+'</div></header>';
+ const head='<header class="collab-head"><div><a href="#collab" class="text-link">← สมุดร่วมกัน</a><h1>'+e(a.note.title)+'</h1><p>'+online+' · '+(viewer?'ดูอย่างเดียว':a.role==='owner'?'เจ้าของ':'แก้ไขได้')+' · <span id="collab-save-status">'+e(a.status)+'</span></p></div><div class="collab-head-actions">'+(a.role==='owner'?'<button class="button secondary" data-action="collab-invite-open">เชิญผู้ร่วมงาน</button>':'')+'<button class="button secondary" data-action="collab-copy-link">คัดลอกลิงก์</button>'+(viewer?'':'<button class="button secondary" data-action="collab-history">ประวัติ</button>')+'<button class="button secondary" data-action="collab-backup">สำรองงาน</button>'+(a.conflict?'<button class="button primary" data-action="collab-resolve">โหลดฉบับล่าสุด</button>':viewer?'':'<button class="button primary" data-action="collab-save">บันทึกงาน</button>')+'</div></header>';
  const members=a.members.map(m=>'<div class="collab-member"><span>'+e(m.display_name||m.user_id.slice(0,8))+' · '+(m.role==='editor'?'แก้ไขได้':'ดูอย่างเดียว')+'</span>'+(a.role==='owner'?'<button type="button" data-action="collab-member-role" data-user="'+m.user_id+'">'+(m.role==='editor'?'เปลี่ยนเป็นดู':'ให้แก้ไข')+'</button><button type="button" data-action="collab-member-remove" data-user="'+m.user_id+'">นำออก</button>':'')+'</div>').join('');
- return head+'<div class="collab-members">'+members+'</div><div class="'+(viewer?'collab-viewer':'collab-editor')+'">'+notePage(a.space,a.id,true)+'</div>';
+ return head+'<div class="collab-members">'+members+'</div><div class="'+(viewer||a.conflict?'collab-viewer':'collab-editor')+'">'+notePage(a.space,a.id,true)+'</div>';
 }
 export function collabPage(){
  if(loading&&!authReady)return '<section class="panel" role="status">กำลังเชื่อมต่อสมุดร่วมกัน…</section>';
@@ -278,6 +280,15 @@ export async function collabAction(action,data,personalSpace,render,toast){
    const picked=r.data.find(v=>String(v.revision)===choice.trim());if(!picked)throw Error('ไม่พบฉบับที่เลือก');
    if(!confirm('ยืนยันนำฉบับ '+choice+' กลับมาแทนฉบับล่าสุด? ระบบจะเก็บฉบับก่อนหน้าไว้อีกครั้ง'))return;
    active.space.saveNotebook({notes:[checked(picked.snapshot)]});await active.space.flush();render();toast('กู้คืนฉบับ '+choice+' แล้ว');return;
+  }
+  if(action==='collab-resolve'){
+   if(!active||!active.conflict)throw Error('ยังไม่มีข้อมูลชนกัน');
+   if(!confirm('ระบบจะดาวน์โหลดสำรองงานค้าง แล้วโหลดฉบับล่าสุดจาก Supabase แทนงานค้าง ยืนยันหรือไม่?'))return;
+   const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(active.note,null,2)],{type:'application/json'}));
+   a.download='shared-note-conflict-'+active.id+'.json';a.href=url;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+   active.note=clone(active.base);active.dirty=false;active.conflict=false;active.edits++;clearDraft(active);
+   active.status='โหลดฉบับล่าสุดแล้ว · งานเดิมสำรองไว้ในไฟล์ JSON';
+   render();toast('สำรองงานเดิมและกลับไปฉบับล่าสุดแล้ว');return;
   }
   if(action==='collab-save'){if(!active)throw Error('ยังไม่พบสมุด');await active.space.flush();toast('บันทึกใน Supabase แล้ว');return;}
   if(action==='collab-backup'){
