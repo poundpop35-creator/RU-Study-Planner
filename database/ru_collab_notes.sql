@@ -105,7 +105,7 @@ begin
     raise exception 'ไม่มีสิทธิ์แก้ไขสมุดนี้' using errcode='42501';
   end if;
   if p_snapshot is null or jsonb_typeof(p_snapshot)<>'object'
-    or p_snapshot->>'id'<>p_note_id::text
+    or coalesce(p_snapshot->>'id','')<>p_note_id::text
     or octet_length(p_snapshot::text)>3800000 then
     raise exception 'รูปแบบสมุดไม่ถูกต้องหรือมีขนาดใหญ่เกินไป' using errcode='22023';
   end if;
