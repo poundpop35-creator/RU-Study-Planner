@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261124-question-scroll'); }
+try { await import('./app.js?v=20261125-monthly-payment'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
