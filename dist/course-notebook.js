@@ -170,7 +170,8 @@ export function openAllCourseNotes(book,course){
   // A changed old copy is kept in the main sheet, not overwritten.
   if(candidates.length===1){
    const old=target.paper.pages[0].objects.find(o=>o.id===candidates[0].id);
-   old.text=('ฉบับสมุดรวมก่อนเชื่อม · '+old.text).slice(0,160);delete old.marks;delete old.links;
+   const labelPrefix='ฉบับสมุดรวมก่อนเชื่อม · ';
+   if(old.text.length+labelPrefix.length<=20000){old.text=labelPrefix+old.text;for(const key of ['marks','links'])if(old[key])old[key]=old[key].map(m=>({...m,start:m.start+labelPrefix.length,end:m.end+labelPrefix.length}));}
    preserved++;
   }
   target.paper=appendSession(target.paper,label,n.id).paper;
