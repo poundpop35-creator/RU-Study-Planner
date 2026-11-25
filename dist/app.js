@@ -10,9 +10,9 @@ import {debtPage,debtAction} from './debt-view.js?v=20261123-debt-mobile-scroll-
 import {documentsPage} from './documents-view.js?v=20261027c';
 import {examEvidenceTable,examEvidenceCard,readingExamFormats,registrationExam} from './exam-evidence.js?v=20261113b';
 import {sections,sectionFor,sectionTabs} from './navigation.js';
-import {prepNotice,classroomPage} from './study-sections.js?v=inline-course-upload-20261120';
+import {prepNotice,classroomPage} from './study-sections.js?v=20261125-auto-coursebooks';
 import {createStudySpace} from './study-space.js?v=20261125-canonicalpdf';
-import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261125-canonicalpdf';
+import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261125-auto-coursebooks';
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
 import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=balanced-friday-replays-20261120';

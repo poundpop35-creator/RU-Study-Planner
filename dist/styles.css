@@ -1063,3 +1063,20 @@ html[data-view=debt] .top-stats{display:none}
 .note-card-top{justify-content:flex-start}
 .note-card-top>span:last-child:not(:first-child){margin-left:auto}
 @media(max-width:600px){.notebook-course-heading{padding:12px;align-items:flex-start}.notebook-course-count{font-size:12px}.notebook-course-group .notebook-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Distinct course bands; no duplicate combined-book card. */
+.notebook-course-separated{--course-accent:#3155a5;--course-tint:#eef3ff;margin:28px 0 40px;padding:0 0 22px;border-bottom:2px solid #dce3ed}
+.notebook-course-separated.course-tone-1{--course-accent:#087d75;--course-tint:#e8f7f4}
+.notebook-course-separated.course-tone-2{--course-accent:#7751aa;--course-tint:#f3edfc}
+.notebook-course-separated.course-tone-3{--course-accent:#a05b19;--course-tint:#fff3e5}
+.notebook-course-separated.course-tone-4{--course-accent:#a63e68;--course-tint:#fceef4}
+.notebook-course-separated.course-tone-5{--course-accent:#277048;--course-tint:#eaf6ed}
+.notebook-course-separated>.notebook-course-heading{display:flex!important;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:15px 18px;margin:0 0 16px;background:var(--course-tint);border:1px solid #dce3ed;border-left:7px solid var(--course-accent);border-bottom:3px solid var(--course-accent);border-radius:10px}
+.notebook-course-separated .notebook-course-name{flex:1 1 220px;min-width:0}
+.notebook-course-separated .notebook-course-name h2{color:#1e293b;margin:3px 0 0;font-size:clamp(17px,2vw,21px);overflow-wrap:anywhere}
+.notebook-course-separated .notebook-course-label{color:var(--course-accent);font-size:12px;font-weight:700}
+.notebook-course-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.notebook-course-separated .notebook-course-count{color:var(--course-accent);background:white;border-color:#dce3ed}
+.notebook-course-separated .notebook-course-open{background:var(--course-accent);border-color:var(--course-accent);color:#fff;white-space:nowrap;min-height:44px}
+.notebook-course-empty{padding:12px;color:#64748b}
+@media(max-width:600px){.notebook-course-separated>.notebook-course-heading{padding:12px;gap:8px}.notebook-course-tools{width:100%;justify-content:space-between}.notebook-course-separated .notebook-course-open{flex:1}}

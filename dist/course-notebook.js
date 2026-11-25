@@ -46,26 +46,8 @@ export function combineCourseNotes(book,course,selectedIds){
  for(const n of notes){
   const session=noteSession(n),label=(session?'ครั้งที่ '+session:'ไม่ระบุครั้ง')+' · '+n.title;
   paper=appendSession(paper,label,n.id).paper;
-  const p=paper.pages[0],groups=new Map();
-  for(const f of n.files||[]){
-   const prev=files.get(f.id);
-   if(prev&&JSON.stringify(prev)!==JSON.stringify(f))throw Error('ไฟล์แนบใช้รหัสเดียวกันแต่ข้อมูลต่างกัน');
-   files.set(f.id,clone(f));
-  }
-  const original=paperFor(n);
-  let cursor=contentBottom(p.objects)+32;
-  for(const old of original.pages){
-   if(!old.objects.length)continue;
-   const top=Math.min(0,...old.objects.map(o=>o.y-margin(o)));
-   const bottom=contentBottom(old.objects);
-   const left=Math.min(0,...old.objects.map(o=>o.x));
-   for(const o of old.objects){
-    const out={...clone(o),id:crypto.randomUUID(),x:o.x-left,y:o.y+cursor-top};
-    if(o.groupId){if(!groups.has(o.groupId))groups.set(o.groupId,crypto.randomUUID());out.groupId=groups.get(o.groupId);}
-    p.objects.push(out);
-   }
-   cursor+=Math.max(0,bottom-top)+32;
-  }
+  mergeSourceFiles(files,n);
+  paper.pages[0].objects.push(...sourceObjects(n,contentBottom(paper.pages[0].objects)+32));
   paper=finalize(paper);
  }
  if(!notes.length)paper=appendSession(paper,'ครั้งที่ 1').paper;
@@ -122,4 +104,86 @@ export function linkOldCourseNotes(book,course,pairs){
 export function assertLinkedHeadings(before,after){
  const ids=linkedSourceIds({paper:before});
  if(ids.length&&ids.some(id=>!linkedSourceIds({paper:after}).includes(id)))throw Error('หัวข้อที่เชื่อมโน้ตเดิมต้องคงอยู่ เพื่อไม่ให้ลิงก์ครั้งเรียนเสีย');
+}
+
+function mergeSourceFiles(files,n){
+ for(const f of n.files||[]){
+  const prev=files.get(f.id);
+  if(prev&&JSON.stringify(prev)!==JSON.stringify(f))throw Error('ไฟล์แนบใช้รหัสเดียวกันแต่ข้อมูลต่างกัน');
+  files.set(f.id,clone(f));
+ }
+}
+function sourceObjects(n,start){
+ const objects=[],groups=new Map();let cursor=start;
+ for(const old of paperFor(n).pages){
+  if(!old.objects.length)continue;
+  const top=Math.min(0,...old.objects.map(o=>o.y-margin(o))),bottom=contentBottom(old.objects);
+  const left=Math.min(0,...old.objects.map(o=>o.x));
+  for(const o of old.objects){
+   const out={...clone(o),id:crypto.randomUUID(),x:o.x-left,y:o.y+cursor-top};
+   if(o.groupId){if(!groups.has(o.groupId))groups.set(o.groupId,crypto.randomUUID());out.groupId=groups.get(o.groupId);}
+   objects.push(out);
+  }
+  cursor+=Math.max(0,bottom-top)+32;
+ }
+ return objects;
+}
+const sourceLabel=n=>((noteSession(n)?'ครั้งที่ '+noteSession(n):'ไม่ระบุครั้ง')+' · '+n.title).slice(0,160);
+export function courseSourceNotes(book,course){
+ return book.notes.filter(n=>n.course===course&&!n.archived&&!isCourseNotebook(n)).sort((a,b)=>(noteSession(a)||1000)-(noteSession(b)||1000)||a.id.localeCompare(b.id));
+}
+function stableObjects(objects){
+ const groups=new Map();
+ return JSON.stringify(objects.map(o=>{
+  const v=clone(o);delete v.id;
+  if(v.groupId){if(!groups.has(v.groupId))groups.set(v.groupId,groups.size+1);v.groupId=groups.get(v.groupId);}
+  return Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b)));
+ }));
+}
+function sameSourceSection(paper,section,n){
+ const headings=sessionSections(paper),i=headings.findIndex(h=>h.id===section.id);
+ const end=headings[i+1]?.y??Infinity;
+ const actual=paper.pages[0].objects.filter(o=>o.id!==section.id&&o.y>=section.y&&o.y<end&&!o.id.startsWith(prefix));
+ const expected=sourceObjects(n,contentBottom([section])+32);
+ return stableObjects(actual)===stableObjects(expected);
+}
+// One click includes every active note. Identical legacy copies are linked,
+// divergent copies are never discarded: keep the original section visibly
+// labelled and append a linked copy of the independent note.
+export function openAllCourseNotes(book,course){
+ if(!/^POL\d{4}$/.test(course))throw Error('รหัสวิชาไม่ถูกต้อง');
+ const sources=courseSourceNotes(book,course),existing=courseBookFor(book,course);
+ if(!existing){const result=combineCourseNotes(book,course,sources.map(n=>n.id));return {...result,changed:true,added:sources.length,preserved:0};}
+ const missing=sources.filter(n=>!isLinkedSource(book,n));
+ if(!missing.length)return {book,id:existing.id,changed:false,added:0,preserved:0};
+ const next=clone(book),target=courseBookFor(next,course),files=new Map((target.files||[]).map(f=>[f.id,clone(f)]));
+ let preserved=0,added=0;
+ for(const n of missing){
+  mergeSourceFiles(files,n);
+  const label=sourceLabel(n),headings=sessionSections(target.paper);
+  const candidates=headings.filter(s=>!s.id.startsWith(sourcePrefix)&&s.text===label);
+  const identical=candidates.filter(s=>sameSourceSection(target.paper,s,n));
+  if(identical.length===1){
+   target.paper.pages[0].objects.find(o=>o.id===identical[0].id).id=sourceHeading(n.id);
+   continue;
+  }
+  // A changed old copy is kept in the main sheet, not overwritten.
+  if(candidates.length===1){
+   const old=target.paper.pages[0].objects.find(o=>o.id===candidates[0].id);
+   const labelPrefix='ฉบับสมุดรวมก่อนเชื่อม · ';
+   if(old.text.length+labelPrefix.length<=20000){old.text=labelPrefix+old.text;for(const key of ['marks','links'])if(old[key])old[key]=old[key].map(m=>({...m,start:m.start+labelPrefix.length,end:m.end+labelPrefix.length}));}
+   preserved++;
+  }
+  target.paper=appendSession(target.paper,label,n.id).paper;
+  target.paper.pages[0].objects.push(...sourceObjects(n,contentBottom(target.paper.pages[0].objects)+32));
+  target.paper=finalize(target.paper);added++;
+ }
+ if(files.size)target.files=validateFiles([...files.values()]);
+ target.updatedAt=new Date().toISOString();
+ return {book:validateNotebook(next),id:target.id,changed:true,added,preserved};
+}
+export function looseCourseSections(book,course){
+ const combined=courseBookFor(book,course);
+ if(!combined)return [];
+ return sessionSections(combined.paper).filter(s=>!s.id.startsWith(sourcePrefix)&&!s.text.startsWith('ฉบับสมุดรวมก่อนเชื่อม ·'));
 }

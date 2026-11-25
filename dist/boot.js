@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261125-surplus'); }
+try { await import('./app.js?v=20261125-auto-coursebooks'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

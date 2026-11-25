@@ -12,8 +12,9 @@ import {materialFor,isCourseCode} from './course-materials.js?v=20261124-documen
 import {openSharedCourseMaterials,courseMaterialCount,courseMaterialList} from './course-materials-ui.js?v=20261124-file-tab';
 import {openNoteFile} from './file-viewer.js?v=20261124-file-tab';
 import {storedDocuments,documentData,attachmentBlob} from './note-files.js?v=20261124-documents20';
-import {isCourseNotebook,combineCourseNotes,courseBookFor,resolveCourseRoute,isLinkedSource,protectsNote,linkedSourceIds,sessionSections,sectionForSession,sectionNumber,linkOldCourseNotes,appendSession} from './course-notebook.js?v=20261125-canonicalpdf';
+import {isCourseNotebook,combineCourseNotes,courseBookFor,resolveCourseRoute,isLinkedSource,protectsNote,linkedSourceIds,sessionSections,sectionForSession,sectionNumber,linkOldCourseNotes,appendSession,openAllCourseNotes,looseCourseSections} from './course-notebook.js?v=20261125-auto-coursebooks';
 let quickInkId=null;
+const openingCourseBooks=new Set();
 let query='',course='',source='',archived=false,reviewing=false,reviewIndex=0,revealed=false,unmount=()=>{};
 const stamps=x=>new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(x));
 const sourceChoices=value=>Object.entries(NOTE_SOURCES).map(([key,label])=>`<option value="${key}" ${value===key?'selected':''}>${label}</option>`).join('');
@@ -61,13 +62,16 @@ export function noteCards(items,book={notes:items}){
  for(const n of sortNotebookNotes(items)){
   const key=n.course||'';
   if(!groups.has(key))groups.set(key,[]);
-  groups.get(key).push(n);
+  if(!isCourseNotebook(n))groups.get(key).push(n);
  }
  return [...groups].map(([id,notes])=>{
   const courseInfo=courses.find(item=>item.id===id),name=id?e(id)+(courseInfo?' · '+e(courseInfo.title):''):'ไม่ระบุรายวิชา';
-  const combined=courseBookFor(book,id);const openButton=id?'<button class="button secondary" data-action="nb-coursebook" data-course="'+e(id)+'">'+(combined?'เปิดสมุดต่อเนื่อง':'สร้างสมุดต่อเนื่อง / รวมโน้ต')+'</button>':'';
-  const migrateButton=combined&&book.notes.some(n=>n.course===id&&!n.archived&&!isCourseNotebook(n)&&!isLinkedSource(book,n))&&sessionSections(combined.paper).some(s=>!s.id.startsWith('lesson-section-source-'))?'<button class="button secondary" data-action="nb-link-old" data-course="'+e(id)+'">เชื่อมโน้ตเดิมกับสมุดรวม</button>':'';
-  return '<section class="notebook-course-group" aria-label="'+name+'"><div class="notebook-course-heading"><div><span class="notebook-course-label">รายวิชา</span><h2>'+name+'</h2><p>เรียงครั้งล่าสุดไว้ก่อน</p>'+openButton+migrateButton+'</div><span class="notebook-course-count">'+notes.length+' โน้ต</span></div><div class="notebook-grid">'+notes.map(n=>notebookCard(n,book)).join('')+'</div></section>';
+  const combined=courseBookFor(book,id);
+  const openButton=id&&!archived?'<button class="button primary notebook-course-open" data-action="nb-coursebook" data-course="'+e(id)+'">เปิดสมุดรวม →</button>':'';
+  const loose=combined&&!archived&&!query&&(!source||source==='classroom')?looseCourseSections(book,id).filter(s=>!notes.some(n=>!isLinkedSource(book,n)&&noteSession(n)>0&&noteSession(n)===sectionNumber(s))):[];
+  const entries=[...notes.map(n=>({session:noteSession(n),html:notebookCard(n,book)})),...loose.map(s=>({session:sectionNumber(s),html:'<article class="note-card note-session-tone-'+((Math.max(1,sectionNumber(s))-1)%6+1)+'"><div class="note-card-top"><span class="badge">'+e(id)+'</span><span class="note-session-badge">'+(sectionNumber(s)?'ครั้งที่ '+sectionNumber(s):'หัวข้อเรียน')+'</span></div><span class="note-origin classroom">จดจากห้องเรียน</span><h2><a class="note-card-link" href="#note/'+e(combined.id)+'~'+e(s.id)+'">'+e(s.text)+'</a></h2><small>เปิดตำแหน่งในสมุดหลัก</small></article>'}))].sort((a,b)=>b.session-a.session);
+  const tone=id?Number(id.slice(-4))%6:0;
+  return '<section class="notebook-course-group notebook-course-separated course-tone-'+tone+'" aria-label="'+name+'"><header class="notebook-course-heading"><div class="notebook-course-name"><span class="notebook-course-label">รายวิชา</span><h2>'+name+'</h2></div><div class="notebook-course-tools"><span class="notebook-course-count">'+entries.length+' โน้ต</span>'+openButton+'</div></header>'+(entries.length?'<div class="notebook-grid">'+entries.map(v=>v.html).join('')+'</div>':'<p class="notebook-course-empty">เปิดสมุดรวมเพื่อดูเนื้อหาวิชานี้</p>')+'</section>';
  }).join('');
 }
 export function destroyEditor(){unmount();unmount=()=>{};}
@@ -88,7 +92,7 @@ async function noteDetails(chosenCourse,chosenSource,note,progress,book){
  const form=d.querySelector('form'),f=form.elements,preview=d.querySelector('output');
  f.group.value=enrolled?'yes':'no';
  function showTitle(){preview.textContent=sessionDetails(f.course.value,Number(f.session.value))?.title||'';}
- function suggest(){f.session.value=note?.session||Math.min(999,1+Math.max(0,...book.notes.filter(n=>n.course===f.course.value).map(n=>n.session||1)));showTitle();}
+ function suggest(){const combined=courseBookFor(book,f.course.value);f.session.value=note?.session||Math.min(999,1+Math.max(0,...book.notes.filter(n=>n.course===f.course.value&&!isCourseNotebook(n)).map(noteSession),...sessionSections(combined?.paper).map(sectionNumber)));showTitle();}
  function list(preselect){const choices=noteCourseChoices(progress,f.group.value==='yes');
  f.course.innerHTML='<option value="">เลือกวิชา</option>'+choices.map(c=>`<option value="${e(c.id)}">${e(c.id)} · ${e(c.title)}</option>`).join('');
  f.course.value=choices.some(c=>c.id===preselect)?preselect:'';suggest();}
@@ -97,47 +101,26 @@ async function noteDetails(chosenCourse,chosenSource,note,progress,book){
  const details=sessionDetails(f.course.value,Number(f.session.value));d.remove();
  return d.returnValue==='save'&&details?{...details,source:f.source.value}:null;
 }
-async function chooseCourseBookNotes(book,course){
- const choices=book.notes.filter(n=>n.course===course&&!n.archived&&!isCourseNotebook(n)).sort((a,b)=>(noteSession(a)||1000)-(noteSession(b)||1000));
- const d=document.createElement('dialog');d.className='paper-sheet-dialog';
- d.innerHTML='<form method="dialog"><h2>สร้างสมุดต่อเนื่อง '+e(course)+'</h2><p>เลือกโน้ตที่จะรวม เรียงตามครั้งเรียน หลังสร้าง ลิงก์โน้ตเดิมจะเปิดตำแหน่งในสมุดหลักโดยตรง ต้นฉบับยังเก็บไว้ในไฟล์สำรอง แต่จะไม่เปิดแก้เป็นข้อมูลอีกชุด</p><div style="max-height:45vh;overflow:auto">'+choices.map(n=>'<label style="display:flex;align-items:center;gap:8px"><input type="checkbox" name="note" value="'+e(n.id)+'" '+(noteSource(n)==='classroom'?'checked':'')+'><span>'+e(n.title)+'</span></label>').join('')+'</div><div class="paper-dialog-actions"><button value="save">สร้างสมุดรวม</button><button value="cancel">ยกเลิก</button></div></form>';
- document.body.append(d);try{await new Promise(resolve=>{d.onclose=resolve;d.showModal();});return d.returnValue==='save'?[...d.querySelectorAll('input:checked')].map(input=>input.value):null;}finally{d.remove();}
-}
-async function chooseOldLinks(book,course){
- const combined=courseBookFor(book,course);if(!combined)return null;
- const candidates=book.notes.filter(n=>n.course===course&&!n.archived&&!isCourseNotebook(n)&&!isLinkedSource(book,n));
- const sections=sessionSections(combined.paper).filter(s=>!s.id.startsWith('lesson-section-source-'));
- if(!candidates.length||!sections.length)throw Error('ไม่มีโน้ตและหัวข้อที่ยังไม่เชื่อม');
- const d=document.createElement('dialog');d.className='paper-sheet-dialog';
- d.innerHTML='<form method="dialog"><h2>เชื่อมโน้ตเดิม '+e(course)+'</h2><p>เลือกหัวข้อในสมุดรวมสำหรับแต่ละโน้ตเดิม หลังเชื่อม สมุดรวมจะเป็นฉบับหลัก เนื้อหาในโน้ตแยกจะไม่ถูกนำมาทับ หากแก้ทั้งสองชุด ให้ตรวจสอบก่อนเลือก ต้นฉบับยังอยู่ในไฟล์สำรอง</p><div style="max-height:45vh;overflow:auto">'+candidates.map(n=>'<label>'+e(n.title)+'<select data-source-id="'+e(n.id)+'"><option value="">ยังไม่เชื่อม</option>'+sections.map(s=>'<option value="'+e(s.id)+'">'+e(s.text)+'</option>').join('')+'</select></label>').join('')+'</div><div class="paper-dialog-actions"><button value="save">ยืนยันใช้สมุดรวมเป็นฉบับหลัก</button><button value="cancel">ยกเลิก</button></div></form>';
- document.body.append(d);try{await new Promise(resolve=>{d.onclose=resolve;d.showModal();});return d.returnValue==='save'?[...d.querySelectorAll('[data-source-id]')].filter(s=>s.value).map(s=>({sourceId:s.dataset.sourceId,sectionId:s.value})):null;}finally{d.remove();}
-}
 export async function notebookAction(action,data,space,progress,render,toast){
  if(!space.info().canEdit){toast('กำลังเชื่อมต่อสมุดจดกับ Supabase กรุณาลองอีกครั้ง');return;}
  const book=['nb-pin','nb-archive','nb-import-legacy'].includes(action)?structuredClone(space.notebook()):space.notebook(),n=book.notes.find(x=>x.id===data.id);
  try{
-  if(action==='nb-link-old'){
-   if(space.info().conflict||space.info().locked)throw Error('แก้การซิงก์ก่อนเชื่อม');
-   const scope=space.info().scope,baseline=JSON.stringify(book);
-   const pairs=await chooseOldLinks(book,data.course);if(!pairs?.length)return;
-   await space.flush();
-   if(scope!==space.info().scope||baseline!==JSON.stringify(space.notebook()))throw Error('ข้อมูลเปลี่ยนแล้ว กรุณาเลือกใหม่');
-   space.saveNotebook(linkOldCourseNotes(space.notebook(),data.course,pairs));await space.flush();
-   render(true);toast('เชื่อมโน้ตเดิมแล้ว ทุกลิงก์เปิดสมุดหลัก');return;
-  }
-  if(action==='nb-coursebook'){
-   const course=data.course;
-   const existing=book.notes.find(n=>n.course===course&&!n.archived&&isCourseNotebook(n));
-   if(existing){location.hash='#note/'+existing.id;return;}
-   if(space.info().conflict||space.info().locked)throw Error('แก้ไขการซิงก์ก่อนสร้างสมุดรวม');
-   const baseline=JSON.stringify(book),scope=space.info().scope;
-   const picked=await chooseCourseBookNotes(book,course);if(picked===null)return;
-   await space.flush();
-   if(scope!==space.info().scope||baseline!==JSON.stringify(space.notebook()))throw Error('ข้อมูลเปลี่ยนแล้ว กรุณาเลือกโน้ตอีกครั้ง');
-   const result=combineCourseNotes(space.notebook(),course,picked);
-   space.saveNotebook(result.book);
-   await space.flush();
-   location.hash='#note/'+result.id;toast('สร้างสมุดต่อเนื่องแล้ว ต้นฉบับยังอยู่ครบ');return;
+  if(action==='nb-coursebook'||action==='nb-link-old'){
+   const selectedCourse=data.course;
+   if(space.info().conflict||space.info().locked)throw Error('แก้ไขการซิงก์ก่อนเปิดสมุดรวม');
+   if(openingCourseBooks.has(selectedCourse))return;
+   openingCourseBooks.add(selectedCourse);
+   const scope=space.info().scope;
+   try{
+    await space.flush();
+    if(scope!==space.info().scope)throw Error('พื้นที่เปลี่ยน กรุณาลองใหม่');
+    const result=openAllCourseNotes(space.notebook(),selectedCourse);
+    if(result.changed){space.saveNotebook(result.book);await space.flush();}
+    location.hash='#note/'+result.id;
+    if(result.preserved)toast('รวมทุกโน้ตแล้ว · เก็บฉบับสมุดรวมเดิมที่ต่างกันไว้ด้วย');
+    else if(result.changed)toast('รวมทุกโน้ตของวิชาแล้ว');
+   }finally{openingCourseBooks.delete(selectedCourse);}
+   return;
   }
   if(action==='nb-filter-course'){
    if(!isCourseCode(data.course))throw Error('รหัสวิชาไม่ถูกต้อง');
@@ -194,8 +177,8 @@ export async function notebookAction(action,data,space,progress,render,toast){
      if(separate)throw Error('มีโน้ตแยกครั้งนี้อยู่แล้ว กรุณาเปิดโน้ตเดิมหรือเชื่อมเข้ากับสมุดรวมก่อน');
      const baseline=JSON.stringify(liveBook),scope=space.info().scope;await space.flush();
      if(scope!==space.info().scope||baseline!==JSON.stringify(space.notebook()))throw Error('ข้อมูลเปลี่ยนแล้ว กรุณาลองใหม่');
-     const next=structuredClone(space.notebook()),target=next.notes.find(n=>n.id===combined.id),result=appendSession(target.paper,'ครั้งที่ '+details.session+' · '+details.title);
-     target.paper=result.paper;target.updatedAt=new Date().toISOString();space.saveNotebook(next);await space.flush();
+     const next=structuredClone(space.notebook()),target=next.notes.find(n=>n.id===combined.id),entry=newNote({...details,source:'classroom'}),result=appendSession(target.paper,'ครั้งที่ '+details.session+' · '+details.title,entry.id);
+     next.notes.push(entry);target.paper=result.paper;target.updatedAt=new Date().toISOString();space.saveNotebook(next);await space.flush();
      location.hash='#note/'+combined.id+'~'+result.sectionId;return;
     }
    }
