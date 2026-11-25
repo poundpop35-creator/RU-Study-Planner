@@ -46,14 +46,16 @@ test('mobile monthly debt tables expose a horizontal scroll region without chang
  assert.match(html,/<th scope="col">เป้า<\/th><th scope="col">จ่ายแล้ว<\/th><th scope="col">ขาด<\/th>/);
 });
 
-test('rollover actually accelerates flexible debt, without spending the current-month surplus or prepaying fixed bills',()=>{
- const cfg=['2030-01-25',1800000,10000,[['Fixed','',300000,0,[150000,150000],0,'',0,'','',25,{baseBudget:1500000,payWindow:[25,25]}],['Flexible','',4600000,100000,[],0,'',2500,'y','',25]],''];
+test('use normal monthly surplus immediately; preserve G and credit prepaid bills',()=>{
+ const cfg=['2030-01-25',1800000,10000,[['G','G',300000,0,[150000,150000],0,'',0,'','',25,{baseBudget:1500000,payWindow:[25,25]}],['Fixed','S2',800000,0,[200000,200000,200000,200000],0,'',0,'','',25],['Flexible','',4600000,100000,[],0,'',2500,'y','',25]],''];
  const p=decode('p2.'+Buffer.from(JSON.stringify(cfg)).toString('base64url')),{rows}=forecast(p,[]);
- assert.equal(rows[0].a[1],100000);assert.equal(rows[0].carryOut,1250000);
- assert.equal(rows[1].a[0],150000);assert.ok(rows[1].extra[1]>0);
- assert.ok(rows.length<46);assert.ok(rows.every(r=>r.transferTotal<=p.budget));
- assert.ok(rows.every(r=>r.extra.every(n=>n%10000===0||n<10000)));
- assert.equal(rows.reduce((n,r)=>n+r.total,0),4900000);
+ assert.equal(rows[0].a[0],150000);assert.equal(rows[1].a[0],150000);assert.equal(rows[0].extra[0],0);
+ assert.equal(rows[0].transferTotal,1500000);assert.ok(rows[0].extra[2]>0);
+ assert.ok(rows.length<10);assert.ok(rows.every(r=>r.transferTotal<=p.budget));
+ assert.equal(rows.reduce((n,r)=>n+r.total,0),5700000);
+ const only={...p,accounts:p.accounts.slice(0,2)};const short=forecast(only,[]).rows;
+ assert.equal(short.length,2);assert.equal(short[0].a[1],800000);assert.equal(short[1].a[1],0);
+ assert.equal(only.accounts[1].bills[1],200000);
 });
 test('full installment action records exact balance, not rounded transfer, and prevents repeat or skipping',()=>{
  const map=new Map(),store={getItem:k=>map.get(k),setItem:(k,v)=>map.set(k,v)};

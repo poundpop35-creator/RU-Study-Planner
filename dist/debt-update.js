@@ -1,4 +1,4 @@
-import {renderDebtCards} from './debt-cards.js?v=20261125-monthly-payment';
+import {renderDebtCards} from './debt-cards.js?v=20261125-surplus';
 // Portfolio details arrive from the private workspace or an import link's fragment.
 // No personal plans, balances, lender names, or installment amounts belong in this module.
 import {readPayments} from './debt-payments.js?v=20261027c';
@@ -41,15 +41,18 @@ function earlyInstallments(ac,m,start,left){
 }
 
 const roundCash=c=>Math.ceil(c/100)*100;
-// Pay required installments first. Unused current-month cash rolls forward;
-// only previously carried cash is eligible for extra principal in 100-baht steps.
+// Required installments are minimums, not maximums (except G). Use available
+// current-month cash in 100-baht steps; reserve only genuine unspent cash.
 function forecastMinimumsWithRollover(p,accounts){
  const left=accounts.map(x=>x.bal),arrears=accounts.map(()=>0),rows=[];
+ const bills=accounts.map(x=>[...x.bills]);
+ const fixedG=v=>String(v.group||v.label).trim().toUpperCase()==='G';
+ const priority=accounts.map((_,i)=>i).filter(i=>!fixedG(accounts[i])).sort((i,j)=>Number(!accounts[i].min)-Number(!accounts[j].min)||i-j);
  let reserve=0;
  for(let m=0;sum(left)>0;m++){
   if(m>=240)fail();
   const opening=[...left],a=accounts.map(()=>0),carryIn=reserve;
-  const dues=accounts.map((v,i)=>Math.min(left[i],arrears[i]+(v.bills[m]||0)+v.min));
+  const dues=accounts.map((v,i)=>Math.min(left[i],arrears[i]+(bills[i][m]||0)+v.min));
   const neededCash=sum(dues.map(roundCash));
   const emergency=Math.min(Math.max(0,p.budget-p.baseBudget),Math.max(0,neededCash-p.baseBudget-carryIn));
   const deposit=p.baseBudget+emergency;
@@ -61,18 +64,23 @@ function forecastMinimumsWithRollover(p,accounts){
    if(cashOut+cash>cap){arrears[i]=due;shortfall+=cash;return;}
    a[i]=due;left[i]-=due;arrears[i]=0;cashOut+=cash;
   });
-  const mandatoryCash=cashOut,extra=accounts.map(()=>0);
-  let available=Math.max(0,Math.min(cap-cashOut,carryIn-Math.max(0,mandatoryCash-deposit)));
-  // Never consume the current month's unused budget just to hit a target.
-  // Do not prepay fixed future installments; only revolving or unscheduled principal.
-  if(!shortfall)accounts.forEach((v,i)=>{
-   const future=sum(v.bills.slice(m+1)),eligible=Math.max(0,left[i]-future);
-   if(!eligible||(!v.min&&!v.carry))return;
+  const extra=accounts.map(()=>0);
+  // Use the normal budget, including genuine prior cash, but do not use
+  // emergency borrowing for discretionary top-ups.
+  let available=Math.max(0,Math.min(cap,p.baseBudget+carryIn)-cashOut);
+  if(!shortfall)for(const i of priority){
+   if(available<10000||!left[i])continue;
    const chunks=Math.floor(available/10000)*10000;
-   const pay=eligible<10000&&roundCash(eligible)<=available?eligible:Math.min(Math.floor(eligible/10000)*10000,chunks);
-   if(!pay)return;
-   const cash=roundCash(pay);a[i]+=pay;extra[i]+=pay;left[i]-=pay;cashOut+=cash;available-=cash;
-  });
+   const pay=Math.min(left[i],chunks),cash=roundCash(pay);
+   if(!pay||cash>available)continue;
+   // Credit prepaid fixed installments oldest first; no double counting.
+   const future=sum(bills[i].slice(m+1));
+   let credit=Math.max(0,pay-Math.max(0,left[i]-future));
+   for(let j=m+1;j<bills[i].length&&credit;j++){
+    const used=Math.min(credit,bills[i][j]);bills[i][j]-=used;credit-=used;
+   }
+   a[i]+=pay;extra[i]+=pay;left[i]-=pay;cashOut+=cash;available-=cash;
+  }
   reserve=carryIn+deposit-cashOut;
   rows.push({month:month(p.date,m),a,opening,interest:0,early:[],shortfall,
    cashCeiling:cap,setAside:reserve,carryOut:reserve,carryIn,extra,total:sum(a),
