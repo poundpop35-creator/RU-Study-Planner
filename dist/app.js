@@ -1,5 +1,6 @@
+import {scrollQuestion,cancelQuestionScroll} from './quiz-scroll.js?v=20261126-shared';
 import {pol2106Tutorial} from './pol2106-tutorial.js';
-import {examReader,mountExamReader} from './exam-reader.js?v=20261124-question-scroll';
+import {examReader,mountExamReader} from './exam-reader.js?v=20261126-unified-scroll';
 import {courseMaterialLabel,uploadSharedCourseFile} from './course-materials-ui.js?v=20261124-file-tab';
 import {registrationChecklist,enrollmentControl} from './registration-checklist.js?v=registration-status';
 import {readingStart,afterPlan,firstChecklist,weekView,mayConfirm} from './after-class.js?v=20261112a';
@@ -12,7 +13,7 @@ import {examEvidenceTable,examEvidenceCard,readingExamFormats,registrationExam} 
 import {sections,sectionFor,sectionTabs} from './navigation.js';
 import {prepNotice,classroomPage} from './study-sections.js?v=20261125-auto-coursebooks';
 import {createStudySpace} from './study-space.js?v=20261125-canonicalpdf';
-import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261126-mobile-menu';
+import {notebookPage,notePage,mountEditor,refreshPaper,destroyEditor,notebookAction,notebookSearch,notebookFilter,importNotebook} from './notebook-view.js?v=20261126-unified-scroll';
 import {accountPage,accountAction} from './account-view.js?v=20261116-shared';
 import {courseResources,resourcesPage} from './resources-view.js?v=20261027c';
 import {calendarPage,calendarAction,calendarCourse,calendarDownload,lectureInfo} from './calendar-view.js?v=balanced-friday-replays-20261120';
@@ -152,6 +153,7 @@ function lessonPage(id){const l=lessonById(id);if(!l)return missing();const c=co
  ${refsHTML(l)}<div class="reflection"><strong>อธิบายให้ตัวเองฟัง</strong><p>${e(l.reflection)}</p></div>
  <section class="lesson-finish${done?' is-done':''}" id="section-finish"${fresh==='complete:'+id?' data-fresh':''}><div class="finish-mascot">${mascot(done?'cheer':'happy',92)}</div><div class="finish-body"><h2>${done?'อ่านจบบทนี้แล้ว เก่งมาก! 🎉':'อ่านจบแล้วใช่ไหม?'}</h2><p>${done?'การ์ดคำสำคัญเข้าคิวทบทวนแล้ว ไปต่อบทถัดไปหรือทบทวนการ์ดก็ได้':`กดเพื่อเก็บ <b>+${XP.lesson} XP</b> และส่งการ์ดคำสำคัญเข้าคิวทบทวน`}</p><div class="button-row"><button class="button ${done?'secondary':'gold'}" data-action="complete" data-id="${id}">${icon('check')} ${done?'อ่านจบแล้ว · ยกเลิกเครื่องหมาย':'ทำเครื่องหมายว่าอ่านจบ'}</button>${link('review','ทบทวนด้วยแฟลชการ์ด →','button secondary')}</div></div></section>${nextHTML(l,next)}<p class="quiet-note">เรียบเรียงใหม่ ต.ค. 2569 · ไม่ใช่คำบรรยายของอาจารย์หรือขอบเขตข้อสอบทางการ · <a href="#about">แหล่งเรียนรู้</a></p></article>
  <aside class="reading-side"><div class="sticky-side"><div class="panel"><span class="eyebrow">ในบทนี้</span><ol class="toc">${l.easy?'<li><button data-action="section" data-index="quick">เข้าใจใน 1 นาที</button></li>':''}${l.sections.map((s,i)=>`<li><button data-action="section" data-index="${i}">${e(s.heading)}</button></li>`).join('')}<li><button data-action="section" data-index="terms">คำสำคัญและชื่อที่ควรจำ</button></li>${l.refs?.length?'<li><button data-action="section" data-index="refs">แหล่งอ้างอิงและอ่านต่อ</button></li>':''}</ol></div><div class="panel note-panel"><h3>${icon('notes')} บันทึกของฉัน</h3><button class="button secondary" data-action="nb-from-lesson" data-lesson="${id}">ไฮไลต์ / แทรกรูปในสมุดจด →</button><p>เขียนสิ่งที่เข้าใจ หรือคำถามที่จะกลับมาค้น</p><label class="sr-only" for="lesson-note">บันทึกบท ${e(l.title)}</label><textarea id="lesson-note" data-lesson="${id}" maxlength="50000" placeholder="ลองสรุปด้วยภาษาของตัวเอง…">${e(state.notes[id]||'')}</textarea><span id="note-status" class="save-status" role="status">บันทึกโน้ตใน Supabase อัตโนมัติ</span></div></div></aside></div>`;}
+function scrollReviewCard(){const card=main.querySelector?.('.flashcard,.review-empty');if(card)scrollQuestion(card,card.querySelector('h2'),document.querySelector('.topbar'));}
 function review(){const due=cardsForReview(state,reviewCourse,today(),includeUnread);return `${heading('ทบทวนบทเรียน','แฟลชการ์ดจากบทที่อ่าน')}<label>วิชา<select id="review-course"><option value="">ทุกวิชา</option>${courses.filter(c=>c.enrolled).map(c=>`<option value="${c.id}" ${reviewCourse===c.id?'selected':''}>${c.id} · ${e(c.title)}</option>`).join('')}</select></label>${flashcardHTML(due)}`;}
 function flashcardHTML(due){const toggle=`<label class="check-label"><input type="checkbox" id="include-unread" ${includeUnread?'checked':''}> รวมการ์ดของบทที่ยังไม่ได้กดอ่านจบ</label>`;if(!due.length)return `${toggle}<div class="empty panel review-empty">${mascot(state.completed.length||includeUnread?'cheer':'happy',104)}<h2>${state.completed.length||includeUnread?'ทบทวนครบสำหรับวันนี้แล้ว 🎉':'อ่านจบบทแรก แล้วการ์ดจะมารอที่นี่'}</h2><p>${state.completed.length||includeUnread?'บัตรที่ตอบแล้วจะกลับมาตามรอบ 1, 3 หรือ 7 วัน':'การ์ดของแต่ละบทเข้าคิวทบทวนหลังกด “ทำเครื่องหมายว่าอ่านจบ” หรือเลือกรวมการ์ดทั้งหมดด้านบน'}</p>${link('courses','กลับไปเรียนบทอื่น')}</div>`;
  const c=due[0],level=state.reviews[c.id]?.level??0,total=due.length+sessionReviewed,pct=Math.round(sessionReviewed/total*100);
@@ -231,7 +233,7 @@ function render(keepScroll=false){
  if(keepScroll)window.scrollTo(0,oldY);else window.scrollTo(0,0);
  readProgress();
 }
-function navigate(){const raw=location.hash.startsWith('#space=')?'home':location.hash.slice(1)||'home';const [view,id]=raw.split('/');if(view!=='review')sessionReviewed=0;currentView=['prep','exams'].includes(view)?'practice':view;currentId=['prep','exams'].includes(view)?'':id||'';reviewQueue=null;if(currentView==='lesson'&&lessonById(currentId)&&studySpace.info().canEdit){state.lastLesson=currentId;save();}render();main.classList.remove('page-enter');void main.offsetWidth;main.classList.add('page-enter');main.focus({preventScroll:true});}
+function navigate(){cancelQuestionScroll();const raw=location.hash.startsWith('#space=')?'home':location.hash.slice(1)||'home';const [view,id]=raw.split('/');if(view!=='review')sessionReviewed=0;currentView=['prep','exams'].includes(view)?'practice':view;currentId=['prep','exams'].includes(view)?'':id||'';reviewQueue=null;if(currentView==='lesson'&&lessonById(currentId)&&studySpace.info().canEdit){state.lastLesson=currentId;save();}render();main.classList.remove('page-enter');void main.offsetWidth;main.classList.add('page-enter');main.focus({preventScroll:true});}
 function download(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function exportAll(){download(`ru-study-backup-${today()}.json`,JSON.stringify(state,null,2),'application/json');toast('ส่งออกไฟล์สำรองแล้ว');}
 function exportPlan(){const rows=[['ภาค','รหัส','รายวิชา','หน่วยกิต','หมวด','ภาระประมาณ','วันสอบ','คาบ','สถานะลงทะเบียน','ผลสอบที่บันทึกเอง','เหตุผลลำดับเรียน'],...planSummary(state).termRows.flatMap(t=>t.courses.map(c=>[t.name,c.id,c.title,3,categories[c.category],c.load,c.exam?thaiDate(c.exam):'รอประกาศ',c.slot||'',isEnrolled(state,c)?'ลงแล้ว':'รอตามแผน',state.grades[c.id]||'',c.reason]))];const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');download('ru-study-plan-all-terms.csv',csv,'text/csv;charset=utf-8');}
@@ -325,7 +327,7 @@ document.addEventListener('click',event=>{const b=event.target.closest('[data-ac
  if(action==='complete'){const id=b.dataset.id;if(!lessonById(id))return;if(state.completed.includes(id)){state.completed=state.completed.filter(v=>v!==id);state.sessions=state.sessions.filter(v=>!(v.lesson===id&&v.date===today()));}else {state.completed.push(id);if(!state.sessions.some(v=>v.lesson===id&&v.date===today()))state.sessions.push({lesson:id,date:today()});}const now=state.completed.includes(id);if(now)fresh='complete:'+id;save();render(true);toast(now?'อ่านจบแล้ว เก่งมาก! 🎉 การ์ดของบทนี้เข้าคิวทบทวนแล้ว':'ยกเลิกเครื่องหมายแล้ว');if(now)confetti(rect);}
  if(action==='mode'){reviewMode=b.dataset.mode;quizIndex=0;flipped=false;reviewQueue=null;render(true);}
  if(action==='flip'){flipped=!flipped;render(true);}
- if(action==='remember'){reviewCard(state,b.dataset.id,b.dataset.value==='yes');sessionReviewed++;save();flipped=false;render(true);if(!cardsForReview(state,reviewCourse,today(),includeUnread).length){toast('ทบทวนครบสำหรับวันนี้แล้ว เก่งมาก! 🎉');confetti(rect);}}
+ if(action==='remember'){reviewCard(state,b.dataset.id,b.dataset.value==='yes');sessionReviewed++;save();flipped=false;render(true);scrollReviewCard();if(!cardsForReview(state,reviewCourse,today(),includeUnread).length){toast('ทบทวนครบสำหรับวันนี้แล้ว เก่งมาก! 🎉');confetti(rect);}}
  if(action==='calendar'){download('ru-exams-2-2569.ics',examICS(),'text/calendar;charset=utf-8');toast('ดาวน์โหลดปฏิทินแบบทั้งวันพร้อมรหัสคาบแล้ว');}
  if(action==='export')exportAll();
  if(action==='export-plan')exportPlan();
@@ -403,9 +405,9 @@ document.addEventListener('change',async event=>{const el=event.target;
    render(true);return;
   }
   if(el.id==='calendar-course'){calendarCourse(el.value);render(true);return;}
- if(el.id==='review-course'){reviewCourse=el.value;quizIndex=0;flipped=false;reviewQueue=null;render(true);}
+ if(el.id==='review-course'){reviewCourse=el.value;quizIndex=0;flipped=false;reviewQueue=null;render(true);scrollReviewCard();}
  if(el.id==='mistakes-only'){mistakesOnly=el.checked;quizIndex=0;reviewQueue=null;render(true);}
- if(el.id==='include-unread'){includeUnread=el.checked;flipped=false;render(true);}
+ if(el.id==='include-unread'){includeUnread=el.checked;flipped=false;render(true);scrollReviewCard();}
  if(el.classList.contains('enrollment-check')){
   const course=courses.find(c=>c.id===el.dataset.course);
   if(!course||state.grades[course.id])return;

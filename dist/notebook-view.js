@@ -1,3 +1,4 @@
+import {scrollQuestion} from './quiz-scroll.js?v=20261126-shared';
 import {planRestore,confirmRestore} from './notebook-backup.js?v=20261124-tips';
 import {paperPage} from './paper-view.js?v=20261124-tips';
 import {mountPaper,refreshPaper as refreshPaperEditor} from './paper-editor.js?v=20261126-mobile-menu';
@@ -196,7 +197,7 @@ export async function notebookAction(action,data,space,progress,render,toast){
   if(action==='nb-archive-filter'){archived=!archived;render(true);}
   if(action==='nb-review'){reviewing=true;reviewIndex=0;revealed=false;if(location.hash==='#notes')render();else location.hash='#notes';}
   if(action==='nb-review-close'){reviewing=false;render();}
-  if(action==='nb-review-next'){reviewIndex++;revealed=false;render(true);}
+  if(action==='nb-review-next'){reviewIndex++;revealed=false;render(true);const card=document.querySelector('.note-recall');if(card)scrollQuestion(card,card.querySelector('h2'),document.querySelector('.topbar'));}
   if(action==='nb-reveal'){revealed=true;render(true);}
   if(action==='nb-print'){
     const a4=document.querySelector('.paper-app [data-paper="print-pages"]');
