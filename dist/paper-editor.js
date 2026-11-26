@@ -2294,7 +2294,9 @@ bind(rich,'keyup',()=>{
    formattingControlActive=false;
   }
   if(!e.target.closest('.paper-shapes-popup,[data-open-shapes],[data-paper="shape"]'))setShapesOpen(false);if(!e.target.closest('.paper-word-menu,.paper-text-ribbon,#paper-text-input,#paper-rich-editor'))closeWordMenu();if(!e.target.closest('.paper-pen-sizes'))closePenSizePicker();if(!e.target.closest('#paper-toolbar-more'))closeExtraTools();if(!e.target.closest('#paper-eraser-menu,[data-paper="eraser"]'))closeEraserMenu();});
- bind(root,'keydown',e=>{if(e.key==='Escape'){setShapesOpen(false);closeWordMenu();closeCanvasMenu();closePenSizePicker();closeExtraTools();closeEraserMenu();}});
+ bind(root,'pointerdown',e=>{const menu=$('.paper-menu');if(menu.open&&!menu.contains(e.target))menu.open=false;});
+ bind(root,'click',e=>{const menu=$('.paper-menu');if(e.target.closest('.paper-menu [data-action]'))menu.open=false;});
+ bind(root,'keydown',e=>{if(e.key==='Escape'){const menu=$('.paper-menu');if(menu.open){menu.open=false;menu.querySelector('summary').focus({preventScroll:true});}setShapesOpen(false);closeWordMenu();closeCanvasMenu();closePenSizePicker();closeExtraTools();closeEraserMenu();}});
   bind($('#paper-finger'),'change',e=>{
    if(!e.target.checked)return;
    if(palmGuard)setPalmGuard(false);

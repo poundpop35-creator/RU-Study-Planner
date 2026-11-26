@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261125-auto-coursebooks'); }
+try { await import('./app.js?v=20261126-mobile-menu'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();
