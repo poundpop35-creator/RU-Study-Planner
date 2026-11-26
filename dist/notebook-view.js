@@ -1,6 +1,6 @@
 import {planRestore,confirmRestore} from './notebook-backup.js?v=20261124-tips';
 import {paperPage} from './paper-view.js?v=20261124-tips';
-import {mountPaper,refreshPaper as refreshPaperEditor} from './paper-editor.js?v=20261125-canonicalpdf';
+import {mountPaper,refreshPaper as refreshPaperEditor} from './paper-editor.js?v=20261126-mobile-menu';
 import {openLegacy} from './paper-legacy.js?v=20261118-edit2';
 export function refreshPaper(space,route){try{const r=resolveCourseRoute(space.notebook(),route);return !!r&&refreshPaperEditor(space,r.id);}catch{return false;}}
 import {confirmNoteDelete} from './note-delete-dialog.js?v=20261118-edit2';

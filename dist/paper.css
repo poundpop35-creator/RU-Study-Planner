@@ -1732,3 +1732,19 @@ dialog.photo-crop{width:min(640px,96vw);padding:0;border:none;background:#14171d
 .course-reference-scroll svg{pointer-events:none}
 @media(max-width:600px){.course-section-bar{flex-wrap:wrap;padding:4px 6px}.course-section-bar label{flex:1 1 100%}.course-section-bar button{flex:1;font-size:11px;padding:5px}.paper-workspace:has(.course-section-reference:not([hidden])){flex-direction:column}.course-section-reference{flex:0 0 38%;width:100%;border-right:0;border-bottom:1px solid #cbd5e1}.course-reference-header{padding:4px;gap:4px}.course-reference-header select{width:70%}}
 @media print{.course-section-bar,.course-section-reference{display:none!important}}
+
+/* Anchor the wrapped phone menu to the full header, never the tiny left-hand
+   summary. Keep all actions reachable even in landscape or short viewports. */
+@media screen and (max-width:720px){
+ .paper-app .paper-header{position:relative;overflow:visible}
+ .paper-app .paper-header:has(.paper-menu[open]){z-index:35}
+ .paper-app .paper-menu{position:static;flex:none}
+ .paper-app .paper-menu summary{min-width:44px;min-height:44px;display:grid;place-items:center;touch-action:manipulation}
+ .paper-app .paper-menu[open]>div{
+  position:absolute;left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));top:100%;
+  min-width:0;width:auto;max-width:none;max-height:calc(100vh - 160px);
+  max-height:min(65dvh,calc(100dvh - 130px));overflow:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;z-index:36;padding:8px;
+ }
+ .paper-app .paper-menu[open]>div button{min-height:44px;font-size:14px;white-space:normal;overflow-wrap:anywhere}
+}
