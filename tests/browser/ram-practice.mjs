@@ -41,9 +41,22 @@ try{
    await page.locator('#options .choice').nth(first.a).click();
    assert.equal(await page.locator('#stat-correct').innerText(),'1');
    assert.ok((await page.locator('#feedback-title').innerText()).includes('ถูกต้อง'));
+   // Reproduce the phone bug: navigation starts well below a tall explanation.
+   await page.locator('#feedback-why').evaluate(node=>{node.textContent='คำอธิบายยาวมาก '.repeat(150);});
    await page.locator('#next').click();
+   async function checkQuestionTop(){
+    await page.waitForFunction(()=>{
+     const q=document.getElementById('question').getBoundingClientRect(),bar=document.querySelector('.ram-topbar').getBoundingClientRect();
+     return q.top>=bar.bottom-1&&q.top<Math.min(window.innerHeight-20,bar.bottom+150);
+    });
+   }
+   await checkQuestionTop();
+   assert.equal(await page.locator('#number').inputValue(),'2');
    await page.locator('#options .choice').nth((second.a+1)%second.o.length).click();
    assert.equal(await page.locator('#stat-wrong').innerText(),'1');
+   await page.locator('#prev').click();await checkQuestionTop();
+   assert.equal(await page.locator('#number').inputValue(),'1');
+   await page.locator('#next').click();await checkQuestionTop();
    await page.locator('#finish').click();
    assert.ok(await page.locator('#results').isVisible(),'partial score is available');
    assert.equal(await page.locator('#final-score').innerText(),'1/'+list.length);
@@ -51,6 +64,7 @@ try{
    assert.equal(await page.locator('#final-pending').innerText(),String(list.length-2));
    await page.locator('#back-to-questions').click();
    assert.ok(await page.locator('#exercise').isVisible(),'return to questions without discarding answers');
+   await checkQuestionTop();
    assert.equal(await page.locator('#stat-answered').innerText(),'2/'+list.length);
 
    // Answer remaining questions via the legacy keys, then reload the page to

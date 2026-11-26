@@ -174,3 +174,7 @@
  .ram-status.is-error { background: #fff0f2; padding: 8px; }
  .ram-choices { gap: 8px; }
 }
+
+/* Sticky header clearance for question navigation; JS measures the live header. */
+.ram-question-card{scroll-margin-top:80px;overflow-anchor:none}
+@media(max-width:720px){.ram-question-card{scroll-margin-top:70px}}
