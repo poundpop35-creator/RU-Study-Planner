@@ -10,7 +10,7 @@
  <link rel="preconnect" href="https://fonts.googleapis.com">
  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Prompt:wght@500;600;700&display=swap">
  <link rel="stylesheet" href="../styles.css?v=20261121-paper-format">
- <link rel="stylesheet" href="./practice.css?v=20261123-reading">
+ <link rel="stylesheet" href="./practice.css?v=20261126-scroll-question">
 </head>
 <body class="ram-body">
  <a class="skip" href="#ram-main">ข้ามไปยังแบบฝึก</a>
@@ -58,7 +58,7 @@
      <div id="exercise" class="ram-grid">
       <article class="panel ram-question-card" aria-labelledby="question">
        <div class="ram-question-top"><span id="count" class="ram-counter">ข้อ 1/1</span></div>
-       <h2 id="question">กำลังเปิดคำถาม…</h2>
+       <h2 id="question" tabindex="-1">กำลังเปิดคำถาม…</h2>
        <div id="options" class="choices ram-choices" role="group" aria-label="ตัวเลือกคำตอบ"></div>
        <section id="feedback" class="ram-feedback" aria-live="polite" hidden>
         <strong id="feedback-title"></strong>
@@ -118,6 +118,6 @@
    </nav>
   </div>
  </div>
- <script type="module" src="./practice.js?v=20261123-unified-quiz-v1"></script>
+ <script type="module" src="./practice.js?v=20261126-scroll-question"></script>
 </body>
 </html>

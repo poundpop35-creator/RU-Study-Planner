@@ -52,6 +52,25 @@ function reveal(q,choice,buttons){
   accepts(q,choice)?'คุณตอบข้อ '+(choice+1)+' ได้ถูกต้อง':'คำตอบที่ถูกคือข้อ '+(q.a+1)+' · '+q.o[q.a];
  el('feedback-why').textContent=String(q.why||'ไม่มีคำอธิบายเพิ่มเติม');
 }
+// Render first, then reset the reading position only on explicit navigation.
+// Two animation frames let mobile Safari settle layout after feedback is hidden.
+let questionScrollToken=0;
+function scrollToQuestion(){
+ const token=++questionScrollToken;
+ const stem=el('question'),card=stem.closest('.ram-question-card');
+ stem.focus({preventScroll:true});
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  if(token!==questionScrollToken||el('exercise').hidden||!card.isConnected)return;
+  const bar=document.querySelector('.ram-topbar');
+  const clearance=Math.max(0,bar?.getBoundingClientRect().height||0,bar?.getBoundingClientRect().bottom||0)+12;
+  card.style.scrollMarginTop=clearance+'px';
+  card.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
+ }));
+}
+function goToQuestion(){
+ showQuestion();
+ scrollToQuestion();
+}
 function showQuestion(){
  const list=currentList();
  if(!list.length)return;
@@ -105,11 +124,12 @@ function displayReview(items){
   const detail=document.createElement('small');
   detail.textContent=answer===null?'ยังไม่ตอบ':'ตอบผิด';
   button.append(title,detail);
-  button.onclick=()=>{index=position;showQuestion();el('question').scrollIntoView({block:'center',behavior:'smooth'});};
+  button.onclick=()=>{index=position;goToQuestion();};
   list.append(button);
  }
 }
 function showResults(){
+ questionScrollToken++;
  const list=currentList(),data=tally();
  el('exercise').hidden=true;
  el('results').hidden=false;
@@ -139,8 +159,7 @@ function resetCurrentSet(){
   try{localStorage.removeItem(key);}catch{storageWarning=true;}
  }
  index=0;
- showQuestion();
- el('question').scrollIntoView({block:'start',behavior:'smooth'});
+ goToQuestion();
 }
 async function openBank(){
  if(course!=='PALAD'&&!/^POL(?:1101|2104|2106|2107|2200|2301|2303)$/.test(course))
@@ -174,21 +193,21 @@ async function openBank(){
  if(course!=='PALAD')el('source').href='https://ram-test-hub.com/s/'+course+'/';
  el('sets').replaceChildren(...[...groups].map(([key,list])=>
   new Option(String(setNames[key]||key)+' · '+list.length+' ข้อ',key)));
- el('sets').onchange=()=>{index=0;showQuestion();};
+ el('sets').onchange=()=>{index=0;goToQuestion();};
  el('number').onchange=()=>{
   const n=Math.trunc(Number(el('number').value));
   index=Number.isFinite(n)?Math.min(currentList().length,Math.max(1,n))-1:0;
-  showQuestion();
+  goToQuestion();
  };
- el('prev').onclick=()=>{if(index>0){index--;showQuestion();}};
- el('next').onclick=()=>{if(index===currentList().length-1)showResults();else{index++;showQuestion();}};
+ el('prev').onclick=()=>{if(index>0){index--;goToQuestion();}};
+ el('next').onclick=()=>{if(index===currentList().length-1)showResults();else{index++;goToQuestion();}};
  el('finish').onclick=showResults;
- el('back-to-questions').onclick=()=>showQuestion();
+ el('back-to-questions').onclick=goToQuestion;
  el('review-wrong').onclick=()=>{
   const list=currentList(),wrong=list.findIndex(q=>getAnswer(q)!==null&&!accepts(q,getAnswer(q)));
   const pending=list.findIndex(q=>getAnswer(q)===null);
   index=wrong>=0?wrong:pending>=0?pending:0;
-  showQuestion();
+  goToQuestion();
  };
  el('reset-set').onclick=resetCurrentSet;
  el('lab').hidden=false;

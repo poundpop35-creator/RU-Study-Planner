@@ -66,3 +66,17 @@ test('standalone practice uses the RU design system, shows progress and final-sc
  assert.match(html,/กลับไปเลือกวิชา/);
  assert.match(html,/คำตอบบันทึกในเบราว์เซอร์เครื่องนี้/);
 });
+
+test('standalone quiz explicit navigation renders then scrolls, unlike answering',async()=>{
+ const js=await readFile(new URL('../dist/ram-exams/practice.js',import.meta.url),'utf8');
+ const html=await readFile(new URL('../dist/ram-exams/practice.html',import.meta.url),'utf8');
+ assert.match(js,/function goToQuestion\(\)\{\s*showQuestion\(\);\s*scrollToQuestion\(\);/);
+ assert.match(js,/requestAnimationFrame\(\(\)=>requestAnimationFrame/);
+ assert.match(js,/card\.scrollIntoView\(\{block:'start',inline:'nearest',behavior:'instant'\}\)/);
+ assert.match(js,/card\.style\.scrollMarginTop=clearance/);
+ assert.match(js,/index\+\+;goToQuestion\(\)/);assert.match(js,/index--;goToQuestion\(\)/);
+ assert.match(js,/el\('back-to-questions'\)\.onclick=goToQuestion/);
+ assert.match(js,/setAnswer\(q,i\);\s*reveal\(q,i,buttons\);\s*updateOverview\(\);/);
+ assert.match(html,/id="question" tabindex="-1"/);
+ assert.match(html,/practice\.js\?v=20261126-scroll-question/);
+});
