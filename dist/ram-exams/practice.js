@@ -1,3 +1,4 @@
+import {scrollQuestion,cancelQuestionScroll} from '../quiz-scroll.js?v=20261126-shared';
 import {accepts,answerKey,parsedAnswer,scoreSet} from './score.js?v=20261123-multikey';
 
 const el=id=>document.getElementById(id);
@@ -54,18 +55,9 @@ function reveal(q,choice,buttons){
 }
 // Render first, then reset the reading position only on explicit navigation.
 // Two animation frames let mobile Safari settle layout after feedback is hidden.
-let questionScrollToken=0;
 function scrollToQuestion(){
- const token=++questionScrollToken;
  const stem=el('question'),card=stem.closest('.ram-question-card');
- stem.focus({preventScroll:true});
- requestAnimationFrame(()=>requestAnimationFrame(()=>{
-  if(token!==questionScrollToken||el('exercise').hidden||!card.isConnected)return;
-  const bar=document.querySelector('.ram-topbar');
-  const clearance=Math.max(0,bar?.getBoundingClientRect().height||0,bar?.getBoundingClientRect().bottom||0)+12;
-  card.style.scrollMarginTop=clearance+'px';
-  card.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
- }));
+ scrollQuestion(card,stem,document.querySelector('.ram-topbar'));
 }
 function goToQuestion(){
  showQuestion();
@@ -129,7 +121,7 @@ function displayReview(items){
  }
 }
 function showResults(){
- questionScrollToken++;
+ cancelQuestionScroll();
  const list=currentList(),data=tally();
  el('exercise').hidden=true;
  el('results').hidden=false;

@@ -1,4 +1,4 @@
-try { await import('./app.js?v=20261126-mobile-menu'); }
+try { await import('./app.js?v=20261126-unified-scroll'); }
 catch {
  const main=document.querySelector('#main');
  main.replaceChildren();

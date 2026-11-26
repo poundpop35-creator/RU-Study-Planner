@@ -1,3 +1,4 @@
+import {scrollQuestion} from './quiz-scroll.js?v=20261126-shared';
 import {loadBank,sharedAnswers} from "./pol2106-sync.js";
 export function examReader(){
  return `<section class="exam-reader" id="exam-reader">
@@ -22,10 +23,7 @@ function goToQuestion(i){
  $('feedback').querySelector('details').open=false;
  show(i);
  const card=root.querySelector('.reader-question'),stem=$('stem'),topbar=document.querySelector('.topbar');
- const clearance=Math.max(0,topbar?.getBoundingClientRect().bottom||0)+12;
- card.style.scrollMarginTop=clearance+'px';
- stem.focus({preventScroll:true});
- card.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
+ scrollQuestion(card,stem,topbar);
 }
 $('prev').onclick=()=>goToQuestion(ix-1);$('next').onclick=()=>goToQuestion(ix+1);$('sets').onchange=()=>goToQuestion(100*Number($('sets').value));$('num').onchange=()=>goToQuestion(100*Math.floor(ix/100)+Number($('num').value));function choose(wrong){const list=bank.map((x,i)=>i).filter(i=>Math.floor(i/100)===Math.floor(ix/100)&&(wrong?(history[i]&&bank[i].k&&history[i]!==bank[i].k):!history[i]));if(list.length)goToQuestion(list[Math.floor(Math.random()*list.length)]);else $('notice').textContent=wrong?'ไม่มีข้อที่ตอบผิดในชุดนี้':'ตอบครบชุดนี้แล้ว'}$('random').onclick=()=>choose(false);$('wrong').onclick=()=>choose(true);
 const cloud=sharedAnswers({storage:localStorage,onUpdate:v=>{const changed=JSON.stringify(history)!==JSON.stringify(v);history=v;if(bank&&changed)show(ix)},status:t=>{$('cloud').textContent=t}});
