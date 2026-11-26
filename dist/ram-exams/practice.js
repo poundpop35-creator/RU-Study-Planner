@@ -1,7 +1,9 @@
+import {pol2200SourcePanel} from './pol2200-sources.js?v=20261126';
 import {accepts,answerKey,parsedAnswer,scoreSet} from './score.js?v=20261123-multikey';
 
 const el=id=>document.getElementById(id);
 const course=new URL(location.href).searchParams.get('course');
+const external=pol2200SourcePanel(course);if(external){el('status').insertAdjacentHTML('beforebegin',external);if(location.hash==='#pol2200-external-sources')document.getElementById('pol2200-external-sources').open=true;}
 const answers=new Map();
 let groups=new Map(),setNames={},index=0,bank=null,storageWarning=false;
 const currentList=()=>groups.get(el('sets').value)||[];

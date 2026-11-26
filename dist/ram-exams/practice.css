@@ -174,3 +174,5 @@
  .ram-status.is-error { background: #fff0f2; padding: 8px; }
  .ram-choices { gap: 8px; }
 }
+
+.ram-pol-sources{margin:0 0 18px;padding:16px;border:1px solid #cbd5e1}.ram-pol-sources summary{cursor:pointer;font-weight:700}.ram-pol-sources p{font-size:13px;line-height:1.7;margin:10px 0;color:#475569}.ram-pol-source-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}.ram-pol-source-grid a{justify-content:center;min-height:44px;text-align:center}
