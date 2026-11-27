@@ -57,7 +57,8 @@ export function calendarEvents({start=calendar.lectureStart,end=calendar.examEnd
 // Weekend deep sessions occupy roughly five hours on each day, with breaks.
 // Saturday: four 75-minute clips; Sunday: three 100-minute clips.
 // Actual video length is not known; these are adjustable study-time budgets.
-export const WEEKEND_PRIORITY=['POL2106','POL2104','POL1101','POL2303','POL2301','POL2107','POL2200'];
+const initialPriority=['POL2106','POL2104','POL1101','POL2303','POL2301','POL2107','POL2200'];
+export const WEEKEND_PRIORITY=['POL2106','POL2107','POL1101','POL2104','POL2200','POL2301','POL2303'];
 const DEEP_SATURDAY=['09:00','10:30','13:00','14:30'];
 const DEEP_SUNDAY=['10:00','13:00','16:00','18:00','20:00'];
 const utcWeekday=d=>new Date(d+'T12:00:00Z').getUTCDay();
@@ -79,7 +80,8 @@ export function defaultWeekendReplays(){
  const events=[];
  for(const [monday,entries] of weeks){
   const sat=addDays(monday,5),sun=addDays(monday,6);
-  const sorted=entries.slice().sort((a,b)=>rankCourse(a.course)-rankCourse(b.course)||a.date.localeCompare(b.date));
+  const order=sat<'2026-11-27'?initialPriority:WEEKEND_PRIORITY;
+  const sorted=entries.slice().sort((a,b)=>order.indexOf(a.course)-order.indexOf(b.course)||a.date.localeCompare(b.date));
   const allowedSat=sorted.filter(x=>addDays(x.date,2)<=sat);
   const satCount=Math.min(DEEP_SATURDAY.length,Math.ceil(sorted.length/2),allowedSat.length);
   const satSet=new Set(allowedSat.slice(0,satCount).map(replayKey));
@@ -99,7 +101,7 @@ export function defaultWeekendReplays(){
 }
 // Mon–Thu: review lightly at 20:00 after the live lectures.
 // 20 Nov: Friday still has the first live POL2200 lecture, so reviews start 20:00.
-// Every Friday from 27 Nov: no live lectures, so spread listening through daylight.
+// Every Friday from 27 Nov: no live lectures, so review after work.
 // The newest eligible Wednesday recording POL2106 has Friday's first slot.
 // Keep light listening distinct from watching a weekend lecture seriously.
 export function personalSkimEvents(skimDone={}, {start=calendar.lectureStart,end=addDays(calendar.examEnd,7),course=''}={}){
@@ -109,11 +111,10 @@ export function personalSkimEvents(skimDone={}, {start=calendar.lectureStart,end
  for(let day=calendar.lectureStart;day<=addDays(calendar.lectureEnd,7);day=addDays(day,1)){
   const weekday=utcWeekday(day);
   if(weekday===0||weekday===6)continue;
-  const freeFriday=weekday===5&&day>='2026-11-27';
-  const slots=freeFriday?['10:00','13:00','15:00']:weekday===5?['20:00','20:45','21:30']:['20:00'];
+  const slots=weekday===5?['20:00','20:45','21:30']:['20:00'];
   for(let index=0;index<slots.length;index++){
    const time=slots[index];
-   const durationMinutes=freeFriday?(index===0?60:45):40;
+   const durationMinutes=40;
    const eligible=lectures.filter(x=>!selected.has(replayKey(x))&&addDays(x.date,2)<=day)
     .sort((a,b)=>b.date.localeCompare(a.date)||rankCourse(a.course)-rankCourse(b.course));
    const lesson=eligible[0];if(!lesson)break;

@@ -11,6 +11,43 @@ const reference={
  POL2107:[4,'17:30','19:20','VKB 301','2027-03-22','B'],
  POL2200:[5,'13:30','15:20','VPB 401','2027-03-13','B']
 };
+const tutoring={
+ "POL1101": [
+  "ทวนสถาบันไทย แล้วอธิบายว่าใครใช้อำนาจและใครตรวจสอบ",
+  "268",
+  "ภาค 2/2568"
+ ],
+ "POL2106": [
+  "ทวนข้อเสนอของนักคิดในคาบ แล้วอธิบายเหตุผลจากความจำก่อนต่อ POL2107",
+  "1-69",
+  "ภาค 1/2569 ชุดที่ 1"
+ ],
+ "POL2107": [
+  "นำแนวคิดจาก POL2106 มาเลือกเกณฑ์เปรียบเทียบ แล้วจำแนกกรณีด้วยตัวเอง",
+  "1-69",
+  "ภาค 1/2569 ชุดที่ 1"
+ ],
+ "POL2104": [
+  "เลือกข่าวพรรคการเมืองหนึ่งเรื่อง ระบุผู้เล่น ผลประโยชน์ และวิธีผลักดัน",
+  "1-68",
+  "ภาค 1/2568"
+ ],
+ "POL2200": [
+  "ตรวจข่าวประชุมจากแถลงการณ์ ระบุวันที่ เวที คู่เจรจา และผลที่ยืนยันแล้ว",
+  "R68a",
+  "ซ่อม 2/68 · ฤดูร้อน 68 ชุด 1"
+ ],
+ "POL2301": [
+  "ยกกรณีจากงานหนึ่งเรื่อง แล้วจับคู่กับศัพท์องค์การในบทที่เรียน",
+  "S-68",
+  "ฤดูร้อน 2568"
+ ],
+ "POL2303": [
+  "ทวนข้อที่เคยผิดในชุดรวมเก็ง โดยเริ่มจากการฝึกอบรมและแยกจากการประเมินผล",
+  "M69",
+  "ชุดรวมเก็ง 1/69"
+ ]
+};
 const colors=['#dbeafe','#d1fae5','#fef3c7','#fce7f3','#ede9fe','#cffafe','#ffedd5'];
 const minutes=s=>Number(s.slice(0,2))*60+Number(s.slice(3));
 // Timetable keeps its hourly columns on every screen; phones pan horizontally.
@@ -43,7 +80,7 @@ function replayBoard(state={},focus=today(),canEdit=true){
  return `<div class="replay-wrapper"><div class="replay-week-nav"><button class="button secondary small" data-action="cal-replay-week" data-delta="-7">← สัปดาห์ก่อน</button><strong>${thaiDate(start,true)} – ${thaiDate(end,true)}</strong><button class="button secondary small" data-action="cal-replay-week" data-delta="7">สัปดาห์ถัดไป →</button><button class="button secondary small" data-action="cal-replay-week" data-delta="0">สัปดาห์นี้</button></div>
   <p class="replay-count">สัปดาห์นี้มี ${rows.length} คลิป · ทำเครื่องหมายดูแล้ว ${nDone}/${rows.length}</p>
   <div class="replay-week-grid">${content}</div>
-  <p class="replay-note"><b>กำหนดส่วนตัว:</b> จ.–พฤ. ทวนเบา ๆ เวลา 20:00, ศุกร์หลังสัปดาห์แรกทวนกลางวัน และ ส.–อา. ดูย้อนหลังจริงจัง · คลิปอาจมา 2 วันหลังคาบจริง ยังไม่ได้ตรวจคลิปที่เผยแพร่จริง</p>
+  <p class="replay-note"><b>กำหนดส่วนตัว:</b> จ.–พฤ. ทวนเบา ๆ เวลา 20:00, ศุกร์ทวนหลังเลิกงาน และ ส.–อา. ดูย้อนหลังจริงจัง · คลิปอาจมา 2 วันหลังคาบจริง ยังไม่ได้ตรวจคลิปที่เผยแพร่จริง</p>
   <p><a class="button secondary" href="https://ondemand.ru.ac.th/" target="_blank" rel="noopener noreferrer">▶ เปิด RU Course on Demand ↗</a></p></div>`;
 }
 
@@ -101,13 +138,18 @@ function unifiedWeekly(mode,state={},focus=today(),canEdit=true){
    <strong>${thaiDate(start,true)} – ${thaiDate(end,true)}</strong>
    ${start>='2027-03-01'?'':`<button class="button secondary small" data-action="cal-replay-week" data-delta="7">ถัดไป →</button>`}<button class="button secondary small" data-action="cal-replay-week" data-delta="0">สัปดาห์นี้</button>
   </div>
-  <p class="unified-legend"><span>● คาบเรียนสดตาม ม.ร.30</span><span>↻ จ.–พฤ. 20:00 · ศุกร์กลางวัน</span><span>▶ ส.–อา. · ดูจริงจัง</span><b>ทวนแล้ว ${lightDone}/${light.length} · ดูจริงจัง ${deepDone}/${deep.length}</b></p>
-  <p class="replay-week-plan"><b>แผน 2 ระดับ:</b> จ.–พฤ. 20:00 ทวนเบา ๆ 40 นาที · ศุกร์ 27 พ.ย. เป็นต้นไปว่างทั้งวัน: 10:00 เริ่ม POL2106 (60 นาที), 13:00 และ 15:00 ทวนอีกสองวิชา (45 นาทีต่อวิชา) · ศุกร์ 20 พ.ย. ยังมีคาบสด จึงทวนเวลา 20:00 · เสาร์–อาทิตย์ดูจริงจังประมาณ 5 ชั่วโมง/วัน โดยเริ่ม POL2106</p>
+  <p class="unified-legend"><span>● คาบเรียนสดตาม ม.ร.30</span><span>↻ จ.–พฤ. 20:00 · ศุกร์หลังเลิกงาน</span><span>▶ ส.–อา. · ดูจริงจัง</span><b>ทวนแล้ว ${lightDone}/${light.length} · ดูจริงจัง ${deepDone}/${deep.length}</b></p>
+  <p class="replay-week-plan"><b>แผน 2 ระดับ:</b> จ.–พฤ. 20:00 ทวนเบา ๆ 40 นาที · ศุกร์ 27 พ.ย. เป็นต้นไปทวนหลังเลิกงาน เริ่ม 20:00 · เสาร์เริ่มด้วยปรัชญาการเมืองแล้วต่อการเมืองเปรียบเทียบ · อาทิตย์ทวนข้อที่ผิด</p>
   <div class="unified-time-nav" aria-label="เลื่อนตารางตามช่วงเวลา"><button type="button" class="button secondary small" data-action="cal-scroll-time" data-target="day">◀ ช่วงกลางวัน</button><span>ตารางแนวนอน · เลื่อนซ้าย–ขวาเพื่อดูเวลา</span><button type="button" class="button secondary small" data-action="cal-scroll-time" data-target="night">ช่วงค่ำ 20:00 ▶</button></div>
   <div class="unified-scroll" role="region" tabindex="0" aria-label="ตารางรายสัปดาห์แนวนอน เลื่อนเพื่อดูเวลา 09 ถึง 01 นาฬิกา"><div class="unified-grid">
    <div class="unified-axis"><b>วัน</b><div>${[9,11,13,15,17,19,21,23,25].map(h=>`<span style="left:${(h-9)/16*100}%">${h===25?'01:00 +1':String(h).padStart(2,'0')+':00'}</span>`).join('')}</div></div>
    ${grid}
   </div></div>
+  <section><h3>หลังเรียนสัปดาห์นี้</h3><p>เลือกงานตามบทที่เรียนถึง เมื่อจบบทให้ฝึก 10 ข้อที่ตรงหัวข้อในชุดแนะนำ</p>
+  ${deep.filter(x=>tutoring[x.course]).map(x=>{
+   const [task,set,name]=tutoring[x.course];
+   return `<article class="unified-replay-edit"><div><b>${thaiDate(x.date,true)} · ${e(x.startTime)} · ${e(x.course)} ${e(x.title)}</b><p>${e(task)}</p></div><a class="button secondary small" href="./ram-exams/practice.html?course=${e(x.course)}&amp;set=${encodeURIComponent(set)}">${e(name)}</a></article>`;
+  }).join('')}</section>
   <details class="unified-edit-panel"><summary>ปรับวันและเวลาที่จะดูจริงจัง</summary><p>เวลาเรียนย้อนหลังเป็นแผนส่วนตัว เปลี่ยนได้โดยไม่แก้คาบเรียนสดหรือสถานะทวนเบา ๆ และควรดูหลังคลิปเผยแพร่จริง</p>${edits||'<p>ไม่มีคลิปในสัปดาห์นี้</p>'}</details>
   <p class="replay-note">คลิปอาจปรากฏประมาณ 2 วันหลังสอนจริง ระบบยังไม่ยืนยันว่าอัปโหลดแล้ว · `+
    `<a href="https://ondemand.ru.ac.th/" target="_blank" rel="noopener noreferrer">▶ เปิด RU Course on Demand</a></p>

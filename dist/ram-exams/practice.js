@@ -185,6 +185,8 @@ async function openBank(){
  if(course!=='PALAD')el('source').href='https://ram-test-hub.com/s/'+course+'/';
  el('sets').replaceChildren(...[...groups].map(([key,list])=>
   new Option(String(setNames[key]||key)+' · '+list.length+' ข้อ',key)));
+ const requestedSet=new URL(location.href).searchParams.get('set');
+ if(groups.has(requestedSet))el('sets').value=requestedSet;
  el('sets').onchange=()=>{index=0;goToQuestion();};
  el('number').onchange=()=>{
   const n=Math.trunc(Number(el('number').value));

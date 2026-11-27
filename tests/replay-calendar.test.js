@@ -63,16 +63,16 @@ test('weekday light listening starts 20:00 and never marks weekend serious watch
  assert.equal(personalReplayEvents({}, {start:'2026-11-21',end:'2026-11-21'}).find(x=>x.course==='POL2106').done,false);
 });
 
-test('Friday 27 Nov and later start POL2106 in a daytime slot while Friday live remains empty',()=>{
+test('Friday 27 Nov and later start POL2106 in an evening slot while Friday live remains empty',()=>{
  const friday=skimOn('2026-11-27');
- assert.deepEqual(friday.map(x=>x.startTime),['10:00','13:00','15:00']);
- assert.deepEqual(friday.map(x=>x.durationMinutes),[60,45,45]);
+ assert.deepEqual(friday.map(x=>x.startTime),['20:00','20:45','21:30']);
+ assert.deepEqual(friday.map(x=>x.durationMinutes),[40,40,40]);
  assert.equal(friday[0].course,'POL2106');
  assert.equal(friday[0].sourceDate,'2026-11-25');
  assert.ok(friday.every(x=>x.availableOn<=x.date));
  const next=skimOn('2026-12-04');
  assert.equal(next[0].course,'POL2106');
- assert.equal(next[0].startTime,'10:00');
+ assert.equal(next[0].startTime,'20:00');
  assert.equal(next[0].sourceDate,'2026-12-02');
 });
 
@@ -136,7 +136,7 @@ test('unified weekly calendar preserves hour columns, live lessons and two diffe
  assert.equal(timelinePosition('20:00'),68.75);
  assert.ok(!first.includes('class="panel"'),'one integrated weekly timetable');
  const friday=weeklyPlanner('inline',freshState(),'2026-11-27',true);
- assert.ok(friday.includes('10:00–11:00 · ทวนเบา ๆ'),'Friday POL2106 should be in daylight');
+ assert.ok(friday.includes('20:00–20:40 · ทวนเบา ๆ'),'Friday POL2106 should be after work');
  assert.ok(friday.includes('ศุกร์ 27 พ.ย.'));
  assert.ok(friday.includes('data-action="cal-scroll-time" data-target="day"'));
 });
