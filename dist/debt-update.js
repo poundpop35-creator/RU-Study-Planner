@@ -22,7 +22,9 @@ export function decode(token){
   if(!str(label,80)||!label||!str(group,80)||!int(bal)||!int(min)||!Array.isArray(bills)||bills.length>120||!bills.every(x=>int(x))||!int(carry)||carry+sum(bills)>bal||(!min&&carry+sum(bills)!==bal)||!str(old,60)||!int(rate,10000)||!['','y','m'].includes(period)||!str(storedRate,40)||!int(day,31))fail();
   const meta=v[11],parts=meta?.parts||[],after=meta?.after||'';
   if(meta&&(!Array.isArray(parts)||parts.length>10||!parts.every(t=>Array.isArray(t)&&str(t[0],80)&&int(t[1],31)&&Array.isArray(t[2])&&t[2].length<=bills.length&&t[2].every(n=>int(n)))||parts.length&&bills.some((n,i)=>n!==sum(parts.map(t=>t[2][i]||0)))||after&&!Number.isFinite(Date.parse(after))))fail();
-  return {label,group,bal,min,bills,carry,old,rate:rate/100,period,storedRate,day,parts,after};
+  const dueMonthOffset=meta?.dueMonthOffset;
+  if(dueMonthOffset!==undefined&&!int(dueMonthOffset,1))fail();
+  return {dueMonthOffset,label,group,bal,min,bills,carry,old,rate:rate/100,period,storedRate,day,parts,after};
  });
  const baseBudget=items[0][11]?.baseBudget||budget;
  if(!int(baseBudget)||!baseBudget||baseBudget>budget)fail();
