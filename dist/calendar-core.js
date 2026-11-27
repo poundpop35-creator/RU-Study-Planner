@@ -110,7 +110,7 @@ export function personalSkimEvents(skimDone={}, {start=calendar.lectureStart,end
  const selected=new Set(),out=[];
  for(let day=calendar.lectureStart;day<=addDays(calendar.lectureEnd,7);day=addDays(day,1)){
   const weekday=utcWeekday(day);
-  if(weekday===0||weekday===6)continue;
+  if(weekday===0||weekday===6||(weekday===5&&day>='2026-11-27'))continue;
   const slots=weekday===5?['20:00','20:45','21:30']:['20:00'];
   for(let index=0;index<slots.length;index++){
    const time=slots[index];
