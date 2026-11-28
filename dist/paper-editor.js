@@ -47,9 +47,9 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false,startSection
  const scope=space.info().scope,images=new Map(),loading=new Set(),history=notebookHistory(),events=[],pointers=new Map();
  const draftKey='ru-paper-draft:'+scope+':'+id;
  const widthKey='ru-paper-pen-width.v1:'+scope,highlightKey='ru-paper-highlight-width.v1:'+scope,pagesKey='ru-paper-pages-open.v1',textSizeKey='ru-paper-text-font-size.v2';
- const palmKey='ru-paper-palm-guard.v1',fingerKey='ru-paper-finger.v2';
- let palmGuard=false;finger=true;
- try{palmGuard=localStorage.getItem(palmKey)==='true';finger=!palmGuard&&localStorage.getItem(fingerKey)!=='false';}catch{}
+ const palmKey='ru-paper-palm-guard.v1',fingerKey='ru-paper-finger.v3';
+ let palmGuard=false;finger=false;
+ try{palmGuard=localStorage.getItem(palmKey)==='true';finger=!palmGuard&&localStorage.getItem(fingerKey)==='true';}catch{}
  try{width=penWidth(localStorage.getItem(widthKey));}catch{/* unavailable device preference: keep 5 */}
  try{highlighterSize=highlightWidth(localStorage.getItem(highlightKey));}catch{/* keep 12 */}
  const tipsKey='ru-paper-pen-tips.v1:'+scope;let tip='fine',lastPenTip='fine',inkOpacity=1;
@@ -152,7 +152,7 @@ export function mountPaper(space,id,{onLegacy=()=>{},startInk=false,startSection
    localStorage.setItem(palmKey,String(palmGuard));
    if(palmGuard)localStorage.setItem(fingerKey,'false');
   }catch{}
-  say(palmGuard?'กันฝ่ามือแล้ว · Apple Pencil เขียนได้ · ใช้ปุ่ม +/− เพื่อซูม':'ปิดกันฝ่ามือแล้ว · ใช้สองนิ้วซูมได้');
+  say(palmGuard?'กันฝ่ามือแล้ว · ปากกาเขียน · นิ้วเลื่อน · สองนิ้วซูม':'ปิดกันฝ่ามือแล้ว · ใช้สองนิ้วซูมได้');
  }
  const selectIds=ids=>expandSelection(page().objects,ids);
  const currentNote=()=>space.notebook().notes.find(n=>n.id===id);
@@ -1726,8 +1726,49 @@ bind(rich,'keyup',()=>{
   if(e.target.closest('#paper-sheet,.paper-bottom,.paper-header,.paper-toolbar'))e.preventDefault();
  }
  bind(root,'selectstart',guardInkSelection);
+ bind(document,'selectionchange',()=>{
+  if(!inkTools.has(tool)||editing)return;
+  const selection=window.getSelection(),active=document.activeElement;
+  if(active?.closest?.('input,textarea,[contenteditable="true"]'))return;
+  if(selection&&!selection.isCollapsed&&(root.contains(selection.anchorNode)||root.contains(selection.focusNode)))selection.removeAllRanges();
+ });
  bind(root,'contextmenu',guardInkSelection);
+ const navigationTouches=new Map();
+ let edgeFrame=0,dragPointer=null;
+ function stopEdgeScroll(){cancelAnimationFrame(edgeFrame);edgeFrame=0;dragPointer=null;}
+ function edgeScroll(){
+  edgeFrame=0;
+  if(!dragPointer||gesture?.kind!=='move'||closed)return;
+  const r=viewport.getBoundingClientRect(),e=dragPointer;
+  const speed=(n,lo,hi)=>n<lo+48?-Math.min(18,(lo+48-n)/3):n>hi-48?Math.min(18,(n-hi+48)/3):0;
+  const dx=speed(e.clientX,r.left,r.right),dy=speed(e.clientY,r.top,r.bottom);
+  const left=viewport.scrollLeft,top=viewport.scrollTop;
+  viewport.scrollLeft+=dx;viewport.scrollTop+=dy;
+  if(left!==viewport.scrollLeft||top!==viewport.scrollTop)pointerMove(e);
+  if(!edgeFrame&&(dx||dy))edgeFrame=requestAnimationFrame(edgeScroll);
+ }
+ function moveNavigation(e){
+  const old=[...navigationTouches.values()];
+  const previous=navigationTouches.get(e.pointerId);
+  navigationTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const next=[...navigationTouches.values()];
+  if(next.length===2){
+   const distance=a=>Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+   const r=viewport.getBoundingClientRect();
+   if(!gesture&&distance(old)>0)zoomAt(zoom*distance(next)/distance(old),(next[0].x+next[1].x)/2-r.left,(next[0].y+next[1].y)/2-r.top);
+  }
+  viewport.scrollLeft-=e.clientX-previous.x;viewport.scrollTop-=e.clientY-previous.y;
+  if(dragPointer&&gesture?.kind==='move')pointerMove(dragPointer);
+ }
  function pointerDown(e){
+  if(e.pointerType==='pen'&&finger){finger=false;syncInputControls();}
+  if(e.pointerType==='touch'&&!finger&&tool!=='text'){
+   e.preventDefault();
+   // Large contacts are likely a resting palm; small contacts can navigate.
+   if(palmGuard&&Math.max(e.width||0,e.height||0)>45)return;
+   navigationTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+   svg.setPointerCapture(e.pointerId);return;
+  }
   // The phone's More drawer must never remain over the paper after the user
   // starts working with a tool or selects a shape/text box.
   if(root.classList.contains('paper-mobile-tools-expanded'))collapsePhoneMore();
@@ -1832,6 +1873,11 @@ bind(rich,'keyup',()=>{
   scheduleDraw();
  }
  function pointerMove(e){
+  if(navigationTouches.has(e.pointerId)){e.preventDefault();moveNavigation(e);return;}
+  if(gesture?.kind==='move'&&pointers.has(e.pointerId)){
+   dragPointer={pointerId:e.pointerId,pointerType:e.pointerType,clientX:e.clientX,clientY:e.clientY,preventDefault(){}};
+   if(!edgeFrame)edgeFrame=requestAnimationFrame(edgeScroll);
+  }
   if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,pointerType:e.pointerType});if(!gesture)return;e.preventDefault();
   if(gesture.multiTap&&!gesture.moved){
    if(Math.hypot(e.clientX-gesture.px,e.clientY-gesture.py)<4)return;
@@ -1900,6 +1946,8 @@ bind(rich,'keyup',()=>{
  }
  function sweepErase(g,p){g.preview=g.preview.filter(o=>!eraserTargetHit(o,g.last,p,g.eraseMode,10/scale));g.last=p;}
  function pointerUp(e){
+  if(navigationTouches.delete(e.pointerId)){if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);return;}
+  if(dragPointer?.pointerId===e.pointerId)stopEdgeScroll();
   if(!pointers.has(e.pointerId))return;const g=gesture;
   cancelSmartTimer();
   if(g?.kind==='erase'&&e.type==='pointerup')sweepErase(g,point(e));
@@ -1983,7 +2031,7 @@ bind(rich,'keyup',()=>{
   }
  });
  bind(svg,'pointerdown',pointerDown);bind(svg,'pointermove',pointerMove);bind(svg,'pointerup',pointerUp);bind(svg,'pointercancel',pointerUp);
- bind(svg,'lostpointercapture',e=>{if(pointers.delete(e.pointerId)){cancelSmartTimer();gesture=null;scheduleDraw();}});
+ bind(svg,'lostpointercapture',e=>{navigationTouches.delete(e.pointerId);if(dragPointer?.pointerId===e.pointerId)stopEdgeScroll();if(pointers.delete(e.pointerId)){cancelSmartTimer();gesture=null;scheduleDraw();}});
  function editFromDesktopDoubleClick(e){
    if(editing||!['select','text','hand'].includes(tool))return false;
    // Resolve the text by page coordinates instead of the event's SVG child,
@@ -2448,5 +2496,5 @@ bind(rich,'keyup',()=>{
  const backup=document.createElement('button');backup.dataset.paper='draft';backup.className='paper-draft-button';backup.textContent='สำรองงานค้าง';$('.paper-bottom').append(backup);const discard=backup.cloneNode();discard.dataset.paper='discard-draft';discard.textContent='ละทิ้งงานค้าง';$('.paper-bottom').append(discard);
  try{const raw=localStorage.getItem(draftKey);if(raw){const draft=JSON.parse(raw);unsaved=validatePaper(draft.paper);draftBase=validatePaper(draft.base);root.classList.add('paper-has-draft');say('มีงานค้างจากครั้งก่อน กดสำรองงานค้างเพื่อเก็บฉบับกู้คืน',true);}}catch{}
  document.body.classList.add('paper-mode');active={id,refresh};syncPenWidthControls();setPagesOpen(root.classList.contains('pages-open'));sizing();draw();showTextRibbon();thumbs();if(startSection&&sectionSelect){const section=sessionSections(model).find(o=>o.id===startSection);if(section){sectionSelect.value=section.id;viewport.scrollTop=Math.max(0,(section.y-24)*scale);viewport.scrollLeft=0;}}if(conversionWarning)say(conversionWarning,true);
- return ()=>{finishText();tableUI.close();closed=true;cancelAnimationFrame(raf);events.forEach(fn=>fn());ro.disconnect();selectionResize.disconnect();for(const url of images.values())URL.revokeObjectURL(url);document.body.classList.remove('paper-mode');if(active?.id===id)active=null;};
+ return ()=>{stopEdgeScroll();navigationTouches.clear();finishText();tableUI.close();closed=true;cancelAnimationFrame(raf);events.forEach(fn=>fn());ro.disconnect();selectionResize.disconnect();for(const url of images.values())URL.revokeObjectURL(url);document.body.classList.remove('paper-mode');if(active?.id===id)active=null;};
 }
