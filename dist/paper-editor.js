@@ -1731,9 +1731,11 @@ bind(rich,'keyup',()=>{
   // The phone's More drawer must never remain over the paper after the user
   // starts working with a tool or selects a shape/text box.
   if(root.classList.contains('paper-mobile-tools-expanded'))collapsePhoneMore();
-  if(e.pointerType==='pen'&&inkTools.has(tool)){
+  if(inkTools.has(tool)){
    const selection=window.getSelection();
    if(selection&&!selection.isCollapsed&&root.contains(selection.anchorNode))selection.removeAllRanges();
+  }
+  if(e.pointerType==='pen'&&inkTools.has(tool)){
    // A palm already resting on the sheet must not turn the pen into a pinch.
    for(const [id,contact] of pointers){
     if(contact.pointerType!=='touch')continue;
